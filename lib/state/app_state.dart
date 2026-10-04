@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../coach/progression.dart';
+import '../coach/splits.dart';
 import '../core/ids.dart';
 import '../data/store.dart';
 import '../domain/catalog.dart';
@@ -192,7 +194,9 @@ class AppState extends ChangeNotifier {
     final fresh = _prefilled(exerciseId);
     entry
       ..exerciseId = exerciseId
-      ..sets = fresh.sets;
+      ..sets = fresh.sets
+      // Návrh kouče patřil původnímu cviku.
+      ..extra.remove(coachKey);
     return saveActive();
   }
 
@@ -332,6 +336,63 @@ class AppState extends ChangeNotifier {
       rethrow;
     }
     notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------
+  // Split a progrese
+  // ---------------------------------------------------------------------
+
+  SplitTemplate? get split => findSplit(profile.splitId);
+
+  Future<void> setSplit(String? id) async {
+    final next = profile.withExtra({'split': id});
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+  }
+
+  /// Den splitu na řadě (po posledním odcvičeném dni).
+  int get nextSplitDay {
+    final s = split;
+    return s == null ? 0 : nextDayIndex(s, workouts);
+  }
+
+  /// Návrh váhy a opakování pro každý cvik dne.
+  List<(PlannedExercise, Suggestion)> plan(SplitDay day) => [
+    for (final p in day.exercises)
+      (
+        p,
+        suggest(
+          p,
+          typeOf(p.exerciseId),
+          exerciseHistory(workouts, p.exerciseId),
+        ),
+      ),
+  ];
+
+  /// Začne trénink podle dne splitu s předvyplněnými návrhy.
+  Future<Workout> startSplitDay(int dayIndex, {DateTime? now}) async {
+    final s = split;
+    if (s == null) throw StateError('Není zvolený split.');
+    if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
+    final index = dayIndex % s.days.length;
+    final day = s.days[index];
+    final workout = await startWorkout(name: day.name, now: now);
+    workout.extra
+      ..['split'] = s.id
+      ..['splitDay'] = index;
+    for (final (p, suggestion) in plan(day)) {
+      workout.exercises.add(
+        WorkoutExercise(
+          id: newId(),
+          exerciseId: p.exerciseId,
+          sets: suggestion.toSets(),
+          extra: {coachKey: suggestion.toJson()},
+        ),
+      );
+    }
+    await saveActive();
+    return workout;
   }
 
   // ---------------------------------------------------------------------

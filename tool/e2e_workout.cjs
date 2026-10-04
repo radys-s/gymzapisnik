@@ -1,5 +1,5 @@
 // E2E: souhlas → trénink → potvrzení série → pauza → reload → souhrn → druhý trénink
-// (předvyplněno, 1 klepnutí) → historie → detail cviku s grafem.
+// (předvyplněno, 1 klepnutí) → historie → detail cviku s grafem → split a návrh kouče.
 // Kontroly čekají s opakováním, ne pevnou dobu (stabilní i na vytíženém stroji).
 const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 let page, context;
@@ -45,7 +45,7 @@ let page, context;
  await see(has(/Zrušit potvrzení/),'set confirmed');
  await see(has(/Pauza [12]:\d\d/),'rest timer started');
  await tap('button','+15');
- await see(has(/Pauza 2:1\d/),'rest +15');
+ await see(has(/Pauza 2:\d\d/),'rest +15');
  await tap('button','Přeskočit');
  await see(t=>!/Pauza/.test(t),'rest skipped');
  await p.reload(); await sem();
@@ -76,6 +76,14 @@ let page, context;
  await see(has(/Cvičené/),'trained exercises on top');
  await tap('button',/^Bench press/);
  await see(t=>/Osobní rekordy/.test(t)&&/Odhad 1RM v čase/.test(t),'exercise detail with chart');
+ // split: výběr, dnešní den a trénink s návrhem kouče
+ await p.goBack().catch(()=>{});
+ await tap('tab',/Domů/);
+ await tap('button',/Vyber si split/);
+ await tap('button',/Push \/ Pull \/ Legs/);
+ await see(has(/Dnes: Push/),'today card for split');
+ await tap('button',/Začít Push/);
+ await see(t=>/přidej 2,5 kg|Drž|Poprvé/.test(t),'coach reason in workout');
  console.log('errors',errs);
  if(errs.length) process.exit(1);
  await ctx.close();

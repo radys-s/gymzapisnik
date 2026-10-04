@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../coach/progression.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/models.dart';
@@ -393,6 +394,14 @@ class _RestBarState extends State<_RestBar> {
   }
 }
 
+/// Vysvětlení návrhu kouče uložené u cviku (jen u tréninku podle splitu).
+String? _coachReason(WorkoutExercise entry) {
+  final coach = entry.extra[coachKey];
+  return coach is Map && coach['reason'] is String
+      ? coach['reason'] as String
+      : null;
+}
+
 class _ExerciseCard extends StatelessWidget {
   final AppState state;
   final WorkoutExercise entry;
@@ -440,6 +449,27 @@ class _ExerciseCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (_coachReason(entry) case final reason?)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4, right: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.tips_and_updates_outlined,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        reason,
+                        style: TextStyle(color: muted, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (entry.note.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),

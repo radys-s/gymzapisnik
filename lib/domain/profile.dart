@@ -30,6 +30,21 @@ class Profile {
       consentAt != null &&
       (adult || guardianConsent);
 
+  /// Zvolený split (ID šablony z `coach/splits.dart`), `null` = volné tréninky.
+  String? get splitId => extra['split'] as String?;
+
+  /// Kopie s jinými hodnotami v `extra` (`null` hodnotu klíč odstraní).
+  Profile withExtra(Map<String, dynamic> changes) {
+    final next = {...extra, ...changes}..removeWhere((_, v) => v == null);
+    return Profile(
+      consentVersion: consentVersion,
+      consentAt: consentAt,
+      adult: adult,
+      guardianConsent: guardianConsent,
+      extra: next,
+    );
+  }
+
   /// Výchozí pauza mezi sériemi v sekundách (nastavení přibude v M8).
   int get restSeconds {
     final v = extra['restSeconds'];
