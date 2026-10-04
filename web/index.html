@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Gym zápisník: rychlý zápis sérií a porovnání s minulým tréninkem.">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Gym zápisník">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>Gym zápisník</title>
+  <link rel="manifest" href="manifest.json">
+  <style>body { background: #0f1115; margin: 0; }</style>
+</head>
+<body>
+  <script src="app_bootstrap.js"></script>
+  <script>
+    (function () {
+      function notice(text, buttonLabel, onClick) {
+        var bar = document.createElement('div');
+        bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;' +
+          'padding:12px 16px;background:#c6f36b;color:#0f1115;font:15px sans-serif;' +
+          'display:flex;gap:12px;align-items:center;justify-content:space-between';
+        bar.textContent = text;
+        if (buttonLabel) {
+          var b = document.createElement('button');
+          b.textContent = buttonLabel;
+          b.style.cssText = 'padding:8px 14px;border:0;border-radius:8px;font:inherit';
+          b.onclick = onClick;
+          bar.appendChild(b);
+        }
+        document.body.appendChild(bar);
+        return bar;
+      }
+
+      if ('serviceWorker' in navigator &&
+          (location.protocol === 'https:' || location.hostname === 'localhost' ||
+           location.hostname === '127.0.0.1')) {
+        var hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (hadController) {
+            var bar = notice('Je dostupná nová verze.', 'Načíst', async function () {
+              try {
+                if (typeof window.appSaveBeforeUpdate !== 'function') {
+                  throw new Error('Aplikace ještě není připravená.');
+                }
+                await window.appSaveBeforeUpdate();
+                location.reload();
+              } catch (_) {
+                bar.firstChild.textContent = 'Nejdřív se musí podařit uložit trénink. Zkus aktualizaci znovu.';
+              }
+            });
+            hadController = false;
+          }
+        });
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('service_worker.js');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

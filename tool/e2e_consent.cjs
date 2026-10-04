@@ -1,0 +1,21 @@
+const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
+(async()=>{
+ const ctx=await chromium.launchPersistentContext(process.argv[2],{executablePath:process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,viewport:{width:400,height:800}});
+ const errs=[]; const p=await ctx.newPage(); p.on('pageerror',e=>errs.push(String(e)));
+ const sem=async()=>{await p.waitForSelector('flt-semantics-placeholder',{state:'attached',timeout:20000}); await p.evaluate(()=>document.querySelector('flt-semantics-placeholder').click()); await p.waitForTimeout(800);};
+ const txt=()=>p.evaluate(()=>[...document.querySelectorAll('flt-semantics')].map(e=>e.getAttribute('aria-label')||e.textContent).filter(Boolean).join(' | ').slice(0,300));
+ await p.goto('http://localhost:8099/'); await sem();
+ console.log('start:',await txt());
+ await p.getByRole('checkbox',{name:/Souhlasím/}).click();
+ await p.getByRole('radio',{name:/18 let nebo/}).click();
+ await p.waitForTimeout(400);
+ await p.getByRole('button',{name:'Pokračovat'}).click();
+ await p.waitForTimeout(1500);
+ console.log('after:',await txt());
+ await p.reload(); await sem();
+ console.log('reload:',await txt());
+ await ctx.setOffline(true); await p.reload(); await sem();
+ console.log('offline:',await txt());
+ console.log('errors',errs);
+ await ctx.close();
+})().catch(e=>{console.error('FAIL',e.message);process.exit(1)});
