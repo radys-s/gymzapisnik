@@ -19,7 +19,11 @@ na webu v IndexedDB).
   odhad 1RM), nové osobní rekordy, délka a objem tréninku.
 - **M5 (hotovo):** historie po měsících, detail tréninku se zopakováním, úpravou a smazáním,
   záložka Cviky s hledáním a detailem cviku (rekordy, graf odhadu 1RM, historie provedení).
-- Další kroky: splity a progrese (M6), dashboard (M7), nastavení a záloha (M8).
+- **M6 (hotovo):** 5 šablon splitů (Full body 3×, Upper/Lower, PPL, Arnold, Bro split) a kouč
+  v `lib/coach/`: dvojitá progrese (všechny série na horní hranici → +2,5 kg), po dvou
+  trénincích bez posunu odlehčení o 10 %. Domů ukazuje „Dnes: <den>" s návrhem pro každý cvik,
+  u cviku v tréninku je vysvětlení návrhu.
+- Další kroky: dashboard (M7), nastavení a záloha (M8).
 
 ## Vývoj
 
@@ -46,6 +50,7 @@ E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`,
 ## Struktura
 
 - `lib/data/` – databáze, úložiště dokumentů, webová perzistence
+- `lib/coach/` – splity a progresní pravidla (čistý Dart)
 - `lib/domain/` – čistá logika bez Flutteru (profil, tréninky, statistiky, historie)
 - `lib/state/` – stav aplikace pro obrazovky
 - `lib/ui/` – obrazovky

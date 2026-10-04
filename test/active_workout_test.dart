@@ -210,4 +210,42 @@ void main() {
     expect(state.workouts, isEmpty);
     expect((await reload()).workouts, isEmpty);
   });
+
+  test('split day: plan, rotation and progression across workouts', () async {
+    await state.setSplit('ppl');
+    expect((await reload()).split?.id, 'ppl');
+    expect(state.nextSplitDay, 0);
+
+    final push = await state.startSplitDay(0, now: DateTime(2026, 10, 1, 17));
+    expect(push.name, 'Push');
+    expect(push.extra['splitDay'], 0);
+    final bench = push.exercises.first;
+    expect(bench.exerciseId, 'bench_press');
+    expect(bench.sets, hasLength(4));
+    expect(bench.extra['coach']['kind'], 'start');
+    for (final s in bench.sets) {
+      s
+        ..weight = 60
+        ..reps = 8
+        ..done = true;
+    }
+    await state.finishActive(now: DateTime(2026, 10, 1, 18));
+    expect(state.nextSplitDay, 1);
+
+    final pushDay = state.split!.days.first;
+    final (_, next) = state.plan(pushDay).first;
+    expect(next.kind.name, 'increase');
+    expect(next.weight, 62.5);
+
+    await state.startWorkout();
+    expect(() => state.startSplitDay(1), throwsStateError);
+  });
+
+  test('replacing a planned exercise drops its coach note', () async {
+    await state.setSplit('ppl');
+    final w = await state.startSplitDay(0);
+    final entry = w.exercises.first;
+    await state.replaceExercise(entry, 'dumbbell_bench_press');
+    expect(entry.extra.containsKey('coach'), isFalse);
+  });
 }
