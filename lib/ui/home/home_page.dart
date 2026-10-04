@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../program/program_page.dart';
+import 'dashboard.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 import '../workout/workout_page.dart';
@@ -96,11 +97,16 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
           if (last != null) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            WeekCard(state, DateTime.now()),
+            const SizedBox(height: 8),
             Card(
               child: ListTile(
                 title: const Text('Poslední trénink'),
-                subtitle: Text('${last.name}\n${formatDateTime(last.date)}'),
+                subtitle: Text(
+                  '${last.name}\n${formatDateTime(last.date)} · '
+                  '${setsLabel(_countedSets(last))}',
+                ),
                 isThreeLine: true,
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.push(
@@ -109,12 +115,19 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            RecentRecordsCard(state),
+            const SizedBox(height: 8),
+            QuickProgressCard(state),
           ],
         ],
       );
     },
   );
 }
+
+int _countedSets(Workout w) =>
+    w.exercises.fold(0, (n, e) => n + e.countedSets.length);
 
 /// „Dnes: Push" – den splitu na řadě s návrhem pro každý cvik.
 class _TodayCard extends StatelessWidget {

@@ -137,4 +137,45 @@ void main() {
     final pull = progressSeries(ws, 'pull_up', ExerciseType.bodyweight);
     expect(pull.single.value, 10);
   });
+
+  test('recent records: newest first, one per exercise, limited', () {
+    final ws = [
+      workout('a', DateTime(2026, 9, 1), {
+        'bench': [(80, 8)],
+        'squat': [(100, 5)],
+      }),
+      workout('b', DateTime(2026, 9, 3), {
+        'bench': [(85, 8)],
+        'squat': [(105, 5)],
+      }),
+      workout('c', DateTime(2026, 9, 5), {
+        'bench': [(90, 8)],
+      }),
+    ];
+    final r = recentRecords(ws, typeOf);
+    expect([for (final p in r) '${p.workoutId}/${p.exerciseId}'], [
+      'c/bench',
+      'b/squat',
+    ]);
+    expect(recentRecords(ws, typeOf, limit: 1), hasLength(1));
+    expect(recentRecords([ws.first], typeOf), isEmpty);
+  });
+
+  test('most trained exercise counts workouts, not sets', () {
+    final ws = [
+      workout('a', DateTime(2026, 9, 1), {
+        'squat': [(100, 5), (100, 5), (100, 5), (100, 5)],
+        'bench': [(80, 8)],
+      }),
+      workout('b', DateTime(2026, 9, 3), {
+        'bench': [(80, 8)],
+      }),
+      workout('c', DateTime(2026, 9, 5), {
+        'squat': [(100, 5)],
+        'bench': [(80, 8)],
+      }, finished: false),
+    ];
+    expect(mostTrainedExercise(ws), 'bench');
+    expect(mostTrainedExercise(const []), isNull);
+  });
 }

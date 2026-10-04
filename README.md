@@ -23,7 +23,9 @@ na webu v IndexedDB).
   v `lib/coach/`: dvojitá progrese (všechny série na horní hranici → +2,5 kg), po dvou
   trénincích bez posunu odlehčení o 10 %. Domů ukazuje „Dnes: <den>" s návrhem pro každý cvik,
   u cviku v tréninku je vysvětlení návrhu.
-- Další kroky: dashboard (M7), nastavení a záloha (M8).
+- **M7 (hotovo):** dashboard na Domů – „Tento týden" (tréninky vůči plánu splitu, série, objem),
+  nedávné rekordy (max 3, jeden na cvik) a rychlý progres nejčastějšího cviku s malou křivkou.
+- Další kroky: nastavení a záloha (M8), pak denní smyčka (mise, streak, notifikace).
 
 ## Vývoj
 

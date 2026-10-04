@@ -24,6 +24,14 @@ let page, context;
  };
  const has=re=>t=>re.test(t);
  const tap=(role,name)=>p.getByRole(role,{name}).first().click();
+ // Klik, který se mohl ztratit při přestavbě sémantiky, zopakuje.
+ const tapUntil=async(role,name,test,msg)=>{
+  for(let i=0;i<5;i++){
+   await tap(role,name);
+   try { await see(test,msg,3000); return; } catch(_) {}
+  }
+  throw new Error(msg);
+ };
 
  await p.goto('http://localhost:8099/'); await sem();
  await tap('checkbox',/Souhlasím/);
@@ -39,10 +47,22 @@ let page, context;
  await tap('button',/^Bench press/);
  await see(has(/Potvrdit sérii/),'exercise added');
  const boxes=p.getByRole('textbox');
- await boxes.nth(0).click(); await p.keyboard.type('77,5');
- await boxes.nth(1).click(); await p.keyboard.type('8');
- await tap('button','Potvrdit sérii');
- await see(has(/Zrušit potvrzení/),'set confirmed');
+ await boxes.nth(1).waitFor();
+ // Flutter otevře skryté <input> až po kliknutí; psát až když má fokus.
+ const typeInto=async(i,value)=>{
+  for(let a=0;a<5;a++){
+   await boxes.nth(i).click();
+   const focused=await p.waitForFunction(()=>document.activeElement?.tagName==='INPUT',null,{timeout:2000}).then(()=>true,()=>false);
+   if(!focused) continue;
+   await p.keyboard.press('Control+A');
+   await p.keyboard.type(value,{delay:30});
+   if(await p.waitForFunction(v=>document.activeElement?.value===v,value,{timeout:2000}).then(()=>true,()=>false)) return;
+  }
+  throw new Error('typing into field '+i+' failed');
+ };
+ await typeInto(0,'77,5');
+ await typeInto(1,'8');
+ await tapUntil('button','Potvrdit sérii',has(/Zrušit potvrzení/),'set confirmed');
  await see(has(/Pauza [12]:\d\d/),'rest timer started');
  await tap('button','+15');
  await see(has(/Pauza 2:\d\d/),'rest +15');
@@ -65,11 +85,11 @@ let page, context;
  await see(has(/Nedávné/),'recent exercises first');
  await tap('button',/^Bench press/);
  await see(t=>t.includes('77,5×8'),'last time shown');
- await tap('button','Potvrdit sérii');
- await see(has(/Zrušit potvrzení/),'one tap logs same set');
+ await tapUntil('button','Potvrdit sérii',has(/Zrušit potvrzení/),'one tap logs same set');
  await tap('button','Dokončit');
  await see(has(/Stejně jako minule/),'second summary compares with first');
  await tap('button','Hotovo');
+ await see(t=>/Tento týden/.test(t)&&/Progres: Bench press/.test(t),'dashboard on home');
  await tap('tab',/Historie/);
  await see(has(/(Leden|Únor|Březen|Duben|Květen|Červen|Červenec|Srpen|Září|Říjen|Listopad|Prosinec) \d{4}/),'history grouped by month');
  await tap('tab',/Cviky/);
