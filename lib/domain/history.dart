@@ -185,3 +185,38 @@ List<ProgressPoint> progressSeries(
   }
   return byWorkout.values.toList()..sort((a, b) => a.date.compareTo(b.date));
 }
+
+/// Nedávné osobní rekordy, od nejnovějšího. Z každého cviku jen jeden
+/// (nejnovější). Prohledává jen posledních [scan] tréninků.
+List<PersonalRecord> recentRecords(
+  Iterable<Workout> workouts,
+  ExerciseType Function(String exerciseId) typeOf, {
+  int limit = 3,
+  int scan = 20,
+}) {
+  final result = <PersonalRecord>[];
+  final seen = <String>{};
+  for (final w in finishedNewestFirst(workouts).take(scan)) {
+    for (final r in newRecords(w, workouts, typeOf)) {
+      if (seen.add(r.exerciseId)) result.add(r);
+      if (result.length >= limit) return result;
+    }
+  }
+  return result;
+}
+
+/// Nejčastěji cvičený cvik (podle počtu tréninků), nebo `null`.
+/// Při shodě vyhrává cvik z novějšího tréninku (seznam je od nejnovějšího).
+String? mostTrainedExercise(Iterable<Workout> workouts) {
+  final counts = <String, int>{};
+  for (final w in finishedNewestFirst(workouts)) {
+    for (final id in {
+      for (final e in w.exercises)
+        if (e.countedSets.isNotEmpty) e.exerciseId,
+    }) {
+      counts.update(id, (v) => v + 1, ifAbsent: () => 1);
+    }
+  }
+  if (counts.isEmpty) return null;
+  return counts.entries.reduce((a, b) => b.value > a.value ? b : a).key;
+}
