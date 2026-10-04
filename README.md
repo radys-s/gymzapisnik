@@ -10,8 +10,10 @@ na webu v IndexedDB).
 
 - **M0 (hotovo):** kostra projektu, lokální úložiště, offline PWA, souhlas s podmínkami a potvrzení věku
   (18+ nebo souhlas zákonného zástupce), navigace Domů / Historie / Cviky.
-- Další kroky: model tréninku a statistiky (M1), zápis tréninku (M2), časovač pauzy, souhrn a porovnání,
-  historie, splity, dashboard, záloha.
+- **M1 (hotovo):** model tréninku, katalog cviků, statistiky (odhad 1RM, objem, porovnání, osobní rekordy).
+- **M2 (hotovo):** zápis tréninku – předvyplnění z minula, potvrzení série jedním klepnutím, rozcvička,
+  poznámky, vlastní cviky, dokončení / zahození; rozepsaný trénink přežije zavření aplikace.
+- Další kroky: časovač pauzy (M3), souhrn a porovnání (M4), historie, splity, dashboard, záloha.
 
 ## Vývoj
 
@@ -31,13 +33,14 @@ flutter build web --release
 python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
 ```
 
-E2E test souhlasu (běží proti `build/web` servírovanému na `http://localhost:8099`):
-`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>`.
+E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka):
+`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` a
+`node tool/e2e_workout.cjs <složka profilu>` (zápis, reload, opakování série jedním klepnutím).
 
 ## Struktura
 
 - `lib/data/` – databáze, úložiště dokumentů, webová perzistence
-- `lib/domain/` – čistá logika bez Flutteru (profil, později tréninky a statistiky)
+- `lib/domain/` – čistá logika bez Flutteru (profil, tréninky, statistiky, historie)
 - `lib/state/` – stav aplikace pro obrazovky
 - `lib/ui/` – obrazovky
 - `web/` – PWA: zámek jednoho okna (`app_bootstrap.js`), offline cache (`service_worker.js`)

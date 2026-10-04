@@ -33,6 +33,28 @@ class LocalStore {
     );
   }
 
+  /// Uloží dokončený trénink a smaže rozepsaný v jedné transakci,
+  /// takže po pádu nikdy nezůstanou oba ani žádný.
+  Future<void> replace({
+    required String removeId,
+    required String kind,
+    required Map<String, dynamic> data,
+  }) => db.transaction(() async {
+    await db.customStatement(
+      '''
+      INSERT INTO entities(id,kind,payload,updated_at,dirty,deleted,conflict,remote_revision)
+      VALUES(?,?,?,?,1,0,0,0)
+      ON CONFLICT(id) DO UPDATE SET kind=excluded.kind,payload=excluded.payload,
+        updated_at=excluded.updated_at,dirty=1,deleted=0
+    ''',
+      [data['id'], kind, jsonEncode(data), _now()],
+    );
+    await db.customStatement(
+      'UPDATE entities SET deleted=1,dirty=1,updated_at=? WHERE id=?',
+      [_now(), removeId],
+    );
+  });
+
   Future<List<Map<String, dynamic>>> all(String kind) async {
     final rows = await db
         .customSelect(
