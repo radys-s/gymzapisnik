@@ -117,4 +117,24 @@ void main() {
     expect(back.exercises[0].sets[0].extra['rpe'], 8);
     expect(back.finishedAt, w.finishedAt);
   });
+
+  test('progress series: best value per workout, oldest first', () {
+    final ws = [
+      workout('b', DateTime(2026, 10, 3), {
+        'bench': [(80, 8), (85, 5)],
+        'pull_up': [(0, 10)],
+      }),
+      workout('a', DateTime(2026, 10, 1), {
+        'bench': [(80, 6)],
+      }),
+      workout('x', DateTime(2026, 10, 4), {
+        'bench': [(100, 1)],
+      }, finished: false),
+    ];
+    final bench = progressSeries(ws, 'bench', ExerciseType.weighted);
+    expect([for (final p in bench) p.date.day], [1, 3]);
+    expect(bench.last.value, closeTo(e1rm(80, 8), 1e-9));
+    final pull = progressSeries(ws, 'pull_up', ExerciseType.bodyweight);
+    expect(pull.single.value, 10);
+  });
 }

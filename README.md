@@ -17,7 +17,9 @@ na webu v IndexedDB).
   ±15 s, přeskočit, vibrace a zvuk na konci.
 - **M4 (hotovo):** souhrn po dokončení – každý cvik proti minulému provedení (série ▲/▼, objem,
   odhad 1RM), nové osobní rekordy, délka a objem tréninku.
-- Další kroky: historie (M5), splity, dashboard, záloha.
+- **M5 (hotovo):** historie po měsících, detail tréninku se zopakováním, úpravou a smazáním,
+  záložka Cviky s hledáním a detailem cviku (rekordy, graf odhadu 1RM, historie provedení).
+- Další kroky: splity a progrese (M6), dashboard (M7), nastavení a záloha (M8).
 
 ## Vývoj
 
@@ -39,7 +41,7 @@ python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
 
 E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka):
 `PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` a
-`node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, souhrn, reload, opakování série jedním klepnutím).
+`node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, souhrn, opakování série jedním klepnutím, historie, detail cviku).
 
 ## Struktura
 

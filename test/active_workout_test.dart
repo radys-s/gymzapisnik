@@ -179,4 +179,35 @@ void main() {
     final saved = (await state.finishActive()).workout!;
     expect(saved.toJson().containsKey('restEndsAt'), isFalse);
   });
+
+  test('edit finished workout keeps filled sets and survives reload', () async {
+    final w = await logBench([(80, 8), (80, 6)], DateTime(2026, 10, 1));
+    final draft = w.copy()..name = '  Push  ';
+    draft.exercises.single.sets
+      ..[1].reps = 0
+      ..add(SetEntry(weight: 70, reps: 10));
+    expect(await state.updateWorkout(draft), isNull);
+    final again = await reload();
+    final saved = again.workouts.single;
+    expect(saved.name, 'Push');
+    expect(
+      [for (final s in saved.exercises.single.sets) (s.weight, s.reps, s.done)],
+      [(80.0, 8, true), (70.0, 10, true)],
+    );
+  });
+
+  test('edit without working set is refused', () async {
+    final w = await logBench([(80, 8)], DateTime(2026, 10, 1));
+    final draft = w.copy();
+    draft.exercises.single.sets.single.warmup = true;
+    expect(await state.updateWorkout(draft), isNotNull);
+    expect(state.workouts.single.exercises.single.sets.single.warmup, isFalse);
+  });
+
+  test('delete removes workout from history', () async {
+    final w = await logBench([(80, 8)], DateTime(2026, 10, 1));
+    await state.deleteWorkout(w);
+    expect(state.workouts, isEmpty);
+    expect((await reload()).workouts, isEmpty);
+  });
 }

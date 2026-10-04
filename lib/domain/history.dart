@@ -156,3 +156,32 @@ WeekSummary weekSummary(
   }
   return WeekSummary(count, sets, kg);
 }
+
+/// Bod grafu progresu: jeden trénink.
+class ProgressPoint {
+  final DateTime date;
+  final double value;
+  const ProgressPoint(this.date, this.value);
+}
+
+/// Progres cviku po trénincích, od nejstaršího: s váhou nejlepší odhad 1RM,
+/// s vlastní váhou nejvíc opakování v sérii.
+List<ProgressPoint> progressSeries(
+  Iterable<Workout> workouts,
+  String exerciseId,
+  ExerciseType type,
+) {
+  final byWorkout = <String, ProgressPoint>{};
+  for (final session in exerciseHistory(workouts, exerciseId)) {
+    for (final set in session.entry.countedSets) {
+      final value = type == ExerciseType.weighted
+          ? e1rm(set.weight, set.reps)
+          : set.reps.toDouble();
+      final current = byWorkout[session.workout.id];
+      if (current == null || value > current.value) {
+        byWorkout[session.workout.id] = ProgressPoint(session.date, value);
+      }
+    }
+  }
+  return byWorkout.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+}

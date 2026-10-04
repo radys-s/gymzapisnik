@@ -23,15 +23,25 @@
       'Použij aktuální prohlížeč přes HTTPS nebo Android aplikaci.');
     return;
   }
-  navigator.locks.request('gymzapisnik-tab', { ifAvailable: true }, function (lock) {
-    if (!lock) {
-      blocked('Aplikace je otevřená v jiném okně. Zavři ho a načti tuto stránku znovu.');
-      return;
-    }
-    start();
-    // The browser releases the lock when the owning document closes.
-    return new Promise(function () {});
-  }).catch(function () {
-    blocked('Nepodařilo se získat bezpečný přístup k úložišti. Obnov stránku.');
-  });
+  // On reload the previous document may still hold the lock for a moment
+  // while it unloads, so retry briefly before reporting another open tab.
+  var attemptsLeft = 8;
+  function acquire() {
+    navigator.locks.request('gymzapisnik-tab', { ifAvailable: true }, function (lock) {
+      if (!lock) {
+        if (--attemptsLeft > 0) {
+          setTimeout(acquire, 400);
+        } else {
+          blocked('Aplikace je otevřená v jiném okně. Zavři ho a načti tuto stránku znovu.');
+        }
+        return;
+      }
+      start();
+      // The browser releases the lock when the owning document closes.
+      return new Promise(function () {});
+    }).catch(function () {
+      blocked('Nepodařilo se získat bezpečný přístup k úložišti. Obnov stránku.');
+    });
+  }
+  acquire();
 })();
