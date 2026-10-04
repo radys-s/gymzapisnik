@@ -30,6 +30,12 @@ class Profile {
       consentAt != null &&
       (adult || guardianConsent);
 
+  /// Výchozí pauza mezi sériemi v sekundách (nastavení přibude v M8).
+  int get restSeconds {
+    final v = extra['restSeconds'];
+    return v is num ? v.toInt().clamp(15, 600) : 120;
+  }
+
   /// Nezletilým aplikace nikdy nenastaví kalorický deficit ani hubnutí.
   bool get restrictWeightLoss => !adult;
 

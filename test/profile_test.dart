@@ -61,4 +61,10 @@ void main() {
     expect(back.consentAt, now);
     expect(back.toJson()['future'], 42);
   });
+
+  test('rest seconds default and clamp', () {
+    expect(const Profile().restSeconds, 120);
+    expect(const Profile(extra: {'restSeconds': 5}).restSeconds, 15);
+    expect(const Profile(extra: {'restSeconds': 90}).restSeconds, 90);
+  });
 }
