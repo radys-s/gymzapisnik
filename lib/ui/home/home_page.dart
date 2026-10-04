@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
+import '../summary/summary_page.dart';
 import '../workout/workout_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -17,8 +18,12 @@ class HomePage extends StatelessWidget {
       MaterialPageRoute(builder: (_) => WorkoutPage(state)),
     );
     if (finished != null && context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Trénink uložen.')));
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SummaryPage(state, finished, justFinished: true),
+        ),
+      );
     }
   }
 
@@ -49,6 +54,11 @@ class HomePage extends StatelessWidget {
                 title: const Text('Poslední trénink'),
                 subtitle: Text('${last.name}\n${formatDateTime(last.date)}'),
                 isThreeLine: true,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SummaryPage(state, last)),
+                ),
               ),
             ),
           ],

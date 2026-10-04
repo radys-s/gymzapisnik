@@ -15,7 +15,9 @@ na webu v IndexedDB).
   poznámky, vlastní cviky, dokončení / zahození; rozepsaný trénink přežije zavření aplikace.
 - **M3 (hotovo):** pauza mezi sériemi – odpočet podle času konce (sedí i po návratu do aplikace),
   ±15 s, přeskočit, vibrace a zvuk na konci.
-- Další kroky: souhrn a porovnání (M4), historie, splity, dashboard, záloha.
+- **M4 (hotovo):** souhrn po dokončení – každý cvik proti minulému provedení (série ▲/▼, objem,
+  odhad 1RM), nové osobní rekordy, délka a objem tréninku.
+- Další kroky: historie (M5), splity, dashboard, záloha.
 
 ## Vývoj
 
@@ -37,7 +39,7 @@ python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
 
 E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka):
 `PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` a
-`node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, opakování série jedním klepnutím).
+`node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, souhrn, reload, opakování série jedním klepnutím).
 
 ## Struktura
 

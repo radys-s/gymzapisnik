@@ -1,4 +1,4 @@
-// E2E: souhlas → trénink → potvrzení série → pauza → dokončení → reload → opakování za 1 klik.
+// E2E: souhlas → trénink → potvrzení série → pauza → souhrn → dokončení → reload → opakování za 1 klik.
 const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 (async()=>{
  const ctx=await chromium.launchPersistentContext(process.argv[2],{executablePath:process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,viewport:{width:400,height:800}});
@@ -32,6 +32,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
  await p.getByRole('button',{name:/Pokračovat v tréninku/}).click(); await wait(800);
  check(await p.getByRole('button',{name:'Zrušit potvrzení'}).count()===1,'confirmed set survives reload');
  await p.getByRole('button',{name:'Dokončit'}).click(); await wait(1200);
+ check(/Trénink hotový/.test(await txt()),'summary shown');
+ check((await txt()).includes('Poprvé'),'first time verdict');
+ await p.getByRole('button',{name:'Hotovo'}).click(); await wait(800);
  check(/Poslední trénink/.test(await txt()),'finished workout on home');
 
  // druhý trénink: předvyplněno, 1 klik
