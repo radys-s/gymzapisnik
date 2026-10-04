@@ -334,6 +334,42 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------------------------------------------------------------------
+  // Historie
+  // ---------------------------------------------------------------------
+
+  /// Uloží upravený dokončený trénink. Ponechá jen vyplněné série a cviky,
+  /// které nějakou mají; bez pracovní série úpravu odmítne.
+  Future<String?> updateWorkout(Workout edited) async {
+    if (!edited.finished) return 'Trénink není dokončený.';
+    final cleaned = edited.copy()
+      ..name = edited.name.trim().isEmpty ? 'Trénink' : edited.name.trim()
+      ..note = edited.note.trim();
+    cleaned.exercises = [
+      for (final e in cleaned.exercises)
+        if (e.sets.any((s) => s.reps > 0))
+          e
+            ..sets = [
+              for (final s in e.sets)
+                if (s.reps > 0) s..done = true,
+            ],
+    ];
+    if (!cleaned.exercises.any((e) => e.countedSets.isNotEmpty)) {
+      return 'Trénink musí mít aspoň jednu pracovní sérii.';
+    }
+    await _enqueue(() => store.put(Kinds.workout, cleaned.toJson()));
+    workouts = [for (final w in workouts) w.id == cleaned.id ? cleaned : w]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    notifyListeners();
+    return null;
+  }
+
+  Future<void> deleteWorkout(Workout workout) async {
+    await _enqueue(() => store.remove(workout.id));
+    workouts = workouts.where((w) => w.id != workout.id).toList();
+    notifyListeners();
+  }
+
   /// Uloží rozepsaná data před aktualizací webové verze.
   Future<void> saveBeforeUpdate() => saveActive();
 }

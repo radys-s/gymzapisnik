@@ -5,7 +5,9 @@ import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
+import '../history/edit_workout_page.dart';
 import '../widgets/labels.dart';
+import '../workout/workout_page.dart';
 
 /// Souhrn dokončeného tréninku: dnes proti minulému provedení a nové rekordy.
 class SummaryPage extends StatelessWidget {
@@ -23,7 +25,72 @@ class SummaryPage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: state,
+    builder: (context, _) {
+      // Po úpravě je v historii nová instance; smazaný trénink zmizí.
+      final current = state.workouts
+          .where((w) => w.id == workout.id)
+          .firstOrNull;
+      if (current == null) return const Scaffold();
+      return _page(context, current);
+    },
+  );
+
+  Future<void> _action(BuildContext context, Workout workout, String a) async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    switch (a) {
+      case 'edit':
+        await navigator.push(
+          MaterialPageRoute(builder: (_) => EditWorkoutPage(state, workout)),
+        );
+      case 'repeat':
+        if (state.active != null) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Nejdřív dokonči rozepsaný trénink.')),
+          );
+          return;
+        }
+        await state.repeatWorkout(workout);
+        final finished = await navigator.push<Workout>(
+          MaterialPageRoute(builder: (_) => WorkoutPage(state)),
+        );
+        if (finished != null) {
+          await navigator.push(
+            MaterialPageRoute(
+              builder: (_) => SummaryPage(state, finished, justFinished: true),
+            ),
+          );
+        }
+      case 'delete':
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Smazat trénink?'),
+            content: Text('${workout.name}, ${formatDate(workout.date)}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Zpět'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Smazat'),
+              ),
+            ],
+          ),
+        );
+        if (ok != true) return;
+        await state.deleteWorkout(workout);
+        navigator.pop();
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Trénink smazán.')),
+        );
+    }
+  }
+
+  Widget _page(BuildContext context, Workout workout) {
     final records = newRecords(workout, state.workouts, state.typeOf);
     final sets = workout.exercises.fold<int>(
       0,
@@ -41,6 +108,17 @@ class SummaryPage extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: !justFinished,
         title: Text(justFinished ? 'Trénink hotový' : workout.name),
+        actions: [
+          if (!justFinished)
+            PopupMenuButton<String>(
+              onSelected: (a) => _action(context, workout, a),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'repeat', child: Text('Zopakovat')),
+                PopupMenuItem(value: 'edit', child: Text('Upravit')),
+                PopupMenuItem(value: 'delete', child: Text('Smazat')),
+              ],
+            ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -258,7 +336,7 @@ class _ComparisonCard extends StatelessWidget {
               ),
             if (warmups > 0)
               Text(
-                'Rozcvička: $warmups ${warmups < 5 ? 'série' : 'sérií'}',
+                'Rozcvička: ${setsLabel(warmups)}',
                 style: TextStyle(color: muted, fontSize: 13),
               ),
             const SizedBox(height: 8),

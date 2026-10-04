@@ -30,3 +30,7 @@ String volumeLabel(ExerciseType type, double value) =>
     type == ExerciseType.weighted
     ? '${formatKg(value.roundToDouble())} kg'
     : '${value.round()} opak.';
+
+/// „1 série", „3 série", „5 sérií".
+String setsLabel(int n) =>
+    '$n ${n == 1 || (n >= 2 && n <= 4) ? 'série' : 'sérií'}';
