@@ -235,6 +235,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
               ),
           ],
         ),
+        bottomNavigationBar: state.restEndsAt == null
+            ? null
+            : _RestBar(state: state, endsAt: state.restEndsAt!),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _addExercise,
@@ -279,6 +282,114 @@ class _ElapsedState extends State<_Elapsed> {
         ? '${s ~/ 3600}:${two(s % 3600 ~/ 60)}:${two(s % 60)}'
         : '${s ~/ 60}:${two(s % 60)}';
     return Text(text, style: Theme.of(context).textTheme.bodySmall);
+  }
+}
+
+/// Odpočet pauzy. Konec se počítá z časového razítka, takže sedí i po
+/// návratu do aplikace. Na konci zavibruje a pípne (jen když je otevřená).
+class _RestBar extends StatefulWidget {
+  final AppState state;
+  final DateTime endsAt;
+  const _RestBar({required this.state, required this.endsAt});
+
+  @override
+  State<_RestBar> createState() => _RestBarState();
+}
+
+class _RestBarState extends State<_RestBar> {
+  late final Timer timer;
+  DateTime? _alertedFor;
+
+  /// Jak dlouho po konci zůstane lišta „Pauza hotová“.
+  static const _linger = Duration(seconds: 10);
+
+  @override
+  void initState() {
+    super.initState();
+    // Pauza, která skončila dřív, než se lišta ukázala, už nepípá.
+    if (!widget.endsAt.isAfter(DateTime.now())) _alertedFor = widget.endsAt;
+    timer = Timer.periodic(const Duration(milliseconds: 250), (_) => _tick());
+  }
+
+  @override
+  void didUpdateWidget(_RestBar old) {
+    super.didUpdateWidget(old);
+    if (old.endsAt != widget.endsAt && !widget.endsAt.isAfter(DateTime.now())) {
+      _alertedFor = widget.endsAt;
+    }
+  }
+
+  void _tick() {
+    if (!mounted) return;
+    final now = DateTime.now();
+    final end = widget.endsAt;
+    if (!end.isAfter(now) && _alertedFor != end) {
+      _alertedFor = end;
+      HapticFeedback.vibrate();
+      SystemSound.play(SystemSoundType.alert);
+    }
+    if (now.isAfter(end.add(_linger))) {
+      widget.state.skipRest();
+      return;
+    }
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final left = widget.endsAt.difference(DateTime.now());
+    final seconds = (left.inMilliseconds / 1000).ceil();
+    final finished = seconds <= 0;
+    final scheme = Theme.of(context).colorScheme;
+    final text = finished
+        ? 'Pauza hotová'
+        : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+    return Material(
+      color: finished ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              const Icon(Icons.timer_outlined),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  semanticsLabel: finished ? text : 'Pauza $text',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              if (!finished) ...[
+                TextButton(
+                  onPressed: () =>
+                      widget.state.adjustRest(const Duration(seconds: -15)),
+                  child: const Text('−15'),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      widget.state.adjustRest(const Duration(seconds: 15)),
+                  child: const Text('+15'),
+                ),
+              ],
+              TextButton(
+                onPressed: widget.state.skipRest,
+                child: Text(finished ? 'Zavřít' : 'Přeskočit'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

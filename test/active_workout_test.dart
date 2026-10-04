@@ -143,4 +143,40 @@ void main() {
     await state.removeExercise(entry);
     expect((await reload()).active!.exercises, isEmpty);
   });
+
+  test('confirming a set starts rest that survives reload', () async {
+    final now = DateTime(2026, 10, 5, 18);
+    await state.startWorkout(now: now);
+    final entry = await state.addExercise('bench_press');
+    entry.sets.single.reps = 5;
+    await state.toggleDone(entry.sets.single, now: now);
+    expect(state.restEndsAt, now.add(const Duration(seconds: 120)));
+    expect((await reload()).restEndsAt, state.restEndsAt);
+
+    await state.adjustRest(const Duration(seconds: 15), now: now);
+    expect(state.restEndsAt, now.add(const Duration(seconds: 135)));
+    await state.adjustRest(const Duration(seconds: -200), now: now);
+    expect(state.restEndsAt, isNull);
+  });
+
+  test('unconfirming does not start rest; skip clears it', () async {
+    await state.startWorkout();
+    final entry = await state.addExercise('bench_press');
+    final set = entry.sets.single..reps = 5;
+    await state.toggleDone(set);
+    await state.skipRest();
+    expect(state.restEndsAt, isNull);
+    await state.toggleDone(set);
+    expect(set.done, isFalse);
+    expect(state.restEndsAt, isNull);
+  });
+
+  test('finished workout does not keep rest timestamp', () async {
+    await state.startWorkout();
+    final entry = await state.addExercise('bench_press');
+    entry.sets.single.reps = 5;
+    await state.toggleDone(entry.sets.single);
+    final saved = (await state.finishActive()).workout!;
+    expect(saved.toJson().containsKey('restEndsAt'), isFalse);
+  });
 }

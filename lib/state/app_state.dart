@@ -220,15 +220,58 @@ class AppState extends ChangeNotifier {
   }
 
   /// Označí sérii jako hotovou (nebo zpět). Vrací chybovou hlášku,
-  /// když se série nedá potvrdit.
-  Future<String?> toggleDone(SetEntry set) async {
+  /// když se série nedá potvrdit. Potvrzení spustí pauzu.
+  Future<String?> toggleDone(SetEntry set, {DateTime? now}) async {
     if (!set.done) {
       if (set.reps <= 0) return 'Zadej počet opakování.';
       if (set.weight < 0 || !set.weight.isFinite) return 'Neplatná váha.';
     }
     set.done = !set.done;
+    if (set.done) {
+      _setRestEnd(
+        (now ?? DateTime.now()).add(Duration(seconds: profile.restSeconds)),
+      );
+    }
     await saveActive();
     return null;
+  }
+
+  // ---------------------------------------------------------------------
+  // Pauza mezi sériemi
+  // ---------------------------------------------------------------------
+
+  static const _restKey = 'restEndsAt';
+
+  /// Konec pauzy jako časové razítko: odpočet sedí i po uspání nebo
+  /// zavření aplikace. `null` = žádná pauza.
+  DateTime? get restEndsAt {
+    final v = active?.extra[_restKey];
+    return v is String ? DateTime.tryParse(v)?.toLocal() : null;
+  }
+
+  void _setRestEnd(DateTime? end) {
+    final workout = active;
+    if (workout == null) return;
+    if (end == null) {
+      workout.extra.remove(_restKey);
+    } else {
+      workout.extra[_restKey] = end.toUtc().toIso8601String();
+    }
+  }
+
+  /// Prodlouží nebo zkrátí běžící pauzu; pod nulou ji ukončí.
+  Future<void> adjustRest(Duration delta, {DateTime? now}) {
+    final end = restEndsAt;
+    if (end == null) return Future.value();
+    final next = end.add(delta);
+    _setRestEnd(next.isAfter(now ?? DateTime.now()) ? next : null);
+    return saveActive();
+  }
+
+  Future<void> skipRest() {
+    if (restEndsAt == null) return Future.value();
+    _setRestEnd(null);
+    return saveActive();
   }
 
   Future<void> toggleWarmup(SetEntry set) {
@@ -243,7 +286,7 @@ class AppState extends ChangeNotifier {
   }) async {
     final workout = active;
     if (workout == null) return (workout: null, error: 'Žádný trénink.');
-    final done = workout.copy();
+    final done = workout.copy()..extra.remove(_restKey);
     done.exercises = [
       for (final e in done.exercises)
         if (e.sets.any((s) => s.done && s.reps > 0))

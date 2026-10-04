@@ -1,4 +1,4 @@
-// E2E: souhlas → trénink → potvrzení série → dokončení → reload → opakování za 1 klik.
+// E2E: souhlas → trénink → potvrzení série → pauza → dokončení → reload → opakování za 1 klik.
 const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 (async()=>{
  const ctx=await chromium.launchPersistentContext(process.argv[2],{executablePath:process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,viewport:{width:400,height:800}});
@@ -22,6 +22,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
  await boxes.nth(1).click(); await p.keyboard.type('8'); await wait(300);
  await p.getByRole('button',{name:'Potvrdit sérii'}).click(); await wait(500);
  check(await p.getByRole('button',{name:'Zrušit potvrzení'}).count()===1,'set confirmed');
+ check(/Pauza [12]:\d\d/.test(await txt()),'rest timer started');
+ await p.getByRole('button',{name:'+15'}).click(); await wait(300);
+ check(/Pauza 2:1\d/.test(await txt()),'rest +15');
+ await p.getByRole('button',{name:'Přeskočit'}).click(); await wait(500);
+ check(!/Pauza/.test(await txt()),'rest skipped');
  await p.reload(); await sem(); await wait(500);
  check(/Pokračovat v tréninku/.test(await txt()),'active workout survives reload');
  await p.getByRole('button',{name:/Pokračovat v tréninku/}).click(); await wait(800);
