@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/version.dart';
 import '../../state/app_state.dart';
+import '../premium/premium_page.dart';
 import '../widgets/labels.dart';
 import 'file_io.dart';
 
@@ -160,6 +161,21 @@ class SettingsPage extends StatelessWidget {
                 showSelectedIcon: false,
                 onSelectionChanged: (s) =>
                     state.setPreferences(theme: s.single),
+              ),
+            ),
+            section('Gym zápisník Pro'),
+            ListTile(
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: const Text('Co obsahuje Pro'),
+              subtitle: Text(
+                state.paywall
+                    ? 'Zobrazit'
+                    : 'Zatím odemčeno zdarma pro testery',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PremiumPage(state)),
               ),
             ),
             section('Data'),

@@ -12,6 +12,7 @@ import '../domain/catalog.dart';
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/profile.dart';
+import '../premium/entitlements.dart';
 
 /// Druhy dokumentů v úložišti.
 abstract final class Kinds {
@@ -23,7 +24,14 @@ abstract final class Kinds {
 /// Stav aplikace sdílený obrazovkami. UI nesahá přímo na úložiště.
 class AppState extends ChangeNotifier {
   final LocalStore store;
-  AppState(this.store);
+  AppState(this.store, {this.paywall = paywallEnabled});
+
+  /// Je zapnutý paywall (v testech jde přepsat).
+  final bool paywall;
+
+  /// Je funkce Pro dostupná?
+  bool has(ProFeature feature) =>
+      Entitlements.has(profile, feature, paywall: paywall);
 
   Profile profile = const Profile();
 
@@ -355,6 +363,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Označí profil jako Pro (až bude hotová platba, volá se po nákupu).
+  Future<void> setPro(bool value) async {
+    final next = profile.withExtra({'pro': value ? true : null});
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+  }
+
   /// Týdenní cíl tréninků: vlastní, jinak podle splitu, jinak 3.
   int get weekGoal => profile.weekGoal ?? split?.perWeek ?? 3;
 
@@ -386,15 +402,25 @@ class AppState extends ChangeNotifier {
   }
 
   /// Návrh váhy a opakování pro každý cvik dne.
+  ///
+  /// Bez Pro dostane každý cvik jen rozsah z plánu, bez návrhu váhy.
   List<(PlannedExercise, Suggestion)> plan(SplitDay day) => [
     for (final p in day.exercises)
       (
         p,
-        suggest(
-          p,
-          typeOf(p.exerciseId),
-          exerciseHistory(workouts, p.exerciseId),
-        ),
+        has(ProFeature.coach)
+            ? suggest(
+                p,
+                typeOf(p.exerciseId),
+                exerciseHistory(workouts, p.exerciseId),
+              )
+            : Suggestion(
+                kind: SuggestionKind.start,
+                weight: 0,
+                reps: p.repMin,
+                sets: p.sets,
+                reason: 'Návrh váhy od kouče je součástí Pro.',
+              ),
       ),
   ];
 

@@ -5,6 +5,8 @@ import '../../coach/splits.dart';
 import '../../core/format.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
+import '../../premium/entitlements.dart';
+import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
 import '../settings/settings_page.dart';
 import 'dashboard.dart';
@@ -74,7 +76,11 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
-          MissionCard(state, DateTime.now()),
+          ProGate(
+            state,
+            ProFeature.mission,
+            child: MissionCard(state, DateTime.now()),
+          ),
           const SizedBox(height: 8),
           if (active != null)
             FilledButton.icon(
@@ -133,7 +139,11 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 8),
             RecentRecordsCard(state),
             const SizedBox(height: 8),
-            QuickProgressCard(state),
+            ProGate(
+              state,
+              ProFeature.progress,
+              child: QuickProgressCard(state),
+            ),
           ],
         ],
       );

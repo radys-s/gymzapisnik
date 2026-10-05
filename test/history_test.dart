@@ -178,4 +178,45 @@ void main() {
     expect(mostTrainedExercise(ws), 'bench');
     expect(mostTrainedExercise(const []), isNull);
   });
+
+  test('previous week summary is bounded to that week', () {
+    // 2026-10-05 je pondělí
+    final ws = [
+      workout('a', DateTime(2026, 9, 29, 18), {
+        'bench': [(100, 5)],
+      }),
+      workout('b', DateTime(2026, 10, 4, 18), {
+        'bench': [(100, 5)],
+      }),
+      workout('c', DateTime(2026, 10, 6, 18), {
+        'bench': [(100, 6)],
+      }),
+    ];
+    final now = DateTime(2026, 10, 7, 12);
+    final prev = previousWeekSummary(ws, now, typeOf);
+    expect(prev.workouts, 2);
+    expect(prev.volumeKg, 1000);
+    final cur = weekSummary(ws, now, typeOf);
+    expect(cur.workouts, 1);
+    expect(cur.volumeKg, 600);
+  });
+
+  test('week record count: exercises with a new record this week', () {
+    final ws = [
+      workout('a', DateTime(2026, 9, 29, 18), {
+        'bench': [(100, 5)],
+        'squat': [(120, 5)],
+      }),
+      workout('b', DateTime(2026, 10, 6, 18), {
+        'bench': [(105, 5)],
+        'squat': [(120, 5)],
+      }),
+      workout('c', DateTime(2026, 10, 7, 18), {
+        'bench': [(110, 5)],
+      }),
+    ];
+    final now = DateTime(2026, 10, 8, 12);
+    expect(weekRecordCount(ws, now, typeOf), 1);
+    expect(weekRecordCount(ws, DateTime(2026, 10, 1), typeOf), 0);
+  });
 }

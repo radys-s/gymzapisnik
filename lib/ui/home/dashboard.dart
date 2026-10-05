@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
+import '../../premium/entitlements.dart';
 import '../exercises/exercise_detail_page.dart';
 import '../widgets/labels.dart';
 
@@ -19,6 +20,13 @@ class WeekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final week = weekSummary(state.workouts, now, state.typeOf);
     final text = Theme.of(context).textTheme;
+    final lines = !state.has(ProFeature.recap)
+        ? const <String>[]
+        : recapLines(
+            week,
+            previousWeekSummary(state.workouts, now, state.typeOf),
+            weekRecordCount(state.workouts, now, state.typeOf),
+          );
     Widget stat(String value, String label) => Expanded(
       child: Column(
         children: [
@@ -50,11 +58,42 @@ class WeekCard extends StatelessWidget {
                 stat('${formatKg(week.volumeKg.roundToDouble())} kg', 'objem'),
               ],
             ),
+            if (lines.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final line in lines)
+                Text(
+                  line,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+/// Řádky shrnutí týdne: objem proti minulému týdnu a rekordy.
+List<String> recapLines(WeekSummary week, WeekSummary previous, int records) {
+  final lines = <String>[];
+  if (week.volumeKg > 0 && previous.volumeKg > 0) {
+    final pct = ((week.volumeKg / previous.volumeKg - 1) * 100).round();
+    lines.add(
+      pct == 0
+          ? 'Objem stejný jako minulý týden.'
+          : 'Objem ${pct > 0 ? '+' : '−'}${pct.abs()} % oproti minulému týdnu.',
+    );
+  }
+  if (records > 0) {
+    lines.add(
+      records == 1
+          ? 'Nový rekord u 1 cviku.'
+          : 'Nové rekordy u $records cviků.',
+    );
+  }
+  return lines;
 }
 
 /// Nedávné osobní rekordy (max 3), klepnutí otevře detail cviku.
