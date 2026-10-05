@@ -43,7 +43,9 @@ B6 hotovo: tělesná váha (karta na Domů, graf, záloha).
 
 B5 hotovo: připomínky na Androidu (plán v coach/reminders.dart, oznámení přes flutter_local_notifications; iPhone PWA bez nich).
 
-Další kroky: balení pro testery (R) (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+R hotovo (kód): verze 1.0.0-beta.1+10, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
+
+Zbývá: hostování PWA na HTTPS pro iPhone, rozeslání APK testerům, sběr zpětné vazby. (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 

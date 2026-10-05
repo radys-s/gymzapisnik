@@ -1,2 +1,5 @@
 /// Verze aplikace; musí odpovídat `version` v `pubspec.yaml` (hlídá test).
-const appVersion = '0.8.0+8';
+const appVersion = '1.0.0-beta.1+10';
+
+/// Kam testeři píšou zpětnou vazbu.
+const feedbackContact = 'tomas.radek11@gmail.com';

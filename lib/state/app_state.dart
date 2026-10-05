@@ -435,6 +435,24 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Po každých tolika nových trénincích od poslední zálohy aplikace
+  /// připomene zálohu (data jsou jen v zařízení).
+  static const backupEvery = 10;
+
+  bool get backupDue {
+    final saved = profile.extra['backupCount'];
+    final at = saved is num ? saved.toInt() : 0;
+    return workouts.length - at >= backupEvery;
+  }
+
+  /// Zapamatuje, že záloha právě vznikla.
+  Future<void> markBackedUp() async {
+    final next = profile.withExtra({'backupCount': workouts.length});
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+  }
+
   Future<void> setWeekGoal(int? goal) async {
     final next = profile.withExtra({'weekGoal': goal?.clamp(1, 7)});
     await _enqueue(() => store.put(Kinds.profile, next.toJson()));
