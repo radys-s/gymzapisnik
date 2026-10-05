@@ -37,4 +37,8 @@ String setsLabel(int n) =>
 
 /// „1 trénink", „3 tréninky", „5 tréninků".
 String workoutsLabel(int n) =>
-    '$n ${n == 1 ? 'trénink' : (n >= 2 && n <= 4) ? 'tréninky' : 'tréninků'}';
+    '$n ${n == 1
+        ? 'trénink'
+        : (n >= 2 && n <= 4)
+        ? 'tréninky'
+        : 'tréninků'}';

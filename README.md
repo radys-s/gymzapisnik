@@ -25,7 +25,11 @@ na webu v IndexedDB).
   u cviku v tréninku je vysvětlení návrhu.
 - **M7 (hotovo):** dashboard na Domů – „Tento týden" (tréninky vůči plánu splitu, série, objem),
   nedávné rekordy (max 3, jeden na cvik) a rychlý progres nejčastějšího cviku s malou křivkou.
-- Další kroky: nastavení a záloha (M8), pak denní smyčka (mise, streak, notifikace).
+- **M8 (hotovo):** Nastavení (ikona na Domů): pauza mezi sériemi, motiv (tmavý/světlý/systém),
+  záloha do JSON souboru a obnova (doplní chybějící tréninky, lokální úpravy nepřepíše, souhlas se
+  nezálohuje), export CSV pro český Excel (BOM, středník, desetinná čárka, ochrana proti vzorcům),
+  smazání všech dat, verze. Fáze A (tracker) je kompletní.
+- Další kroky: fáze B – denní smyčka (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 
