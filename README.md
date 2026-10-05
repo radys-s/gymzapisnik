@@ -41,7 +41,9 @@ na webu v IndexedDB).
 
 B6 hotovo: tělesná váha (karta na Domů, graf, záloha).
 
-Další kroky: připomínky, balení pro testery (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+B5 hotovo: připomínky na Androidu (plán v coach/reminders.dart, oznámení přes flutter_local_notifications; iPhone PWA bez nich).
+
+Další kroky: balení pro testery (R) (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 
