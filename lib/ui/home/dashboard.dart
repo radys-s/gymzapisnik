@@ -126,7 +126,9 @@ class QuickProgressCard extends StatelessWidget {
         ? formatKg(double.parse(delta.abs().toStringAsFixed(1)))
         : '${delta.abs().round()}';
     final sign = delta > 0 ? '+' : (delta < 0 ? '−' : '±');
-    final metric = type == ExerciseType.weighted ? 'odhad 1RM' : 'max opakování';
+    final metric = type == ExerciseType.weighted
+        ? 'odhad 1RM'
+        : 'max opakování';
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),

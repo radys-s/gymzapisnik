@@ -45,7 +45,14 @@ class Profile {
     );
   }
 
-  /// Výchozí pauza mezi sériemi v sekundách (nastavení přibude v M8).
+  /// Motiv: `system`, `dark` (výchozí) nebo `light`.
+  String get theme => switch (extra['theme']) {
+    'system' => 'system',
+    'light' => 'light',
+    _ => 'dark',
+  };
+
+  /// Výchozí pauza mezi sériemi v sekundách.
   int get restSeconds {
     final v = extra['restSeconds'];
     return v is num ? v.toInt().clamp(15, 600) : 120;

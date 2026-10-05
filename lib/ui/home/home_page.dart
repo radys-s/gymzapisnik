@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../program/program_page.dart';
+import '../settings/settings_page.dart';
 import 'dashboard.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
@@ -59,7 +60,19 @@ class _HomePageState extends State<HomePage> {
       return ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Domů', style: text.headlineMedium),
+          Row(
+            children: [
+              Expanded(child: Text('Domů', style: text.headlineMedium)),
+              IconButton(
+                tooltip: 'Nastavení',
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SettingsPage(state)),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           if (active != null)
             FilledButton.icon(

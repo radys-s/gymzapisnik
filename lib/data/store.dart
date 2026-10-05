@@ -33,6 +33,23 @@ class LocalStore {
     );
   }
 
+  /// Uloží víc dokumentů v jedné transakci (obnova ze zálohy).
+  Future<void> putAll(List<(String, Map<String, dynamic>)> docs) =>
+      db.transaction(() async {
+        final now = _now();
+        for (final (kind, data) in docs) {
+          await db.customStatement(
+            '''
+      INSERT INTO entities(id,kind,payload,updated_at,dirty,deleted,conflict,remote_revision)
+      VALUES(?,?,?,?,1,0,0,0)
+      ON CONFLICT(id) DO UPDATE SET kind=excluded.kind,payload=excluded.payload,
+        updated_at=excluded.updated_at,dirty=1,deleted=0
+    ''',
+            [data['id'], kind, jsonEncode(data), now],
+          );
+        }
+      });
+
   /// Uloží dokončený trénink a smaže rozepsaný v jedné transakci,
   /// takže po pádu nikdy nezůstanou oba ani žádný.
   Future<void> replace({

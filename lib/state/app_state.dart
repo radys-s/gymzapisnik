@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
 import '../core/ids.dart';
+import '../data/backup.dart';
+import '../data/csv.dart';
 import '../data/store.dart';
 import '../domain/catalog.dart';
 import '../domain/history.dart';
@@ -433,4 +435,76 @@ class AppState extends ChangeNotifier {
 
   /// Uloží rozepsaná data před aktualizací webové verze.
   Future<void> saveBeforeUpdate() => saveActive();
+
+  // ---------------------------------------------------------------------
+  // Nastavení, záloha, export
+  // ---------------------------------------------------------------------
+
+  /// Změní nastavení v profilu (`null` = beze změny).
+  Future<void> setPreferences({int? restSeconds, String? theme}) async {
+    final next = profile.withExtra({
+      'restSeconds': ?restSeconds?.clamp(15, 600),
+      'theme': ?theme,
+    });
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+  }
+
+  String exportBackup({DateTime? now}) => encodeBackup(
+    Backup(
+      exportedAt: now ?? DateTime.now(),
+      workouts: workouts,
+      exercises: customExercises,
+      settings: {
+        for (final e in profile.extra.entries)
+          if (backupSettingsKeys.contains(e.key)) e.key: e.value,
+      },
+    ),
+  );
+
+  String exportCsv() => workoutsToCsv(workouts, exercise);
+
+  /// Doplní ze zálohy tréninky a vlastní cviky, které v zařízení chybí.
+  /// Co už v zařízení je (i upravené po záloze), zůstane beze změny;
+  /// nic se nemaže. Vrací počet doplněných tréninků.
+  /// Neplatný soubor hodí [FormatException] s českou zprávou.
+  Future<int> restoreBackup(String source) async {
+    final backup = decodeBackup(source);
+    final haveWorkouts = {for (final w in workouts) w.id};
+    final haveExercises = {for (final e in customExercises) e.id};
+    final newWorkouts = [
+      for (final w in backup.workouts)
+        if (!haveWorkouts.contains(w.id)) w,
+    ];
+    final newExercises = [
+      for (final e in backup.exercises)
+        if (!haveExercises.contains(e.id)) e,
+    ];
+    final nextProfile = profile.withExtra(backup.settings);
+    await _enqueue(
+      () => store.putAll([
+        for (final e in newExercises) (Kinds.exercise, e.toJson()),
+        for (final w in newWorkouts) (Kinds.workout, w.toJson()),
+        (Kinds.profile, nextProfile.toJson()),
+      ]),
+    );
+    workouts = [...newWorkouts, ...workouts]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    customExercises = [...newExercises, ...customExercises]
+      ..sort((a, b) => a.name.compareTo(b.name));
+    profile = nextProfile;
+    notifyListeners();
+    return newWorkouts.length;
+  }
+
+  /// Smaže všechna data v zařízení včetně souhlasu (aplikace začne znovu).
+  Future<void> wipeAll() async {
+    await _enqueue(store.wipeLocal);
+    profile = const Profile();
+    workouts = [];
+    active = null;
+    customExercises = [];
+    notifyListeners();
+  }
 }

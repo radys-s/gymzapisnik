@@ -12,16 +12,21 @@ class GymApp extends StatelessWidget {
   const GymApp(this.state, {super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Gym zápisník',
-    debugShowCheckedModeBanner: false,
-    theme: buildTheme(Brightness.light),
-    darkTheme: buildTheme(Brightness.dark),
-    themeMode: ThemeMode.dark,
-    home: ListenableBuilder(
-      listenable: state,
-      builder: (context, _) =>
-          state.profile.hasValidConsent ? AppShell(state) : ConsentPage(state),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: state,
+    builder: (context, _) => MaterialApp(
+      title: 'Gym zápisník',
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: switch (state.profile.theme) {
+        'light' => ThemeMode.light,
+        'system' => ThemeMode.system,
+        _ => ThemeMode.dark,
+      },
+      home: state.profile.hasValidConsent
+          ? AppShell(state)
+          : ConsentPage(state),
     ),
   );
 }
