@@ -6,6 +6,7 @@ import '../coach/splits.dart';
 import '../coach/streak.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
+import '../data/hevy_import.dart';
 import '../data/csv.dart';
 import '../data/store.dart';
 import '../domain/catalog.dart';
@@ -546,6 +547,34 @@ class AppState extends ChangeNotifier {
     customExercises = [...newExercises, ...customExercises]
       ..sort((a, b) => a.name.compareTo(b.name));
     profile = nextProfile;
+    notifyListeners();
+    return newWorkouts.length;
+  }
+
+  /// Doplní tréninky z exportu Hevy. Už existující (stejný začátek a název)
+  /// přeskočí, takže opakovaný import nic nezdvojí. Vrací počet přidaných.
+  Future<int> importHevy(String source) async {
+    final parsed = parseHevyCsv(source, custom: customExercises);
+    final haveWorkouts = {for (final w in workouts) w.id};
+    final haveExercises = {for (final e in customExercises) e.id};
+    final newWorkouts = [
+      for (final w in parsed.workouts)
+        if (!haveWorkouts.contains(w.id)) w,
+    ];
+    final newExercises = [
+      for (final e in parsed.newExercises)
+        if (!haveExercises.contains(e.id)) e,
+    ];
+    await _enqueue(
+      () => store.putAll([
+        for (final e in newExercises) (Kinds.exercise, e.toJson()),
+        for (final w in newWorkouts) (Kinds.workout, w.toJson()),
+      ]),
+    );
+    workouts = [...newWorkouts, ...workouts]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    customExercises = [...newExercises, ...customExercises]
+      ..sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
     return newWorkouts.length;
   }
