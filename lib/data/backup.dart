@@ -1,10 +1,11 @@
 import 'dart:convert';
 
+import '../domain/bodyweight.dart';
 import '../domain/models.dart';
 
 /// Formát zálohy do souboru. Čistý Dart bez Flutteru.
 ///
-/// Záloha obsahuje dokončené tréninky, vlastní cviky a nastavení
+/// Záloha obsahuje dokončené tréninky, vlastní cviky, váhu a nastavení
 /// (ne souhlas s podmínkami – ten patří zařízení a člověku, ne souboru).
 const backupFormat = 'gymzapisnik-backup';
 const backupVersion = 1;
@@ -17,12 +18,14 @@ class Backup {
   final List<Workout> workouts;
   final List<Exercise> exercises;
   final Map<String, dynamic> settings;
+  final List<BodyWeight> bodyweights;
 
   const Backup({
     required this.exportedAt,
     required this.workouts,
     required this.exercises,
     required this.settings,
+    this.bodyweights = const [],
   });
 }
 
@@ -34,6 +37,7 @@ String encodeBackup(Backup backup) =>
       'settings': backup.settings,
       'exercises': [for (final e in backup.exercises) e.toJson()],
       'workouts': [for (final w in backup.workouts) w.toJson()],
+      'bodyweights': [for (final b in backup.bodyweights) b.toJson()],
     });
 
 /// Načte zálohu. Při neplatném souboru hodí [FormatException]
@@ -63,6 +67,10 @@ Backup decodeBackup(String source) {
       for (final e in json['exercises'] as List? ?? const [])
         Exercise.fromJson(Map<String, dynamic>.from(e as Map)),
     ];
+    final bodyweights = [
+      for (final b in json['bodyweights'] as List? ?? const [])
+        BodyWeight.fromJson(Map<String, dynamic>.from(b as Map)),
+    ];
     final rawSettings = json['settings'];
     return Backup(
       exportedAt:
@@ -71,6 +79,7 @@ Backup decodeBackup(String source) {
       // Rozepsaný trénink do obnovy nepatří.
       workouts: workouts.where((w) => w.finished).toList(),
       exercises: exercises,
+      bodyweights: bodyweights,
       settings: {
         if (rawSettings is Map)
           for (final e in rawSettings.entries)

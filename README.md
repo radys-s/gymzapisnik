@@ -39,7 +39,9 @@ na webu v IndexedDB).
   Platba později = přepnout konstantu a doplnit nákup.
 - B4 hotovo: import z Hevy (workout_data.csv, Nastavení → Import z Hevy, opakovaný import nic nezdvojí).
 
-Další kroky: fáze B – připomínky, váha, balení pro testery (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+B6 hotovo: tělesná váha (karta na Domů, graf, záloha).
+
+Další kroky: připomínky, balení pro testery (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 

@@ -6,6 +6,7 @@ import '../coach/splits.dart';
 import '../coach/streak.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
+import '../domain/bodyweight.dart';
 import '../data/hevy_import.dart';
 import '../data/csv.dart';
 import '../data/store.dart';
@@ -20,6 +21,7 @@ abstract final class Kinds {
   static const profile = 'profile';
   static const workout = 'workout';
   static const exercise = 'exercise';
+  static const bodyweight = 'bodyweight';
 }
 
 /// Stav aplikace sdílený obrazovkami. UI nesahá přímo na úložiště.
@@ -44,6 +46,9 @@ class AppState extends ChangeNotifier {
 
   List<Exercise> customExercises = [];
 
+  /// Tělesná váha, nejnovější první.
+  List<BodyWeight> bodyweights = [];
+
   Future<void> load() async {
     await store.open();
     final json = await store.get(Profile.id);
@@ -59,6 +64,9 @@ class AppState extends ChangeNotifier {
     customExercises = [
       for (final e in await store.all(Kinds.exercise)) Exercise.fromJson(e),
     ]..sort((a, b) => a.name.compareTo(b.name));
+    bodyweights = [
+      for (final b in await store.all(Kinds.bodyweight)) BodyWeight.fromJson(b),
+    ]..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
   }
 
@@ -504,11 +512,33 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Zapíše váhu; `false` = nesmyslná hodnota.
+  Future<bool> addBodyweight(double kg, {DateTime? now}) async {
+    if (!validBodyWeight(kg)) return false;
+    final entry = BodyWeight(
+      id: newId(),
+      date: now ?? DateTime.now(),
+      kg: double.parse(kg.toStringAsFixed(1)),
+    );
+    await _enqueue(() => store.put(Kinds.bodyweight, entry.toJson()));
+    bodyweights = [entry, ...bodyweights]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> removeBodyweight(String id) async {
+    await _enqueue(() => store.remove(id));
+    bodyweights = bodyweights.where((b) => b.id != id).toList();
+    notifyListeners();
+  }
+
   String exportBackup({DateTime? now}) => encodeBackup(
     Backup(
       exportedAt: now ?? DateTime.now(),
       workouts: workouts,
       exercises: customExercises,
+      bodyweights: bodyweights,
       settings: {
         for (final e in profile.extra.entries)
           if (backupSettingsKeys.contains(e.key)) e.key: e.value,
@@ -535,8 +565,14 @@ class AppState extends ChangeNotifier {
         if (!haveExercises.contains(e.id)) e,
     ];
     final nextProfile = profile.withExtra(backup.settings);
+    final haveWeights = {for (final b in bodyweights) b.id};
+    final newWeights = [
+      for (final b in backup.bodyweights)
+        if (!haveWeights.contains(b.id)) b,
+    ];
     await _enqueue(
       () => store.putAll([
+        for (final b in newWeights) (Kinds.bodyweight, b.toJson()),
         for (final e in newExercises) (Kinds.exercise, e.toJson()),
         for (final w in newWorkouts) (Kinds.workout, w.toJson()),
         (Kinds.profile, nextProfile.toJson()),
@@ -547,6 +583,8 @@ class AppState extends ChangeNotifier {
     customExercises = [...newExercises, ...customExercises]
       ..sort((a, b) => a.name.compareTo(b.name));
     profile = nextProfile;
+    bodyweights = [...newWeights, ...bodyweights]
+      ..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
     return newWorkouts.length;
   }
@@ -586,6 +624,7 @@ class AppState extends ChangeNotifier {
     workouts = [];
     active = null;
     customExercises = [];
+    bodyweights = [];
     notifyListeners();
   }
 }
