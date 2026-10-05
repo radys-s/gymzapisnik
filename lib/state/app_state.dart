@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../coach/missions.dart';
@@ -14,6 +16,8 @@ import '../domain/catalog.dart';
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/profile.dart';
+import '../coach/reminders.dart';
+import '../notify/notifier.dart';
 import '../premium/entitlements.dart';
 
 /// Druhy dokumentů v úložišti.
@@ -27,7 +31,14 @@ abstract final class Kinds {
 /// Stav aplikace sdílený obrazovkami. UI nesahá přímo na úložiště.
 class AppState extends ChangeNotifier {
   final LocalStore store;
-  AppState(this.store, {this.paywall = paywallEnabled});
+  AppState(
+    this.store, {
+    this.paywall = paywallEnabled,
+    this.notifier = const NoopNotifier(),
+  });
+
+  /// Místní oznámení (na webu a iPhonu prázdná implementace).
+  final Notifier notifier;
 
   /// Je zapnutý paywall (v testech jde přepsat).
   final bool paywall;
@@ -68,6 +79,7 @@ class AppState extends ChangeNotifier {
       for (final b in await store.all(Kinds.bodyweight)) BodyWeight.fromJson(b),
     ]..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
+    unawaited(syncReminders());
   }
 
   Future<void> acceptConsent({
@@ -343,6 +355,7 @@ class AppState extends ChangeNotifier {
     workouts = [finished, ...workouts.where((w) => w.id != finished.id)]
       ..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
+    unawaited(syncReminders());
     return (workout: finished, error: null);
   }
 
@@ -370,6 +383,7 @@ class AppState extends ChangeNotifier {
     await _enqueue(() => store.put(Kinds.profile, next.toJson()));
     profile = next;
     notifyListeners();
+    unawaited(syncReminders());
   }
 
   /// Označí profil jako Pro (až bude hotová platba, volá se po nákupu).
@@ -383,11 +397,50 @@ class AppState extends ChangeNotifier {
   /// Týdenní cíl tréninků: vlastní, jinak podle splitu, jinak 3.
   int get weekGoal => profile.weekGoal ?? split?.perWeek ?? 3;
 
+  /// Čas připomínky (minuty od půlnoci) nebo `null` = vypnout. Při zapnutí
+  /// se zeptá na povolení; vrací `false`, když ho uživatel odmítl.
+  Future<bool> setReminder(int? minutes) async {
+    if (minutes != null && !await notifier.requestPermission()) {
+      return false;
+    }
+    final next = profile.withExtra({'reminder': minutes?.clamp(0, 1439)});
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+    await syncReminders();
+    return true;
+  }
+
+  /// Přepočítá naplánovaná oznámení podle tréninků a týdenního cíle.
+  /// Chyba plánování nikdy nesmí shodit zápis tréninku.
+  Future<void> syncReminders({DateTime? now}) async {
+    if (!notifier.supported) return;
+    try {
+      final minutes = profile.reminderMinutes;
+      if (minutes == null) {
+        await notifier.cancelAll();
+        return;
+      }
+      await notifier.schedule(
+        planReminders(
+          now: now ?? DateTime.now(),
+          hour: minutes ~/ 60,
+          minute: minutes % 60,
+          goal: weekGoal,
+          finished: workouts,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Připomínky se nepodařilo naplánovat: $e');
+    }
+  }
+
   Future<void> setWeekGoal(int? goal) async {
     final next = profile.withExtra({'weekGoal': goal?.clamp(1, 7)});
     await _enqueue(() => store.put(Kinds.profile, next.toJson()));
     profile = next;
     notifyListeners();
+    unawaited(syncReminders());
   }
 
   /// Dnešní mise podle týdenního cíle a odcvičených tréninků.
@@ -485,6 +538,7 @@ class AppState extends ChangeNotifier {
     workouts = [for (final w in workouts) w.id == cleaned.id ? cleaned : w]
       ..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
+    unawaited(syncReminders());
     return null;
   }
 
@@ -492,6 +546,7 @@ class AppState extends ChangeNotifier {
     await _enqueue(() => store.remove(workout.id));
     workouts = workouts.where((w) => w.id != workout.id).toList();
     notifyListeners();
+    unawaited(syncReminders());
   }
 
   /// Uloží rozepsaná data před aktualizací webové verze.
@@ -586,6 +641,7 @@ class AppState extends ChangeNotifier {
     bodyweights = [...newWeights, ...bodyweights]
       ..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
+    unawaited(syncReminders());
     return newWorkouts.length;
   }
 
@@ -614,6 +670,7 @@ class AppState extends ChangeNotifier {
     customExercises = [...newExercises, ...customExercises]
       ..sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
+    unawaited(syncReminders());
     return newWorkouts.length;
   }
 
@@ -626,5 +683,6 @@ class AppState extends ChangeNotifier {
     customExercises = [];
     bodyweights = [];
     notifyListeners();
+    if (notifier.supported) unawaited(notifier.cancelAll());
   }
 }

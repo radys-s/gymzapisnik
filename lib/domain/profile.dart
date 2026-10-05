@@ -55,6 +55,12 @@ class Profile {
     return v is num ? v.toInt().clamp(1, 7) : null;
   }
 
+  /// Čas připomínky v minutách od půlnoci; `null` = vypnuto.
+  int? get reminderMinutes {
+    final v = extra['reminder'];
+    return v is num ? v.toInt().clamp(0, 1439) : null;
+  }
+
   /// Motiv: `system`, `dark` (výchozí) nebo `light`.
   String get theme => switch (extra['theme']) {
     'system' => 'system',

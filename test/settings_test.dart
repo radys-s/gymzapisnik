@@ -33,7 +33,7 @@ void main() {
       await state.load();
       await state.acceptConsent(adult: true, guardianConsent: false);
     });
-    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    await tester.binding.setSurfaceSize(const Size(400, 2200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final files = FakeFiles();
     await tester.pumpWidget(GymApp(state));

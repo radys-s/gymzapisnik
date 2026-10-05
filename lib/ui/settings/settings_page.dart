@@ -94,6 +94,30 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
+  static String _clock(int minutes) =>
+      '${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')}';
+
+  Future<void> _setReminder(BuildContext context, int? minutes) async {
+    final ok = await state.setReminder(minutes);
+    if (!ok && context.mounted) {
+      _toast(
+        context,
+        'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+      );
+    }
+  }
+
+  Future<void> _pickReminderTime(BuildContext context) async {
+    final current = state.profile.reminderMinutes ?? 18 * 60;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
+      helpText: 'Čas připomínky',
+    );
+    if (picked == null || !context.mounted) return;
+    await _setReminder(context, picked.hour * 60 + picked.minute);
+  }
+
   Future<void> _wipe(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -189,6 +213,35 @@ class SettingsPage extends StatelessWidget {
                     state.setPreferences(theme: s.single),
               ),
             ),
+            section('Připomínky'),
+            if (!state.notifier.supported)
+              const ListTile(
+                leading: Icon(Icons.notifications_off_outlined),
+                title: Text('Připomínky tréninku'),
+                subtitle: Text(
+                  'Na iPhonu a ve webové verzi nejdou. Denní úkol od kouče '
+                  'uvidíš po otevření aplikace.',
+                ),
+                isThreeLine: true,
+              )
+            else ...[
+              SwitchListTile(
+                secondary: const Icon(Icons.notifications_outlined),
+                title: const Text('Připomínat trénink'),
+                subtitle: const Text(
+                  'Jen v plánované dny a když týdenní cíl ještě není splněný',
+                ),
+                value: state.profile.reminderMinutes != null,
+                onChanged: (on) => _setReminder(context, on ? 18 * 60 : null),
+              ),
+              if (state.profile.reminderMinutes != null)
+                ListTile(
+                  leading: const Icon(Icons.schedule),
+                  title: const Text('Čas připomínky'),
+                  subtitle: Text(_clock(state.profile.reminderMinutes!)),
+                  onTap: () => _pickReminderTime(context),
+                ),
+            ],
             section('Gym zápisník Pro'),
             ListTile(
               leading: const Icon(Icons.workspace_premium_outlined),
