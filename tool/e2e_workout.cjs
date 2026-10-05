@@ -110,6 +110,10 @@ let page, context;
  await p.reload(); await sem();
  await tap('button','Nastavení');
  await see(t=>/Uložit zálohu/.test(t)&&/Cíl tréninků týdně/.test(t),'settings open');
+ await tap('button',/Co obsahuje Pro/);
+ await see(t=>/Kouč, který za tebou chodí/.test(t)&&/Zatím zdarma pro testery/.test(t),'pro overview');
+ await tap('button','Zatím zdarma pro testery');
+ await see(has(/Uložit zálohu/),'back in settings');
  const download=async name=>{
   const [d]=await Promise.all([p.waitForEvent('download',{timeout:10000}),tap('button',name)]);
   const file=await d.path(); return {name:d.suggestedFilename(),file,text:require('fs').readFileSync(file,'utf8')};

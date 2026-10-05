@@ -32,7 +32,12 @@ na webu v IndexedDB).
 - **B1 (hotovo):** denní mise na Domů (trénuj dnes / máš hotovo / odpočinek / dnes je potřeba) a streak
   po týdnech se žolíkem (zachrání jeden zmeškaný týden, obnoví se za 8 týdnů). Týdenní cíl podle splitu
   nebo vlastní v Nastavení. Logika v `lib/coach/missions.dart` a `streak.dart`.
-- Další kroky: fáze B – zbytek denní smyčky (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+- **B2 (hotovo):** shrnutí týdne na Domů – objem proti minulému týdnu a počet cviků s novým rekordem.
+- **B3 (hotovo):** příprava na Pro – `lib/premium/entitlements.dart`. Dokud je `paywallEnabled = false`,
+  je všechno odemčené (testeři). Přehled Pro je v Nastavení. Zamčené Pro: kouč s návrhem váhy, mise
+  a streak, shrnutí týdne, rychlý progres. Zdarma navždy: zápis, historie, cviky, záloha, CSV, import.
+  Platba později = přepnout konstantu a doplnit nákup.
+- Další kroky: fáze B – import z Hevy, připomínky, váha, balení pro testery (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 

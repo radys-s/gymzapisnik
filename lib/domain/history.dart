@@ -129,8 +129,59 @@ class WeekSummary {
   const WeekSummary(this.workouts, this.sets, this.volumeKg);
 }
 
-/// Souhrn od pondělí 00:00 místního času.
+/// Souhrn od pondělí 00:00 místního času do konce týdne.
 WeekSummary weekSummary(
+  Iterable<Workout> workouts,
+  DateTime now,
+  ExerciseType Function(String exerciseId) typeOf,
+) {
+  final local = now.toLocal();
+  return _summaryOfWeek(
+    workouts,
+    DateTime(local.year, local.month, local.day - (local.weekday - 1)),
+    typeOf,
+  );
+}
+
+/// Souhrn předchozího týdne (pondělí až neděle).
+WeekSummary previousWeekSummary(
+  Iterable<Workout> workouts,
+  DateTime now,
+  ExerciseType Function(String exerciseId) typeOf,
+) {
+  final local = now.toLocal();
+  return _summaryOfWeek(
+    workouts,
+    DateTime(local.year, local.month, local.day - (local.weekday - 1) - 7),
+    typeOf,
+  );
+}
+
+WeekSummary _summaryOfWeek(
+  Iterable<Workout> workouts,
+  DateTime monday,
+  ExerciseType Function(String exerciseId) typeOf,
+) {
+  final end = DateTime(monday.year, monday.month, monday.day + 7);
+  var count = 0;
+  var sets = 0;
+  var kg = 0.0;
+  for (final w in workouts) {
+    final at = w.date.toLocal();
+    if (!w.finished || at.isBefore(monday) || !at.isBefore(end)) continue;
+    count++;
+    for (final e in w.exercises) {
+      sets += e.countedSets.length;
+      if (typeOf(e.exerciseId) == ExerciseType.weighted) {
+        kg += volume(ExerciseType.weighted, e.sets);
+      }
+    }
+  }
+  return WeekSummary(count, sets, kg);
+}
+
+/// Počet cviků s novým rekordem v tomto týdnu (každý cvik nejvýš jednou).
+int weekRecordCount(
   Iterable<Workout> workouts,
   DateTime now,
   ExerciseType Function(String exerciseId) typeOf,
@@ -141,20 +192,16 @@ WeekSummary weekSummary(
     local.month,
     local.day - (local.weekday - 1),
   );
-  var count = 0;
-  var sets = 0;
-  var kg = 0.0;
+  final end = DateTime(monday.year, monday.month, monday.day + 7);
+  final exercises = <String>{};
   for (final w in workouts) {
-    if (!w.finished || w.date.toLocal().isBefore(monday)) continue;
-    count++;
-    for (final e in w.exercises) {
-      sets += e.countedSets.length;
-      if (typeOf(e.exerciseId) == ExerciseType.weighted) {
-        kg += volume(ExerciseType.weighted, e.sets);
-      }
+    final at = w.date.toLocal();
+    if (!w.finished || at.isBefore(monday) || !at.isBefore(end)) continue;
+    for (final r in newRecords(w, workouts, typeOf)) {
+      exercises.add(r.exerciseId);
     }
   }
-  return WeekSummary(count, sets, kg);
+  return exercises.length;
 }
 
 /// Bod grafu progresu: jeden trénink.

@@ -45,6 +45,10 @@ class Profile {
     );
   }
 
+  /// Má zaplacené Pro. Platí jen při zapnutém paywallu
+  /// (viz `premium/entitlements.dart`).
+  bool get isPro => extra['pro'] == true;
+
   /// Vlastní týdenní cíl tréninků (1–7); `null` = podle splitu.
   int? get weekGoal {
     final v = extra['weekGoal'];

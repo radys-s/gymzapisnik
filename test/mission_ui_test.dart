@@ -5,6 +5,8 @@ import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/home/dashboard.dart';
+import 'package:gymzapisnik/domain/history.dart';
 import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
@@ -73,5 +75,19 @@ void main() {
     expect(state.weekGoal, 2);
     await state.setWeekGoal(null);
     expect(state.weekGoal, 4);
+  });
+
+  test('recap lines compare volume with last week and count records', () {
+    const cur = WeekSummary(2, 20, 1120);
+    const prev = WeekSummary(3, 30, 1000);
+    expect(recapLines(cur, prev, 0), ['Objem +12 % oproti minulému týdnu.']);
+    expect(recapLines(const WeekSummary(1, 5, 500), prev, 1), [
+      'Objem −50 % oproti minulému týdnu.',
+      'Nový rekord u 1 cviku.',
+    ]);
+    expect(recapLines(cur, const WeekSummary(0, 0, 0), 3), [
+      'Nové rekordy u 3 cviků.',
+    ]);
+    expect(recapLines(cur, cur, 0), ['Objem stejný jako minulý týden.']);
   });
 }
