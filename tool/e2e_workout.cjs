@@ -134,9 +134,18 @@ let page, context;
  const [chooser]=await Promise.all([p.waitForEvent('filechooser',{timeout:10000}),tap('button',/Obnovit ze zálohy/)]);
  await chooser.setFiles(backup.file);
  await see(has(/Obnoveno: 2 tréninky/),'restore from file');
+ const hevyFile=require('path').join(require('os').tmpdir(),'gz_e2e_hevy.csv');
+ require('fs').writeFileSync(hevyFile,['title,start_time,end_time,description,exercise_title,superset_id,exercise_notes,set_index,set_type,weight_kg,reps,distance_km,duration_seconds,rpe','Hevy Push,"3 Mar 2026, 09:00","3 Mar 2026, 10:00",,Bench Press (Barbell),,,0,normal,60,10,,,'].join(String.fromCharCode(10)));
+ for(const [expect_,label] of [[/Z Hevy přidáno: 1 trénink/,'hevy import'],[/Nic nového/,'hevy import idempotent']]){
+  const [hc]=await Promise.all([p.waitForEvent('filechooser',{timeout:10000}),tap('button',/Import z Hevy/)]);
+  await hc.setFiles(hevyFile);
+  await see(has(expect_),label);
+  await p.waitForTimeout(500);
+ }
  await p.goBack().catch(()=>{});
  await tap('tab',/Historie/);
  await see(t=>(t.match(/Bench press/g)||[]).length>=2,'history restored');
+ await see(has(/Hevy Push/),'hevy workout in history');
  console.log('errors',errs);
  if(errs.length) process.exit(1);
  await ctx.close();

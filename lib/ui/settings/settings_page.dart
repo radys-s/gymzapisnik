@@ -68,6 +68,32 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
+  Future<void> _importHevy(BuildContext context) async {
+    final String? source;
+    try {
+      source = await files.pickText(const ['csv']);
+    } catch (e) {
+      if (context.mounted) _toast(context, 'Soubor se nepodařilo otevřít: $e');
+      return;
+    }
+    if (source == null || !context.mounted) return;
+    try {
+      final count = await state.importHevy(source);
+      if (context.mounted) {
+        _toast(
+          context,
+          count == 0
+              ? 'Nic nového, tyto tréninky už tu jsou.'
+              : 'Z Hevy přidáno: ${workoutsLabel(count)}.',
+        );
+      }
+    } on FormatException catch (e) {
+      if (context.mounted) _toast(context, e.message);
+    } catch (e) {
+      if (context.mounted) _toast(context, 'Import se nezdařil: $e');
+    }
+  }
+
   Future<void> _wipe(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -195,6 +221,14 @@ class SettingsPage extends StatelessWidget {
               title: const Text('Obnovit ze zálohy'),
               subtitle: const Text('Doplní tréninky ze souboru, nic nesmaže'),
               onTap: () => _restore(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('Import z Hevy'),
+              subtitle: const Text(
+                'Soubor workout_data.csv z Hevy (Export data), nic nesmaže',
+              ),
+              onTap: () => _importHevy(context),
             ),
             ListTile(
               leading: const Icon(Icons.table_chart_outlined),

@@ -37,7 +37,9 @@ na webu v IndexedDB).
   je všechno odemčené (testeři). Přehled Pro je v Nastavení. Zamčené Pro: kouč s návrhem váhy, mise
   a streak, shrnutí týdne, rychlý progres. Zdarma navždy: zápis, historie, cviky, záloha, CSV, import.
   Platba později = přepnout konstantu a doplnit nákup.
-- Další kroky: fáze B – import z Hevy, připomínky, váha, balení pro testery (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+- B4 hotovo: import z Hevy (workout_data.csv, Nastavení → Import z Hevy, opakovaný import nic nezdvojí).
+
+Další kroky: fáze B – připomínky, váha, balení pro testery (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 
