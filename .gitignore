@@ -51,3 +51,6 @@ app.*.map.json
 build_web.log
 prof*/
 .playwright-mcp/
+
+# lokální výstupy balení
+dist/

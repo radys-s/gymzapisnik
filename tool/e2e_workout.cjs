@@ -143,7 +143,11 @@ let page, context;
  const hevyFile=require('path').join(require('os').tmpdir(),'gz_e2e_hevy.csv');
  require('fs').writeFileSync(hevyFile,['title,start_time,end_time,description,exercise_title,superset_id,exercise_notes,set_index,set_type,weight_kg,reps,distance_km,duration_seconds,rpe','Hevy Push,"3 Mar 2026, 09:00","3 Mar 2026, 10:00",,Bench Press (Barbell),,,0,normal,60,10,,,'].join(String.fromCharCode(10)));
  for(const [expect_,label] of [[/Z Hevy přidáno: 1 trénink/,'hevy import'],[/Nic nového/,'hevy import idempotent']]){
-  const [hc]=await Promise.all([p.waitForEvent('filechooser',{timeout:10000}),tap('button',/Import z Hevy/)]);
+  let hc;
+  for(let a=0;a<4&&!hc;a++){
+   [hc]=await Promise.all([p.waitForEvent('filechooser',{timeout:4000}).catch(()=>null),tap('button',/Import z Hevy/).catch(()=>{})]);
+  }
+  if(!hc) throw new Error('hevy file chooser did not open');
   await hc.setFiles(hevyFile);
   await see(has(expect_),label);
   await p.waitForTimeout(500);

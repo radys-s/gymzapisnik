@@ -11,14 +11,16 @@ import 'notifier.dart';
 class AndroidNotifier implements Notifier {
   final _plugin = FlutterLocalNotificationsPlugin();
   Future<void>? _ready;
+  bool _zoneKnown = false;
 
   Future<void> _init() => _ready ??= () async {
     tz_data.initializeTimeZones();
     try {
       final zone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(zone.identifier));
+      _zoneKnown = true;
     } catch (_) {
-      // zůstane UTC; čas se pak spočítá z posunu zařízení níže
+      // Bez známého pásma by se připomínky plánovaly v UTC, tak radši žádné.
     }
     await _plugin.initialize(
       settings: const InitializationSettings(
@@ -44,6 +46,7 @@ class AndroidNotifier implements Notifier {
   Future<void> schedule(List<Reminder> reminders) async {
     await _init();
     await _plugin.cancelAll();
+    if (!_zoneKnown) return;
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'training',

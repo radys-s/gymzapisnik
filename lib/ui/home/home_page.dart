@@ -146,6 +146,25 @@ class _HomePageState extends State<HomePage> {
               child: QuickProgressCard(state),
             ),
           ],
+          if (state.backupDue) ...[
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.save_alt),
+                title: const Text('Ulož si zálohu'),
+                subtitle: const Text(
+                  'Data jsou jen v tomto zařízení. Záloha do souboru je '
+                  'jistota, kdyby se něco smazalo.',
+                ),
+                isThreeLine: true,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SettingsPage(state)),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           BodyweightCard(state),
         ],

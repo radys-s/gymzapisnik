@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/version.dart';
 import '../../state/app_state.dart';
 import '../premium/premium_page.dart';
 import '../widgets/labels.dart';
 import 'file_io.dart';
+import 'legal_page.dart';
 
 /// Nastavení: pauza, motiv, záloha, export, smazání dat, o aplikaci.
 class SettingsPage extends StatelessWidget {
@@ -37,10 +39,12 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     String name,
     String Function() content,
-    String mime,
-  ) async {
+    String mime, {
+    Future<void> Function()? onSaved,
+  }) async {
     try {
       final saved = await files.saveText(name, content(), mime);
+      if (saved) await onSaved?.call();
       if (saved && context.mounted) _toast(context, 'Uloženo: $name');
     } catch (e) {
       if (context.mounted) _toast(context, 'Soubor se nepodařilo uložit: $e');
@@ -116,6 +120,27 @@ class SettingsPage extends StatelessWidget {
     );
     if (picked == null || !context.mounted) return;
     await _setReminder(context, picked.hour * 60 + picked.minute);
+  }
+
+  Future<void> _feedback(BuildContext context) async {
+    await Clipboard.setData(const ClipboardData(text: feedbackContact));
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('Zpětná vazba'),
+        content: const Text(
+          'Napiš na $feedbackContact (adresa je zkopírovaná). Připiš verzi '
+          '$appVersion a co jsi dělal.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog),
+            child: const Text('Zavřít'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _wipe(BuildContext context) async {
@@ -267,6 +292,7 @@ class SettingsPage extends StatelessWidget {
                 'gymzapisnik-zaloha-${_stamp()}.json',
                 state.exportBackup,
                 'application/json',
+                onSaved: state.markBackedUp,
               ),
             ),
             ListTile(
@@ -300,6 +326,21 @@ class SettingsPage extends StatelessWidget {
               onTap: () => _wipe(context),
             ),
             section('O aplikaci'),
+            ListTile(
+              leading: const Icon(Icons.mail_outline),
+              title: const Text('Napsat zpětnou vazbu'),
+              subtitle: const Text('Co tě zdrželo, co chybělo, co nefunguje'),
+              onTap: () => _feedback(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.policy_outlined),
+              title: const Text('Podmínky a soukromí'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LegalPage()),
+              ),
+            ),
             const ListTile(
               leading: Icon(Icons.info_outline),
               title: Text('Gym zápisník'),
