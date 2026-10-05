@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 
+import '../coach/missions.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
+import '../coach/streak.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../data/csv.dart';
@@ -352,6 +354,30 @@ class AppState extends ChangeNotifier {
     profile = next;
     notifyListeners();
   }
+
+  /// Týdenní cíl tréninků: vlastní, jinak podle splitu, jinak 3.
+  int get weekGoal => profile.weekGoal ?? split?.perWeek ?? 3;
+
+  Future<void> setWeekGoal(int? goal) async {
+    final next = profile.withExtra({'weekGoal': goal?.clamp(1, 7)});
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+  }
+
+  /// Dnešní mise podle týdenního cíle a odcvičených tréninků.
+  Mission mission([DateTime? now]) => todayMission(
+    goal: weekGoal,
+    finished: [for (final w in workouts) w.date],
+    now: now ?? DateTime.now(),
+  );
+
+  /// Týdny v řadě se splněným cílem.
+  Streak streak([DateTime? now]) => computeStreak(
+    goal: weekGoal,
+    finished: [for (final w in workouts) w.date],
+    now: now ?? DateTime.now(),
+  );
 
   /// Den splitu na řadě (po posledním odcvičeném dni).
   int get nextSplitDay {

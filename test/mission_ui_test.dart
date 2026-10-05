@@ -1,0 +1,77 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/data/database.dart';
+import 'package:gymzapisnik/data/store.dart';
+import 'package:gymzapisnik/domain/models.dart';
+import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/home/home_page.dart';
+import 'package:gymzapisnik/ui/theme.dart';
+
+Future<AppState> newState(WidgetTester tester) async {
+  final db = AppDatabase(NativeDatabase.memory());
+  addTearDown(db.close);
+  final state = AppState(LocalStore(db));
+  await tester.runAsync(state.load);
+  return state;
+}
+
+Future<void> show(WidgetTester tester, AppState state) async {
+  await tester.binding.setSurfaceSize(const Size(400, 1600));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: buildTheme(Brightness.dark),
+      home: Scaffold(body: HomePage(state)),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  testWidgets('new user sees a train-today mission with default goal', (
+    tester,
+  ) async {
+    final state = await newState(tester);
+    await show(tester, state);
+    expect(state.weekGoal, 3);
+    expect(find.text('Dnes je dobrý den na trénink'), findsOneWidget);
+    expect(find.text('0/3 tento týden'), findsOneWidget);
+  });
+
+  testWidgets('trained today: mission done, weekly goal follows settings', (
+    tester,
+  ) async {
+    final state = await newState(tester);
+    await tester.runAsync(() async {
+      final now = DateTime.now();
+      await state.startWorkout(now: now.subtract(const Duration(minutes: 30)));
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 80, reps: 8, done: true)];
+      await state.finishActive(now: now);
+      await state.setWeekGoal(1);
+    });
+    await show(tester, state);
+    expect(find.text('Týdenní cíl splněn'), findsOneWidget);
+    expect(find.text('1/1 tento týden'), findsOneWidget);
+    expect(find.text('1 týden'), findsOneWidget); // streak chip
+
+    await tester.runAsync(() => state.setWeekGoal(null));
+    await tester.pumpAndSettle();
+    expect(find.text('Dnes máš hotovo'), findsOneWidget);
+    expect(find.text('1/3 tento týden'), findsOneWidget);
+  });
+
+  test('week goal follows split until set manually', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    await state.load();
+    await state.setSplit('upper_lower');
+    expect(state.weekGoal, 4);
+    await state.setWeekGoal(2);
+    expect(state.weekGoal, 2);
+    await state.setWeekGoal(null);
+    expect(state.weekGoal, 4);
+  });
+}

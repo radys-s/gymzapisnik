@@ -33,6 +33,8 @@ void main() {
       await state.load();
       await state.acceptConsent(adult: true, guardianConsent: false);
     });
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final files = FakeFiles();
     await tester.pumpWidget(GymApp(state));
     final nav = tester.state<NavigatorState>(find.byType(Navigator).first);
@@ -66,7 +68,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('není platná záloha'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('Smazat všechna data'), 100);
     await tester.tap(find.text('Smazat všechna data'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Smazat vše'));

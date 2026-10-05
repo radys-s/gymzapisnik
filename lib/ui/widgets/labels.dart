@@ -42,3 +42,23 @@ String workoutsLabel(int n) =>
         : (n >= 2 && n <= 4)
         ? 'tréninky'
         : 'tréninků'}';
+
+/// „1 týden", „3 týdny", „5 týdnů".
+String weeksLabel(int n) =>
+    '$n ${n == 1
+        ? 'týden'
+        : (n >= 2 && n <= 4)
+        ? 'týdny'
+        : 'týdnů'}';
+
+/// „1 den", „3 dny", „5 dní".
+String daysLabel(int n) =>
+    '$n ${n == 1
+        ? 'den'
+        : (n >= 2 && n <= 4)
+        ? 'dny'
+        : 'dní'}';
+
+/// „Zbývá 1 trénink", „Zbývají 3 tréninky", „Zbývá 5 tréninků".
+String remainingWorkoutsLabel(int n) =>
+    '${n >= 2 && n <= 4 ? 'Zbývají' : 'Zbývá'} ${workoutsLabel(n)}';

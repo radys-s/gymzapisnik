@@ -130,6 +130,23 @@ class SettingsPage extends StatelessWidget {
                 onChanged: (s) => state.setPreferences(restSeconds: s),
               ),
             ),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('Cíl tréninků týdně'),
+              trailing: DropdownButton<int>(
+                value: profile.weekGoal ?? 0,
+                underline: const SizedBox.shrink(),
+                items: [
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('Podle splitu (${state.weekGoal}×)'),
+                  ),
+                  for (var n = 1; n <= 7; n++)
+                    DropdownMenuItem(value: n, child: Text('$n×')),
+                ],
+                onChanged: (n) => state.setWeekGoal(n == 0 ? null : n),
+              ),
+            ),
             section('Vzhled'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

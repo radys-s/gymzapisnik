@@ -29,7 +29,10 @@ na webu v IndexedDB).
   záloha do JSON souboru a obnova (doplní chybějící tréninky, lokální úpravy nepřepíše, souhlas se
   nezálohuje), export CSV pro český Excel (BOM, středník, desetinná čárka, ochrana proti vzorcům),
   smazání všech dat, verze. Fáze A (tracker) je kompletní.
-- Další kroky: fáze B – denní smyčka (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+- **B1 (hotovo):** denní mise na Domů (trénuj dnes / máš hotovo / odpočinek / dnes je potřeba) a streak
+  po týdnech se žolíkem (zachrání jeden zmeškaný týden, obnoví se za 8 týdnů). Týdenní cíl podle splitu
+  nebo vlastní v Nastavení. Logika v `lib/coach/missions.dart` a `streak.dart`.
+- Další kroky: fáze B – zbytek denní smyčky (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
 
 ## Vývoj
 

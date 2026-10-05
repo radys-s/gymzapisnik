@@ -73,7 +73,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          MissionCard(state, DateTime.now()),
+          const SizedBox(height: 8),
           if (active != null)
             FilledButton.icon(
               onPressed: () => _run(() async {}),

@@ -153,10 +153,10 @@ void main() {
       }),
     ];
     final r = recentRecords(ws, typeOf);
-    expect([for (final p in r) '${p.workoutId}/${p.exerciseId}'], [
-      'c/bench',
-      'b/squat',
-    ]);
+    expect(
+      [for (final p in r) '${p.workoutId}/${p.exerciseId}'],
+      ['c/bench', 'b/squat'],
+    );
     expect(recentRecords(ws, typeOf, limit: 1), hasLength(1));
     expect(recentRecords([ws.first], typeOf), isEmpty);
   });
