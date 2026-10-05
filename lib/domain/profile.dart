@@ -45,6 +45,12 @@ class Profile {
     );
   }
 
+  /// Vlastní týdenní cíl tréninků (1–7); `null` = podle splitu.
+  int? get weekGoal {
+    final v = extra['weekGoal'];
+    return v is num ? v.toInt().clamp(1, 7) : null;
+  }
+
   /// Motiv: `system`, `dark` (výchozí) nebo `light`.
   String get theme => switch (extra['theme']) {
     'system' => 'system',

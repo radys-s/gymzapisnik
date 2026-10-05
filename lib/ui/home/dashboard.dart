@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../coach/missions.dart';
 import '../../core/format.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
@@ -31,7 +32,6 @@ class WeekCard extends StatelessWidget {
         ],
       ),
     );
-    final perWeek = state.split?.perWeek;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -43,9 +43,7 @@ class WeekCard extends StatelessWidget {
             Row(
               children: [
                 stat(
-                  perWeek == null
-                      ? '${week.workouts}'
-                      : '${week.workouts}/$perWeek',
+                  '${week.workouts}/${state.weekGoal}',
                   workoutsLabel(week.workouts).split(' ').last,
                 ),
                 stat('${week.sets}', setsLabel(week.sets).split(' ').last),
@@ -182,6 +180,115 @@ class QuickProgressCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dnešní mise: co dnes dělat, postup v týdnu a streak.
+class MissionCard extends StatelessWidget {
+  final AppState state;
+  final DateTime now;
+  const MissionCard(this.state, this.now, {super.key});
+
+  static String title(Mission m) => switch (m.kind) {
+    MissionKind.weekDone => 'Týdenní cíl splněn',
+    MissionKind.doneToday => 'Dnes máš hotovo',
+    MissionKind.catchUp => 'Dnes je potřeba trénovat',
+    MissionKind.rest => 'Dnes odpočinek',
+    MissionKind.trainToday => 'Dnes je dobrý den na trénink',
+  };
+
+  static String subtitle(Mission m) => switch (m.kind) {
+    MissionKind.weekDone => 'Další trénink už je bonus.',
+    MissionKind.doneToday => 'Dobrá práce. Další trénink až příště.',
+    MissionKind.catchUp =>
+      '${remainingWorkoutsLabel(m.remaining)} a ${daysLabel(m.daysLeft)} '
+          'do konce týdne.',
+    MissionKind.rest => 'Včera jsi cvičil. Trénink si klidně dej i dnes.',
+    MissionKind.trainToday => 'Tvůj týdenní cíl je ${m.goal}×.',
+  };
+
+  static IconData icon(MissionKind kind) => switch (kind) {
+    MissionKind.weekDone => Icons.emoji_events_outlined,
+    MissionKind.doneToday => Icons.check_circle_outline,
+    MissionKind.catchUp => Icons.priority_high,
+    MissionKind.rest => Icons.bedtime_outlined,
+    MissionKind.trainToday => Icons.fitness_center,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final m = state.mission(now);
+    final streak = state.streak(now);
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final urgent = m.kind == MissionKind.catchUp;
+    final dots = m.goal.clamp(1, 7);
+    return Card(
+      color: urgent ? scheme.tertiaryContainer : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon(m.kind), color: scheme.primary),
+                const SizedBox(width: 12),
+                Expanded(child: Text(title(m), style: text.titleMedium)),
+                if (streak.weeks > 0)
+                  Tooltip(
+                    message: streak.jokerReady
+                        ? 'Žolík je připravený: zachrání jeden zmeškaný týden.'
+                        : 'Žolík se po použití obnoví za pár týdnů.',
+                    child: Chip(
+                      avatar: Icon(
+                        Icons.local_fire_department,
+                        size: 18,
+                        color: scheme.primary,
+                      ),
+                      label: Text(weeksLabel(streak.weeks)),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(subtitle(m), style: TextStyle(color: scheme.onSurfaceVariant)),
+            if (streak.jokerJustUsed)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Žolík ti minulý týden zachránil streak.',
+                  style: TextStyle(color: scheme.primary),
+                ),
+              ),
+            const SizedBox(height: 12),
+            Semantics(
+              label: 'Tento týden ${m.done} z ${m.goal} tréninků',
+              excludeSemantics: true,
+              child: Row(
+                children: [
+                  for (var i = 0; i < dots; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Icon(
+                        i < m.done ? Icons.circle : Icons.circle_outlined,
+                        size: 14,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${m.done}/${m.goal} tento týden',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -37,7 +37,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tento týden'), findsOneWidget);
-    expect(find.text('0'), findsNWidgets(2)); // tréninky, série
+    expect(find.text('0/3'), findsOneWidget); // tréninky vůči cíli
+    expect(find.text('0'), findsOneWidget); // série
     expect(find.text('Poslední trénink'), findsOneWidget);
     expect(find.text('Nedávné rekordy'), findsOneWidget);
     expect(find.textContaining('Max váha 82,5 kg'), findsOneWidget);

@@ -77,6 +77,7 @@ let page, context;
  await see(has(/Poprvé/),'first time verdict');
  await tap('button','Hotovo');
  await see(has(/Poslední trénink/),'finished workout on home');
+ await see(has(/Dnes máš hotovo/),'mission: done today');
 
  // druhý trénink: předvyplněno, 1 klepnutí
  await p.reload(); await sem();
@@ -108,7 +109,7 @@ let page, context;
  await p.goBack().catch(()=>{});
  await p.reload(); await sem();
  await tap('button','Nastavení');
- await see(has(/Uložit zálohu/),'settings open');
+ await see(t=>/Uložit zálohu/.test(t)&&/Cíl tréninků týdně/.test(t),'settings open');
  const download=async name=>{
   const [d]=await Promise.all([p.waitForEvent('download',{timeout:10000}),tap('button',name)]);
   const file=await d.path(); return {name:d.suggestedFilename(),file,text:require('fs').readFileSync(file,'utf8')};

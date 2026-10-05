@@ -10,7 +10,7 @@ const backupFormat = 'gymzapisnik-backup';
 const backupVersion = 1;
 
 /// Klíče profilu, které jsou nastavením a patří do zálohy.
-const backupSettingsKeys = {'restSeconds', 'split', 'theme'};
+const backupSettingsKeys = {'restSeconds', 'split', 'theme', 'weekGoal'};
 
 class Backup {
   final DateTime exportedAt;
