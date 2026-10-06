@@ -10,11 +10,13 @@ import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
 import '../data/hevy_import.dart';
+import '../data/off_client.dart';
 import '../data/csv.dart';
 import '../data/store.dart';
 import '../domain/catalog.dart';
 import '../domain/history.dart';
 import '../domain/models.dart';
+import '../domain/nutrition.dart';
 import '../domain/profile.dart';
 import '../coach/reminders.dart';
 import '../notify/notifier.dart';
@@ -26,6 +28,7 @@ abstract final class Kinds {
   static const workout = 'workout';
   static const exercise = 'exercise';
   static const bodyweight = 'bodyweight';
+  static const food = 'food';
 }
 
 /// Stav aplikace sdílený obrazovkami. UI nesahá přímo na úložiště.
@@ -35,7 +38,11 @@ class AppState extends ChangeNotifier {
     this.store, {
     this.paywall = paywallEnabled,
     this.notifier = const NoopNotifier(),
-  });
+    ProductLookup? lookup,
+  }) : lookup = lookup ?? OffClient();
+
+  /// Hledání produktů podle čárového kódu (v testech jde přepsat).
+  final ProductLookup lookup;
 
   /// Místní oznámení (na webu a iPhonu prázdná implementace).
   final Notifier notifier;
@@ -60,6 +67,9 @@ class AppState extends ChangeNotifier {
   /// Tělesná váha, nejnovější první.
   List<BodyWeight> bodyweights = [];
 
+  /// Výživový deník, nejnovější záznam první.
+  List<FoodEntry> foods = [];
+
   Future<void> load() async {
     await store.open();
     final json = await store.get(Profile.id);
@@ -78,6 +88,8 @@ class AppState extends ChangeNotifier {
     bodyweights = [
       for (final b in await store.all(Kinds.bodyweight)) BodyWeight.fromJson(b),
     ]..sort((a, b) => b.date.compareTo(a.date));
+    foods = [for (final f in await store.all(Kinds.food)) FoodEntry.fromJson(f)]
+      ..sort(_newestFood);
     notifyListeners();
     unawaited(syncReminders());
   }
@@ -629,12 +641,60 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  static int _newestFood(FoodEntry a, FoodEntry b) {
+    final byDay = b.day.compareTo(a.day);
+    return byDay != 0 ? byDay : b.loggedAt.compareTo(a.loggedAt);
+  }
+
+  /// Záznamy deníku z jednoho dne, nejnovější první.
+  List<FoodEntry> foodsOn(String day) => [
+    for (final f in foods)
+      if (f.day == day) f,
+  ];
+
+  /// Naposledy zapsaná jídla (bez duplicit podle názvu), k rychlému opakování.
+  List<FoodEntry> get recentFoods {
+    final seen = <String>{};
+    return [
+      for (final f in foods)
+        if (seen.add('${f.name.toLowerCase()}|${f.barcode ?? ''}')) f,
+    ].take(8).toList();
+  }
+
+  /// Uloží nový záznam, nebo přepíše existující (stejné `id`).
+  /// Vrací chybovou zprávu, nebo `null` po uložení.
+  Future<String?> saveFood(FoodEntry entry) async {
+    final error = validateFood(
+      name: entry.name,
+      amount: entry.amount,
+      basis: entry.basis,
+      values: entry.values,
+    );
+    if (error != null) return error;
+    if (parseDayKey(entry.day) == null) return 'Neplatný den.';
+    await _enqueue(() => store.put(Kinds.food, entry.toJson()));
+    foods = [
+      entry,
+      for (final f in foods)
+        if (f.id != entry.id) f,
+    ]..sort(_newestFood);
+    notifyListeners();
+    return null;
+  }
+
+  Future<void> removeFood(String id) async {
+    await _enqueue(() => store.remove(id));
+    foods = foods.where((f) => f.id != id).toList();
+    notifyListeners();
+  }
+
   String exportBackup({DateTime? now}) => encodeBackup(
     Backup(
       exportedAt: now ?? DateTime.now(),
       workouts: workouts,
       exercises: customExercises,
       bodyweights: bodyweights,
+      foods: foods,
       settings: {
         for (final e in profile.extra.entries)
           if (backupSettingsKeys.contains(e.key)) e.key: e.value,
@@ -667,7 +727,13 @@ class AppState extends ChangeNotifier {
         for (final b in backup.bodyweights)
           if (!haveWeights.contains(b.id)) b,
       ];
+      final haveFoods = {for (final f in foods) f.id};
+      final newFoods = [
+        for (final f in backup.foods)
+          if (!haveFoods.contains(f.id)) f,
+      ];
       final docs = <(String, Map<String, dynamic>)>[
+        for (final f in newFoods) (Kinds.food, f.toJson()),
         for (final b in newWeights) (Kinds.bodyweight, b.toJson()),
         for (final e in newExercises) (Kinds.exercise, e.toJson()),
         for (final w in newWorkouts) (Kinds.workout, w.toJson()),
@@ -691,6 +757,7 @@ class AppState extends ChangeNotifier {
       profile = nextProfile;
       bodyweights = [...newWeights, ...bodyweights]
         ..sort((a, b) => b.date.compareTo(a.date));
+      foods = [...newFoods, ...foods]..sort(_newestFood);
       return newWorkouts.length;
     });
     notifyListeners();
@@ -736,6 +803,7 @@ class AppState extends ChangeNotifier {
     active = null;
     customExercises = [];
     bodyweights = [];
+    foods = [];
     notifyListeners();
     if (notifier.supported) unawaited(notifier.cancelAll());
   }

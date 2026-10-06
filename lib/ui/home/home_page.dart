@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../../premium/entitlements.dart';
 import '../bodyweight/bodyweight_page.dart';
+import '../nutrition/nutrition_page.dart';
 import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
 import '../settings/settings_page.dart';
@@ -167,6 +168,8 @@ class _HomePageState extends State<HomePage> {
           ],
           const SizedBox(height: 8),
           BodyweightCard(state),
+          const SizedBox(height: 8),
+          NutritionCard(state),
         ],
       );
     },

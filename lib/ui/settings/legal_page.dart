@@ -20,10 +20,21 @@ class LegalPage extends StatelessWidget {
     ),
     (
       'Jaká data a kde',
-      'Tréninky, cviky, tělesná váha a nastavení se ukládají jen v tomto '
-          'zařízení. Aplikace nemá účet, nic nenahrává na server a neobsahuje '
+      'Tréninky, cviky, tělesná váha, výživový deník a nastavení se ukládají '
+          'jen v tomto zařízení. Aplikace nemá účet, nic nenahrává na vlastní '
+          'server a neobsahuje '
           'reklamy ani sledování. Pokud v telefonu povolíš oznámení, '
           'připomínky se plánují lokálně v zařízení.',
+    ),
+    (
+      'Čárové kódy a Open Food Facts',
+      'Když hledáš produkt podle čárového kódu, aplikace odešle jen ten kód '
+          'a své označení (název a verzi) do veřejné databáze Open Food Facts '
+          '(openfoodfacts.org); ta ho přijme jako každý jiný dotaz včetně '
+          'IP adresy. Bez hledání se nic neodesílá a deník funguje offline. '
+          'Údaje databáze jsou pod licencí ODbL, vytvořili je dobrovolníci '
+          'a mohou být nepřesné: před uložením je zkontroluj. Výživová data '
+          'jsou orientační a nejsou zdravotním doporučením.',
     ),
     (
       'Záloha a smazání',

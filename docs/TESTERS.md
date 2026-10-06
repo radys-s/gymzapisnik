@@ -30,7 +30,7 @@ Tato beta na iPhonu nemá připomínky tréninku; denní úkol uvidíš po otev�
 Místní úložiště není záloha: může zmizet například při vyčištění dat nebo nedostatku
 místa ([pravidla WebKit](https://webkit.org/blog/14403/updates-to-storage-policy/)).
 Proto ukládej JSON do souboru. Aplikace připomíná zálohu po 10 nových trénincích, ne podle
-uplynulých týdnů. JSON obsahuje dokončené tréninky, vlastní cviky, váhu a nastavení;
+uplynulých týdnů. JSON obsahuje dokončené tréninky, vlastní cviky, váhu, výživový deník a nastavení;
 rozepsaný trénink ani souhlas s podmínkami v záloze nejsou.
 
 Při nabídce nové verze klepni na **Načíst**: aplikace počká na uložení před restartem.
@@ -71,6 +71,9 @@ zkoušej jen v odděleném testovacím zařízení/profilu.
 - Vybrat split a sledovat denní úkol a streak na úvodní obrazovce.
 - Import z Hevy (Hevy → Profil → Nastavení → Export dat; pak Nastavení → Import z Hevy).
 - Zapsat tělesnou váhu.
+- Výživa (karta na Domů): přidat jídlo ručně, podle čárového kódu (např. 3017620422003 = Nutella, potřebuje
+  internet; úpravu před uložením zkus) a podívat se na včerejší den. Bez internetu musí jít jídlo zapsat ručně
+  a uložený deník zůstat vidět. Mobilní chování zatím nikdo neověřil.
 
 ## Zpětná vazba
 
