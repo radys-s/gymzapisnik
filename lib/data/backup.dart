@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../domain/bodyweight.dart';
 import '../domain/models.dart';
+import '../domain/profile.dart';
 
 /// Formát zálohy do souboru. Čistý Dart bez Flutteru.
 ///
@@ -53,12 +54,24 @@ Backup decodeBackup(String source) {
     throw const FormatException('Soubor není záloha Gym zápisníku.');
   }
   final version = json['version'];
-  if (version is! num || version > backupVersion) {
+  if (version is! int || version != backupVersion) {
     throw const FormatException(
-      'Záloha je z novější verze aplikace. Nejdřív aplikaci aktualizuj.',
+      'Nepodporovaná verze zálohy. Zkontroluj verzi aplikace.',
     );
   }
   try {
+    for (final raw in json['workouts'] as List? ?? const []) {
+      final w = raw as Map;
+      final start = DateTime.tryParse(w['startedAt'] as String? ?? '');
+      final end = w['finishedAt'];
+      if (start == null ||
+          (end != null &&
+              (end is! String ||
+                  DateTime.tryParse(end) == null ||
+                  DateTime.parse(end).isBefore(start)))) {
+        throw const FormatException('Záloha obsahuje neplatný čas tréninku.');
+      }
+    }
     final workouts = [
       for (final w in json['workouts'] as List? ?? const [])
         Workout.fromJson(Map<String, dynamic>.from(w as Map)),
@@ -72,6 +85,34 @@ Backup decodeBackup(String source) {
         BodyWeight.fromJson(Map<String, dynamic>.from(b as Map)),
     ];
     final rawSettings = json['settings'];
+    if (rawSettings != null && rawSettings is! Map) {
+      throw const FormatException('Záloha obsahuje neplatné nastavení.');
+    }
+    if (rawSettings is Map) {
+      for (final key in ['split', 'theme']) {
+        if (rawSettings[key] != null && rawSettings[key] is! String) {
+          throw const FormatException('Záloha obsahuje neplatné nastavení.');
+        }
+      }
+      for (final key in ['restSeconds', 'weekGoal']) {
+        final value = rawSettings[key];
+        if (value != null && (value is! num || !value.isFinite)) {
+          throw const FormatException('Záloha obsahuje neplatné nastavení.');
+        }
+      }
+    }
+    final ids = <String>{};
+    for (final id in [
+      ...workouts.map((w) => w.id),
+      ...exercises.map((e) => e.id),
+      ...bodyweights.map((b) => b.id),
+    ]) {
+      if (id.trim().isEmpty || id == Profile.id || !ids.add(id)) {
+        throw const FormatException(
+          'Záloha obsahuje prázdné nebo duplicitní ID.',
+        );
+      }
+    }
     return Backup(
       exportedAt:
           DateTime.tryParse(json['exportedAt'] as String? ?? '') ??

@@ -43,9 +43,12 @@ B6 hotovo: tělesná váha (karta na Domů, graf, záloha).
 
 B5 hotovo: připomínky na Androidu (plán v coach/reminders.dart, oznámení přes flutter_local_notifications; iPhone PWA bez nich).
 
-R hotovo (kód): verze 1.0.0-beta.1+10, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
+R hotovo (kód): verze 1.0.0-beta.2+11, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
 
-Zbývá: hostování PWA na HTTPS pro iPhone, rozeslání APK testerům, sběr zpětné vazby. (mise dne, streak s žolíkem, týdenní skóre, notifikace, váha).
+Nezávislé review bety, důkazy testů a hranice ověření: [docs/REVIEW.md](docs/REVIEW.md).
+Zbývá fyzické Android/iPhone ověření, schválené hostování PWA na HTTPS, rozeslání
+APK testerům a sběr zpětné vazby. Název a kontaktní e-mail jsou zachované;
+jejich potvrzení a záloha podpisového klíče jsou před distribucí na Tomášovi.
 
 ## Vývoj
 

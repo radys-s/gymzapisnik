@@ -21,8 +21,10 @@ class WorkoutPage extends StatefulWidget {
 
 class _WorkoutPageState extends State<WorkoutPage> {
   AppState get state => widget.state;
+  bool _busy = false;
 
   void _snack(String text) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(text)));
@@ -111,26 +113,35 @@ class _WorkoutPageState extends State<WorkoutPage> {
   }
 
   Future<void> _finish(Workout workout) async {
-    FocusScope.of(context).unfocus();
-    final pending = workout.exercises
-        .expand((e) => e.sets)
-        .where((s) => !s.done && s.reps > 0)
-        .length;
-    if (pending > 0 &&
-        !await _confirm(
-          'Dokončit trénink?',
-          'Nepotvrzené série ($pending) se neuloží.',
-          'Dokončit',
-        )) {
-      return;
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      FocusScope.of(context).unfocus();
+      final pending = workout.exercises
+          .expand((e) => e.sets)
+          .where((s) => !s.done && s.reps > 0)
+          .length;
+      if (pending > 0 &&
+          !await _confirm(
+            'Dokončit trénink?',
+            'Nepotvrzené série ($pending) se neuloží.',
+            'Dokončit',
+          )) {
+        return;
+      }
+      final result = await state.finishActive();
+      if (!mounted) return;
+      if (result.error != null) return _snack(result.error!);
+      Navigator.pop(context, result.workout);
+    } catch (_) {
+      _snack('Trénink se nepodařilo uložit. Zkus dokončení znovu.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-    final result = await state.finishActive();
-    if (!mounted) return;
-    if (result.error != null) return _snack(result.error!);
-    Navigator.pop(context, result.workout);
   }
 
   Future<void> _discard() async {
+    if (_busy) return;
     if (!await _confirm(
       'Zahodit trénink?',
       'Rozepsaný trénink se smaže.',
@@ -176,74 +187,87 @@ class _WorkoutPageState extends State<WorkoutPage> {
     builder: (context, _) {
       final workout = state.active;
       if (workout == null) return const Scaffold();
-      return Scaffold(
-        appBar: AppBar(
-          title: InkWell(
-            onTap: () => _rename(workout),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(workout.name, overflow: TextOverflow.ellipsis),
-                _Elapsed(workout.startedAt),
+      return PopScope(
+        canPop: !_busy,
+        child: AbsorbPointer(
+          absorbing: _busy,
+          child: Scaffold(
+            appBar: AppBar(
+              title: InkWell(
+                onTap: () => _rename(workout),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(workout.name, overflow: TextOverflow.ellipsis),
+                    _Elapsed(workout.startedAt),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => _finish(workout),
+                  child: Text(_busy ? 'Ukládám…' : 'Dokončit'),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (v) => switch (v) {
+                    'rename' => _rename(workout),
+                    'note' => _editWorkoutNote(workout),
+                    _ => _discard(),
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'rename', child: Text('Přejmenovat')),
+                    PopupMenuItem(
+                      value: 'note',
+                      child: Text('Poznámka k tréninku'),
+                    ),
+                    PopupMenuItem(
+                      value: 'discard',
+                      child: Text('Zahodit trénink'),
+                    ),
+                  ],
+                ),
               ],
+            ),
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
+              children: [
+                if (workout.note.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                    child: Text(
+                      workout.note,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                if (workout.exercises.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Text(
+                      'Přidej první cvik.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                for (final entry in workout.exercises)
+                  _ExerciseCard(
+                    key: ObjectKey(entry),
+                    state: state,
+                    entry: entry,
+                    onMenu: (action) => _exerciseMenu(entry, action),
+                    onError: _snack,
+                  ),
+              ],
+            ),
+            bottomNavigationBar: state.restEndsAt == null
+                ? null
+                : _RestBar(state: state, endsAt: state.restEndsAt!),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _addExercise,
+              icon: const Icon(Icons.add),
+              label: const Text('Přidat cvik'),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => _finish(workout),
-              child: const Text('Dokončit'),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (v) => switch (v) {
-                'rename' => _rename(workout),
-                'note' => _editWorkoutNote(workout),
-                _ => _discard(),
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'rename', child: Text('Přejmenovat')),
-                PopupMenuItem(
-                  value: 'note',
-                  child: Text('Poznámka k tréninku'),
-                ),
-                PopupMenuItem(value: 'discard', child: Text('Zahodit trénink')),
-              ],
-            ),
-          ],
-        ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
-          children: [
-            if (workout.note.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                child: Text(
-                  workout.note,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            if (workout.exercises.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Text('Přidej první cvik.', textAlign: TextAlign.center),
-              ),
-            for (final entry in workout.exercises)
-              _ExerciseCard(
-                key: ObjectKey(entry),
-                state: state,
-                entry: entry,
-                onMenu: (action) => _exerciseMenu(entry, action),
-                onError: _snack,
-              ),
-          ],
-        ),
-        bottomNavigationBar: state.restEndsAt == null
-            ? null
-            : _RestBar(state: state, endsAt: state.restEndsAt!),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _addExercise,
-          icon: const Icon(Icons.add),
-          label: const Text('Přidat cvik'),
         ),
       );
     },
@@ -543,17 +567,15 @@ class _SetRow extends StatefulWidget {
 class _SetRowState extends State<_SetRow> {
   late final weight = TextEditingController(text: _kgText(widget.set.weight));
   late final reps = TextEditingController(text: _repsText(widget.set.reps));
-  Timer? _debounce;
+  bool _saving = false;
+  final _tapClock = Stopwatch()..start();
+  int? _lastToggleMs;
 
   static String _kgText(double v) => v == 0 ? '' : formatKg(v);
   static String _repsText(int v) => v == 0 ? '' : '$v';
 
   @override
   void dispose() {
-    if (_debounce?.isActive ?? false) {
-      _debounce!.cancel();
-      widget.state.saveActive();
-    }
     weight.dispose();
     reps.dispose();
     super.dispose();
@@ -563,18 +585,40 @@ class _SetRowState extends State<_SetRow> {
     widget.set
       ..weight = parseNum(weight.text) ?? 0
       ..reps = int.tryParse(reps.text.trim()) ?? 0;
-    _debounce?.cancel();
-    _debounce = Timer(
-      const Duration(milliseconds: 400),
-      widget.state.saveActive,
-    );
+    unawaited(_persist());
+  }
+
+  Future<void> _persist() async {
+    try {
+      await widget.state.saveActive();
+    } catch (_) {
+      if (mounted) {
+        widget.onError(
+          'Změnu se nepodařilo uložit. Zkus ji znovu; aplikaci zatím nezavírej.',
+        );
+      }
+    }
   }
 
   Future<void> _toggleDone() async {
-    _changed();
-    _debounce?.cancel();
-    final error = await widget.state.toggleDone(widget.set);
-    if (error != null) widget.onError(error);
+    final now = _tapClock.elapsedMilliseconds;
+    if (_saving || (_lastToggleMs != null && now - _lastToggleMs! < 300)) {
+      return;
+    }
+    _lastToggleMs = now;
+    setState(() => _saving = true);
+    try {
+      final error = await widget.state.toggleDone(widget.set);
+      if (error != null && mounted) widget.onError(error);
+    } catch (_) {
+      if (mounted) {
+        widget.onError(
+          'Sérii se nepodařilo uložit. Zkus zápis znovu; aplikaci zatím nezavírej.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Widget _field(TextEditingController c, String hint, {bool decimal = false}) =>
@@ -617,7 +661,6 @@ class _SetRowState extends State<_SetRow> {
         child: const Icon(Icons.delete_outline),
       ),
       onDismissed: (_) {
-        _debounce?.cancel();
         widget.state.removeSet(widget.entry, set);
       },
       child: Container(
@@ -659,12 +702,12 @@ class _SetRowState extends State<_SetRow> {
               child: set.done
                   ? IconButton.filled(
                       tooltip: 'Zrušit potvrzení',
-                      onPressed: _toggleDone,
+                      onPressed: _saving ? null : _toggleDone,
                       icon: const Icon(Icons.check),
                     )
                   : IconButton.outlined(
                       tooltip: 'Potvrdit sérii',
-                      onPressed: _toggleDone,
+                      onPressed: _saving ? null : _toggleDone,
                       icon: const Icon(Icons.check),
                     ),
             ),
