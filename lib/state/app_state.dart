@@ -137,11 +137,14 @@ class AppState extends ChangeNotifier {
   /// Výchozí `null` místo `Future.value()`: hotová future si pamatuje zónu,
   /// ve které vznikla, a v testech s falešným časem by fronta nikdy nedoběhla.
   Future<void>? _writes;
+  Future<({Workout? workout, String? error})>? _finishing;
 
-  Future<void> _enqueue(Future<void> Function() write) {
+  Future<T> _enqueue<T>(Future<T> Function() write) {
     final previous = _writes;
-    final next = previous == null ? write() : previous.then((_) => write());
-    _writes = next.catchError((_) {});
+    final next = previous == null
+        ? Future<T>.sync(write)
+        : previous.then((_) => write());
+    _writes = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return next;
   }
 
@@ -166,6 +169,7 @@ class AppState extends ChangeNotifier {
 
   /// Začne nový trénink, nebo vrátí rozepsaný.
   Future<Workout> startWorkout({String? name, DateTime? now}) async {
+    if (_finishing != null) throw StateError('Počkej na uložení tréninku.');
     final existing = active;
     if (existing != null) return existing;
     final start = now ?? DateTime.now();
@@ -318,7 +322,15 @@ class AppState extends ChangeNotifier {
 
   /// Dokončí trénink: uloží jen potvrzené série a cviky, které nějakou mají.
   /// Vrací dokončený trénink, nebo chybovou hlášku.
-  Future<({Workout? workout, String? error})> finishActive({
+  Future<({Workout? workout, String? error})> finishActive({DateTime? now}) {
+    final pending = _finishing;
+    if (pending != null) return pending;
+    final finishing = _finishActive(now: now);
+    _finishing = finishing;
+    return finishing.whenComplete(() => _finishing = null);
+  }
+
+  Future<({Workout? workout, String? error})> _finishActive({
     DateTime? now,
   }) async {
     final workout = active;
@@ -350,7 +362,11 @@ class AppState extends ChangeNotifier {
       );
     } catch (_) {
       active = workout;
-      rethrow;
+      notifyListeners();
+      return (
+        workout: null,
+        error: 'Trénink se nepodařilo uložit. Zkus dokončení znovu. Pokud chyba trvá, aplikaci nezavírej.',
+      );
     }
     workouts = [finished, ...workouts.where((w) => w.id != finished.id)]
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -568,7 +584,14 @@ class AppState extends ChangeNotifier {
   }
 
   /// Uloží rozepsaná data před aktualizací webové verze.
-  Future<void> saveBeforeUpdate() => saveActive();
+  Future<void> saveBeforeUpdate() async {
+    final finishing = _finishing;
+    if (finishing != null) {
+      final result = await finishing;
+      if (result.error != null) throw StateError(result.error!);
+    }
+    await saveActive();
+  }
 
   // ---------------------------------------------------------------------
   // Nastavení, záloha, export
@@ -627,69 +650,82 @@ class AppState extends ChangeNotifier {
   /// Neplatný soubor hodí [FormatException] s českou zprávou.
   Future<int> restoreBackup(String source) async {
     final backup = decodeBackup(source);
-    final haveWorkouts = {for (final w in workouts) w.id};
-    final haveExercises = {for (final e in customExercises) e.id};
-    final newWorkouts = [
-      for (final w in backup.workouts)
-        if (!haveWorkouts.contains(w.id)) w,
-    ];
-    final newExercises = [
-      for (final e in backup.exercises)
-        if (!haveExercises.contains(e.id)) e,
-    ];
-    final nextProfile = profile.withExtra(backup.settings);
-    final haveWeights = {for (final b in bodyweights) b.id};
-    final newWeights = [
-      for (final b in backup.bodyweights)
-        if (!haveWeights.contains(b.id)) b,
-    ];
-    await _enqueue(
-      () => store.putAll([
+    final count = await _enqueue(() async {
+      final haveWorkouts = {for (final w in workouts) w.id};
+      final haveExercises = {for (final e in customExercises) e.id};
+      final newWorkouts = [
+        for (final w in backup.workouts)
+          if (!haveWorkouts.contains(w.id)) w,
+      ];
+      final newExercises = [
+        for (final e in backup.exercises)
+          if (!haveExercises.contains(e.id)) e,
+      ];
+      final nextProfile = profile.withExtra(backup.settings);
+      final haveWeights = {for (final b in bodyweights) b.id};
+      final newWeights = [
+        for (final b in backup.bodyweights)
+          if (!haveWeights.contains(b.id)) b,
+      ];
+      final docs = <(String, Map<String, dynamic>)>[
         for (final b in newWeights) (Kinds.bodyweight, b.toJson()),
         for (final e in newExercises) (Kinds.exercise, e.toJson()),
         for (final w in newWorkouts) (Kinds.workout, w.toJson()),
         (Kinds.profile, nextProfile.toJson()),
-      ]),
-    );
-    workouts = [...newWorkouts, ...workouts]
-      ..sort((a, b) => b.date.compareTo(a.date));
-    customExercises = [...newExercises, ...customExercises]
-      ..sort((a, b) => a.name.compareTo(b.name));
-    profile = nextProfile;
-    bodyweights = [...newWeights, ...bodyweights]
-      ..sort((a, b) => b.date.compareTo(a.date));
+      ];
+      for (final (kind, data) in docs) {
+        if (kind == Kinds.profile) continue;
+        final existing = await store.raw(data['id'] as String);
+        if ((existing != null && existing['kind'] != kind) ||
+            data['id'] == active?.id) {
+          throw const FormatException(
+            'Záloha obsahuje kolidující ID. Nic nebylo obnoveno.',
+          );
+        }
+      }
+      await store.putAll(docs);
+      workouts = [...newWorkouts, ...workouts]
+        ..sort((a, b) => b.date.compareTo(a.date));
+      customExercises = [...newExercises, ...customExercises]
+        ..sort((a, b) => a.name.compareTo(b.name));
+      profile = nextProfile;
+      bodyweights = [...newWeights, ...bodyweights]
+        ..sort((a, b) => b.date.compareTo(a.date));
+      return newWorkouts.length;
+    });
     notifyListeners();
     unawaited(syncReminders());
-    return newWorkouts.length;
+    return count;
   }
 
   /// Doplní tréninky z exportu Hevy. Už existující (stejný začátek a název)
   /// přeskočí, takže opakovaný import nic nezdvojí. Vrací počet přidaných.
   Future<int> importHevy(String source) async {
-    final parsed = parseHevyCsv(source, custom: customExercises);
-    final haveWorkouts = {for (final w in workouts) w.id};
-    final haveExercises = {for (final e in customExercises) e.id};
-    final newWorkouts = [
-      for (final w in parsed.workouts)
-        if (!haveWorkouts.contains(w.id)) w,
-    ];
-    final newExercises = [
-      for (final e in parsed.newExercises)
-        if (!haveExercises.contains(e.id)) e,
-    ];
-    await _enqueue(
-      () => store.putAll([
+    final count = await _enqueue(() async {
+      final parsed = parseHevyCsv(source, custom: customExercises);
+      final haveWorkouts = {for (final w in workouts) w.id};
+      final haveExercises = {for (final e in customExercises) e.id};
+      final newWorkouts = [
+        for (final w in parsed.workouts)
+          if (!haveWorkouts.contains(w.id)) w,
+      ];
+      final newExercises = [
+        for (final e in parsed.newExercises)
+          if (!haveExercises.contains(e.id)) e,
+      ];
+      await store.putAll([
         for (final e in newExercises) (Kinds.exercise, e.toJson()),
         for (final w in newWorkouts) (Kinds.workout, w.toJson()),
-      ]),
-    );
-    workouts = [...newWorkouts, ...workouts]
-      ..sort((a, b) => b.date.compareTo(a.date));
-    customExercises = [...newExercises, ...customExercises]
-      ..sort((a, b) => a.name.compareTo(b.name));
+      ]);
+      workouts = [...newWorkouts, ...workouts]
+        ..sort((a, b) => b.date.compareTo(a.date));
+      customExercises = [...newExercises, ...customExercises]
+        ..sort((a, b) => a.name.compareTo(b.name));
+      return newWorkouts.length;
+    });
     notifyListeners();
     unawaited(syncReminders());
-    return newWorkouts.length;
+    return count;
   }
 
   /// Smaže všechna data v zařízení včetně souhlasu (aplikace začne znovu).
