@@ -43,6 +43,14 @@ B6 hotovo: tělesná váha (karta na Domů, graf, záloha).
 
 B5 hotovo: připomínky na Androidu (plán v coach/reminders.dart, oznámení přes flutter_local_notifications; iPhone PWA bez nich).
 
+C (kód hotov, mobilní tok neověřen): výživový deník – karta Výživa na Domů, denní přehled s listováním dnů,
+ruční zápis (název, množství, kcal, bílkoviny, sacharidy, tuky; hodnoty na 100 g/ml nebo na porci, prázdné
+pole = neznámo, nula = nula), hledání podle čárového kódu v Open Food Facts API v3 (ručně zadané číslo
+s kontrolní číslicí; kamera se neskenuje), potvrzení a úprava před uložením, při nenalezení nebo výpadku ruční
+zápis, úprava/smazání se „Vrátit", záloha a obnova (nepovinný klíč `foods`, verze zálohy zůstává 1).
+Deník je v zařízení a funguje offline; internet je jen pro hledání kódu. Bez cílů a doporučení.
+Logika `lib/domain/nutrition.dart`, klient `lib/data/off_client.dart`, UI `lib/ui/nutrition/`.
+
 R hotovo (kód): verze 1.0.0-beta.2+11, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
 
 Nezávislé review bety, důkazy testů a hranice ověření: [docs/REVIEW.md](docs/REVIEW.md).

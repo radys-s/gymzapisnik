@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import '../domain/bodyweight.dart';
 import '../domain/models.dart';
+import '../domain/nutrition.dart';
 import '../domain/profile.dart';
 
 /// Formát zálohy do souboru. Čistý Dart bez Flutteru.
 ///
-/// Záloha obsahuje dokončené tréninky, vlastní cviky, váhu a nastavení
+/// Záloha obsahuje dokončené tréninky, vlastní cviky, váhu, výživový deník a nastavení
 /// (ne souhlas s podmínkami – ten patří zařízení a člověku, ne souboru).
 const backupFormat = 'gymzapisnik-backup';
 const backupVersion = 1;
@@ -21,12 +22,16 @@ class Backup {
   final Map<String, dynamic> settings;
   final List<BodyWeight> bodyweights;
 
+  /// Výživový deník (nepovinný klíč; starší zálohy ho nemají).
+  final List<FoodEntry> foods;
+
   const Backup({
     required this.exportedAt,
     required this.workouts,
     required this.exercises,
     required this.settings,
     this.bodyweights = const [],
+    this.foods = const [],
   });
 }
 
@@ -39,6 +44,7 @@ String encodeBackup(Backup backup) =>
       'exercises': [for (final e in backup.exercises) e.toJson()],
       'workouts': [for (final w in backup.workouts) w.toJson()],
       'bodyweights': [for (final b in backup.bodyweights) b.toJson()],
+      'foods': [for (final f in backup.foods) f.toJson()],
     });
 
 /// Načte zálohu. Při neplatném souboru hodí [FormatException]
@@ -84,6 +90,22 @@ Backup decodeBackup(String source) {
       for (final b in json['bodyweights'] as List? ?? const [])
         BodyWeight.fromJson(Map<String, dynamic>.from(b as Map)),
     ];
+    final foods = [
+      for (final f in json['foods'] as List? ?? const [])
+        FoodEntry.fromJson(Map<String, dynamic>.from(f as Map)),
+    ];
+    for (final f in foods) {
+      if (parseDayKey(f.day) == null ||
+          validateFood(
+                name: f.name,
+                amount: f.amount,
+                basis: f.basis,
+                values: f.values,
+              ) !=
+              null) {
+        throw const FormatException('Záloha obsahuje neplatný záznam jídla.');
+      }
+    }
     final rawSettings = json['settings'];
     if (rawSettings != null && rawSettings is! Map) {
       throw const FormatException('Záloha obsahuje neplatné nastavení.');
@@ -106,6 +128,7 @@ Backup decodeBackup(String source) {
       ...workouts.map((w) => w.id),
       ...exercises.map((e) => e.id),
       ...bodyweights.map((b) => b.id),
+      ...foods.map((f) => f.id),
     ]) {
       if (id.trim().isEmpty || id == Profile.id || !ids.add(id)) {
         throw const FormatException(
@@ -121,6 +144,7 @@ Backup decodeBackup(String source) {
       workouts: workouts.where((w) => w.finished).toList(),
       exercises: exercises,
       bodyweights: bodyweights,
+      foods: foods,
       settings: {
         if (rawSettings is Map)
           for (final e in rawSettings.entries)
