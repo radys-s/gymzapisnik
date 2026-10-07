@@ -77,6 +77,19 @@ class Profile {
   /// Nezletilým aplikace nikdy nenastaví kalorický deficit ani hubnutí.
   bool get restrictWeightLoss => !adult;
 
+  static double? _num(Object? v, double min, double max) =>
+      v is num && v.isFinite && v >= min && v <= max ? v.toDouble() : null;
+
+  /// Volitelný denní cíl bílkovin v gramech (nastavuje uživatel sám).
+  double? get proteinTarget => _num(extra['proteinTarget'], 20, 400);
+
+  /// Volitelný denní cíl energie v kcal; jen pro dospělé.
+  double? get kcalTarget =>
+      restrictWeightLoss ? null : _num(extra['kcalTarget'], 1000, 6000);
+
+  /// Uživatel viděl upozornění, kam jde fotka pro AI.
+  bool get aiNoticeAccepted => extra['aiNotice'] == true;
+
   /// Nezletilý bez souhlasu zákonného zástupce souhlas udělit nemůže.
   Profile acceptConsent({
     required bool adult,

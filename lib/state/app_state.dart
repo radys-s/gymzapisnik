@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../ai/ai_config.dart';
+import '../ai/fridge_coach.dart';
 import '../coach/missions.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
@@ -39,7 +41,14 @@ class AppState extends ChangeNotifier {
     this.paywall = paywallEnabled,
     this.notifier = const NoopNotifier(),
     ProductLookup? lookup,
-  }) : lookup = lookup ?? OffClient();
+    FridgeCoach? coach,
+  }) : lookup = lookup ?? OffClient() {
+    this.coach =
+        coach ?? HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
+  }
+
+  /// AI kouč pro ledničku a návrhy jídel (v testech jde přepsat).
+  late final FridgeCoach coach;
 
   /// Hledání produktů podle čárového kódu (v testech jde přepsat).
   final ProductLookup lookup;
@@ -686,6 +695,79 @@ class AppState extends ChangeNotifier {
     await _enqueue(() => store.remove(id));
     foods = foods.where((f) => f.id != id).toList();
     notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------
+  // AI kouč: spíž, cíle, kontext pro návrhy
+  // ---------------------------------------------------------------------
+
+  Future<void> _saveProfile(Profile next) async {
+    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
+    profile = next;
+    notifyListeners();
+  }
+
+  /// Náhodné ID instalace pro denní limit AI; vznikne při prvním použití.
+  /// Nepatří do zálohy (jiné zařízení = jiná instalace).
+  Future<String> installId() async {
+    final saved = profile.extra['installId'];
+    if (saved is String && saved.length == 36) return saved;
+    final id = newId();
+    await _saveProfile(profile.withExtra({'installId': id}));
+    return id;
+  }
+
+  /// Poslední potvrzený seznam potravin doma.
+  List<PantryItem> get pantry {
+    final raw = profile.extra['pantry'];
+    if (raw is! List) return const [];
+    return [for (final i in raw) ?PantryItem.tryParse(i)];
+  }
+
+  Future<void> savePantry(List<PantryItem> items) => _saveProfile(
+    profile.withExtra({
+      'pantry': items.isEmpty
+          ? null
+          : [for (final i in items.take(60)) i.toJson()],
+    }),
+  );
+
+  Future<void> acceptAiNotice() =>
+      _saveProfile(profile.withExtra({'aiNotice': true}));
+
+  /// Nastaví cíle (`null` = bez cíle). Kalorický cíl jen pro dospělé.
+  Future<void> setNutritionTargets({double? protein, double? kcal}) =>
+      _saveProfile(
+        profile.withExtra({
+          'proteinTarget': protein?.clamp(20, 400).roundToDouble(),
+          'kcalTarget': profile.restrictWeightLoss
+              ? null
+              : kcal?.clamp(1000, 6000).roundToDouble(),
+        }),
+      );
+
+  /// Kolik bílkovin dnes zbývá do cíle; `null` bez cíle.
+  double? proteinLeft([DateTime? now]) {
+    final target = profile.proteinTarget;
+    if (target == null) return null;
+    final eaten = totalsOf(foodsOn(dayKey(now ?? DateTime.now()))).protein;
+    return (target - eaten).clamp(0, target).toDouble();
+  }
+
+  /// Kontext pro návrh jídel: dnešní trénink, snědeno, zbývající bílkoviny.
+  MealContext mealContext({required int maxMinutes, DateTime? now}) {
+    final at = now ?? DateTime.now();
+    final today = dayKey(at);
+    final totals = totalsOf(foodsOn(today));
+    final trainedToday = workouts.any((w) => dayKey(w.date.toLocal()) == today);
+    return MealContext(
+      trainingToday: trainedToday || mission(at).shouldTrain,
+      eatenKcal: totals.kcal,
+      eatenProtein: totals.protein,
+      proteinLeft: proteinLeft(at),
+      maxMinutes: maxMinutes,
+      adult: profile.adult,
+    );
   }
 
   String exportBackup({DateTime? now}) => encodeBackup(
