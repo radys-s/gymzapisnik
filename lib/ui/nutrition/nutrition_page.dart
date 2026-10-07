@@ -5,6 +5,7 @@ import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
 import 'barcode_dialog.dart';
 import 'food_form.dart';
+import 'fridge_page.dart';
 
 String _n(double v) => v.round().toString();
 
@@ -253,6 +254,20 @@ class _NutritionPageState extends State<NutritionPage> {
                       '${_g(totals.carbs)} · '
                       'Tuky ${lower(totals.fatMissing)}${_g(totals.fat)}',
                     ),
+                    if (state.profile.proteinTarget != null)
+                      _Progress(
+                        label: 'Bílkoviny',
+                        value: totals.protein,
+                        target: state.profile.proteinTarget!,
+                        unit: 'g',
+                      ),
+                    if (state.profile.kcalTarget != null)
+                      _Progress(
+                        label: 'Energie',
+                        value: totals.kcal,
+                        target: state.profile.kcalTarget!,
+                        unit: 'kcal',
+                      ),
                     if (anyMissing)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -265,6 +280,20 @@ class _NutritionPageState extends State<NutritionPage> {
                         ),
                       ),
                   ],
+                ),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.kitchen_outlined),
+                title: const Text('Co mám v ledničce'),
+                subtitle: const Text(
+                  'Vyfoť ledničku a nech si navrhnout jídlo',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FridgePage(state)),
                 ),
               ),
             ),
@@ -303,4 +332,31 @@ class _NutritionPageState extends State<NutritionPage> {
     return '${amountLabel(e)} · $kcal · B ${_g(v.protein)} · '
         'S ${_g(v.carbs)} · T ${_g(v.fat)}';
   }
+}
+
+/// Postup k vlastnímu cíli (bez hodnocení, jen číslo a pruh).
+class _Progress extends StatelessWidget {
+  final String label;
+  final double value;
+  final double target;
+  final String unit;
+  const _Progress({
+    required this.label,
+    required this.value,
+    required this.target,
+    required this.unit,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$label ${_n(value)} / ${_n(target)} $unit'),
+        const SizedBox(height: 4),
+        LinearProgressIndicator(value: (value / target).clamp(0, 1)),
+      ],
+    ),
+  );
 }
