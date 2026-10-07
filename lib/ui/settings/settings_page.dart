@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../core/parse.dart';
+
 import 'package:flutter/services.dart';
 
 import '../../core/version.dart';
@@ -223,6 +226,52 @@ class SettingsPage extends StatelessWidget {
                 onChanged: (n) => state.setWeekGoal(n == 0 ? null : n),
               ),
             ),
+            section('Výživa'),
+            ListTile(
+              leading: const Icon(Icons.egg_outlined),
+              title: const Text('Denní cíl bílkovin'),
+              subtitle: Text(
+                profile.proteinTarget == null
+                    ? 'Bez cíle'
+                    : '${profile.proteinTarget!.round()} g',
+              ),
+              onTap: () => _editTarget(
+                context,
+                title: 'Denní cíl bílkovin (g)',
+                current: profile.proteinTarget,
+                min: 20,
+                max: 400,
+                hint:
+                    'Číslo si zvol sám, třeba podle trenéra nebo lékaře. '
+                    'Prázdné pole = bez cíle.',
+                save: (v) => state.setNutritionTargets(
+                  protein: v,
+                  kcal: profile.kcalTarget,
+                ),
+              ),
+            ),
+            if (!profile.restrictWeightLoss)
+              ListTile(
+                leading: const Icon(Icons.local_fire_department_outlined),
+                title: const Text('Denní cíl energie'),
+                subtitle: Text(
+                  profile.kcalTarget == null
+                      ? 'Bez cíle'
+                      : '${profile.kcalTarget!.round()} kcal',
+                ),
+                onTap: () => _editTarget(
+                  context,
+                  title: 'Denní cíl energie (kcal)',
+                  current: profile.kcalTarget,
+                  min: 1000,
+                  max: 6000,
+                  hint: 'Prázdné pole = bez cíle.',
+                  save: (v) => state.setNutritionTargets(
+                    protein: profile.proteinTarget,
+                    kcal: v,
+                  ),
+                ),
+              ),
             section('Vzhled'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -355,5 +404,99 @@ class SettingsPage extends StatelessWidget {
         ),
       );
     },
+  );
+}
+
+/// Dialog pro vlastní denní cíl. Prázdné pole cíl zruší.
+Future<void> _editTarget(
+  BuildContext context, {
+  required String title,
+  required double? current,
+  required double min,
+  required double max,
+  required String hint,
+  required Future<void> Function(double? value) save,
+}) async {
+  final result = await showDialog<(double?,)>(
+    context: context,
+    builder: (_) => _TargetDialog(
+      title: title,
+      current: current,
+      min: min,
+      max: max,
+      hint: hint,
+    ),
+  );
+  if (result != null) await save(result.$1);
+}
+
+class _TargetDialog extends StatefulWidget {
+  final String title;
+  final double? current;
+  final double min;
+  final double max;
+  final String hint;
+  const _TargetDialog({
+    required this.title,
+    required this.current,
+    required this.min,
+    required this.max,
+    required this.hint,
+  });
+
+  @override
+  State<_TargetDialog> createState() => _TargetDialogState();
+}
+
+class _TargetDialogState extends State<_TargetDialog> {
+  late final controller = TextEditingController(
+    text: widget.current == null ? '' : widget.current!.round().toString(),
+  );
+  String? error;
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final raw = controller.text.trim();
+    if (raw.isEmpty) {
+      Navigator.pop(context, (null,));
+      return;
+    }
+    final v = parseNum(raw);
+    if (v == null || v < widget.min || v > widget.max) {
+      setState(
+        () => error =
+            'Zadej číslo od ${widget.min.round()} do ${widget.max.round()}.',
+      );
+      return;
+    }
+    Navigator.pop(context, (v,));
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(widget.title),
+    content: TextField(
+      controller: controller,
+      autofocus: true,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        helperText: widget.hint,
+        helperMaxLines: 3,
+        errorText: error,
+      ),
+      onSubmitted: (_) => _save(),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Zrušit'),
+      ),
+      FilledButton(onPressed: _save, child: const Text('Uložit')),
+    ],
   );
 }

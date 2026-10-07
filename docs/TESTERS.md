@@ -74,6 +74,9 @@ zkoušej jen v odděleném testovacím zařízení/profilu.
 - Výživa (karta na Domů): přidat jídlo ručně, podle čárového kódu (např. 3017620422003 = Nutella, potřebuje
   internet; úpravu před uložením zkus) a podívat se na včerejší den. Bez internetu musí jít jídlo zapsat ručně
   a uložený deník zůstat vidět. Mobilní chování zatím nikdo neověřil.
+- Výživa → „Co mám v ledničce“ (jen ve verzi se zapnutou AI): vyfoť ledničku, oprav seznam, zvol čas a nech
+  si navrhnout jídlo. Napiš, co AI poznala špatně a jestli návrhy dávaly smysl. Limit je 8 fotek a 20 návrhů
+  za den na telefon; kapacita pro všechny testery dohromady je omezená.
 
 ## Zpětná vazba
 

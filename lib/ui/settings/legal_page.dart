@@ -37,6 +37,18 @@ class LegalPage extends StatelessWidget {
           'jsou orientační a nejsou zdravotním doporučením.',
     ),
     (
+      'AI: lednička a návrhy jídel',
+      'Funkce „Co mám v ledničce“ odešle fotku nebo seznam potravin '
+          '(a u návrhu jídel i dnešní součet bílkovin, u dospělých i energie, '
+          'a zda dnes trénuješ) přes server aplikace na Cloudflare do služby '
+          'Cloudflare Workers AI (otevřený model Mistral Small 3.1). Fotka ani '
+          'texty se neukládají ani nelogují. Server si pamatuje jen počet '
+          'dotazů za den podle náhodného ID instalace (kvůli limitu), dva dny. '
+          'AI se může splést v rozpoznání i v hodnotách; návrhy jsou jen '
+          'inspirace, ne výživové ani zdravotní doporučení. Bez použití této '
+          'funkce se nic neodesílá.',
+    ),
+    (
       'Záloha a smazání',
       'Protože data nejsou nikde jinde, ulož si zálohu do souboru '
           '(Nastavení → Uložit zálohu). Smazáním dat prohlížeče, odinstalací '
