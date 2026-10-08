@@ -65,3 +65,18 @@ export async function countRetry(store: QuotaStore, now: Date): Promise<void> {
     expirationTtl: TTL,
   });
 }
+
+/** The free Workers AI allocation ran out today (set after error 4006). */
+export async function markExhausted(
+  store: QuotaStore,
+  now: Date,
+): Promise<void> {
+  await store.put(`x:${dayOf(now)}`, "1", { expirationTtl: TTL });
+}
+
+export async function isExhausted(
+  store: QuotaStore,
+  now: Date,
+): Promise<boolean> {
+  return (await store.get(`x:${dayOf(now)}`)) === "1";
+}
