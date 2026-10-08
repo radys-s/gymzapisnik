@@ -240,6 +240,64 @@ describe("quota", () => {
   });
 });
 
+describe("free plan", () => {
+  it("stops for the day when the free allocation is used up", async () => {
+    const { env, calls } = makeEnv([
+      new Error("AiError: 4006: you have used up your daily free allocation of 10,000 neurons"),
+    ]);
+    const res = await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
+    expect(res.status).toBe(429);
+    expect((await body(res)).error.code).toBe("quota_global");
+    expect(calls).toHaveLength(1); // no retry
+    const next = await handle(post("/v1/meals", mealsBody), env, NOW);
+    expect(next.status).toBe(429);
+    expect(calls).toHaveLength(1); // no model call at all
+    const tomorrow = await handle(
+      post("/v1/meals", mealsBody),
+      env,
+      new Date("2026-10-08T00:05:00Z"),
+    );
+    expect(tomorrow.status).toBe(502); // model called again (no reply queued)
+    expect(calls.length).toBeGreaterThan(1);
+  });
+
+  it("detects exhaustion on the retry too", async () => {
+    const { env, calls } = makeEnv([
+      new Error("busy"),
+      new Error("4006: you have used up your daily free allocation"),
+    ]);
+    const res = await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
+    expect(res.status).toBe(429);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("ignores 4006 or neurons later in an error message", async () => {
+    const { env, kv } = makeEnv([
+      new Error("Bad input: Vejce 4006: daily free allocation neurons"),
+      new Error("busy"),
+    ]);
+    const res = await handle(post("/v1/meals", mealsBody), env, NOW);
+    expect(res.status).toBe(502);
+    expect(kv.data.has("x:2026-10-07")).toBe(false);
+  });
+
+  it("still answers 429 when KV cannot store the flag", async () => {
+    const { env } = makeEnv([
+      new Error("AiError: 4006: you have used up your daily free allocation"),
+    ]);
+    const kv = env.QUOTA;
+    env.QUOTA = {
+      get: (k) => kv.get(k),
+      put: async (k, v, o) => {
+        if (k.startsWith("x:")) throw new Error("KV down");
+        await kv.put(k, v, o);
+      },
+    };
+    const res = await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
+    expect(res.status).toBe(429);
+  });
+});
+
 describe("http", () => {
   it("requires a UUID install id", async () => {
     const { env } = makeEnv([]);

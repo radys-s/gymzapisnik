@@ -32,6 +32,11 @@ Limits (`wrangler.toml` `[vars]`): 8 photos and 20 meal requests per install
 per UTC day; `GLOBAL_DAILY_CAP` model calls per day for everybody (retries
 count), kept below the free 10,000 Neurons/day.
 
+Free only: deploy on the Workers **Free** plan (no payment method). Workers AI
+cannot bill a Free account; when the daily allocation runs out, Workers AI
+fails with error 4006, the Worker marks the day as exhausted in KV and answers
+`429 quota_global` without calling the model again until the next UTC day.
+
 ## Develop
 
 ```bash

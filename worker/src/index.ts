@@ -3,7 +3,14 @@
 // or stored, only daily counters per install ID.
 
 import { FRIDGE_SYSTEM, mealsSystem, mealsUser } from "./prompts";
-import { countRetry, reserve, type Feature, type QuotaStore } from "./quota";
+import {
+  countRetry,
+  isExhausted,
+  markExhausted,
+  reserve,
+  type Feature,
+  type QuotaStore,
+} from "./quota";
 import {
   MAX_IMAGE_B64,
   fridgeSchema,
@@ -91,6 +98,14 @@ function fail(
   return json({ error: { code, message } }, status, origin);
 }
 
+const exhausted = (origin: string | null) =>
+  fail(
+    "quota_global",
+    "AI pro testery má dnes vyčerpanou kapacitu. Zkus to zítra.",
+    429,
+    origin,
+  );
+
 async function readJson(
   request: Request,
   max: number,
@@ -107,15 +122,27 @@ async function readJson(
 }
 
 /**
+ * Workers AI on the Free plan refuses calls once the daily 10,000 Neurons are
+ * used (error 4006). The account is never charged; we just stop for the day.
+ */
+export function isAllocationExhausted(error: unknown): boolean {
+  const text = error instanceof Error ? error.message : String(error);
+  // Anchored to the start of the message: later parts of an error may echo
+  // user content, which must not switch the AI off for everybody.
+  return /^(?:[A-Za-z]*Error:\s*)?4006:[^\n]*daily free allocation/i.test(text);
+}
+
+/**
  * Calls the model; on a throw or output that fails [validate] tries once more.
- * Returns null when both attempts fail.
+ * Returns null when both attempts fail, "exhausted" when the free daily
+ * allocation is used up (no retry then).
  */
 async function runValidated<T>(
   env: Env,
   input: Record<string, unknown>,
   validate: (raw: unknown) => T | null,
   now: Date,
-): Promise<T | null> {
+): Promise<T | null | "exhausted"> {
   const model = env.MODEL || DEFAULT_MODEL;
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) await countRetry(env.QUOTA, now);
@@ -123,8 +150,16 @@ async function runValidated<T>(
       const out = (await env.AI.run(model, input)) as { response?: unknown };
       const result = validate(out?.response);
       if (result !== null) return result;
-    } catch {
+    } catch (error) {
       // Error details may contain user content; do not log them.
+      if (isAllocationExhausted(error)) {
+        try {
+          await markExhausted(env.QUOTA, now);
+        } catch {
+          // The 429 still holds; the next call will just try the model again.
+        }
+        return "exhausted";
+      }
     }
   }
   return null;
@@ -172,6 +207,8 @@ async function handle(
     return fail("bad_request", parsed, 400, origin);
   }
 
+  if (await isExhausted(env.QUOTA, now)) return exhausted(origin);
+
   const quota = await reserve(
     env.QUOTA,
     {
@@ -193,14 +230,7 @@ async function handle(
       origin,
     );
   }
-  if (quota === "global") {
-    return fail(
-      "quota_global",
-      "AI pro testery má dnes vyčerpanou kapacitu. Zkus to zítra.",
-      429,
-      origin,
-    );
-  }
+  if (quota === "global") return exhausted(origin);
 
   if ("image" in parsed) {
     const items = await runValidated(
@@ -226,6 +256,7 @@ async function handle(
       validateFridge,
       now,
     );
+    if (items === "exhausted") return exhausted(origin);
     if (items === null) {
       return fail(
         "ai_failed",
@@ -251,6 +282,7 @@ async function handle(
     (raw) => validateMeals(raw, parsed.context.maxMinutes),
     now,
   );
+  if (meals === "exhausted") return exhausted(origin);
   if (meals === null) {
     return fail(
       "ai_failed",

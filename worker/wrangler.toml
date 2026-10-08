@@ -2,7 +2,10 @@ name = "gymzapisnik-ai"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
-# Workers AI: free plan = 10,000 Neurons/day, no API key in the app.
+# Workers AI on the Workers Free plan: 10,000 Neurons/day, no card, no API key
+# in the app. The Free plan is never charged; once the daily allocation is used
+# up the model returns error 4006 and the Worker answers 429 `quota_global`
+# until the next UTC day.
 [ai]
 binding = "AI"
 
