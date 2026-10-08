@@ -52,7 +52,14 @@ no cost). `PORT`, `ORIGINS` and `MOCK_AI=exhausted` (simulates a used-up free
 plan) are optional environment variables. Build the app with
 `--dart-define=AI_URL=http://localhost:8787` to use it.
 
-## Deploy (needs your Cloudflare account)
+## Deployed
+
+`https://gymzapisnik-ai.gymzapisnik-ai.workers.dev` (Workers Free plan, KV
+namespace `QUOTA` id in `wrangler.toml`). First live check 2026-10-08: fridge
+photo ~4 s, meal ideas ~13 s, `guided_json` with nullable types accepted.
+Redeploy after changes: `npx wrangler deploy`.
+
+## Deploy from scratch (needs a Cloudflare account)
 
 ```bash
 npx wrangler login

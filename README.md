@@ -51,14 +51,15 @@ zápis, úprava/smazání se „Vrátit", záloha a obnova (nepovinný klíč `f
 Deník je v zařízení a funguje offline; internet je jen pro hledání kódu. Bez cílů a doporučení.
 Logika `lib/domain/nutrition.dart`, klient `lib/data/off_client.dart`, UI `lib/ui/nutrition/`.
 
-D1 (kód hotov, živý model neověřen): AI kouč ledničky – Výživa → „Co mám v ledničce“: fotka (image_picker,
+D1 (nasazeno 2026-10-08, živý model ověřen syntetickou fotkou, skutečná lednička z telefonu zatím ne): AI kouč ledničky – Výživa → „Co mám v ledničce“: fotka (image_picker,
 na webu výběr souboru) se zmenší na JPEG ≤ 1024 px a pošle přes vlastní proxy (`worker/`, Cloudflare Workers AI,
 model Mistral Small 3.1, žádný klíč v aplikaci) → upravitelný seznam potravin (uložený, v záloze jako `pantry`)
 → „Navrhni jídlo“ (10/20/40 min) → 3 návrhy s postupem, časem a odhadem maker (přednostně z místní tabulky
 `lib/domain/food_table.dart`, jinak odhad AI) → „Zapsat do deníku“. Jednorázové upozornění před prvním odesláním.
 Volitelný denní cíl bílkovin (a energie jen pro dospělé) v Nastavení → Výživa, postup na stránce Výživa.
-AI se zapne buildem s `--dart-define=AI_URL=https://<worker>.workers.dev`; bez něj jsou AI tlačítka vypnutá.
-Nasazení proxy: [worker/README.md](worker/README.md) (potřebuje `wrangler login` na Tomášově účtu Cloudflare).
+AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-ai.workers.dev` (nasazená proxy,
+Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
+`ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
 R hotovo (kód): verze 1.0.0-beta.2+11, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
 
