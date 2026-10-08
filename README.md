@@ -89,6 +89,9 @@ python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
 E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka):
 `PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` a
 `node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, souhrn, opakování série jedním klepnutím, historie, detail cviku).
+AI lednička bez Cloudflare: `cd worker && npm run mock` (skutečný kód proxy, falešný model, port 8787), web build
+s `--dart-define=AI_URL=http://localhost:8787` a `node tool/e2e_fridge.cjs <složka profilu>` (fotka přes výběr
+souboru, upozornění, seznam, návrhy, zápis do deníku, reload).
 
 ## Struktura
 

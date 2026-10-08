@@ -45,6 +45,13 @@ npm test
 npm run typecheck
 ```
 
+Local mock without Cloudflare: `npm run mock` bundles the real Worker code
+(`wrangler deploy --dry-run`) and serves it on `http://localhost:8787` with an
+in-memory KV and a fake model (fixed fridge items and two meals, no network,
+no cost). `PORT`, `ORIGINS` and `MOCK_AI=exhausted` (simulates a used-up free
+plan) are optional environment variables. Build the app with
+`--dart-define=AI_URL=http://localhost:8787` to use it.
+
 ## Deploy (needs your Cloudflare account)
 
 ```bash

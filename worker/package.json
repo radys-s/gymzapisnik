@@ -7,7 +7,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "mock": "wrangler deploy --dry-run --outdir .wrangler/mock && node dev/mock-server.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261007.1",
