@@ -46,8 +46,12 @@ Nasazená původní proxy odpověděla na 3 syntetické návrhy jídel 3/3 HTTP 
 Její preflight pro origin localhost:8080 prošel, localhost:8099 byl HTTP 403:
 chybný origin reprodukovatelně způsobuje neúspěšné připojení z webu.
 To neprokazuje příčinu původního jednotlivého selhání na jiné adrese.
-Nová konfigurace zahrnuje oba lokální porty. Změny proxy a promptu nejsou
-živě ověřené, dokud uživatel neschválí a neproběhne jejich nasazení.
+Nová konfigurace zahrnuje oba lokální porty. Tomáš schválil push i nasazení;
+commit 16686d8 je na main a proxy byla nasazena jako
+48b42f87-b8b9-4f20-bf79-0de0197ea12b. Po nasazení proběhly z Chrome originu
+localhost:8099 tři skutečné návrhy nad syntetickými potravinami: všechny
+HTTP 200, 3/3 úspěšné, žádná chybějící jednotka. Časy přibližně 23/23/12 s.
+Ověřeno připojení, nový prompt a validované návrhy, ne kvalita reálné fotky.
 
 Chrome tréninkový E2E dále prošel zápis, minulý výkon, souhrn, historii,
 opakovanou obnovu JSON a idempotentní Hevy import. Samostatný PWA E2E ověřil
@@ -60,6 +64,10 @@ dist/gymzapisnik-1.0.0-beta.3-web.zip; kontrolní součty v odpovídajícím
 SHA256 souboru. APK používá dosavadní podpis a balíček cz.radys.gymzapisnik.
 Webový archiv potřebuje schválený HTTPS hosting a jeho přesný origin přidaný
 do konfigurace AI proxy. Lokální sestavení není veřejná distribuce.
+Obě finální release sestavení prošla; tréninkový a PWA browser scénář znovu
+prošly i nad finálním webem. APK má versionCode 12, versionName
+1.0.0-beta.3 a INTERNET. Ověřený podpis se shoduje s beta.2:
+SHA-256 e7f946922b2327964123d928b5e889d2e74c7772a6bd460211e35ad89acb4a9c.
 
 Fyzický Android/iPhone, kamera, skutečná lednička, mobilní úložiště, doručení
 připomínek a Safari PWA zatím neověřené. ADB nemá připojený telefon.
