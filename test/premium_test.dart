@@ -16,6 +16,8 @@ AppState newState({required bool paywall}) {
   return AppState(LocalStore(db), paywall: paywall);
 }
 
+DateTime monday() => DateTime(2026, 10, 5, 12);
+
 void main() {
   test('paywall is off for testers: everything unlocked', () {
     expect(paywallEnabled, isFalse);
@@ -67,7 +69,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.dark),
-        home: Scaffold(body: HomePage(state)),
+        home: Scaffold(body: HomePage(state, now: monday)),
       ),
     );
     await tester.pumpAndSettle();
@@ -89,7 +91,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.dark),
-        home: Scaffold(body: HomePage(state)),
+        home: Scaffold(body: HomePage(state, now: monday)),
       ),
     );
     await tester.pumpAndSettle();

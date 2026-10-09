@@ -8,15 +8,11 @@ import 'package:image/image.dart' as img;
 const maxPhotoSide = 1024;
 const maxPhotoBytes = 1000000;
 
-bool _isJpeg(Uint8List b) =>
-    b.length > 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF;
-
 /// Vrací JPEG připravený k odeslání, nebo `null`, když fotku nejde přečíst.
 ///
-/// Malý JPEG (už zmenšený výběrem fotky) projde beze změny; jinak se
-/// dekóduje, zmenší a znovu uloží.
+/// I malý soubor může mít velké rozměry nebo být poškozený. Vždy se
+/// dekóduje, ověří rozměry, zmenší a znovu uloží.
 Uint8List? prepareJpeg(Uint8List bytes) {
-  if (_isJpeg(bytes) && bytes.length <= maxPhotoBytes ~/ 2) return bytes;
   img.Image? decoded;
   try {
     decoded = img.decodeImage(bytes);

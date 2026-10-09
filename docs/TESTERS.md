@@ -1,7 +1,9 @@
 # Gym zápisník – návod pro testery
 
-Dík, že to zkoušíš. Aplikace je v betě: data jsou jen v tvém telefonu, žádný účet
-ani cloud. Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
+Dík, že to zkoušíš. Tréninky, deník a seznam potravin jsou uložené v zařízení,
+bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fotku
+nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
+Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
 ## Android (APK)
 
@@ -30,14 +32,15 @@ Tato beta na iPhonu nemá připomínky tréninku; denní úkol uvidíš po otev�
 Místní úložiště není záloha: může zmizet například při vyčištění dat nebo nedostatku
 místa ([pravidla WebKit](https://webkit.org/blog/14403/updates-to-storage-policy/)).
 Proto ukládej JSON do souboru. Aplikace připomíná zálohu po 10 nových trénincích, ne podle
-uplynulých týdnů. JSON obsahuje dokončené tréninky, vlastní cviky, váhu, výživový deník a nastavení;
+uplynulých týdnů. JSON obsahuje dokončené tréninky, vlastní cviky, váhu, výživový deník,
+seznam potravin a nastavení;
 rozepsaný trénink ani souhlas s podmínkami v záloze nejsou.
 
 Při nabídce nové verze klepni na **Načíst**: aplikace počká na uložení před restartem.
 Při chybě ukládání ji nezavírej a zkus uložení znovu. Používej stále stejnou adresu —
 jiná doména má jiné místní úložiště.
 
-## Jeden celý trénink na telefonu (beta.2)
+## Jeden celý trénink na telefonu (beta.3)
 
 Nejdřív zálohuj svoje data. Použij testovací váhy, nemusíš skutečně cvičit.
 
@@ -76,7 +79,15 @@ zkoušej jen v odděleném testovacím zařízení/profilu.
   a uložený deník zůstat vidět. Mobilní chování zatím nikdo neověřil.
 - Výživa → „Co mám v ledničce“ (jen ve verzi se zapnutou AI): vyfoť ledničku, oprav seznam, zvol čas a nech
   si navrhnout jídlo. Napiš, co AI poznala špatně a jestli návrhy dávaly smysl. Limit je 8 fotek a 20 návrhů
-  za den na telefon; kapacita pro všechny testery dohromady je omezená.
+  za UTC den na instalaci; jde o přibližné limity, ne ověření identity telefonu.
+  Celková kapacita je omezená: strop 100 rezervovaných volání = nejvýš přibližně
+  50 požadavků pro všechny testery (každý rezervuje i případné opakování).
+  Změna konfigurace platí až po nasazení aktualizované proxy.
+  Při neznámé jednotce zvol g/ml/ks; množství z fotografie je pouze odhad.
+  Zkus odmítnout AI upozornění, výběr fotky zrušit a jídlo zapsat ručně.
+  Zapsaný návrh oprav, zavři aplikaci a ověř deník i seznam po návratu offline.
+  Bez internetu se nové návrhy nevytvářejí. Dočasné vytížení znamená zkusit za
+  chvíli; vyčerpaná denní kvóta znamená počkat do dalšího UTC dne.
 
 ## Zpětná vazba
 

@@ -568,14 +568,14 @@ class _SetRowState extends State<_SetRow> {
   late final weight = TextEditingController(text: _kgText(widget.set.weight));
   late final reps = TextEditingController(text: _repsText(widget.set.reps));
   bool _saving = false;
-  final _tapClock = Stopwatch()..start();
-  int? _lastToggleMs;
+  Timer? _toggleCooldown;
 
   static String _kgText(double v) => v == 0 ? '' : formatKg(v);
   static String _repsText(int v) => v == 0 ? '' : '$v';
 
   @override
   void dispose() {
+    _toggleCooldown?.cancel();
     weight.dispose();
     reps.dispose();
     super.dispose();
@@ -601,11 +601,10 @@ class _SetRowState extends State<_SetRow> {
   }
 
   Future<void> _toggleDone() async {
-    final now = _tapClock.elapsedMilliseconds;
-    if (_saving || (_lastToggleMs != null && now - _lastToggleMs! < 300)) {
+    if (_saving || (_toggleCooldown?.isActive ?? false)) {
       return;
     }
-    _lastToggleMs = now;
+    _toggleCooldown = Timer(const Duration(milliseconds: 300), () {});
     setState(() => _saving = true);
     try {
       final error = await widget.state.toggleDone(widget.set);

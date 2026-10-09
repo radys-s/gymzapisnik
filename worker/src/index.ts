@@ -4,7 +4,6 @@
 
 import { FRIDGE_SYSTEM, mealsSystem, mealsUser } from "./prompts";
 import {
-  countRetry,
   isExhausted,
   markExhausted,
   reserve,
@@ -47,6 +46,7 @@ type ErrorCode =
   | "too_large"
   | "quota_install"
   | "quota_global"
+  | "service_busy"
   | "ai_failed";
 
 function limitOf(v: string | undefined, fallback: number): number {
@@ -112,8 +112,27 @@ async function readJson(
 ): Promise<unknown | "too_large" | "bad"> {
   const declared = Number(request.headers.get("Content-Length"));
   if (Number.isFinite(declared) && declared > max) return "too_large";
-  const text = await request.text();
-  if (text.length > max) return "too_large";
+  const reader = request.body?.getReader();
+  if (!reader) return "bad";
+  const parts: Uint8Array[] = [];
+  let size = 0;
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    size += chunk.value.byteLength;
+    if (size > max) {
+      await reader.cancel();
+      return "too_large";
+    }
+    parts.push(chunk.value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const part of parts) {
+    bytes.set(part, offset);
+    offset += part.byteLength;
+  }
+  const text = new TextDecoder().decode(bytes);
   try {
     return JSON.parse(text);
   } catch {
@@ -145,7 +164,6 @@ async function runValidated<T>(
 ): Promise<T | null | "exhausted"> {
   const model = env.MODEL || DEFAULT_MODEL;
   for (let attempt = 0; attempt < 2; attempt++) {
-    if (attempt > 0) await countRetry(env.QUOTA, now);
     try {
       const out = (await env.AI.run(model, input)) as { response?: unknown };
       const result = validate(out?.response);
@@ -298,12 +316,16 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       return await handle(request, env, new Date());
-    } catch {
+    } catch (error) {
       const origin = request.headers.get("Origin");
+      const kvBusy = error instanceof Error &&
+        /^KV (?:PUT|GET) failed: 429\b/.test(error.message);
       return fail(
-        "ai_failed",
-        "Služba teď nefunguje. Zkus to později.",
-        500,
+        kvBusy ? "service_busy" : "ai_failed",
+        kvBusy
+          ? "Služba je teď vytížená. Zkus to za chvíli."
+          : "Služba teď nefunguje. Zkus to později.",
+        kvBusy ? 503 : 500,
         allowedOrigin(env, origin) ? origin : null,
       );
     }

@@ -103,7 +103,7 @@ class MealContext {
   };
 }
 
-enum AiErrorKind { disabled, offline, quota, failed }
+enum AiErrorKind { disabled, offline, quota, busy, failed }
 
 sealed class AiResult<T> {
   const AiResult();
@@ -143,7 +143,15 @@ List<MealIdea> parseMeals(Object? json) {
     final minutes = m['minutes'];
     final steps = m['steps'];
     final est = m['estimate'];
-    if (title is! String || minutes is! num || steps is! List || est is! Map) {
+    if (title is! String ||
+        title.trim().isEmpty ||
+        minutes is! num ||
+        !minutes.isFinite ||
+        minutes < 1 ||
+        minutes > 240 ||
+        steps is! List ||
+        steps.isEmpty ||
+        est is! Map) {
       continue;
     }
     final ingredients = [
@@ -181,8 +189,12 @@ List<MealIdea> parseMeals(Object? json) {
 
 List<PantryItem> parseItems(Object? json) {
   final items = json is Map ? json['items'] : null;
-  if (items is! List) return const [];
-  return [for (final i in items) ?PantryItem.tryParse(i)];
+  if (items is! List) throw const FormatException('Chybí seznam potravin.');
+  final parsed = [for (final i in items) ?PantryItem.tryParse(i)];
+  if (parsed.length != items.length) {
+    throw const FormatException('Neplatná potravina.');
+  }
+  return parsed;
 }
 
 /// Chybová odpověď proxy na výsledek pro UI (zpráva je česky z proxy).
@@ -200,6 +212,12 @@ AiError<T> errorFromResponse<T>(int status, String body) {
     }
   } on FormatException {
     // Prázdné nebo nečitelné tělo: obecná zpráva níž.
+  }
+  if (code == 'service_busy' || status == 503) {
+    return AiError(
+      AiErrorKind.busy,
+      message ?? 'Služba je teď vytížená. Zkus to za chvíli.',
+    );
   }
   if (status == 429 || code == 'quota_install' || code == 'quota_global') {
     return AiError(
@@ -243,6 +261,16 @@ class HttpFridgeCoach implements FridgeCoach {
         'AI v této verzi aplikace zatím není zapnutá.',
       );
     }
+    final String id;
+    try {
+      id = await installId();
+    } catch (_) {
+      return const AiError(
+        AiErrorKind.failed,
+        'Identifikátor aplikace se nepodařilo uložit. Zkus to znovu; '
+        'aplikaci zatím nezavírej.',
+      );
+    }
     try {
       final base = baseUrl.endsWith('/')
           ? baseUrl.substring(0, baseUrl.length - 1)
@@ -250,10 +278,7 @@ class HttpFridgeCoach implements FridgeCoach {
       final response = await _client
           .post(
             Uri.parse('$base$path'),
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Install-Id': await installId(),
-            },
+            headers: {'Content-Type': 'application/json', 'X-Install-Id': id},
             body: jsonEncode(body),
           )
           .timeout(timeout);
@@ -282,7 +307,8 @@ class HttpFridgeCoach implements FridgeCoach {
     } catch (_) {
       return const AiError(
         AiErrorKind.offline,
-        'AI není dostupná (zkontroluj internet).',
+        'K AI se nepodařilo připojit. Zkontroluj internet; na webu může '
+        'připojení blokovat i nastavení serveru.',
       );
     }
   }

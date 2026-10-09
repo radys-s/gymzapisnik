@@ -26,11 +26,23 @@ message the app can show as is.
 | 403 | `forbidden` | browser origin not in `ALLOWED_ORIGINS` |
 | 413 | `too_large` | body over the limit |
 | 429 | `quota_install` / `quota_global` | daily limit of this install / all testers |
+| 503 | `service_busy` | temporary KV throttling; try shortly |
 | 502 | `ai_failed` | model failed twice or returned invalid JSON |
 
 Limits (`wrangler.toml` `[vars]`): 8 photos and 20 meal requests per install
-per UTC day; `GLOBAL_DAILY_CAP` model calls per day for everybody (retries
-count), kept below the free 10,000 Neurons/day.
+per UTC day; `GLOBAL_DAILY_CAP` reserved model calls per day for everybody.
+Each accepted request reserves two calls upfront, including its one retry.
+Unused retries remain reserved: the default 100 permits at most about 50
+requests, not 100 scans. Neuron use depends on images and tokens; this counter
+is not a measurement of the free 10,000 Neurons/day allocation.
+
+KV is eventually consistent and limits writes to the same key to once per
+second. Counters can undercount concurrent requests; install IDs can be changed.
+These limits are soft tester protection, not authentication or a hard billing
+cap. The provider's Workers Free plan is the cost boundary. A KV 429 becomes
+`503 service_busy` (try shortly), distinct from daily `429 quota_global`.
+See [Cloudflare KV write limits](https://developers.cloudflare.com/kv/api/write-key-value-pairs/)
+and [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
 
 Free only: deploy on the Workers **Free** plan (no payment method). Workers AI
 cannot bill a Free account; when the daily allocation runs out, Workers AI
@@ -73,5 +85,7 @@ PWA origin to `ALLOWED_ORIGINS`, then:
 npx wrangler deploy
 ```
 
-Put the printed `https://gymzapisnik-ai.<subdomain>.workers.dev` URL into the
-app (`lib/ai/ai_config.dart`).
+Build the app with `--dart-define=AI_URL=https://gymzapisnik-ai.<subdomain>.workers.dev`.
+Keep the default config empty for builds without AI. Allow the exact PWA
+origin (including a local test port) in `ALLOWED_ORIGINS`; an allowed 8080 does
+not allow 8099. After editing this configuration, redeploy the Worker.

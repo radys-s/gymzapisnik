@@ -26,8 +26,8 @@ Future<Uint8List?> pickPhoto(bool camera) async {
 String itemAmount(PantryItem i) {
   final a = i.amount;
   if (a == null) return '';
-  return '${formatKg(double.parse(a.toStringAsFixed(1)))} ${i.unit ?? ''}'
-      .trim();
+  return '${formatKg(double.parse(a.toStringAsFixed(1)))} '
+      '${i.unit ?? '(jednotka neznámá)'}';
 }
 
 /// Upozornění před prvním použitím AI. Vrací `true`, když uživatel souhlasí.
@@ -77,66 +77,82 @@ class _FridgePageState extends State<FridgePage> {
   final skipped = <String>{};
   int minutes = 20;
   String? busy;
+  bool inFlight = false;
   String? error;
 
   AppState get state => widget.state;
   bool get aiEnabled => state.coach.enabled;
 
   Future<void> _store(List<PantryItem> next) async {
-    setState(() => items = next);
     await state.savePantry(next);
+    if (mounted) setState(() => items = next);
   }
 
   Future<void> _scan(bool camera) async {
-    if (!await confirmAiNotice(context, state) || !mounted) return;
-    setState(() => error = null);
-    final Uint8List? raw;
+    if (inFlight) return;
+    setState(() {
+      inFlight = true;
+      error = null;
+    });
     try {
-      raw = await widget.picker(camera);
-    } catch (_) {
-      if (mounted) setState(() => error = 'Fotku se nepodařilo načíst.');
-      return;
-    }
-    if (raw == null || !mounted) return;
-    setState(() => busy = 'Prohlížím fotku…');
-    final jpeg = prepareJpeg(raw);
-    if (jpeg == null) {
-      setState(() {
-        busy = null;
-        error = 'Tenhle formát fotky neumím přečíst. Zkus jinou.';
-      });
-      return;
-    }
-    final result = await state.coach.scanFridge(jpeg);
-    if (!mounted) return;
-    switch (result) {
-      case AiOk(:final value):
-        final have = {for (final i in items) i.name.toLowerCase()};
-        final added = [
-          for (final i in value)
-            if (have.add(i.name.toLowerCase())) i,
-        ];
-        setState(() => busy = null);
-        await _store([...items, ...added]);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                value.isEmpty
-                    ? 'Na fotce AI žádné jídlo nenašla.'
-                    : added.isEmpty
-                    ? 'Nic nového, všechno už v seznamu je.'
-                    : 'Přidáno ${added.length}. Zkontroluj seznam.',
-              ),
-            ),
-          );
-      case AiError(:final message):
+      if (!await confirmAiNotice(context, state) || !mounted) return;
+      setState(() => error = null);
+      final raw = await widget.picker(camera);
+      if (raw == null || !mounted) return;
+      setState(() => busy = 'Prohlížím fotku…');
+      final jpeg = prepareJpeg(raw);
+      if (jpeg == null) {
         setState(() {
           busy = null;
-          error = message;
+          error = 'Tenhle formát fotky neumím přečíst. Zkus jinou.';
         });
+        return;
+      }
+      final result = await state.coach.scanFridge(jpeg);
+      if (!mounted) return;
+      switch (result) {
+        case AiOk(:final value):
+          final have = {for (final i in items) i.name.toLowerCase()};
+          final added = [
+            for (final i in value)
+              if (have.add(i.name.toLowerCase())) i,
+          ];
+          await _store([...items, ...added]);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  value.isEmpty
+                      ? 'Na fotce AI žádné jídlo nenašla.'
+                      : added.isEmpty
+                      ? 'Nic nového, všechno už v seznamu je.'
+                      : 'Přidáno ${added.length}. Zkontroluj seznam.',
+                ),
+              ),
+            );
+        case AiError(:final message):
+          setState(() {
+            busy = null;
+            error = message;
+          });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error =
+              'Fotku nebo seznam se nepodařilo '
+              'zpracovat a uložit. Zkus to znovu.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = null;
+          inFlight = false;
+        });
+      }
     }
   }
 
@@ -145,7 +161,7 @@ class _FridgePageState extends State<FridgePage> {
       context: context,
       builder: (_) => _ItemDialog(index == null ? null : items[index]),
     );
-    if (edited == null) return;
+    if (edited == null || !mounted) return;
     final next = [...items];
     if (index == null) {
       next.add(edited);
@@ -153,15 +169,43 @@ class _FridgePageState extends State<FridgePage> {
       skipped.remove(items[index].name.toLowerCase());
       next[index] = edited;
     }
-    await _store(next);
+    await _saveList(next);
   }
 
   Future<void> _remove(int index) async {
     skipped.remove(items[index].name.toLowerCase());
-    await _store([...items]..removeAt(index));
+    await _saveList([...items]..removeAt(index));
+  }
+
+  Future<void> _saveList(List<PantryItem> next) async {
+    if (inFlight) return;
+    setState(() {
+      inFlight = true;
+      busy = 'Ukládám seznam…';
+      error = null;
+    });
+    try {
+      await _store(next);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error =
+              'Seznam se nepodařilo uložit. '
+              'Zkus změnu znovu; aplikaci zatím nezavírej.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = null;
+          inFlight = false;
+        });
+      }
+    }
   }
 
   Future<void> _suggest() async {
+    if (inFlight) return;
     final chosen = [
       for (final i in items)
         if (!skipped.contains(i.name.toLowerCase())) i,
@@ -170,25 +214,47 @@ class _FridgePageState extends State<FridgePage> {
       setState(() => error = 'Vyber aspoň jednu potravinu.');
       return;
     }
-    if (!await confirmAiNotice(context, state) || !mounted) return;
+    if (chosen.length > 40) {
+      setState(() => error = 'Pro návrh vyber nejvýš 40 potravin.');
+      return;
+    }
     setState(() {
-      busy = 'Vymýšlím jídla…';
+      inFlight = true;
       error = null;
     });
-    final result = await state.coach.suggestMeals(
-      chosen,
-      state.mealContext(maxMinutes: minutes),
-    );
-    if (!mounted) return;
-    setState(() => busy = null);
-    switch (result) {
-      case AiOk(:final value):
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => MealIdeasPage(state, value)),
+    try {
+      if (!await confirmAiNotice(context, state) || !mounted) return;
+      setState(() => busy = 'Vymýšlím jídla…');
+      final result = await state.coach.suggestMeals(
+        chosen,
+        state.mealContext(maxMinutes: minutes),
+      );
+      if (!mounted) return;
+      setState(() => busy = null);
+      switch (result) {
+        case AiOk(:final value):
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => MealIdeasPage(state, value)),
+          );
+        case AiError(:final message):
+          setState(() => error = message);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error =
+              'Návrh se nepodařilo načíst. '
+              'Zkus to znovu; seznam zůstává uložený.',
         );
-      case AiError(:final message):
-        setState(() => error = message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = null;
+          inFlight = false;
+        });
+      }
     }
   }
 
@@ -196,7 +262,7 @@ class _FridgePageState extends State<FridgePage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final working = busy != null;
+    final working = inFlight;
     final left = state.proteinLeft();
     return Scaffold(
       appBar: AppBar(title: const Text('Co mám v ledničce')),
@@ -239,7 +305,7 @@ class _FridgePageState extends State<FridgePage> {
             'můžeš upravit.',
             style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
-          if (working)
+          if (busy != null)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: Column(
@@ -356,7 +422,7 @@ class _ItemDialogState extends State<_ItemDialog> {
         ? ''
         : formatKg(double.parse(widget.item!.amount!.toStringAsFixed(1))),
   );
-  late String unit = widget.item?.unit ?? 'g';
+  late String unit = widget.item == null ? 'g' : widget.item!.unit ?? 'unknown';
   String? error;
 
   @override
@@ -376,6 +442,10 @@ class _ItemDialogState extends State<_ItemDialog> {
     final a = raw.isEmpty ? null : parseNum(raw);
     if (raw.isNotEmpty && (a == null || a <= 0 || a > 100000)) {
       setState(() => error = 'Množství musí být kladné číslo.');
+      return;
+    }
+    if (a != null && unit == 'unknown') {
+      setState(() => error = 'Vyber jednotku množství.');
       return;
     }
     Navigator.pop(
@@ -410,6 +480,7 @@ class _ItemDialogState extends State<_ItemDialog> {
         SegmentedButton<String>(
           showSelectedIcon: false,
           segments: const [
+            ButtonSegment(value: 'unknown', label: Text('?')),
             ButtonSegment(value: 'g', label: Text('g')),
             ButtonSegment(value: 'ml', label: Text('ml')),
             ButtonSegment(value: 'ks', label: Text('ks')),

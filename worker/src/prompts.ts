@@ -23,7 +23,10 @@ Každé jídlo musí jít připravit do zadaného času. minutes = celková doba
 Jsou to návrhy, ne příkazy. Žádná zdravotní ani lékařská tvrzení.
 ${safety}
 Když uživatel dnes trénuje nebo mu chybí bílkoviny, upřednostni jídla s více bílkovinami.
-Kroky piš česky, stručně, max 8 kroků. Množství v gramech, ml nebo kusech.
+Kroky piš česky, stručně, max 8 kroků.
+Názvy surovin piš stejně jako v seznamu uživatele.
+Maso, ryby, sýr, pečivo, rýži, těstoviny, zeleninu a luštěniny uváděj v gramech ("g"), tekutiny v "ml".
+"ks" použij jen u vajec a celého ovoce. U soli a koření dej amount null.
 estimate = hrubý odhad na celou porci: kcal, bílkoviny, sacharidy a tuky v gramech.
 Odpověz pouze JSON ve tvaru {"meals":[{"title":"...","minutes":15,"ingredients":[{"name":"...","amount":150,"unit":"g"}],"steps":["..."],"estimate":{"kcal":0,"protein":0,"carbs":0,"fat":0}}]}.`;
 }

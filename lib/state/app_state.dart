@@ -728,7 +728,7 @@ class AppState extends ChangeNotifier {
     profile.withExtra({
       'pantry': items.isEmpty
           ? null
-          : [for (final i in items.take(60)) i.toJson()],
+          : [for (final i in items) i.toJson()],
     }),
   );
 

@@ -10,6 +10,8 @@ import 'package:gymzapisnik/domain/history.dart';
 import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
+final monday = DateTime(2026, 10, 5, 12);
+
 Future<AppState> newState(WidgetTester tester) async {
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
@@ -24,7 +26,7 @@ Future<void> show(WidgetTester tester, AppState state) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: buildTheme(Brightness.dark),
-      home: Scaffold(body: HomePage(state)),
+      home: Scaffold(body: HomePage(state, now: () => monday)),
     ),
   );
   await tester.pumpAndSettle();
@@ -46,7 +48,7 @@ void main() {
   ) async {
     final state = await newState(tester);
     await tester.runAsync(() async {
-      final now = DateTime.now();
+      final now = monday;
       await state.startWorkout(now: now.subtract(const Duration(minutes: 30)));
       final e = await state.addExercise('bench_press');
       e.sets = [SetEntry(weight: 80, reps: 8, done: true)];

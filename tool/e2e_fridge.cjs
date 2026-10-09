@@ -8,6 +8,7 @@ let ctx;
  ctx=await chromium.launchPersistentContext(process.argv[2],{executablePath:process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,viewport:{width:400,height:800}});
  const errs=[]; const p=await ctx.newPage(); p.on('pageerror',e=>errs.push(String(e)));
  const requests=[]; p.on('request',r=>{ if(r.url().includes('/v1/')) requests.push(r.method()+' '+new URL(r.url()).pathname); });
+ const statuses=[]; p.on('response',r=>{ if(r.url().includes('/v1/') && r.request().method()==='POST') statuses.push(r.status()); });
  const txt=()=>p.evaluate(()=>[...document.querySelectorAll('flt-semantics')].map(e=>e.getAttribute('aria-label')||e.textContent).filter(Boolean).join(' | '));
  const sem=async()=>{
   for(let i=0;i<20;i++){
@@ -69,8 +70,16 @@ let ctx;
  await see(t=>/Vejce/.test(t)&&/Mléko/.test(t),'pantry survives reload');
 
  console.log('requests:',requests.join(', '));
+ if(statuses.join()!=='200,200') throw new Error('AI HTTP statuses: '+statuses.join());
  const posts=requests.filter(r=>r.startsWith('POST'));
  if(posts.join()!=='POST /v1/fridge,POST /v1/meals') throw new Error('unexpected AI calls: '+posts.join());
+ await ctx.setOffline(true);
+ await p.reload(); await sem();
+ await tapUntil('button',/kcal dnes/,has(/Tvaroh s banánem/),'diary available after offline reload');
+ await tapUntil('button',/Co mám v ledničce/,has(/Vyfotit/),'pantry offline');
+ await see(t=>/Vejce/.test(t)&&/Mléko/.test(t),'pantry retained offline');
+ await tap('button','Navrhni jídlo');
+ await see(has(/K AI se nepodařilo připojit/),'offline AI error leaves pantry available');
  if(errs.length) throw new Error('page errors: '+errs.join('\n'));
  console.log('E2E fridge OK');
  await ctx.close();
