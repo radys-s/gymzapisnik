@@ -21,8 +21,8 @@ class LegalPage extends StatelessWidget {
     (
       'Jaká data a kde',
       'Tréninky, cviky, tělesná váha, výživový deník a nastavení se ukládají '
-          'jen v tomto zařízení. Aplikace nemá účet, nic nenahrává na vlastní '
-          'server a neobsahuje '
+          'jen v tomto zařízení. Aplikace nemá účet ani cloudovou synchronizaci. '
+          'Dotazy na Open Food Facts a AI popisujeme níže. Neobsahuje '
           'reklamy ani sledování. Pokud v telefonu povolíš oznámení, '
           'připomínky se plánují lokálně v zařízení.',
     ),

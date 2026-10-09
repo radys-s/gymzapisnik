@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { handle, type Env } from "../src/index";
+import worker, { handle, type Env } from "../src/index";
 import type { QuotaStore } from "../src/quota";
 import {
   extractJson,
@@ -97,6 +97,29 @@ async function body(res: Response) {
 }
 
 describe("fridge", () => {
+  it("retry survives the KV one-write-per-second limit", async () => {
+    const { env } = makeEnv([new Error("busy"), fridgeOk]);
+    const data = new Map<string, string>();
+    env.QUOTA = {
+      get: async (key) => data.get(key) ?? null,
+      put: async (key, value) => {
+        if (data.has(key)) throw new Error("KV PUT failed: 429 Too Many Requests");
+        data.set(key, value);
+      },
+    };
+    const res = await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
+    expect(res.status).toBe(200);
+  });
+
+  it("a retry cannot exceed the configured global cap", async () => {
+    const { env, calls } = makeEnv([new Error("busy"), fridgeOk], {
+      GLOBAL_DAILY_CAP: "1",
+    });
+    const res = await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
+    expect(res.status).toBe(429);
+    expect(calls.length).toBeLessThanOrEqual(1);
+  });
+
   it("returns validated, deduplicated items", async () => {
     const { env, calls } = makeEnv([fridgeOk]);
     const res = await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
@@ -210,8 +233,8 @@ describe("quota", () => {
   });
 
   it("enforces the global cap across installs", async () => {
-    const { env } = makeEnv([fridgeOk, fridgeOk], { GLOBAL_DAILY_CAP: "1" });
-    await handle(post("/v1/fridge", { image: JPEG }), env, NOW);
+    const { env } = makeEnv([fridgeOk, fridgeOk], { GLOBAL_DAILY_CAP: "2" });
+    expect((await handle(post("/v1/fridge", { image: JPEG }), env, NOW)).status).toBe(200);
     const other = post(
       "/v1/fridge",
       { image: JPEG },
@@ -299,6 +322,23 @@ describe("free plan", () => {
 });
 
 describe("http", () => {
+  it("limits streamed UTF-8 bytes without a Content-Length header", async () => {
+    const { env, calls, kv } = makeEnv([]);
+    const request = post("/v1/meals", {items: [{name: "é".repeat(9_000)}]});
+    expect(request.headers.get("Content-Length")).toBeNull();
+    expect((await handle(request, env, NOW)).status).toBe(413);
+    expect(calls).toHaveLength(0);
+    expect(kv.data.size).toBe(0);
+  });
+  it("KV throttling is temporary unavailability, not an exhausted daily quota", async () => {
+    const { env, calls } = makeEnv([]);
+    env.QUOTA.put = async () => { throw new Error("KV PUT failed: 429 Too Many Requests"); };
+    const res = await worker.fetch(post("/v1/fridge", { image: JPEG }), env);
+    expect(res.status).toBe(503);
+    expect((await body(res)).error.code).toBe("service_busy");
+    expect(calls).toHaveLength(0);
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+  });
   it("requires a UUID install id", async () => {
     const { env } = makeEnv([]);
     const res = await handle(
@@ -343,6 +383,10 @@ describe("http", () => {
 });
 
 describe("schema", () => {
+  it("does not exceed the selected total preparation time", () => {
+    expect(validateMeals({meals: [{...meal, minutes: 25}]}, 20)).toBeNull();
+    expect(validateMeals({meals: [{...meal, minutes: 20}]}, 20)).toHaveLength(1);
+  });
   it("extracts JSON from fenced model text", () => {
     expect(extractJson('Tady:\n```json\n{"items":[]}\n```')).toEqual({
       items: [],

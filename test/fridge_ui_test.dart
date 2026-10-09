@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -14,7 +15,9 @@ import 'package:gymzapisnik/ui/settings/settings_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 import 'package:image/image.dart' as img;
 
-final jpeg = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 0, 0x10]);
+final jpeg = Uint8List.fromList(
+  img.encodeJpg(img.Image(width: 16, height: 16)),
+);
 
 class FakeCoach implements FridgeCoach {
   @override
@@ -93,6 +96,49 @@ void main() {
     await settle(tester);
   }
 
+  testWidgets('photo picker pending disables a second scan', (tester) async {
+    final picked = Completer<Uint8List?>();
+    final state = await pump(
+      tester,
+      page: (state) => FridgePage(state, picker: (_) => picked.future),
+    );
+    await tester.runAsync(state.acceptAiNotice);
+    await tester.tap(find.text('Vyfotit'));
+    await tester.pump();
+    await tester.tap(find.text('Z galerie'));
+    picked.complete(jpeg);
+    await settle(tester);
+    expect(coach.scans, hasLength(1));
+  });
+
+  testWidgets(
+    'unknown unit is visible and editing requires an explicit choice',
+    (tester) async {
+      final state = await pump(tester);
+      await tester.runAsync(
+        () => state.savePantry(const [PantryItem('chléb', amount: 200)]),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.dark),
+          home: FridgePage(state, key: UniqueKey()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('200 (jednotka neznámá)'), findsOneWidget);
+      await tester.tap(find.byTooltip('Upravit chléb'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Uložit'));
+      await tester.pump();
+      expect(find.text('Vyber jednotku množství.'), findsOneWidget);
+      await tester.tap(find.text('g'));
+      await tester.tap(find.text('Uložit'));
+      await settle(tester);
+      expect(state.pantry.single.unit, 'g');
+      expect(find.text('200 g'), findsOneWidget);
+    },
+  );
+
   testWidgets('photo adds recognised items after the one-time notice', (
     tester,
   ) async {
@@ -104,7 +150,7 @@ void main() {
     await tester.tap(find.text('Vyfotit'));
     await tester.pumpAndSettle();
     await acceptNotice(tester);
-    expect(coach.scans.single, jpeg);
+    expect(img.decodeJpg(coach.scans.single)!.width, 16);
     expect(find.text('Vejce'), findsOneWidget);
     expect(find.text('6 ks'), findsOneWidget);
     expect(find.text('Přidáno 2. Zkontroluj seznam.'), findsOneWidget);
@@ -303,7 +349,7 @@ void main() {
     final decoded = img.decodeJpg(out)!;
     expect(decoded.width, 1024);
     expect(decoded.height, 512);
-    expect(prepareJpeg(jpeg), same(jpeg));
+    expect(img.decodeJpg(prepareJpeg(jpeg)!)!.width, 16);
     expect(prepareJpeg(Uint8List.fromList([1, 2, 3])), isNull);
   });
 }

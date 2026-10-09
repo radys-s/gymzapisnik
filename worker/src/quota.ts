@@ -33,7 +33,8 @@ export type QuotaResult = "ok" | "install" | "global";
 
 /**
  * Checks and reserves one request of [feature] for [installId]. Also reserves
- * one model call in the global counter.
+ * both possible model calls in the global counter. Reserve the retry upfront:
+ * KV permits only one write per key per second. Unused retries stay reserved.
  */
 export async function reserve(
   store: QuotaStore,
@@ -50,20 +51,12 @@ export async function reserve(
     read(store, globalKey),
   ]);
   if (mine >= limits[feature]) return "install";
-  if (all >= limits.global) return "global";
+  if (all + 2 > limits.global) return "global";
   await Promise.all([
     store.put(installKey, String(mine + 1), { expirationTtl: TTL }),
-    store.put(globalKey, String(all + 1), { expirationTtl: TTL }),
+    store.put(globalKey, String(all + 2), { expirationTtl: TTL }),
   ]);
   return "ok";
-}
-
-/** Counts an extra model call (retry) in the global counter. */
-export async function countRetry(store: QuotaStore, now: Date): Promise<void> {
-  const key = `g:${dayOf(now)}`;
-  await store.put(key, String((await read(store, key)) + 1), {
-    expirationTtl: TTL,
-  });
 }
 
 /** The free Workers AI allocation ran out today (set after error 4006). */

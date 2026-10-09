@@ -247,14 +247,16 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(MaterialApp(home: WorkoutPage(state)));
-    await tester.runAsync(() async {
-      await tester.tap(find.byTooltip('Potvrdit sérii'));
-      await state.saveActive();
-      await tester.pump();
-      await tester.tap(find.byTooltip('Zrušit potvrzení'));
-      expect(set.done, isTrue);
-      await state.saveActive();
-    });
+    await tester.tap(find.byTooltip('Potvrdit sérii'));
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 80)));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Zrušit potvrzení'));
+    expect(set.done, isTrue);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.byTooltip('Zrušit potvrzení'));
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 80)));
+    await tester.pump();
+    expect(set.done, isFalse); // pozdější úmyslná oprava zůstává možná
     await tester.pumpWidget(const SizedBox());
   });
 }

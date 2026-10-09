@@ -55,6 +55,7 @@ const foodTable = <FoodRef>[
     19.7,
     0,
     4.1,
+    piece: 150, // maso z jednoho stehna bez kosti
   ),
   FoodRef('krůtí prsa', ['kruti', 'krocan'], 105, 23, 0, 1.2),
   FoodRef(
@@ -176,7 +177,7 @@ const foodTable = <FoodRef>[
   FoodRef('ovesné vločky', ['vlock', 'oves', 'ovsen'], 370, 13, 60, 7),
   FoodRef('müsli', ['musli', 'granol'], 370, 9, 64, 7),
   FoodRef('cornflakes', ['cornflak', 'kukuricne lupin'], 370, 7, 84, 0.9),
-  FoodRef('chléb', ['chleb', 'chlebic'], 240, 8, 48, 1.5),
+  FoodRef('chléb', ['chleb', 'chlebic'], 240, 8, 48, 1.5, piece: 45), // krajíc
   FoodRef('toustový chléb', ['toust'], 265, 8, 49, 3.5, piece: 25),
   FoodRef(
     'rohlík',

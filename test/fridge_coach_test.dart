@@ -87,6 +87,19 @@ void main() {
       expect(n.protein, closeTo(12.6 + 4, 0.01));
     });
 
+    test(
+      'explicit pieces use approximate edible weights (bread slices, legs)',
+      () {
+        final n = tableEstimate([
+          (name: 'chléb', amount: 2, unit: 'ks'),
+          (name: 'kuřecí stehno', amount: 1, unit: 'ks'),
+        ])!;
+        // 2 krajíce po 45 g + 150 g masa ze stehna
+        expect(n.kcal, closeTo(240 * 0.9 + 121 * 1.5, 0.01));
+        expect(n.protein, closeTo(8 * 0.9 + 19.7 * 1.5, 0.01));
+      },
+    );
+
     test('unknown food or missing amount means no table estimate', () {
       expect(
         tableEstimate([(name: 'dračí ovoce', amount: 100, unit: 'g')]),
@@ -145,11 +158,18 @@ void main() {
       expect(meals[1].estimate.kcal, 999);
     });
 
-    test('items drop entries without a name and bad units', () {
+    test('items reject missing names and keep unknown units unknown', () {
+      expect(
+        () => parseItems({
+          'items': [
+            {'name': ''},
+          ],
+        }),
+        throwsFormatException,
+      );
       final items = parseItems({
         'items': [
           {'name': ' Mléko ', 'amount': 1000, 'unit': 'ml'},
-          {'name': '', 'amount': 1, 'unit': 'g'},
           {'name': 'Sýr', 'amount': -1, 'unit': 'kg'},
         ],
       });
@@ -282,6 +302,15 @@ void main() {
       expect(a, hasLength(36));
       expect(b, a);
       expect(state.exportBackup(), isNot(contains(a)));
+    });
+
+    test('pantry does not silently discard items after sixty', () async {
+      final state = await loadedState();
+      final items = List.generate(61, (i) => PantryItem('potravina $i'));
+      await state.savePantry(items);
+      expect(state.pantry.map((i) => i.name), items.map((i) => i.name));
+      await state.load();
+      expect(state.pantry, hasLength(61));
     });
 
     test('pantry survives backup and restore', () async {

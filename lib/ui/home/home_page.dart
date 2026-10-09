@@ -18,7 +18,8 @@ import '../workout/workout_page.dart';
 
 class HomePage extends StatefulWidget {
   final AppState state;
-  const HomePage(this.state, {super.key});
+  final DateTime Function() now;
+  const HomePage(this.state, {super.key, this.now = DateTime.now});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -81,7 +82,7 @@ class _HomePageState extends State<HomePage> {
           ProGate(
             state,
             ProFeature.mission,
-            child: MissionCard(state, DateTime.now()),
+            child: MissionCard(state, widget.now()),
           ),
           const SizedBox(height: 8),
           if (active != null)
@@ -121,7 +122,7 @@ class _HomePageState extends State<HomePage> {
           ],
           if (last != null) ...[
             const SizedBox(height: 16),
-            WeekCard(state, DateTime.now()),
+            WeekCard(state, widget.now()),
             const SizedBox(height: 8),
             Card(
               child: ListTile(

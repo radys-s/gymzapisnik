@@ -61,7 +61,12 @@ AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-a
 Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
 `ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
-R hotovo (kód): verze 1.0.0-beta.2+11, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
+R hotovo (kód): verze 1.0.0-beta.3+12, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
+
+Navazující review C/D1 a stav nové AI bety: [docs/D1_REVIEW.md](docs/D1_REVIEW.md).
+Neznámá jednotka se neodhaduje jako kusy; seznam ji ukáže a při úpravě vyžaduje
+výběr g/ml/ks. Makra z tabulky i kusové hmotnosti jsou orientační, ne ověřená
+databáze konkrétních výrobků. Návrh vždy zkontroluj před zápisem.
 
 Nezávislé review bety, důkazy testů a hranice ověření: [docs/REVIEW.md](docs/REVIEW.md).
 Zbývá fyzické Android/iPhone ověření, schválené hostování PWA na HTTPS, rozeslání

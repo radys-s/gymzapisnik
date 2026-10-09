@@ -169,8 +169,7 @@ export function validateMeals(raw: unknown, maxMinutes: number): Meal[] | null {
     const title = cleanText(v.title, 80);
     const minutes = num(v.minutes, 1, 240);
     if (title === null || minutes === null) continue;
-    // Small tolerance; the model rounds prep times.
-    if (minutes > maxMinutes + 5) continue;
+    if (minutes > maxMinutes) continue;
     const ingredients = Array.isArray(v.ingredients)
       ? v.ingredients.map(ingredient).filter((i): i is Ingredient => i !== null)
       : [];
