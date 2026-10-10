@@ -4,6 +4,20 @@ Cílem je release IPA pro fyzický iPhone, podepsaná až místně v iLoaderu.
 Sestavení potřebuje macOS/Xcode; Windows ani iLoader aplikaci nezkompilují.
 Do GitHubu se neposílá Apple účet, certifikát ani provisioning profile.
 
+## Stav 2026-10-10
+
+Znovu prošlo 184 Flutter testů, 28 testů proxy, TypeScript a Flutter analýza.
+Statický test reprodukoval chybějící kamerové a galerijní oprávnění; Info.plist
+je opravený. Šest Python testů včetně release gates prošlo. GitHub workflow
+rozpoznal jako aktivní (ID 380589872); spuštění Xcode ani IPA zatím neověřené.
+
+Tomáš schválil výhradně použití bez placeného čerpání. Job se proto dosud
+nespustil: token nemá billing scope a browser není přihlášený. Před spuštěním
+je potřeba ověřit účetní zákaz placené spotřeby Actions (nulový rozpočet se
+zapnutým Stop usage when budget limit is reached, nebo jinou prokazatelnou
+blokaci plateb). Samotný časový limit není cenový limit. Viditelnost repa se
+nemění a Apple údaje zůstávají lokální. Žádný hotový IPA soubor zatím není.
+
 Workflow `iPhone beta for local sideloading` se spouští pouze ručně. Používá
 standardní macOS 15 runner, Flutter 3.47.2, zamčené závislosti, testy a analýzu.
 Po skutečné kompilaci kontroluje arm64 device bundle, Flutter frameworky,
