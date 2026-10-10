@@ -6,8 +6,9 @@ import 'package:flutter/services.dart';
 
 import 'tokens.dart';
 
-/// Stránka s velkým nadpisem, který se při posunu zmenší do lišty (iOS).
-class LargeTitlePage extends StatelessWidget {
+/// Stránka s velkým nadpisem (iOS): nadpis 34 pt v obsahu, po posunu
+/// se objeví malý nadpis v liště a pod ní tenká linka.
+class LargeTitlePage extends StatefulWidget {
   final String title;
   final List<Widget> actions;
   final List<Widget> children;
@@ -31,33 +32,77 @@ class LargeTitlePage extends StatelessWidget {
   });
 
   @override
+  State<LargeTitlePage> createState() => _LargeTitlePageState();
+}
+
+class _LargeTitlePageState extends State<LargeTitlePage> {
+  /// Posun, od kterého je velký nadpis schovaný pod lištou.
+  static const _collapseAt = 34.0;
+  bool collapsed = false;
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    final now = n.metrics.pixels > _collapseAt;
+    if (now != collapsed) setState(() => collapsed = now);
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      bottomNavigationBar: bottom,
-      body: CustomScrollView(
-        controller: controller,
-        slivers: [
-          SliverAppBar.large(
-            backgroundColor: p.background,
-            surfaceTintColor: Colors.transparent,
-            scrolledUnderElevation: 0,
-            expandedHeight: 108,
-            centerTitle: true,
-            title: Text(title),
-            actions: [
-              ...actions,
-              const SizedBox(width: Space.xs),
-            ],
-            flexibleSpace: null,
-            titleTextStyle: text.titleMedium,
-          ),
-          SliverPadding(
-            padding: padding,
-            sliver: SliverList.list(children: children),
-          ),
-        ],
+      bottomNavigationBar: widget.bottom,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: CustomScrollView(
+          controller: widget.controller,
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              backgroundColor: p.background,
+              surfaceTintColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              title: AnimatedOpacity(
+                opacity: collapsed ? 1 : 0,
+                duration: const Duration(milliseconds: 150),
+                child: ExcludeSemantics(
+                  excluding: !collapsed,
+                  child: Text(widget.title),
+                ),
+              ),
+              actions: [
+                ...widget.actions,
+                const SizedBox(width: Space.xs),
+              ],
+              shape: Border(
+                bottom: BorderSide(
+                  color: collapsed ? p.separator : Colors.transparent,
+                  width: 0.5,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.page + Space.xs,
+                  0,
+                  Space.page,
+                  Space.xs,
+                ),
+                child: Semantics(
+                  header: true,
+                  child: Text(widget.title, style: text.headlineLarge),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: widget.padding,
+              sliver: SliverList.list(children: widget.children),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -218,10 +263,14 @@ class GroupedRow extends StatelessWidget {
               ),
               if (value != null) ...[
                 const SizedBox(width: Space.s),
-                Flexible(
+                // Hodnota drží u pravého okraje; dlouhá se zkrátí.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 160),
                   child: Text(
                     value!,
                     textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: text.bodyLarge?.copyWith(
                       color: p.secondaryLabel,
                       fontFeatures: tabular,

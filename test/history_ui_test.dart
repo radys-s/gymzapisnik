@@ -34,7 +34,7 @@ void main() {
     await tester.pumpWidget(app(HistoryPage(state)));
     expect(find.text('Říjen 2026'), findsOneWidget);
     expect(find.text('Září 2026'), findsOneWidget);
-    expect(find.text('1 PR'), findsNWidgets(2));
+    expect(find.text('Rekord'), findsNWidgets(2));
 
     await tester.pumpWidget(app(ExerciseDetailPage(state, 'bench_press')));
     await tester.pumpAndSettle();

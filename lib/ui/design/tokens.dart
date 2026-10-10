@@ -157,5 +157,10 @@ const minTap = 44.0;
 const tabular = [FontFeature.tabularFigures()];
 
 extension PaletteX on BuildContext {
-  AppPalette get palette => Theme.of(this).extension<AppPalette>()!;
+  /// Paleta z motivu; bez ní (např. cizí MaterialApp v testu) výchozí.
+  AppPalette get palette {
+    final theme = Theme.of(this);
+    return theme.extension<AppPalette>() ??
+        AppPalette.of(theme.brightness, Accent.lime);
+  }
 }

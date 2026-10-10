@@ -32,8 +32,10 @@ String volumeLabel(ExerciseType type, double value) =>
     : '${value.round()} opak.';
 
 /// „1 série", „3 série", „5 sérií".
-String setsLabel(int n) =>
-    '$n ${n == 1 || (n >= 2 && n <= 4) ? 'série' : 'sérií'}';
+String setsLabel(int n) => '$n ${setsNoun(n)}';
+
+/// Jen slovo k počtu sérií (čeština podle CLDR: 22 sérií).
+String setsNoun(int n) => n == 1 || (n >= 2 && n <= 4) ? 'série' : 'sérií';
 
 /// „1 trénink", „3 tréninky", „5 tréninků".
 String workoutsLabel(int n) =>
