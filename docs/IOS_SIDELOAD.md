@@ -9,14 +9,25 @@ Do GitHubu se neposílá Apple účet, certifikát ani provisioning profile.
 Znovu prošlo 184 Flutter testů, 28 testů proxy, TypeScript a Flutter analýza.
 Statický test reprodukoval chybějící kamerové a galerijní oprávnění; Info.plist
 je opravený. Šest Python testů včetně release gates prošlo. GitHub workflow
-rozpoznal jako aktivní (ID 380589872); spuštění Xcode ani IPA zatím neověřené.
+rozpoznal jako aktivní (ID 380589872).
 
-Tomáš schválil výhradně použití bez placeného čerpání. Job se proto dosud
-nespustil: token nemá billing scope a browser není přihlášený. Před spuštěním
-je potřeba ověřit účetní zákaz placené spotřeby Actions (nulový rozpočet se
-zapnutým Stop usage when budget limit is reached, nebo jinou prokazatelnou
-blokaci plateb). Samotný časový limit není cenový limit. Viditelnost repa se
-nemění a Apple údaje zůstávají lokální. Žádný hotový IPA soubor zatím není.
+Tomáš schválil výhradně použití bez placeného čerpání. Před spuštěním byl
+v přihlášeném GitHub účtu radys-s ověřen rozpočet pro produkt Actions:
+0 USD, Stop usage Yes. Nastavení se neměnilo. Časový limit není cenový limit;
+před dalším během ověř stejnou blokaci placené spotřeby.
+
+[Běh 38061742003](https://github.com/radys-s/gymzapisnik/actions/runs/38061742003)
+úspěšně dokončil Xcode 16.4 device release, 184 Flutter testů, šest Python
+testů, analýzu i balení. Zdroj: 61c26fc4a5dbfac097dfd3393419718aa48f460c.
+Stažená IPA prošla kontrolou ZIP integrity, identity, platformy iPhoneOS,
+ARM64 aplikace a frameworků, oprávnění, zdrojového commitu a SHA256.
+
+Soubor: `dist/ios/gymzapisnik-1.0.0-beta.3-unsigned.ipa` (9 372 407 bajtů).
+SHA256: `1bd3524a981c0b6ab7d5e4f0dfa3810505f484dfaddbbbd4c9f7aab3baaf078e`.
+Metadata a kontrolní součet jsou vedle IPA. Soubor je nepodepsaný a potřebuje
+místní podpis v iLoaderu. Instalace, spuštění, kamera a úložiště na fyzickém
+iPhonu zatím nejsou ověřené. Tato beta má smysl pro nový test; nejde o
+potvrzení připravenosti pro veřejnou distribuci.
 
 Workflow `iPhone beta for local sideloading` se spouští pouze ručně. Používá
 standardní macOS 15 runner, Flutter 3.47.2, zamčené závislosti, testy a analýzu.

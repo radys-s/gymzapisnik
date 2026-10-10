@@ -15,6 +15,15 @@ Aktualizace: nejdřív ulož zálohu a nainstaluj novější APK přes starou. Z
 dat vyžaduje stejný balíček a podpis. Neodinstalovávej původní aplikaci.
 Ověření aktualizace na konkrétním telefonu je součást testu.
 
+## iPhone (nativní IPA přes iLoader)
+
+Ověřené sestavení beta.3 a postup místního podpisu jsou v
+[IOS_SIDELOAD.md](IOS_SIDELOAD.md). Nejdřív zálohuj data; Safari/PWA a nativní
+aplikace mají oddělené úložiště. Do aplikace přenes dokončené tréninky pomocí
+JSON zálohy, původní data nemaž. Fyzické ověření iPhonu zatím čeká na testera.
+Po instalaci proveď celý trénink níže, restart v režimu letadlo a zkus kameru
+i galerii včetně odmítnutí oprávnění. Tréninkové připomínky na iOS nejsou.
+
 ## iPhone (webová aplikace)
 
 1. V **Safari** otevři adresu aplikace, kterou ti poslal Tomáš.
