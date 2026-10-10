@@ -465,13 +465,115 @@ class AppState extends ChangeNotifier {
   // Split a progrese
   // ---------------------------------------------------------------------
 
-  SplitTemplate? get split => findSplit(profile.splitId);
+  SplitTemplate? get split => findSplit(profile.splitId, customPrograms);
+
+  Profile? _programsOf;
+  List<SplitTemplate> _programs = const [];
+
+  /// Vlastní programy (uložené v profilu, jdou i do zálohy).
+  List<SplitTemplate> get customPrograms {
+    if (!identical(_programsOf, profile)) {
+      _programsOf = profile;
+      final raw = profile.extra['programs'];
+      _programs = [
+        if (raw is List)
+          for (final json in raw) ?SplitTemplate.tryCustom(json),
+      ];
+    }
+    return _programs;
+  }
 
   Future<void> setSplit(String? id) async {
-    final next = profile.withExtra({'split': id});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile((p) => p.withExtra({'split': id}));
+    unawaited(syncReminders());
+  }
+
+  /// Uloží vlastní program (nový dostane ID). Vrací uložený program,
+  /// nebo hodí [ArgumentError] s českou zprávou.
+  Future<SplitTemplate> saveProgram(
+    SplitTemplate program, {
+    bool activate = false,
+  }) async {
+    final cleaned = program.copyWith(
+      id: program.id.startsWith(customProgramPrefix)
+          ? program.id
+          : '$customProgramPrefix${newId()}',
+      name: program.name.trim(),
+      custom: true,
+      // Vlastní program se cvičí dokola: doporučení = počet dnů.
+      perWeek: program.days.length.clamp(1, 7),
+      days: [for (final d in program.days) d.copyWith(name: d.name.trim())],
+    );
+    final error = programError(cleaned);
+    if (error != null) throw ArgumentError(error);
+    await _updateProfile((p) {
+      final list = [
+        for (final json in p.extra['programs'] as List? ?? const [])
+          ?SplitTemplate.tryCustom(json),
+      ];
+      final at = list.indexWhere((e) => e.id == cleaned.id);
+      if (at >= 0) {
+        list[at] = cleaned;
+      } else {
+        if (list.length >= maxCustomPrograms) {
+          throw ArgumentError(
+            'Vlastních programů může být nejvýš $maxCustomPrograms.',
+          );
+        }
+        list.add(cleaned);
+      }
+      return p.withExtra({
+        'programs': [for (final e in list) e.toJson()],
+        if (activate) 'split': cleaned.id,
+      });
+    });
+    unawaited(syncReminders());
+    return cleaned;
+  }
+
+  /// Smaže vlastní program; byl-li zvolený, přejde na volné tréninky.
+  Future<void> deleteProgram(String id) async {
+    await _updateProfile((p) {
+      final list = [
+        for (final json in p.extra['programs'] as List? ?? const [])
+          if (json is Map && json['id'] != id) json,
+      ];
+      return p.withExtra({
+        'programs': list.isEmpty ? null : list,
+        if (p.splitId == id) 'split': null,
+      });
+    });
+    unawaited(syncReminders());
+  }
+
+  /// Frekvence: kolikrát týdně a volitelně ve které dny. Se zvolenými dny
+  /// je cíl jejich počet; `null` cíl = podle programu.
+  Future<void> setFrequency({int? perWeek, List<int>? days}) async {
+    final picked = days == null || days.isEmpty
+        ? null
+        : ({for (final d in days) d.clamp(1, 7)}.toList()..sort());
+    await _updateProfile(
+      (p) => p.withExtra({
+        'weekGoal': picked?.length ?? perWeek?.clamp(1, 7),
+        'trainingDays': picked,
+      }),
+    );
+    unawaited(syncReminders());
+  }
+
+  /// Přidá nebo odebere den tréninku (1 = pondělí). Čte aktuální profil
+  /// až ve frontě zápisů, takže rychlá klepnutí se nepřepíšou. Bez dnů
+  /// se cíl vrátí na počet podle programu.
+  Future<void> toggleTrainingDay(int day) async {
+    await _updateProfile((p) {
+      final days = [...?p.trainingDays];
+      if (!days.remove(day)) days.add(day.clamp(1, 7));
+      days.sort();
+      return p.withExtra({
+        'weekGoal': days.isEmpty ? null : days.length,
+        'trainingDays': days.isEmpty ? null : days,
+      });
+    });
     unawaited(syncReminders());
   }
 
@@ -517,6 +619,7 @@ class AppState extends ChangeNotifier {
           minute: minutes % 60,
           goal: weekGoal,
           finished: workouts,
+          trainingDays: profile.trainingDays,
         ),
       );
     } catch (e) {
@@ -542,13 +645,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setWeekGoal(int? goal) async {
-    final next = profile.withExtra({'weekGoal': goal?.clamp(1, 7)});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
-    unawaited(syncReminders());
-  }
+  /// Týdenní cíl bez pevných dnů (`null` = podle programu).
+  Future<void> setWeekGoal(int? goal) => setFrequency(perWeek: goal);
 
   /// Dnešní mise podle týdenního cíle a odcvičených tréninků.
   Mission mission([DateTime? now]) => todayMission(
@@ -556,6 +654,7 @@ class AppState extends ChangeNotifier {
     finished: [for (final w in workouts) w.date],
     now: now ?? DateTime.now(),
     startedAt: profile.consentAt?.toLocal(),
+    trainingDays: profile.trainingDays,
   );
 
   /// Týdny v řadě se splněným cílem.

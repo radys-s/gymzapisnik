@@ -2,81 +2,189 @@ import 'package:flutter/material.dart';
 
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
+import 'program_detail_page.dart';
+import 'program_editor_page.dart';
+import 'program_widgets.dart';
 
-/// Výběr splitu. Aplikace pak každý den nabídne trénink na řadě.
+/// Program: co se cvičí který den a jak často. Vlastní programy,
+/// hotové programy a frekvence na jednom místě.
 class ProgramPage extends StatelessWidget {
   final AppState state;
   const ProgramPage(this.state, {super.key});
 
-  Future<void> _choose(BuildContext context, String? id) async {
-    await state.setSplit(id);
-    if (context.mounted) Navigator.pop(context);
+  void _open(BuildContext context, SplitTemplate program) => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => ProgramDetailPage(state, program.id)),
+  );
+
+  // Editor přes celou obrazovku, bez lišty záložek.
+  Future<void> _create(BuildContext context) =>
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => ProgramEditorPage(state),
+        ),
+      );
+
+  Future<void> _free(BuildContext context) async {
+    try {
+      await state.setSplit(null);
+    } catch (_) {
+      if (context.mounted) {
+        showToast(context, 'Změnu se nepodařilo uložit. Zkus to znovu.');
+      }
+    }
   }
 
   @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: state,
+    builder: (context, _) {
+      final p = context.palette;
+      final current = state.split;
+      final mine = state.customPrograms;
+      Widget check(SplitTemplate t) => t.id == current?.id
+          ? Icon(Icons.check_rounded, color: p.accent)
+          : const SizedBox.shrink();
+      return LargeTitlePage(
+        title: 'Program',
+        children: [
+          _CurrentCard(
+            state: state,
+            program: current,
+            onOpen: current == null ? null : () => _open(context, current),
+            onCreate: () => _create(context),
+          ),
+          const SectionHeader('Frekvence'),
+          FrequencyPanel(state),
+          const SectionHeader('Moje programy'),
+          GroupedSection(
+            footer: mine.isEmpty
+                ? 'Slož si vlastní dny, třeba ramena a triceps dohromady.'
+                : null,
+            children: [
+              for (final t in mine)
+                GroupedRow(
+                  title: t.name,
+                  subtitle: programSummary(t),
+                  trailing: check(t),
+                  chevron: true,
+                  onTap: () => _open(context, t),
+                ),
+              GroupedRow(
+                leading: Icon(Icons.add_rounded, color: p.accent),
+                title: 'Vytvořit vlastní program',
+                chevron: false,
+                onTap: () => _create(context),
+              ),
+            ],
+          ),
+          const SectionHeader('Hotové programy'),
+          GroupedSection(
+            footer:
+                'Hotový program jde upravit: vznikne z něj tvůj vlastní a '
+                'originál zůstane.',
+            children: [
+              for (final t in splitTemplates)
+                GroupedRow(
+                  title: t.name,
+                  subtitle:
+                      '${perWeekLabel(t.perWeek)} · '
+                      '${t.days.map((d) => d.name).join(' · ')}',
+                  trailing: check(t),
+                  chevron: true,
+                  onTap: () => _open(context, t),
+                ),
+            ],
+          ),
+          GroupedSection(
+            footer: 'Cviky si skládáš až při tréninku, bez dnů na řadě.',
+            children: [
+              GroupedRow(
+                title: 'Volné tréninky',
+                trailing: current == null
+                    ? Icon(Icons.check_rounded, color: p.accent)
+                    : null,
+                chevron: false,
+                onTap: () => _free(context),
+              ),
+            ],
+          ),
+        ],
+      );
+    },
+  );
+}
+
+/// Aktuální program: název, dny a cesta k detailu.
+class _CurrentCard extends StatelessWidget {
+  final AppState state;
+  final SplitTemplate? program;
+  final VoidCallback? onOpen;
+  final VoidCallback onCreate;
+  const _CurrentCard({
+    required this.state,
+    required this.program,
+    required this.onOpen,
+    required this.onCreate,
+  });
+
+  @override
   Widget build(BuildContext context) {
-    final current = state.profile.splitId;
-    final scheme = Theme.of(context).colorScheme;
-    final muted = scheme.onSurfaceVariant;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Vyber split')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final program = this.program;
+    final next = state.nextSplitDay;
+    return HeroCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Split určuje, co se cvičí který den. Aplikace ti pak nabídne '
-            'trénink na řadě s návrhem váhy podle minula.',
-            style: TextStyle(color: muted),
-          ),
-          for (final t in splitTemplates)
-            Card(
-              margin: const EdgeInsets.only(top: 12),
-              shape: t.id == current
-                  ? RoundedRectangleBorder(
-                      side: BorderSide(color: scheme.primary, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    )
-                  : null,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _choose(context, t.id),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              t.name,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                          Text('${t.perWeek}× týdně'),
-                          if (t.id == current) ...[
-                            const SizedBox(width: 8),
-                            Icon(Icons.check_circle, color: scheme.primary),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(t.description),
-                      const SizedBox(height: 4),
-                      Text(
-                        t.days.map((d) => d.name).join(' · '),
-                        style: TextStyle(color: muted, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            'Aktuální program',
+            style: text.labelMedium?.copyWith(
+              color: p.accent,
+              fontWeight: FontWeight.w600,
             ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => _choose(context, null),
-            child: const Text('Bez splitu – volné tréninky'),
           ),
+          const SizedBox(height: 2),
+          Text(program?.name ?? 'Volné tréninky', style: text.headlineSmall),
+          const SizedBox(height: 2),
+          Text(
+            program == null
+                ? 'Žádné dny na řadě. Vyber hotový program, nebo si slož '
+                      'vlastní.'
+                : '${programSummary(program)} · ${perWeekLabel(state.weekGoal)}',
+            style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+          ),
+          if (program != null) ...[
+            const SizedBox(height: Space.m),
+            Wrap(
+              spacing: Space.s,
+              runSpacing: Space.s,
+              children: [
+                for (var i = 0; i < program.days.length; i++)
+                  Pill(
+                    i == next % program.days.length
+                        ? 'Na řadě: ${program.days[i].name}'
+                        : program.days[i].name,
+                    color: i == next % program.days.length
+                        ? p.accent
+                        : p.secondaryLabel,
+                  ),
+              ],
+            ),
+            const SizedBox(height: Space.l),
+            SecondaryButton('Zobrazit dny a cviky', onPressed: onOpen),
+          ] else ...[
+            const SizedBox(height: Space.l),
+            PrimaryButton(
+              'Vytvořit vlastní program',
+              icon: Icons.add_rounded,
+              onPressed: onCreate,
+            ),
+          ],
         ],
       ),
     );

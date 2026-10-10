@@ -22,6 +22,9 @@ enum MissionKind {
 
   /// Dnes je dobrý den na trénink.
   trainToday,
+
+  /// Dnes není v plánu trénink (uživatel si zvolil dny tréninku).
+  plannedRest,
 }
 
 class Mission {
@@ -57,6 +60,7 @@ Mission todayMission({
   required Iterable<DateTime> finished,
   required DateTime now,
   DateTime? startedAt,
+  List<int>? trainingDays,
 }) {
   final today = dayStart(now);
   final monday = weekStart(now);
@@ -88,6 +92,8 @@ Mission todayMission({
     kind = MissionKind.catchUp;
   } else if (trainedYesterday) {
     kind = MissionKind.rest;
+  } else if (trainingDays != null && !trainingDays.contains(today.weekday)) {
+    kind = MissionKind.plannedRest;
   } else {
     kind = MissionKind.trainToday;
   }

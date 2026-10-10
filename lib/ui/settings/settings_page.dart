@@ -9,6 +9,8 @@ import '../../state/app_state.dart';
 import '../design/tokens.dart';
 import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
+import '../program/program_page.dart';
+import '../program/program_widgets.dart';
 import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
 import 'file_io.dart';
@@ -214,19 +216,19 @@ class SettingsPage extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.flag_outlined),
-              title: const Text('Cíl tréninků týdně'),
-              trailing: DropdownButton<int>(
-                value: profile.weekGoal ?? 0,
-                underline: const SizedBox.shrink(),
-                items: [
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text('Podle splitu (${state.weekGoal}×)'),
-                  ),
-                  for (var n = 1; n <= 7; n++)
-                    DropdownMenuItem(value: n, child: Text('$n×')),
-                ],
-                onChanged: (n) => state.setWeekGoal(n == 0 ? null : n),
+              title: const Text('Frekvence tréninku'),
+              subtitle: Text(
+                profile.trainingDays == null
+                    ? perWeekLabel(state.weekGoal)
+                    : [
+                        for (final d in profile.trainingDays!)
+                          weekdayShort[d - 1],
+                      ].join(', '),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProgramPage(state)),
               ),
             ),
             section('Výživa'),
