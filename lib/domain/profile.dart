@@ -61,12 +61,28 @@ class Profile {
     return v is num ? v.toInt().clamp(0, 1439) : null;
   }
 
-  /// Motiv: `system`, `dark` (výchozí) nebo `light`.
+  /// Motiv: `system` (výchozí, podle telefonu), `dark` nebo `light`.
   String get theme => switch (extra['theme']) {
-    'system' => 'system',
+    'dark' => 'dark',
     'light' => 'light',
-    _ => 'dark',
+    _ => 'system',
   };
+
+  /// Barevný motiv (`lime`, `lagoon`, `sunset`); neznámý = výchozí.
+  String get accent => switch (extra['accent']) {
+    'lagoon' => 'lagoon',
+    'sunset' => 'sunset',
+    _ => 'lime',
+  };
+
+  /// Uživatel prošel úvodem (ukazuje se jen jednou).
+  bool get welcomeSeen => extra['welcomeSeen'] == true;
+
+  /// Verze, jejíž novinky už uživatel viděl.
+  String? get seenVersion => extra['seenVersion'] as String?;
+
+  /// Naposledy otevřená záložka (0 = Cvičení, 1 = Strava).
+  int get lastTab => extra['lastTab'] == 1 ? 1 : 0;
 
   /// Výchozí pauza mezi sériemi v sekundách.
   int get restSeconds {

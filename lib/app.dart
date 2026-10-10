@@ -14,20 +14,20 @@ class GymApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
-    builder: (context, _) => MaterialApp(
-      title: 'Gym zápisník',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      themeMode: switch (state.profile.theme) {
-        'light' => ThemeMode.light,
-        'system' => ThemeMode.system,
-        _ => ThemeMode.dark,
-      },
-      home: state.profile.hasValidConsent
-          ? AppShell(state)
-          : ConsentPage(state),
-    ),
+    builder: (context, _) => _app(Accent.parse(state.profile.accent)),
+  );
+
+  Widget _app(Accent accent) => MaterialApp(
+    title: 'Gym zápisník',
+    debugShowCheckedModeBanner: false,
+    theme: buildTheme(Brightness.light, accent),
+    darkTheme: buildTheme(Brightness.dark, accent),
+    themeMode: switch (state.profile.theme) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    },
+    home: state.profile.hasValidConsent ? AppShell(state) : ConsentPage(state),
   );
 }
 
