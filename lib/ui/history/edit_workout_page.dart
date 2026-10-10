@@ -34,9 +34,15 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
     draft
       ..name = name.text
       ..note = note.text;
-    final error = await widget.state.updateWorkout(draft);
+    String? error;
+    try {
+      error = await widget.state.updateWorkout(draft);
+    } catch (_) {
+      error = 'Změny se nepodařilo uložit. Zkus to znovu.';
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
     if (!mounted) return;
-    setState(() => saving = false);
     if (error != null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(error)));
