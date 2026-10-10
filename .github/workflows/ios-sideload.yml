@@ -1,0 +1,61 @@
+name: iPhone beta for local sideloading
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-sideload
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      AI_URL: https://gymzapisnik-ai.gymzapisnik-ai.workers.dev
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Install pinned Flutter SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Record toolchain and restore locked dependencies
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          pod --version
+          flutter --version
+          flutter pub get --enforce-lockfile
+      - name: Verify source
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s scripts
+          flutter analyze --no-pub
+          flutter test --no-pub
+      - name: Compile device release without Apple credentials
+        run: |
+          set -euo pipefail
+          flutter build ios --release --no-pub --no-codesign \
+            --build-name=1.0.0 --build-number=12 --dart-define=AI_URL="$AI_URL"
+          python3 scripts/verify_ios_app.py build/ios/iphoneos/Runner.app
+      - name: Package and verify IPA
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios-sideload/Payload dist/ios
+          ditto build/ios/iphoneos/Runner.app build/ios-sideload/Payload/Runner.app
+          ditto -c -k --sequesterRsrc --keepParent build/ios-sideload/Payload dist/ios/gymzapisnik-1.0.0-beta.3-unsigned.ipa
+          python3 scripts/verify_ios_app.py build/ios-sideload/Payload/Runner.app dist/ios/gymzapisnik-1.0.0-beta.3-unsigned.ipa
+          printf '%s\n' "$GITHUB_SHA" > dist/ios/SOURCE_COMMIT.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: gymzapisnik-ios-sideload
+          path: dist/ios/
+          if-no-files-found: error
+          retention-days: 1
