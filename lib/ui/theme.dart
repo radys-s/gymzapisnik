@@ -48,6 +48,8 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
   );
 
   final base = ThemeData(
+    // Stejná hustota i ve webu na počítači: aplikace je dělaná pro telefon.
+    visualDensity: VisualDensity.standard,
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,

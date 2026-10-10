@@ -92,6 +92,7 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
                   Space.xs,
                 ),
                 child: Semantics(
+                  container: true,
                   header: true,
                   child: Text(widget.title, style: text.headlineLarge),
                 ),
@@ -122,6 +123,7 @@ class SectionHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Semantics(
+            container: true,
             header: true,
             child: Text(title, style: Theme.of(context).textTheme.titleLarge),
           ),
@@ -175,6 +177,7 @@ class GroupedSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, 6),
               child: Semantics(
+                container: true,
                 header: true,
                 child: Text(header!, style: text.bodySmall),
               ),
@@ -202,6 +205,9 @@ class GroupedSection extends StatelessWidget {
 /// Řádek seskupeného seznamu: barevná ikona, text, hodnota, šipka.
 class GroupedRow extends StatelessWidget {
   final IconData? icon;
+
+  /// Vlastní prvek vlevo místo ikony (např. vzorek barvy).
+  final Widget? leading;
   final Color? iconColor;
   final String title;
   final String? subtitle;
@@ -214,6 +220,7 @@ class GroupedRow extends StatelessWidget {
   const GroupedRow({
     super.key,
     this.icon,
+    this.leading,
     this.iconColor,
     required this.title,
     this.subtitle,
@@ -240,7 +247,10 @@ class GroupedRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              if (icon != null) ...[
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: Space.m),
+              ] else if (icon != null) ...[
                 IconTile(icon!, color: iconColor ?? p.accent),
                 const SizedBox(width: Space.m),
               ],
@@ -333,7 +343,9 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onAccent : p.tertiaryLabel;
+    // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
+      container: true,
       button: true,
       enabled: enabled,
       child: Material(
@@ -676,18 +688,24 @@ class _MarkPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final u = size.width / 100;
-    final paint = Paint()..color = Colors.black.withValues(alpha: 0.85);
+    final paint = Paint()..color = Colors.black;
+    // Průhlednost na celou vrstvu, aby překryvy osy a kotoučů neztmavly.
+    canvas.saveLayer(
+      Offset.zero & size,
+      Paint()..color = Colors.black.withValues(alpha: 0.85),
+    );
     RRect r(double x, double y, double w, double h, double rad) =>
         RRect.fromRectAndRadius(
           Rect.fromLTWH(x * u, y * u, w * u, h * u),
           Radius.circular(rad * u),
         );
     canvas
-      ..drawRRect(r(22, 46, 56, 8, 4), paint)
+      ..drawRRect(r(28, 46, 44, 8, 4), paint)
       ..drawRRect(r(24, 30, 10, 40, 5), paint)
       ..drawRRect(r(66, 30, 10, 40, 5), paint)
       ..drawRRect(r(14, 38, 8, 24, 4), paint)
-      ..drawRRect(r(78, 38, 8, 24, 4), paint);
+      ..drawRRect(r(78, 38, 8, 24, 4), paint)
+      ..restore();
   }
 
   @override

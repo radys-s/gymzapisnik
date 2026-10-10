@@ -2,7 +2,7 @@
 const CACHE = 'gymzapisnik-shell-dev';
 const PRECACHE = [
   './', './index.html', './app_bootstrap.js', './flutter_bootstrap.js',
-  './main.dart.js', './manifest.json', './sqlite3.wasm',
+  './main.dart.js', './manifest.json', './sqlite3.wasm', './icons/splash-mark.png',
   './assets/AssetManifest.bin', './assets/FontManifest.json',
   './assets/fonts/MaterialIcons-Regular.otf',
   './assets/packages/cupertino_icons/assets/CupertinoIcons.ttf',

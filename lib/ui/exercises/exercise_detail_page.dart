@@ -138,6 +138,7 @@ class _ProgressChart extends StatelessWidget {
     final maxY = values.reduce((a, b) => a > b ? a : b);
     final pad = (maxY - minY) * 0.15 + 1;
     return Semantics(
+      container: true,
       label:
           'Graf progresu, ${points.length} tréninků, '
           'od ${formatKg(points.first.value.roundToDouble())} '

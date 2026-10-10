@@ -43,6 +43,37 @@ void main() {
       expect(r.shouldTrain, isTrue);
     });
 
+    test('unreachable goal does not nag', () {
+      // sobota 10.: chybí 3, zbývají 2 dny -> cíl už nejde, jen nabídka
+      expect(m([], day(10)).kind, MissionKind.trainToday);
+    });
+
+    test('no catch up in the week the user started', () {
+      final r = todayMission(
+        goal: 4,
+        finished: const [],
+        now: day(8),
+        startedAt: day(7, 9),
+      );
+      expect(r.kind, MissionKind.trainToday);
+      // Začátek v minulém týdnu: naléhání platí.
+      final before = todayMission(
+        goal: 4,
+        finished: const [],
+        now: day(8),
+        startedAt: DateTime(2026, 10, 1),
+      );
+      expect(before.kind, MissionKind.catchUp);
+      // Stávající uživatel s novým souhlasem: starší historie, naléhání platí.
+      final returning = todayMission(
+        goal: 4,
+        finished: [DateTime(2026, 9, 28)],
+        now: day(8),
+        startedAt: day(7, 9),
+      );
+      expect(returning.kind, MissionKind.catchUp);
+    });
+
     test('catch up beats rest', () {
       // neděle 11.: poslední den, chybí 1, včera cvičil -> dnes je potřeba
       expect(m([day(5), day(10)], day(11)).kind, MissionKind.catchUp);

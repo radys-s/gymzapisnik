@@ -168,6 +168,7 @@ class _Chart extends StatelessWidget {
     final maxY = values.reduce((a, b) => a > b ? a : b);
     final pad = ((maxY - minY) * 0.2).clamp(1.0, 10.0);
     return Semantics(
+      container: true,
       label:
           'Graf váhy, ${points.length} záznamů, od ${formatKg(points.first.kg)} '
           'do ${formatKg(points.last.kg)} kg',

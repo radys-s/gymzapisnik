@@ -6,7 +6,10 @@ import 'package:flutter/services.dart';
 
 import '../../core/version.dart';
 import '../../state/app_state.dart';
+import '../design/tokens.dart';
+import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
+import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
 import 'file_io.dart';
 import 'legal_page.dart';
@@ -287,6 +290,16 @@ class SettingsPage extends StatelessWidget {
                     state.setPreferences(theme: s.single),
               ),
             ),
+            ListTile(
+              leading: const Icon(Icons.palette_outlined),
+              title: const Text('Barva'),
+              subtitle: Text(Accent.parse(profile.accent).label),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AccentPage(state)),
+              ),
+            ),
             section('Připomínky'),
             if (!state.notifier.supported)
               const ListTile(
@@ -380,6 +393,15 @@ class SettingsPage extends StatelessWidget {
               title: const Text('Napsat zpětnou vazbu'),
               subtitle: const Text('Co tě zdrželo, co chybělo, co nefunguje'),
               onTap: () => _feedback(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('Novinky'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WhatsNewPage()),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.policy_outlined),
