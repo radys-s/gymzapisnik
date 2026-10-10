@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Fotoaparát použiješ k vyfocení potravin pro seznam ledničky. Fotka se do AI odešle až po tvém potvrzení.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Z fotek můžeš vybrat obrázek potravin pro seznam ledničky. Do AI se odešle jen vybraná fotka po tvém potvrzení.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
