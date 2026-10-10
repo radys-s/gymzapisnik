@@ -28,15 +28,17 @@ class Reminder {
 }
 
 /// Připomínky na nejbližších [horizonDays] dní od [now], v čase [hour]:[minute].
+/// Se zvolenými [trainingDays] jen v tyto dny, jinak rozložené podle cíle.
 List<Reminder> planReminders({
   required DateTime now,
   required int hour,
   required int minute,
   required int goal,
   required Iterable<Workout> finished,
+  List<int>? trainingDays,
   int horizonDays = 14,
 }) {
-  final days = reminderDays[goal.clamp(1, 7)]!;
+  final days = trainingDays ?? reminderDays[goal.clamp(1, 7)]!;
   final doneDays = <DateTime>{};
   final perWeek = <DateTime, int>{};
   for (final w in finished) {

@@ -38,6 +38,9 @@ class _HomePageState extends State<HomePage> {
   /// Ručně zvolený jiný den splitu (jinak den na řadě).
   int? dayOverride;
 
+  /// Program, ke kterému ruční volba dne patří (po změně programu neplatí).
+  String? overrideSplit;
+
   /// Pojistka proti dvojímu klepnutí na start (dvě obrazovky tréninku).
   bool _starting = false;
 
@@ -91,9 +94,14 @@ class _HomePageState extends State<HomePage> {
             state: state,
             now: now,
             busy: _starting,
-            dayIndex: dayOverride ?? state.nextSplitDay,
+            dayIndex: overrideSplit == state.split?.id
+                ? dayOverride ?? state.nextSplitDay
+                : state.nextSplitDay,
             onStart: _run,
-            onPickDay: (i) => setState(() => dayOverride = i),
+            onPickDay: (i) => setState(() {
+              dayOverride = i;
+              overrideSplit = state.split?.id;
+            }),
             onProgram: () => _push(ProgramPage(state)),
           ),
           const SectionHeader('Tento týden'),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../coach/splits.dart';
 import '../domain/bodyweight.dart';
 import '../domain/models.dart';
 import '../domain/nutrition.dart';
@@ -22,6 +23,8 @@ const backupSettingsKeys = {
   'proteinTarget',
   'kcalTarget',
   'pantry',
+  'programs',
+  'trainingDays',
 };
 
 class Backup {
@@ -124,6 +127,21 @@ Backup decodeBackup(String source) {
         if (rawSettings[key] != null && rawSettings[key] is! String) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
+      }
+      final programs = rawSettings['programs'];
+      if (programs != null &&
+          (programs is! List ||
+              programs.length > maxCustomPrograms ||
+              programs.any((p) => SplitTemplate.tryCustom(p) == null) ||
+              {for (final p in programs) (p as Map)['id']}.length !=
+                  programs.length)) {
+        throw const FormatException('Záloha obsahuje neplatný program.');
+      }
+      final days = rawSettings['trainingDays'];
+      if (days != null &&
+          (days is! List ||
+              days.any((d) => d is! num || d < 1 || d > 7 || d != d.toInt()))) {
+        throw const FormatException('Záloha obsahuje neplatné dny tréninku.');
       }
       for (final key in ['restSeconds', 'weekGoal']) {
         final value = rawSettings[key];

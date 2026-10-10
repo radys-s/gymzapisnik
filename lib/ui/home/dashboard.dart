@@ -237,6 +237,7 @@ class MissionCard extends StatelessWidget {
     MissionKind.catchUp => 'Dnes je potřeba trénovat',
     MissionKind.rest => 'Dnes odpočinek',
     MissionKind.trainToday => 'Dnes je dobrý den na trénink',
+    MissionKind.plannedRest => 'Dnes volno podle plánu',
   };
 
   static String subtitle(Mission m) => switch (m.kind) {
@@ -247,6 +248,8 @@ class MissionCard extends StatelessWidget {
           'do konce týdne.',
     MissionKind.rest => 'Včera byl trénink. Klidně si dej další i dnes.',
     MissionKind.trainToday => 'Tvůj týdenní cíl je ${m.goal}×.',
+    MissionKind.plannedRest =>
+      'Hotovo ${m.done} z ${m.goal}. Trénink se počítá i mimo plán.',
   };
 
   static IconData icon(MissionKind kind) => switch (kind) {
@@ -255,6 +258,7 @@ class MissionCard extends StatelessWidget {
     MissionKind.catchUp => Icons.priority_high,
     MissionKind.rest => Icons.bedtime_outlined,
     MissionKind.trainToday => Icons.fitness_center,
+    MissionKind.plannedRest => Icons.bedtime_outlined,
   };
 
   @override

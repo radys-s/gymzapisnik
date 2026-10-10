@@ -55,6 +55,17 @@ class Profile {
     return v is num ? v.toInt().clamp(1, 7) : null;
   }
 
+  /// Dny tréninku (1 = pondělí, seřazené); `null` = kdykoli v týdnu.
+  List<int>? get trainingDays {
+    final v = extra['trainingDays'];
+    if (v is! List) return null;
+    final days = {
+      for (final d in v)
+        if (d is num && d >= 1 && d <= 7) d.toInt(),
+    }.toList()..sort();
+    return days.isEmpty ? null : days;
+  }
+
   /// Čas připomínky v minutách od půlnoci; `null` = vypnuto.
   int? get reminderMinutes {
     final v = extra['reminder'];
