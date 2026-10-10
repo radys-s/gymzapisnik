@@ -103,19 +103,22 @@ class AppState extends ChangeNotifier {
     unawaited(syncReminders());
   }
 
+  /// Souhlas; s [welcomeVersion] zároveň uzavře uvítání jedním zápisem,
+  /// aby po pádu nezůstalo „uvítání hotové, souhlas chybí".
   Future<void> acceptConsent({
     required bool adult,
     required bool guardianConsent,
-  }) async {
-    final next = profile.acceptConsent(
+    String? welcomeVersion,
+  }) => _updateProfile((current) {
+    final next = current.acceptConsent(
       adult: adult,
       guardianConsent: guardianConsent,
       now: DateTime.now(),
     );
-    await store.put(Kinds.profile, next.toJson());
-    profile = next;
-    notifyListeners();
-  }
+    return welcomeVersion == null
+        ? next
+        : next.withExtra({'welcomeSeen': true, 'seenVersion': welcomeVersion});
+  });
 
   /// Všechny cviky: vlastní + katalog.
   List<Exercise> get allExercises => [...customExercises, ...builtInExercises];
@@ -165,7 +168,12 @@ class AppState extends ChangeNotifier {
     final next = previous == null
         ? Future<T>.sync(write)
         : previous.then((_) => write());
-    _writes = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    final chain = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _writes = chain;
+    // Doběhlá fronta se zahodí: další zápis pak nezávisí na zóně staré future.
+    chain.whenComplete(() {
+      if (identical(_writes, chain)) _writes = null;
+    });
     return next;
   }
 
@@ -503,6 +511,7 @@ class AppState extends ChangeNotifier {
     goal: weekGoal,
     finished: [for (final w in workouts) w.date],
     now: now ?? DateTime.now(),
+    startedAt: profile.consentAt?.toLocal(),
   );
 
   /// Týdny v řadě se splněným cílem.
@@ -623,16 +632,13 @@ class AppState extends ChangeNotifier {
     int? restSeconds,
     String? theme,
     String? accent,
-  }) async {
-    final next = profile.withExtra({
+  }) => _updateProfile(
+    (p) => p.withExtra({
       'restSeconds': ?restSeconds?.clamp(15, 600),
       'theme': ?theme,
       'accent': ?accent,
-    });
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
-  }
+    }),
+  );
 
   /// Zapíše váhu; `false` = nesmyslná hodnota.
   Future<bool> addBodyweight(double kg, {DateTime? now}) async {
@@ -712,6 +718,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Změna profilu počítaná až ve frontě z posledního uloženého stavu:
+  /// dvě rychlé změny (barva, souhlas) se navzájem nepřepíšou.
+  Future<void> _updateProfile(Profile Function(Profile current) change) =>
+      _enqueue(() async {
+        final next = change(profile);
+        await store.put(Kinds.profile, next.toJson());
+        profile = next;
+        notifyListeners();
+      });
+
   /// Náhodné ID instalace pro denní limit AI; vznikne při prvním použití.
   /// Nepatří do zálohy (jiné zařízení = jiná instalace).
   Future<String> installId() async {
@@ -736,12 +752,12 @@ class AppState extends ChangeNotifier {
   );
 
   /// Úvod je za uživatelem; zároveň zná novinky této verze.
-  Future<void> finishWelcome(String version) => _saveProfile(
-    profile.withExtra({'welcomeSeen': true, 'seenVersion': version}),
+  Future<void> finishWelcome(String version) => _updateProfile(
+    (p) => p.withExtra({'welcomeSeen': true, 'seenVersion': version}),
   );
 
   Future<void> markVersionSeen(String version) =>
-      _saveProfile(profile.withExtra({'seenVersion': version}));
+      _updateProfile((p) => p.withExtra({'seenVersion': version}));
 
   /// Zapamatuje si záložku; chyba uložení nesmí rozbít přepnutí.
   Future<void> setLastTab(int tab) async {

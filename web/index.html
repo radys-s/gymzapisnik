@@ -6,17 +6,36 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Gym zápisník: rychlý zápis sérií a porovnání s minulým tréninkem.">
-  <meta name="theme-color" content="#0f1115">
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Gym zápisník">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
   <title>Gym zápisník</title>
   <link rel="manifest" href="manifest.json">
-  <style>body { background: #0f1115; margin: 0; }</style>
+  <style>
+    /* Stejné pozadí a značka jako nativní spouštěcí obrazovka. */
+    body { background: #F2F2F7; margin: 0; }
+    @media (prefers-color-scheme: dark) { body { background: #000; } }
+    #splash { position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; transition: opacity .2s ease-out; }
+    #splash img { width: 96px; height: 96px; }
+    #splash.gone { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
+  <div id="splash" aria-hidden="true"><img src="icons/splash-mark.png" alt=""></div>
+  <script>
+    // Značku schová až první snímek aplikace, ne pevný čas.
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash');
+      if (!s) return;
+      s.className = 'gone';
+      setTimeout(function () { s.remove(); }, 250);
+    });
+  </script>
   <script src="app_bootstrap.js"></script>
   <script>
     (function () {

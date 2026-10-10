@@ -451,6 +451,7 @@ class _WeekPanel extends StatelessWidget {
           Row(
             children: [
               Semantics(
+                container: true,
                 label: 'Tento týden ${week.workouts} z $goal tréninků',
                 excludeSemantics: true,
                 child: ProgressRing(

@@ -5,6 +5,7 @@ import 'package:gymzapisnik/app.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 
 void main() {
   testWidgets('system back walks tab stack, then first tab, then exits', (
@@ -31,15 +32,13 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final state = AppState(LocalStore(db));
-    await tester.runAsync(state.load);
-    await tester.pumpWidget(GymApp(state));
-    await tester.tap(find.text('Souhlasím s podmínkami používání'));
-    await tester.tap(find.text('Je mi 18 let nebo víc'));
-    await tester.pump();
+    // Uvítání a souhlas testuje consent_flow_test; tady rovnou do aplikace.
     await tester.runAsync(() async {
-      await tester.tap(find.text('Pokračovat'));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await state.load();
+      await state.acceptConsent(adult: true, guardianConsent: false);
+      await state.finishWelcome(whatsNewRelease);
     });
+    await tester.pumpWidget(GymApp(state));
     await tester.pumpAndSettle();
 
     // Podstránka v záložce Cvičení: zpět ji zavře, lišta zůstává.

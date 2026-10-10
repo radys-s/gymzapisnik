@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,8 +7,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'state/app_state.dart';
 import 'ui/home/home_page.dart';
 import 'ui/nutrition/nutrition_page.dart';
-import 'ui/onboarding/consent_page.dart';
+import 'ui/design/components.dart';
+import 'ui/onboarding/onboarding_page.dart';
 import 'ui/theme.dart';
+import 'ui/welcome/whats_new.dart';
 
 const _czech = Locale('cs');
 
@@ -22,7 +26,7 @@ class GymApp extends StatelessWidget {
       theme: state.profile.theme,
       home: state.profile.hasValidConsent
           ? AppShell(state)
-          : ConsentPage(state),
+          : OnboardingPage(state),
     ),
   );
 }
@@ -60,6 +64,16 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   late int tab = widget.state.profile.lastTab;
+
+  @override
+  void initState() {
+    super.initState();
+    // Po aktualizaci jednou ukáže novinky (nové instalace je mají za sebou).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showWhatsNewOnce(context, widget.state);
+    });
+  }
+
   final _navigators = [
     GlobalKey<NavigatorState>(debugLabel: 'Cvičení'),
     GlobalKey<NavigatorState>(debugLabel: 'Strava'),
@@ -132,23 +146,189 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-/// Zobrazí se, když se nepodaří otevřít úložiště.
-class StartupErrorApp extends StatelessWidget {
-  final Object error;
-  const StartupErrorApp(this.error, {super.key});
+/// Spuštění: značka hned (navazuje na nativní spouštěcí obrazovku),
+/// ukazatel načítání jen když opravdu čekáme. Žádné umělé zdržení.
+class AppLoader extends StatefulWidget {
+  final Future<AppState> Function() open;
+  final void Function(AppState state)? onReady;
+  const AppLoader({super.key, required this.open, this.onReady});
 
   @override
-  Widget build(BuildContext context) => appFrame(
-    home: Scaffold(
-      body: Center(
+  State<AppLoader> createState() => _AppLoaderState();
+}
+
+class _AppLoaderState extends State<AppLoader> {
+  AppState? state;
+  Object? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (error != null) setState(() => error = null);
+    try {
+      final opened = await widget.open();
+      widget.onReady?.call(opened);
+      if (mounted) setState(() => state = opened);
+    } catch (e) {
+      if (mounted) setState(() => error = e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = state;
+    if (ready != null) return GymApp(ready);
+    return appFrame(
+      home: error == null
+          ? const BootScreen()
+          : StartupErrorPage(error: error!, onRetry: _load),
+    );
+  }
+}
+
+/// Značka uprostřed; kolečko se objeví, jen když načítání trvá déle.
+class BootScreen extends StatefulWidget {
+  /// Po jaké době čekání ukázat ukazatel (rychlé načtení ho nezobrazí).
+  static const indicatorAfter = Duration(milliseconds: 400);
+  const BootScreen({super.key});
+
+  @override
+  State<BootScreen> createState() => _BootScreenState();
+}
+
+class _BootScreenState extends State<BootScreen> {
+  bool slow = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(BootScreen.indicatorAfter, () {
+      if (mounted) setState(() => slow = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Scaffold(
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Stejná velikost a místo jako nativní značka: bez poskoku.
+          const AppMark(size: 96),
+          Align(
+            alignment: const Alignment(0, 0.3),
+            child: AnimatedOpacity(
+              opacity: slow ? 1 : 0,
+              duration: const Duration(milliseconds: 250),
+              child: Semantics(
+                container: true,
+                label: 'Načítám',
+                child: SizedBox.square(
+                  dimension: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: p.secondaryLabel,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Když se nepodaří otevřít úložiště: srozumitelně a s novým pokusem.
+class StartupErrorPage extends StatefulWidget {
+  final Object error;
+  final Future<void> Function() onRetry;
+  const StartupErrorPage({
+    super.key,
+    required this.error,
+    required this.onRetry,
+  });
+
+  @override
+  State<StartupErrorPage> createState() => _StartupErrorPageState();
+}
+
+class _StartupErrorPageState extends State<StartupErrorPage> {
+  bool retrying = false;
+
+  Future<void> _retry() async {
+    setState(() => retrying = true);
+    try {
+      await widget.onRetry();
+    } finally {
+      if (mounted) setState(() => retrying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Scaffold(
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Aplikaci se nepodařilo spustit.\n\n$error',
-            textAlign: TextAlign.center,
+          padding: const EdgeInsets.all(Space.xxl),
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 56,
+                          color: p.secondaryLabel,
+                        ),
+                        const SizedBox(height: Space.xl),
+                        Text(
+                          'Aplikaci se nepodařilo spustit',
+                          style: text.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: Space.m),
+                        Text(
+                          'Zkus to znovu. Když to nepomůže, zavři aplikaci '
+                          'úplně a otevři ji znovu. Zálohu ze souboru pak '
+                          'obnovíš v Nastavení.',
+                          style: text.bodyLarge?.copyWith(
+                            color: p.secondaryLabel,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: Space.l),
+                        SelectableText(
+                          '${widget.error}',
+                          style: text.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              PrimaryButton('Zkusit znovu', busy: retrying, onPressed: _retry),
+            ],
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

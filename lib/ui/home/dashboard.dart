@@ -245,7 +245,7 @@ class MissionCard extends StatelessWidget {
     MissionKind.catchUp =>
       '${remainingWorkoutsLabel(m.remaining)} a ${daysLabel(m.daysLeft)} '
           'do konce týdne.',
-    MissionKind.rest => 'Včera jsi cvičil. Trénink si klidně dej i dnes.',
+    MissionKind.rest => 'Včera byl trénink. Klidně si dej další i dnes.',
     MissionKind.trainToday => 'Tvůj týdenní cíl je ${m.goal}×.',
   };
 
@@ -306,6 +306,7 @@ class MissionCard extends StatelessWidget {
               ),
             const SizedBox(height: 12),
             Semantics(
+              container: true,
               label: 'Tento týden ${m.done} z ${m.goal} tréninků',
               excludeSemantics: true,
               child: Row(
