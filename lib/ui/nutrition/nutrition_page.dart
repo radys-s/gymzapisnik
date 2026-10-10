@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
+import '../settings/settings_button.dart';
 import 'barcode_dialog.dart';
 import 'food_form.dart';
 import 'fridge_page.dart';
@@ -16,17 +17,16 @@ String _g(double? v) => v == null ? '–' : '${_n(v)} g';
 String amountLabel(FoodEntry e) {
   final a = formatKg(e.amount);
   if (e.basis == FoodBasis.perServing) {
-    return e.amount == 1 ? '1 porce' : '$a porcí';
+    // 1 porce, 2–4 porce, 5 porcí; desetinné množství je „porce" (2,5 porce).
+    final whole = e.amount == e.amount.roundToDouble();
+    final n = e.amount.round();
+    return !whole || (n >= 1 && n <= 4) ? '$a porce' : '$a porcí';
   }
   return '$a ${e.unit == FoodUnit.ml ? 'ml' : 'g'}';
 }
 
 String _dayTitle(DateTime day, DateTime now) {
-  final diff = DateTime(
-    now.year,
-    now.month,
-    now.day,
-  ).difference(DateTime(day.year, day.month, day.day)).inDays;
+  final diff = calendarDaysBetween(day, now);
   if (diff == 0) return 'Dnes';
   if (diff == 1) return 'Včera';
   return formatDate(day);
@@ -83,6 +83,8 @@ Future<void> addFoodFlow(
 ) async {
   final choice = await showModalBottomSheet<Object>(
     context: context,
+    // Nad spodní lištou, ne uvnitř záložky (jinak by zůstal viset po přepnutí).
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
     builder: (sheet) => SafeArea(
@@ -141,7 +143,15 @@ class NutritionPage extends StatefulWidget {
 
   /// Počáteční den (v testech); jinak dnes.
   final DateTime? initialDay;
-  const NutritionPage(this.state, {super.key, this.initialDay});
+
+  /// Kořen záložky Strava (nadpis a nastavení), jinak vnořená stránka.
+  final bool root;
+  const NutritionPage(
+    this.state, {
+    super.key,
+    this.initialDay,
+    this.root = false,
+  });
 
   @override
   State<NutritionPage> createState() => _NutritionPageState();
@@ -204,7 +214,10 @@ class _NutritionPageState extends State<NutritionPage> {
               totals.fatMissing);
       String lower(bool missing) => missing && entries.isNotEmpty ? '≥ ' : '';
       return Scaffold(
-        appBar: AppBar(title: const Text('Výživa')),
+        appBar: AppBar(
+          title: Text(widget.root ? 'Strava' : 'Výživa'),
+          actions: [if (widget.root) SettingsButton(state)],
+        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => addFoodFlow(context, state, key),
           icon: const Icon(Icons.add),

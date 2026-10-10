@@ -40,7 +40,7 @@ void main() {
     await show(tester, state);
     expect(state.weekGoal, 3);
     expect(find.text('Dnes je dobrý den na trénink'), findsOneWidget);
-    expect(find.text('0/3 tento týden'), findsOneWidget);
+    expect(find.text('0/3'), findsOneWidget); // kruh týdne
   });
 
   testWidgets('trained today: mission done, weekly goal follows settings', (
@@ -57,13 +57,13 @@ void main() {
     });
     await show(tester, state);
     expect(find.text('Týdenní cíl splněn'), findsOneWidget);
-    expect(find.text('1/1 tento týden'), findsOneWidget);
+    expect(find.text('1/1'), findsOneWidget);
     expect(find.text('1 týden'), findsOneWidget); // streak chip
 
     await tester.runAsync(() => state.setWeekGoal(null));
     await tester.pumpAndSettle();
     expect(find.text('Dnes máš hotovo'), findsOneWidget);
-    expect(find.text('1/3 tento týden'), findsOneWidget);
+    expect(find.text('1/3'), findsOneWidget);
   });
 
   test('week goal follows split until set manually', () async {

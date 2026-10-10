@@ -9,7 +9,7 @@ import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  testWidgets('home shows week, recent records and quick progress', (
+  testWidgets('home shows week ring, recent history and the records row', (
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
@@ -39,21 +39,29 @@ void main() {
     expect(find.text('Tento týden'), findsOneWidget);
     expect(find.text('0/3'), findsOneWidget); // tréninky vůči cíli
     expect(find.text('0'), findsOneWidget); // série
-    expect(find.text('Poslední trénink'), findsOneWidget);
-    expect(find.text('Nedávné rekordy'), findsOneWidget);
-    expect(find.textContaining('Max váha 82,5 kg'), findsOneWidget);
-    expect(find.text('Progres: Bench press'), findsOneWidget);
-    expect(find.text('odhad 1RM +9,5 kg za 3 tréninky'), findsOneWidget);
+    expect(find.text('Historie'), findsOneWidget);
+    expect(find.text('Vše'), findsOneWidget);
+    expect(find.textContaining('Rekord: Bench press 82,5 kg'), findsOneWidget);
+    expect(find.text('Program'), findsOneWidget);
+    expect(find.text('Tělesná váha'), findsOneWidget);
+
+    await tester.tap(find.text('Vše'));
+    await tester.pumpAndSettle();
+    expect(find.text('Historie'), findsWidgets);
+    expect(find.text('Rekord'), findsNWidgets(2)); // první trénink není rekord
   });
 
-  testWidgets('empty home has no dashboard cards', (tester) async {
+  testWidgets('empty home: one start action, no history section', (
+    tester,
+  ) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final state = AppState(LocalStore(db));
     await tester.runAsync(state.load);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: HomePage(state))));
     expect(find.text('Začít trénink'), findsOneWidget);
-    expect(find.text('Tento týden'), findsNothing);
-    expect(find.text('Nedávné rekordy'), findsNothing);
+    expect(find.text('Vybrat program'), findsOneWidget);
+    expect(find.text('Historie'), findsNothing);
+    expect(find.text('0/3'), findsOneWidget);
   });
 }

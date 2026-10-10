@@ -34,7 +34,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
-    expect(find.text('Domů'), findsWidgets);
+    expect(find.text('Cvičení'), findsWidgets);
     expect(state.profile.adult, isFalse);
     expect(state.profile.restrictWeightLoss, isTrue);
 
