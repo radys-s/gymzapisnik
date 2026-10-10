@@ -20,6 +20,7 @@ import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/nutrition.dart';
 import '../domain/profile.dart';
+import '../domain/set_match.dart';
 import '../coach/reminders.dart';
 import '../notify/notifier.dart';
 import '../premium/entitlements.dart';
@@ -271,22 +272,58 @@ class AppState extends ChangeNotifier {
     return saveActive();
   }
 
-  /// Další série: hodnoty z minula na stejné pozici, jinak kopie poslední.
+  /// Posune cvik v tréninku o [delta] míst (záporně = nahoru).
+  Future<void> moveExercise(WorkoutExercise entry, int delta) {
+    final list = active?.exercises;
+    if (list == null) return Future.value();
+    final from = list.indexOf(entry);
+    final to = from + delta;
+    if (from < 0 || to < 0 || to >= list.length) return Future.value();
+    list
+      ..removeAt(from)
+      ..insert(to, entry);
+    return saveActive();
+  }
+
+  /// Hodnoty „minule" pro série cviku (stejný druh a pořadí v něm).
+  List<SetEntry?> previousFor(WorkoutExercise entry) =>
+      previousSets(entry.sets, lastSetsOf(entry.exerciseId));
+
+  /// Další pracovní série: hodnoty z minula na stejné pozici, jinak kopie
+  /// poslední pracovní série.
   Future<SetEntry> addSet(WorkoutExercise entry) async {
-    final last = lastSetsOf(entry.exerciseId);
-    final index = entry.sets.length;
-    final source = index < last.length
-        ? last[index]
-        : entry.sets.lastOrNull ?? SetEntry();
-    final set = source.copy(done: false)..warmup = false;
+    final set = nextWorkingSet(entry.sets, lastSetsOf(entry.exerciseId));
     entry.sets.add(set);
     await saveActive();
     return set;
   }
 
-  Future<void> removeSet(WorkoutExercise entry, SetEntry set) {
-    entry.sets.remove(set);
-    return saveActive();
+  /// Smaže sérii a vrátí její pozici (pro „Vrátit"), -1 když tam nebyla.
+  Future<int> removeSet(WorkoutExercise entry, SetEntry set) async {
+    final index = entry.sets.indexOf(set);
+    if (index < 0) return index;
+    entry.sets.removeAt(index);
+    await saveActive();
+    return index;
+  }
+
+  /// Vrátí smazanou sérii na původní místo. [sets] je seznam, ze kterého
+  /// se mazalo: po nahrazení cviku, jeho odebrání nebo dokončení tréninku
+  /// se nic nevrací (vrací `false`).
+  Future<bool> restoreSet(
+    WorkoutExercise entry,
+    SetEntry set,
+    int index, {
+    required List<SetEntry> sets,
+  }) async {
+    if (!(active?.exercises.contains(entry) ?? false) ||
+        !identical(entry.sets, sets) ||
+        sets.contains(set)) {
+      return false;
+    }
+    sets.insert(index.clamp(0, sets.length), set);
+    await saveActive();
+    return true;
   }
 
   /// Označí sérii jako hotovou (nebo zpět). Vrací chybovou hlášku,
@@ -346,6 +383,13 @@ class AppState extends ChangeNotifier {
 
   Future<void> toggleWarmup(SetEntry set) {
     set.warmup = !set.warmup;
+    return saveActive();
+  }
+
+  /// Nastaví druh série (rozcvička / pracovní).
+  Future<void> setWarmup(SetEntry set, bool warmup) {
+    if (set.warmup == warmup) return Future.value();
+    set.warmup = warmup;
     return saveActive();
   }
 

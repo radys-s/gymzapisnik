@@ -8,6 +8,8 @@ import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
 import 'exercise_picker.dart';
 
 /// Rozepsaný trénink. Každá změna se hned ukládá (přežije zavření aplikace).
@@ -24,20 +26,35 @@ class _WorkoutPageState extends State<WorkoutPage> {
   bool _busy = false;
 
   void _snack(String text) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+    if (mounted) showToast(context, text);
   }
 
-  Future<String?> _pickExercise() => Navigator.push<String>(
-    context,
-    MaterialPageRoute(builder: (_) => ExercisePickerPage(state)),
-  );
+  Future<List<String>?> _pickExercises({bool multiple = true}) =>
+      Navigator.push<List<String>>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ExercisePickerPage(state, multiple: multiple),
+        ),
+      );
 
-  Future<void> _addExercise() async {
-    final id = await _pickExercise();
-    if (id != null) await state.addExercise(id);
+  Future<void> _addExercises() async {
+    final ids = await _pickExercises();
+    if (ids == null) return;
+    var failed = 0;
+    for (final id in ids) {
+      try {
+        await state.addExercise(id);
+      } catch (_) {
+        failed++;
+      }
+    }
+    if (failed > 0) {
+      _snack(
+        failed == ids.length
+            ? 'Cvik se nepodařilo přidat. Zkus to znovu.'
+            : 'Některé cviky se nepodařilo přidat. Zkus je přidat znovu.',
+      );
+    }
   }
 
   Future<String?> _editText({
@@ -71,25 +88,13 @@ class _WorkoutPageState extends State<WorkoutPage> {
     ).whenComplete(controller.dispose);
   }
 
-  Future<bool> _confirm(String title, String body, String action) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(title),
-          content: Text(body),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Zpět'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(action),
-            ),
-          ],
-        ),
-      ) ??
-      false;
+  Future<void> _save() async {
+    try {
+      await state.saveActive();
+    } catch (_) {
+      _snack('Změnu se nepodařilo uložit. Zkus to znovu.');
+    }
+  }
 
   Future<void> _rename(Workout workout) async {
     final name = await _editText(
@@ -98,7 +103,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
     );
     if (name == null || name.trim().isEmpty) return;
     workout.name = name.trim();
-    await state.saveActive();
+    await _save();
   }
 
   Future<void> _editWorkoutNote(Workout workout) async {
@@ -109,7 +114,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
     );
     if (note == null) return;
     workout.note = note.trim();
-    await state.saveActive();
+    await _save();
   }
 
   Future<void> _finish(Workout workout) async {
@@ -122,16 +127,18 @@ class _WorkoutPageState extends State<WorkoutPage> {
           .where((s) => !s.done && s.reps > 0)
           .length;
       if (pending > 0 &&
-          !await _confirm(
-            'Dokončit trénink?',
-            'Nepotvrzené série ($pending) se neuloží.',
-            'Dokončit',
+          !await confirmAction(
+            context,
+            title: 'Dokončit trénink?',
+            message: 'Nepotvrzené série ($pending) se neuloží.',
+            confirm: 'Dokončit',
           )) {
         return;
       }
       final result = await state.finishActive();
       if (!mounted) return;
       if (result.error != null) return _snack(result.error!);
+      _hideUndo();
       Navigator.pop(context, result.workout);
     } catch (_) {
       _snack('Trénink se nepodařilo uložit. Zkus dokončení znovu.');
@@ -142,18 +149,47 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
   Future<void> _discard() async {
     if (_busy) return;
-    if (!await _confirm(
-      'Zahodit trénink?',
-      'Rozepsaný trénink se smaže.',
-      'Zahodit',
+    if (!await confirmAction(
+      context,
+      title: 'Zahodit trénink?',
+      message: 'Rozepsaný trénink se smaže.',
+      confirm: 'Zahodit',
+      destructive: true,
     )) {
       return;
     }
-    await state.discardActive();
-    if (mounted) Navigator.pop(context);
+    try {
+      await state.discardActive();
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      _snack('Trénink se nepodařilo zahodit. Zkus to znovu.');
+    }
   }
 
+  /// Smaže sérii a nabídne „Vrátit".
+  Future<void> _removeSet(WorkoutExercise entry, SetEntry set) async {
+    final sets = entry.sets;
+    try {
+      final index = await state.removeSet(entry, set);
+      if (index < 0 || !mounted) return;
+      showUndo(context, 'Série smazána', () async {
+        try {
+          final ok = await state.restoreSet(entry, set, index, sets: sets);
+          if (!ok) _snack('Sérii už nejde vrátit.');
+        } catch (_) {
+          _snack('Sérii se nepodařilo vrátit.');
+        }
+      });
+    } catch (_) {
+      _snack('Sérii se nepodařilo smazat. Zkus to znovu.');
+    }
+  }
+
+  /// Zavře nabídku „Vrátit" (po změně, po které už nedává smysl).
+  void _hideUndo() => ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
   Future<void> _exerciseMenu(WorkoutExercise entry, String action) async {
+    final hasDone = entry.sets.any((s) => s.done);
     switch (action) {
       case 'note':
         final note = await _editText(
@@ -164,20 +200,49 @@ class _WorkoutPageState extends State<WorkoutPage> {
         );
         if (note == null) return;
         entry.note = note.trim();
-        await state.saveActive();
+        await _save();
       case 'replace':
-        final id = await _pickExercise();
-        if (id != null) await state.replaceExercise(entry, id);
-      case 'remove':
-        if (entry.sets.any((s) => s.done) &&
-            !await _confirm(
-              'Odebrat cvik?',
-              'Potvrzené série tohoto cviku se smažou.',
-              'Odebrat',
+        if (hasDone &&
+            !await confirmAction(
+              context,
+              title: 'Nahradit cvik?',
+              message: 'Potvrzené série tohoto cviku se smažou.',
+              confirm: 'Nahradit',
+              destructive: true,
             )) {
           return;
         }
-        await state.removeExercise(entry);
+        final ids = await _pickExercises(multiple: false);
+        if (ids == null || ids.isEmpty) return;
+        _hideUndo();
+        try {
+          await state.replaceExercise(entry, ids.first);
+        } catch (_) {
+          _snack('Cvik se nepodařilo nahradit. Zkus to znovu.');
+        }
+      case 'up' || 'down':
+        try {
+          await state.moveExercise(entry, action == 'up' ? -1 : 1);
+        } catch (_) {
+          _snack('Pořadí se nepodařilo uložit. Zkus to znovu.');
+        }
+      case 'remove':
+        if (hasDone &&
+            !await confirmAction(
+              context,
+              title: 'Odebrat cvik?',
+              message: 'Potvrzené série tohoto cviku se smažou.',
+              confirm: 'Odebrat',
+              destructive: true,
+            )) {
+          return;
+        }
+        _hideUndo();
+        try {
+          await state.removeExercise(entry);
+        } catch (_) {
+          _snack('Cvik se nepodařilo odebrat. Zkus to znovu.');
+        }
     }
   }
 
@@ -187,20 +252,29 @@ class _WorkoutPageState extends State<WorkoutPage> {
     builder: (context, _) {
       final workout = state.active;
       if (workout == null) return const Scaffold();
+      final p = context.palette;
+      final text = Theme.of(context).textTheme;
+      final exercises = workout.exercises;
       return PopScope(
         canPop: !_busy,
         child: AbsorbPointer(
           absorbing: _busy,
           child: Scaffold(
             appBar: AppBar(
-              title: InkWell(
-                onTap: () => _rename(workout),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(workout.name, overflow: TextOverflow.ellipsis),
-                    _Elapsed(workout.startedAt),
-                  ],
+              title: Semantics(
+                container: true,
+                button: true,
+                hint: 'Přejmenovat trénink',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(Radii.control),
+                  onTap: () => _rename(workout),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(workout.name, overflow: TextOverflow.ellipsis),
+                      _Elapsed(workout.startedAt),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -209,64 +283,85 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   child: Text(_busy ? 'Ukládám…' : 'Dokončit'),
                 ),
                 PopupMenuButton<String>(
+                  tooltip: 'Možnosti tréninku',
                   onSelected: (v) => switch (v) {
                     'rename' => _rename(workout),
                     'note' => _editWorkoutNote(workout),
                     _ => _discard(),
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'rename', child: Text('Přejmenovat')),
-                    PopupMenuItem(
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'rename',
+                      child: Text('Přejmenovat'),
+                    ),
+                    const PopupMenuItem(
                       value: 'note',
                       child: Text('Poznámka k tréninku'),
                     ),
                     PopupMenuItem(
                       value: 'discard',
-                      child: Text('Zahodit trénink'),
+                      child: Text(
+                        'Zahodit trénink',
+                        style: TextStyle(color: p.negative),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
             body: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                Space.s,
+                Space.page,
+                Space.xxxl,
+              ),
               children: [
                 if (workout.note.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                    child: Text(
-                      workout.note,
-                      style: Theme.of(context).textTheme.bodySmall,
+                    padding: const EdgeInsets.fromLTRB(
+                      Space.xs,
+                      0,
+                      Space.xs,
+                      Space.m,
                     ),
+                    child: Text(workout.note, style: text.bodySmall),
                   ),
-                if (workout.exercises.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Text(
-                      'Přidej první cvik.',
-                      textAlign: TextAlign.center,
-                    ),
+                if (exercises.isEmpty)
+                  const EmptyState(
+                    icon: Icons.fitness_center_rounded,
+                    title: 'Zatím žádný cvik',
+                    message: 'Přidej první cvik a zapiš sérii.',
                   ),
-                for (final entry in workout.exercises)
+                for (var i = 0; i < exercises.length; i++)
                   _ExerciseCard(
-                    key: ObjectKey(entry),
+                    key: ObjectKey(exercises[i]),
                     state: state,
-                    entry: entry,
-                    onMenu: (action) => _exerciseMenu(entry, action),
+                    entry: exercises[i],
+                    canMoveUp: i > 0,
+                    canMoveDown: i < exercises.length - 1,
+                    onMenu: (action) => _exerciseMenu(exercises[i], action),
+                    onRemoveSet: (set) => _removeSet(exercises[i], set),
                     onError: _snack,
+                  ),
+                const SizedBox(height: Space.s),
+                if (exercises.isEmpty)
+                  PrimaryButton(
+                    'Přidat cvik',
+                    icon: Icons.add_rounded,
+                    onPressed: _addExercises,
+                  )
+                else
+                  SecondaryButton(
+                    'Přidat cvik',
+                    icon: Icons.add_rounded,
+                    onPressed: _addExercises,
                   ),
               ],
             ),
             bottomNavigationBar: state.restEndsAt == null
                 ? null
                 : _RestBar(state: state, endsAt: state.restEndsAt!),
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.centerFloat,
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _addExercise,
-              icon: const Icon(Icons.add),
-              label: const Text('Přidat cvik'),
-            ),
           ),
         ),
       );
@@ -306,7 +401,11 @@ class _ElapsedState extends State<_Elapsed> {
     final text = s >= 3600
         ? '${s ~/ 3600}:${two(s % 3600 ~/ 60)}:${two(s % 60)}'
         : '${s ~/ 60}:${two(s % 60)}';
-    return Text(text, style: Theme.of(context).textTheme.bodySmall);
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall
+          ?.copyWith(fontFeatures: tabular),
+    );
   }
 }
 
@@ -426,112 +525,176 @@ String? _coachReason(WorkoutExercise entry) {
       : null;
 }
 
+/// Šířky sloupců řádku série (záhlaví a řádky musí sedět).
+const _typeWidth = minTap;
+const _doneWidth = 52.0;
+
 class _ExerciseCard extends StatelessWidget {
   final AppState state;
   final WorkoutExercise entry;
+  final bool canMoveUp;
+  final bool canMoveDown;
   final ValueChanged<String> onMenu;
+  final ValueChanged<SetEntry> onRemoveSet;
   final ValueChanged<String> onError;
 
   const _ExerciseCard({
     super.key,
     required this.state,
     required this.entry,
+    required this.canMoveUp,
+    required this.canMoveDown,
     required this.onMenu,
+    required this.onRemoveSet,
     required this.onError,
   });
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
     final exercise = state.exercise(entry.exerciseId);
-    final last = state.lastSetsOf(entry.exerciseId);
+    final previous = state.previousFor(entry);
     final bodyweight = exercise.type == ExerciseType.bodyweight;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     var workingIndex = 0;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 4, 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.m),
+      child: Panel(
+        padding: const EdgeInsets.fromLTRB(
+          Space.m,
+          Space.xs,
+          Space.xs,
+          Space.s,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    exercise.name,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: Space.xs),
+                    child: Semantics(
+                      container: true,
+                      header: true,
+                      child: Text(exercise.name, style: text.titleMedium),
+                    ),
                   ),
                 ),
                 PopupMenuButton<String>(
                   tooltip: 'Možnosti cviku',
+                  icon: Icon(Icons.more_horiz_rounded, color: p.secondaryLabel),
                   onSelected: onMenu,
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'note', child: Text('Poznámka')),
-                    PopupMenuItem(value: 'replace', child: Text('Nahradit')),
-                    PopupMenuItem(value: 'remove', child: Text('Odebrat')),
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'note', child: Text('Poznámka')),
+                    const PopupMenuItem(
+                      value: 'replace',
+                      child: Text('Nahradit'),
+                    ),
+                    if (canMoveUp)
+                      const PopupMenuItem(
+                        value: 'up',
+                        child: Text('Posunout výš'),
+                      ),
+                    if (canMoveDown)
+                      const PopupMenuItem(
+                        value: 'down',
+                        child: Text('Posunout níž'),
+                      ),
+                    PopupMenuItem(
+                      value: 'remove',
+                      child: Text(
+                        'Odebrat',
+                        style: TextStyle(color: p.negative),
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
             if (_coachReason(entry) case final reason?)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4, right: 8),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.xs,
+                  0,
+                  Space.s,
+                  Space.s,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.tips_and_updates_outlined,
                       size: 16,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: p.accent,
                     ),
                     const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        reason,
-                        style: TextStyle(color: muted, fontSize: 13),
-                      ),
-                    ),
+                    Expanded(child: Text(reason, style: text.bodySmall)),
                   ],
                 ),
               ),
             if (entry.note.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  entry.note,
-                  style: TextStyle(color: muted, fontSize: 13),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.xs,
+                  0,
+                  Space.s,
+                  Space.s,
                 ),
+                child: Text(entry.note, style: text.bodySmall),
               ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: DefaultTextStyle.merge(
-                style: TextStyle(color: muted, fontSize: 12),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 36, child: Text('Série')),
-                    const Expanded(flex: 3, child: Text('Minule')),
-                    Expanded(flex: 3, child: Text(bodyweight ? '+kg' : 'kg')),
-                    const Expanded(flex: 3, child: Text('Opak.')),
-                    const SizedBox(width: 52),
-                  ],
+            ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsets.only(right: Space.s),
+                child: DefaultTextStyle.merge(
+                  style: text.labelMedium,
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                        width: _typeWidth,
+                        child: Text('Série', textAlign: TextAlign.center),
+                      ),
+                      const Expanded(flex: 3, child: Text('Minule')),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          bodyweight ? '+kg' : 'kg',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const Expanded(
+                        flex: 3,
+                        child: Text('opak.', textAlign: TextAlign.center),
+                      ),
+                      const SizedBox(width: _doneWidth),
+                    ],
+                  ),
                 ),
               ),
             ),
+            const SizedBox(height: Space.xs),
             for (var i = 0; i < entry.sets.length; i++)
               _SetRow(
                 key: ObjectKey(entry.sets[i]),
                 state: state,
-                entry: entry,
                 set: entry.sets[i],
                 label: entry.sets[i].warmup ? 'R' : '${++workingIndex}',
-                previous: i < last.length ? last[i] : null,
+                bodyweight: bodyweight,
+                previous: previous[i],
+                onRemove: () => onRemoveSet(entry.sets[i]),
                 onError: onError,
               ),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                onPressed: () => state.addSet(entry),
-                icon: const Icon(Icons.add),
+                onPressed: () async {
+                  try {
+                    await state.addSet(entry);
+                  } catch (_) {
+                    onError('Sérii se nepodařilo přidat. Zkus to znovu.');
+                  }
+                },
+                icon: const Icon(Icons.add_rounded),
                 label: const Text('Série'),
               ),
             ),
@@ -544,19 +707,21 @@ class _ExerciseCard extends StatelessWidget {
 
 class _SetRow extends StatefulWidget {
   final AppState state;
-  final WorkoutExercise entry;
   final SetEntry set;
   final String label;
+  final bool bodyweight;
   final SetEntry? previous;
+  final VoidCallback onRemove;
   final ValueChanged<String> onError;
 
   const _SetRow({
     super.key,
     required this.state,
-    required this.entry,
     required this.set,
     required this.label,
+    required this.bodyweight,
     required this.previous,
+    required this.onRemove,
     required this.onError,
   });
 
@@ -573,6 +738,9 @@ class _SetRowState extends State<_SetRow> {
   static String _kgText(double v) => v == 0 ? '' : formatKg(v);
   static String _repsText(int v) => v == 0 ? '' : '$v';
 
+  /// Název série pro čtečku obrazovky.
+  String get _name => widget.set.warmup ? 'Rozcvička' : 'Série ${widget.label}';
+
   @override
   void dispose() {
     _toggleCooldown?.cancel();
@@ -585,12 +753,12 @@ class _SetRowState extends State<_SetRow> {
     widget.set
       ..weight = parseNum(weight.text) ?? 0
       ..reps = int.tryParse(reps.text.trim()) ?? 0;
-    unawaited(_persist());
+    unawaited(_persist(widget.state.saveActive));
   }
 
-  Future<void> _persist() async {
+  Future<void> _persist(Future<void> Function() save) async {
     try {
-      await widget.state.saveActive();
+      await save();
     } catch (_) {
       if (mounted) {
         widget.onError(
@@ -620,67 +788,127 @@ class _SetRowState extends State<_SetRow> {
     }
   }
 
-  Widget _field(TextEditingController c, String hint, {bool decimal = false}) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: TextField(
-          controller: c,
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
-            ),
-          ],
-          decoration: InputDecoration(
-            hintText: hint,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+  void _typeMenu(String action) => switch (action) {
+    'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
+    'warmup' => _persist(() => widget.state.setWarmup(widget.set, true)),
+    _ => widget.onRemove(),
+  };
+
+  Widget _field(
+    TextEditingController c, {
+    required String label,
+    bool decimal = false,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 3),
+    child: Semantics(
+      container: true,
+      label: label,
+      child: TextField(
+        controller: c,
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(
+            decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
           ),
-          onTap: () => c.selection = TextSelection(
-            baseOffset: 0,
-            extentOffset: c.text.length,
-          ),
-          onChanged: (_) => _changed(),
+        ],
+        style: Theme.of(context).textTheme.bodyLarge
+            ?.copyWith(fontFeatures: tabular),
+        decoration: const InputDecoration(
+          hintText: '0',
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         ),
-      );
+        onTap: () => c.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: c.text.length,
+        ),
+        onChanged: (_) => _changed(),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
     final set = widget.set;
-    final scheme = Theme.of(context).colorScheme;
     final prev = widget.previous;
+    final kgLabel = widget.bodyweight ? 'Přidaná váha v kg' : 'Váha v kg';
     return Dismissible(
       key: ObjectKey(set),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: scheme.errorContainer,
-        child: const Icon(Icons.delete_outline),
+        padding: const EdgeInsets.only(right: Space.xl),
+        decoration: BoxDecoration(
+          color: p.negative,
+          borderRadius: BorderRadius.circular(Radii.control),
+        ),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
-      onDismissed: (_) {
-        widget.state.removeSet(widget.entry, set);
-      },
+      onDismissed: (_) => widget.onRemove(),
       child: Container(
-        color: set.done ? scheme.primary.withValues(alpha: 0.08) : null,
-        padding: const EdgeInsets.only(right: 8),
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.only(right: Space.s),
+        decoration: BoxDecoration(
+          color: set.done ? p.accent.withValues(alpha: 0.12) : null,
+          borderRadius: BorderRadius.circular(Radii.control),
+        ),
         child: Row(
           children: [
             SizedBox(
-              width: 36,
-              child: InkWell(
-                onTap: () => widget.state.toggleWarmup(set),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Text(
-                    widget.label,
-                    semanticsLabel: set.warmup
-                        ? 'Rozcvička, přepnout na pracovní'
-                        : 'Série ${widget.label}, přepnout na rozcvičku',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: set.warmup ? scheme.tertiary : null,
+              width: _typeWidth,
+              height: minTap,
+              // Vlastní uzel, jinak se tlačítko slije s textem „Minule".
+              child: Semantics(
+                container: true,
+                button: true,
+                child: PopupMenuButton<String>(
+                  tooltip: '$_name, změnit typ',
+                  padding: EdgeInsets.zero,
+                  onSelected: _typeMenu,
+                  itemBuilder: (_) => [
+                    CheckedPopupMenuItem(
+                      value: 'working',
+                      checked: !set.warmup,
+                      child: const Text('Pracovní série'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: 'warmup',
+                      checked: set.warmup,
+                      child: const Text('Rozcvička'),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        'Smazat sérii',
+                        style: TextStyle(color: p.negative),
+                      ),
+                    ),
+                  ],
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 30),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: set.warmup
+                            ? p.accent.withValues(alpha: 0.16)
+                            : p.fill,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        style: text.titleSmall?.copyWith(
+                          color: set.warmup ? p.accent : p.label,
+                          fontFeatures: tabular,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -690,25 +918,39 @@ class _SetRowState extends State<_SetRow> {
               flex: 3,
               child: Text(
                 prev == null ? '–' : '${formatKg(prev.weight)}×${prev.reps}',
-                style: TextStyle(color: scheme.onSurfaceVariant),
+                semanticsLabel: prev == null
+                    ? 'Minule nic'
+                    : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text.bodyMedium?.copyWith(
+                  color: p.secondaryLabel,
+                  fontFeatures: tabular,
+                ),
               ),
             ),
-            Expanded(flex: 3, child: _field(weight, '0', decimal: true)),
-            Expanded(flex: 3, child: _field(reps, '0')),
-            SizedBox(
-              width: 52,
+            Expanded(
+              flex: 3,
+              child: _field(weight, label: '$kgLabel, $_name', decimal: true),
+            ),
+            Expanded(flex: 3, child: _field(reps, label: 'Opakování, $_name')),
+            Container(
+              width: _doneWidth,
               height: 48,
-              child: set.done
-                  ? IconButton.filled(
-                      tooltip: 'Zrušit potvrzení',
-                      onPressed: _saving ? null : _toggleDone,
-                      icon: const Icon(Icons.check),
-                    )
-                  : IconButton.outlined(
-                      tooltip: 'Potvrdit sérii',
-                      onPressed: _saving ? null : _toggleDone,
-                      icon: const Icon(Icons.check),
-                    ),
+              padding: const EdgeInsets.only(left: Space.xs),
+              child: IconButton(
+                tooltip: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
+                onPressed: _saving ? null : _toggleDone,
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  backgroundColor: set.done ? p.accent : p.fill,
+                  foregroundColor: set.done ? p.onAccent : p.secondaryLabel,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Radii.control),
+                  ),
+                ),
+                icon: const Icon(Icons.check_rounded),
+              ),
             ),
           ],
         ),
