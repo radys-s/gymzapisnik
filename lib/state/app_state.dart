@@ -619,10 +619,15 @@ class AppState extends ChangeNotifier {
   // ---------------------------------------------------------------------
 
   /// Změní nastavení v profilu (`null` = beze změny).
-  Future<void> setPreferences({int? restSeconds, String? theme}) async {
+  Future<void> setPreferences({
+    int? restSeconds,
+    String? theme,
+    String? accent,
+  }) async {
     final next = profile.withExtra({
       'restSeconds': ?restSeconds?.clamp(15, 600),
       'theme': ?theme,
+      'accent': ?accent,
     });
     await _enqueue(() => store.put(Kinds.profile, next.toJson()));
     profile = next;
@@ -726,11 +731,28 @@ class AppState extends ChangeNotifier {
 
   Future<void> savePantry(List<PantryItem> items) => _saveProfile(
     profile.withExtra({
-      'pantry': items.isEmpty
-          ? null
-          : [for (final i in items) i.toJson()],
+      'pantry': items.isEmpty ? null : [for (final i in items) i.toJson()],
     }),
   );
+
+  /// Úvod je za uživatelem; zároveň zná novinky této verze.
+  Future<void> finishWelcome(String version) => _saveProfile(
+    profile.withExtra({'welcomeSeen': true, 'seenVersion': version}),
+  );
+
+  Future<void> markVersionSeen(String version) =>
+      _saveProfile(profile.withExtra({'seenVersion': version}));
+
+  /// Zapamatuje si záložku; chyba uložení nesmí rozbít přepnutí.
+  Future<void> setLastTab(int tab) async {
+    if (profile.lastTab == tab) return;
+    profile = profile.withExtra({'lastTab': tab == 1 ? 1 : null});
+    try {
+      await _enqueue(() => store.put(Kinds.profile, profile.toJson()));
+    } catch (e) {
+      debugPrint('Záložku se nepodařilo uložit: $e');
+    }
+  }
 
   Future<void> acceptAiNotice() =>
       _saveProfile(profile.withExtra({'aiNotice': true}));

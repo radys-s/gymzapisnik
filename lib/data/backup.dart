@@ -17,6 +17,7 @@ const backupSettingsKeys = {
   'restSeconds',
   'split',
   'theme',
+  'accent',
   'weekGoal',
   'proteinTarget',
   'kcalTarget',
@@ -119,7 +120,7 @@ Backup decodeBackup(String source) {
       throw const FormatException('Záloha obsahuje neplatné nastavení.');
     }
     if (rawSettings is Map) {
-      for (final key in ['split', 'theme']) {
+      for (final key in ['split', 'theme', 'accent']) {
         if (rawSettings[key] != null && rawSettings[key] is! String) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
