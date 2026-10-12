@@ -41,14 +41,24 @@ async function type(page, index, text) {
   await semantics(page);
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-  await page.getByRole('button', {name: /^(Začít trénink|Volný trénink)$/}).click();
-  await page.getByRole('button', {name: /Přidat cvik/}).click();
-  await type(page, 0, 'bench');
-  await page.getByRole('button', {name: /^Bench press/}).first().click();
+  // Program může založit den s více cviky; bench press v něm už být může.
+  await page.getByRole('button', {name: /^(Začít|Pokračovat v tréninku)/}).first().click();
+  await see(page, /Potvrdit sérii|Přidat cvik/);
+  const workoutText = () => page.evaluate(() => [...document.querySelectorAll('flt-semantics')]
+    .map(e => e.getAttribute('aria-label') || e.textContent).join(' | '));
+  if (!/Bench press/.test(await workoutText())) {
+    await page.getByRole('button', {name: /Přidat cvik/}).first().click();
+    await see(page, /Přidat cviky/);
+    await page.getByRole('textbox').last().click();
+    await page.keyboard.type('bench');
+    // Výběr je vícenásobný: označit cvik a potvrdit tlačítkem dole.
+    await page.getByRole('button', {name: /^Bench press/}).first().click();
+    await page.getByRole('button', {name: 'Přidat cvik'}).last().click();
+  }
   await see(page, /Potvrdit sérii/);
   await type(page, 0, '82,5');
   await type(page, 1, '7');
-  await page.getByRole('button', {name: 'Potvrdit sérii', exact: true}).click();
+  await page.getByRole('button', {name: 'Potvrdit sérii'}).first().click();
   await see(page, /Zrušit potvrzení/);
 
   // A real service worker install/controller change using the same built assets.
@@ -90,15 +100,21 @@ async function type(page, index, text) {
   assert.ok(values.includes('6'), JSON.stringify(values));
   console.log('ok: full browser restart offline preserves 82.5 kg x 6');
   await page.getByRole('button', {name: 'Dokončit', exact: true}).click();
+  // Den programu má další nepotvrzené série, takže se dokončení musí potvrdit.
+  await see(page, /Dokončit trénink\?/);
+  await page.getByRole('button', {name: 'Dokončit', exact: true}).last().click();
   await see(page, /Trénink hotový/);
   await see(page, /495/);
   await page.getByRole('button', {name: 'Hotovo', exact: true}).click();
-  await page.getByRole('tab', {name: /Historie/}).click();
+  await page.getByRole('button', {name: 'Vše', exact: true}).click();
   await see(page, /Hevy Push/);
   await see(page, /495/);
   console.log('ok: offline summary and history match saved volume 495 kg');
   assert.deepEqual(errors, []);
-})().catch(e => { console.error(e); process.exitCode = 1; }).finally(async () => {
+})().catch(async e => {
+  console.error(e); process.exitCode = 1;
+  if (process.env.E2E_SHOT) await context?.pages()[0]?.screenshot({path: process.env.E2E_SHOT}).catch(() => {});
+}).finally(async () => {
   fs.writeFileSync(worker, original);
   await context?.close();
 });
