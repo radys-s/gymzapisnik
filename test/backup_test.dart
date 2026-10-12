@@ -145,6 +145,9 @@ void main() {
 
   test('app version matches pubspec', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(pubspec, contains('\nversion: $appVersion\n'));
+    expect(
+      pubspec.split('\n').map((line) => line.trim()),
+      contains('version: $appVersion'),
+    );
   });
 }

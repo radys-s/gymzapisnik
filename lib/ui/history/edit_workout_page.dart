@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -21,6 +23,49 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   late final name = TextEditingController(text: draft.name);
   late final note = TextEditingController(text: draft.note);
   bool saving = false;
+  bool allowExit = false;
+
+  bool get dirty {
+    final current = draft.copy()
+      ..name = name.text
+      ..note = note.text;
+    return jsonEncode(current.toJson()) != jsonEncode(widget.workout.toJson());
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    name.addListener(_changed);
+    note.addListener(_changed);
+  }
+
+  void _changed() => setState(() {});
+
+  Future<void> _leave() async {
+    if (saving) return;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Zahodit změny?'),
+        content: const Text('Úpravy tohoto tréninku ještě nejsou uložené.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Pokračovat v úpravách'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Zahodit změny'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || discard != true) return;
+    setState(() => allowExit = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.pop(context);
+    });
+  }
 
   @override
   void dispose() {
@@ -48,82 +93,93 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
           .showSnackBar(SnackBar(content: Text(error)));
       return;
     }
-    Navigator.pop(context);
+    setState(() => allowExit = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.pop(context);
+    });
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Upravit trénink'),
-      actions: [
-        TextButton(
-          onPressed: saving ? null : _save,
-          child: const Text('Uložit'),
-        ),
-      ],
-    ),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      children: [
-        TextField(
-          controller: name,
-          decoration: const InputDecoration(labelText: 'Název'),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: note,
-          maxLines: 3,
-          minLines: 1,
-          decoration: const InputDecoration(labelText: 'Poznámka'),
-        ),
-        for (final entry in draft.exercises)
-          Card(
-            key: ObjectKey(entry),
-            margin: const EdgeInsets.only(top: 12),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.state.exercise(entry.exerciseId).name,
-                          style: Theme.of(context).textTheme.titleMedium,
+  Widget build(BuildContext context) => PopScope(
+    canPop: allowExit || (!dirty && !saving),
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _leave();
+    },
+    child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Upravit trénink'),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : _save,
+            child: const Text('Uložit'),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          TextField(
+            controller: name,
+            decoration: const InputDecoration(labelText: 'Název'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: note,
+            maxLines: 3,
+            minLines: 1,
+            decoration: const InputDecoration(labelText: 'Poznámka'),
+          ),
+          for (final entry in draft.exercises)
+            Card(
+              key: ObjectKey(entry),
+              margin: const EdgeInsets.only(top: 12),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.state.exercise(entry.exerciseId).name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Odebrat cvik',
+                          onPressed: () =>
+                              setState(() => draft.exercises.remove(entry)),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
+                    ),
+                    for (final set in entry.sets)
+                      _EditSetRow(
+                        key: ObjectKey(set),
+                        set: set,
+                        onChanged: _changed,
+                        onWarmup: () =>
+                            setState(() => set.warmup = !set.warmup),
+                        onRemove: () => setState(() => entry.sets.remove(set)),
+                      ),
+                    TextButton.icon(
+                      onPressed: () => setState(
+                        () => entry.sets.add(
+                          (entry.sets.lastOrNull?.copy() ?? SetEntry())
+                            ..warmup = false
+                            ..done = true,
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Odebrat cvik',
-                        onPressed: () =>
-                            setState(() => draft.exercises.remove(entry)),
-                        icon: const Icon(Icons.delete_outline),
-                      ),
-                    ],
-                  ),
-                  for (final set in entry.sets)
-                    _EditSetRow(
-                      key: ObjectKey(set),
-                      set: set,
-                      onWarmup: () => setState(() => set.warmup = !set.warmup),
-                      onRemove: () => setState(() => entry.sets.remove(set)),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Série'),
                     ),
-                  TextButton.icon(
-                    onPressed: () => setState(
-                      () => entry.sets.add(
-                        (entry.sets.lastOrNull?.copy() ?? SetEntry())
-                          ..warmup = false
-                          ..done = true,
-                      ),
-                    ),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Série'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     ),
   );
 }
@@ -132,11 +188,13 @@ class _EditSetRow extends StatefulWidget {
   final SetEntry set;
   final VoidCallback onWarmup;
   final VoidCallback onRemove;
+  final VoidCallback onChanged;
   const _EditSetRow({
     super.key,
     required this.set,
     required this.onWarmup,
     required this.onRemove,
+    required this.onChanged,
   });
 
   @override
@@ -179,6 +237,7 @@ class _EditSetRowState extends State<_EditSetRow> {
           widget.set
             ..weight = parseNum(weight.text) ?? 0
             ..reps = int.tryParse(reps.text) ?? 0;
+          widget.onChanged();
         },
       ),
     ),

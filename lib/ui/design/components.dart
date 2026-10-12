@@ -16,6 +16,9 @@ class LargeTitlePage extends StatefulWidget {
   final EdgeInsets padding;
   final ScrollController? controller;
 
+  /// Šipka zpět; vypnutá např. u souhrnu hned po tréninku.
+  final bool implyLeading;
+
   const LargeTitlePage({
     super.key,
     required this.title,
@@ -29,6 +32,7 @@ class LargeTitlePage extends StatefulWidget {
       Space.xxxl,
     ),
     this.controller,
+    this.implyLeading = true,
   });
 
   @override
@@ -60,13 +64,16 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
           slivers: [
             SliverAppBar(
               pinned: true,
+              automaticallyImplyLeading: widget.implyLeading,
               backgroundColor: p.background,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
               centerTitle: true,
               title: AnimatedOpacity(
                 opacity: collapsed ? 1 : 0,
-                duration: const Duration(milliseconds: 150),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 150),
                 child: ExcludeSemantics(
                   excluding: !collapsed,
                   child: Text(widget.title),
@@ -499,7 +506,9 @@ class ProgressRing extends StatelessWidget {
       dimension: size,
       child: TweenAnimationBuilder<double>(
         tween: Tween(end: value.clamp(0, 1).toDouble()),
-        duration: const Duration(milliseconds: 600),
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 600),
         curve: Curves.easeOutCubic,
         builder: (context, v, _) => CustomPaint(
           painter: _RingPainter(v, stroke, p.fill, p.gradient),

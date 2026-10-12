@@ -289,8 +289,8 @@ class _TodayCard extends StatelessWidget {
         Text('Začni trénink', style: text.headlineSmall),
         const SizedBox(height: 2),
         Text(
-          'Cviky přidáš během cvičení. Program ti každý den nabídne '
-          'trénink na řadě s návrhem váhy.',
+          'Přidej cviky a zapisuj série. Minulé váhy a opakování '
+          'se předvyplní při dalším tréninku.',
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
         ),
         const SizedBox(height: Space.l),
@@ -300,8 +300,6 @@ class _TodayCard extends StatelessWidget {
           busy: busy,
           onPressed: () => onStart(state.startWorkout),
         ),
-        const SizedBox(height: Space.s),
-        SecondaryButton('Vybrat program', onPressed: onProgram),
       ]);
     }
 

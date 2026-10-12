@@ -103,7 +103,7 @@ class _AppShellState extends State<AppShell> {
         if (didPop) return;
         final nav = _navigators[tab].currentState;
         if (nav != null && nav.canPop()) {
-          nav.pop();
+          nav.maybePop();
         } else if (tab != 0) {
           _select(0);
         } else {

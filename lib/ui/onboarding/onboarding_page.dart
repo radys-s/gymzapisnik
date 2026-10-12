@@ -15,22 +15,23 @@ const _intro = <_Intro>[
     icon: null,
     title: 'Gym zápisník',
     body:
-        'Sérii zapíšeš jedním klepnutím. Aplikace si pamatuje minulý '
-        'trénink a navrhne, kolik přidat.',
+        'Aplikace předvyplní minulé váhy a opakování. Upravíš je podle '
+        'dnešního výkonu a potvrdíš sérii.',
   ),
   (
     icon: Icons.restaurant_rounded,
     title: 'Trénink i jídlo na jednom místě',
     body:
-        'Program ti každý den řekne, co je na řadě. Ve Stravě hlídáš '
+        'Vybereš si program a den tréninku. Ve Stravě sleduješ '
         'bílkoviny a necháš si poradit, co uvařit z ledničky.',
   ),
   (
     icon: Icons.lock_outline_rounded,
     title: 'Tvoje data zůstávají u tebe',
     body:
-        'Bez účtu a bez reklam. Všechno je uložené v telefonu a funguje '
-        'i bez internetu.',
+        'Bez účtu a bez reklam. Zápis tréninku, historie a ruční deník '
+        'fungují bez internetu. AI a hledání čárových kódů potřebují '
+        'připojení a odesílají údaje ke zpracování. Data si zálohuj do souboru.',
   ),
 ];
 
@@ -59,7 +60,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   void _go(int to) => _pages.animateToPage(
     to,
-    duration: const Duration(milliseconds: 320),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 320),
     curve: Curves.easeOutCubic,
   );
 
