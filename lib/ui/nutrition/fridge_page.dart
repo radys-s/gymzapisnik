@@ -39,7 +39,8 @@ Future<bool> confirmAiNotice(BuildContext context, AppState state) async {
       title: const Text('Než použiješ AI'),
       content: const Text(
         'Fotka nebo seznam potravin se odešle přes server aplikace do '
-        'Cloudflare Workers AI. Nic se neukládá a nepoužívá k ničemu jinému.\n\n'
+        'Cloudflare Workers AI kvůli rozpoznání nebo návrhu jídel. '
+        'Potvrzený seznam a poslední návrhy si aplikace pamatuje v zařízení.\n\n'
         'AI se může splést: seznam i hodnoty si vždy zkontroluj. Návrhy jídel '
         'jsou jen inspirace, ne výživové ani zdravotní doporučení.',
       ),
@@ -74,11 +75,34 @@ class _FridgePageState extends State<FridgePage> {
   late List<PantryItem> items = [...widget.state.pantry];
 
   /// Názvy (malými písmeny) vynechané z návrhu.
-  final skipped = <String>{};
-  int minutes = 20;
+  late Set<String> skipped = {...state.pantryExcluded};
+  late int minutes = state.pantryMinutes;
   String? busy;
   bool inFlight = false;
   String? error;
+  int requestId = 0;
+
+  void _cancel() {
+    requestId++;
+    final coach = state.coach;
+    if (coach is CancellableFridgeCoach) {
+      (coach as CancellableFridgeCoach).cancelPending();
+    }
+    setState(() {
+      inFlight = false;
+      busy = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    requestId++;
+    final coach = state.coach;
+    if (coach is CancellableFridgeCoach) {
+      (coach as CancellableFridgeCoach).cancelPending();
+    }
+    super.dispose();
+  }
 
   AppState get state => widget.state;
   bool get aiEnabled => state.coach.enabled;
@@ -90,15 +114,20 @@ class _FridgePageState extends State<FridgePage> {
 
   Future<void> _scan(bool camera) async {
     if (inFlight) return;
+    final request = ++requestId;
     setState(() {
       inFlight = true;
       error = null;
     });
     try {
-      if (!await confirmAiNotice(context, state) || !mounted) return;
+      if (!await confirmAiNotice(context, state) ||
+          !mounted ||
+          request != requestId) {
+        return;
+      }
       setState(() => error = null);
       final raw = await widget.picker(camera);
-      if (raw == null || !mounted) return;
+      if (raw == null || !mounted || request != requestId) return;
       setState(() => busy = 'Prohlížím fotku…');
       final jpeg = prepareJpeg(raw);
       if (jpeg == null) {
@@ -109,26 +138,30 @@ class _FridgePageState extends State<FridgePage> {
         return;
       }
       final result = await state.coach.scanFridge(jpeg);
-      if (!mounted) return;
+      if (!mounted || request != requestId) return;
       switch (result) {
         case AiOk(:final value):
-          final have = {for (final i in items) i.name.toLowerCase()};
-          final added = [
-            for (final i in value)
-              if (have.add(i.name.toLowerCase())) i,
-          ];
-          await _store([...items, ...added]);
-          if (!mounted) return;
+          if (value.isEmpty) {
+            setState(
+              () => error =
+                  'Na fotce AI žádné jídlo nenašla. Můžeš ho přidat ručně.',
+            );
+            break;
+          }
+          setState(() => busy = null);
+          final confirmed = await Navigator.push<List<PantryItem>>(
+            context,
+            MaterialPageRoute(builder: (_) => _PhotoReviewPage(value)),
+          );
+          if (!mounted || request != requestId || confirmed == null) return;
+          await _store(mergePantry(items, confirmed));
+          if (!mounted || request != requestId) return;
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
               SnackBar(
                 content: Text(
-                  value.isEmpty
-                      ? 'Na fotce AI žádné jídlo nenašla.'
-                      : added.isEmpty
-                      ? 'Nic nového, všechno už v seznamu je.'
-                      : 'Přidáno ${added.length}. Zkontroluj seznam.',
+                  'Potvrzený seznam je uložený. Shodné potraviny mají aktualizované množství.',
                 ),
               ),
             );
@@ -139,7 +172,7 @@ class _FridgePageState extends State<FridgePage> {
           });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && request == requestId) {
         setState(
           () => error =
               'Fotku nebo seznam se nepodařilo '
@@ -147,7 +180,7 @@ class _FridgePageState extends State<FridgePage> {
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && request == requestId) {
         setState(() {
           busy = null;
           inFlight = false;
@@ -162,19 +195,56 @@ class _FridgePageState extends State<FridgePage> {
       builder: (_) => _ItemDialog(index == null ? null : items[index]),
     );
     if (edited == null || !mounted) return;
+    if (items.indexed.any(
+      (pair) =>
+          pair.$1 != index && pantryKey(pair.$2.name) == pantryKey(edited.name),
+    )) {
+      setState(
+        () => error = 'Tato potravina už v seznamu je. Uprav její množství.',
+      );
+      return;
+    }
     final next = [...items];
     if (index == null) {
       next.add(edited);
     } else {
-      skipped.remove(items[index].name.toLowerCase());
+      // Vyřazení drží jen přejmenování; změna množství ho nezruší.
+      final before = pantryKey(items[index].name);
+      final after = pantryKey(edited.name);
+      if (before != after && skipped.remove(before)) skipped.add(after);
       next[index] = edited;
     }
     await _saveList(next);
   }
 
   Future<void> _remove(int index) async {
-    skipped.remove(items[index].name.toLowerCase());
+    final removed = items[index];
+    final wasSkipped = skipped.remove(pantryKey(removed.name));
     await _saveList([...items]..removeAt(index));
+    if (!mounted ||
+        items.any((i) => pantryKey(i.name) == pantryKey(removed.name))) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Odebráno: ${removed.name}'),
+        action: SnackBarAction(
+          label: 'Vrátit',
+          onPressed: () async {
+            if (inFlight ||
+                items.any(
+                  (i) => pantryKey(i.name) == pantryKey(removed.name),
+                )) {
+              return;
+            }
+            if (wasSkipped) skipped.add(pantryKey(removed.name));
+            await _saveList(
+              [...items]..insert(index.clamp(0, items.length), removed),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _saveList(List<PantryItem> next) async {
@@ -186,6 +256,7 @@ class _FridgePageState extends State<FridgePage> {
     });
     try {
       await _store(next);
+      await state.savePantrySelection(skipped, minutes);
     } catch (_) {
       if (mounted) {
         setState(
@@ -206,9 +277,10 @@ class _FridgePageState extends State<FridgePage> {
 
   Future<void> _suggest() async {
     if (inFlight) return;
+    final request = ++requestId;
     final chosen = [
       for (final i in items)
-        if (!skipped.contains(i.name.toLowerCase())) i,
+        if (!skipped.contains(pantryKey(i.name))) i,
     ];
     if (chosen.isEmpty) {
       setState(() => error = 'Vyber aspoň jednu potravinu.');
@@ -223,16 +295,22 @@ class _FridgePageState extends State<FridgePage> {
       error = null;
     });
     try {
-      if (!await confirmAiNotice(context, state) || !mounted) return;
+      if (!await confirmAiNotice(context, state) ||
+          !mounted ||
+          request != requestId) {
+        return;
+      }
       setState(() => busy = 'Vymýšlím jídla…');
       final result = await state.coach.suggestMeals(
         chosen,
         state.mealContext(maxMinutes: minutes),
       );
-      if (!mounted) return;
+      if (!mounted || request != requestId) return;
       setState(() => busy = null);
       switch (result) {
         case AiOk(:final value):
+          await state.saveMealIdeas(value);
+          if (!mounted || request != requestId) return;
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => MealIdeasPage(state, value)),
@@ -241,7 +319,7 @@ class _FridgePageState extends State<FridgePage> {
           setState(() => error = message);
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && request == requestId) {
         setState(
           () => error =
               'Návrh se nepodařilo načíst. '
@@ -249,12 +327,39 @@ class _FridgePageState extends State<FridgePage> {
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && request == requestId) {
         setState(() {
           busy = null;
           inFlight = false;
         });
       }
+    }
+  }
+
+  Future<void> _selection({String? name, bool? include, int? time}) async {
+    if (inFlight) return;
+    setState(() => inFlight = true);
+    final next = {...skipped};
+    if (name != null) {
+      include == true
+          ? next.remove(pantryKey(name))
+          : next.add(pantryKey(name));
+    }
+    try {
+      await state.savePantrySelection(next, time ?? minutes);
+      if (mounted) {
+        setState(() {
+          skipped = next;
+          minutes = time ?? minutes;
+          error = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => error = 'Výběr se nepodařilo uložit. Zkus to znovu.');
+      }
+    } finally {
+      if (mounted) setState(() => inFlight = false);
     }
   }
 
@@ -264,11 +369,26 @@ class _FridgePageState extends State<FridgePage> {
     final text = Theme.of(context).textTheme;
     final working = inFlight;
     final left = state.proteinLeft();
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 21;
+    final photos = [
+      OutlinedButton.icon(
+        onPressed: working || !aiEnabled ? null : () => _scan(true),
+        icon: const Icon(Icons.photo_camera_outlined),
+        label: const Text('Vyfotit'),
+      ),
+      OutlinedButton.icon(
+        onPressed: working || !aiEnabled ? null : () => _scan(false),
+        icon: const Icon(Icons.photo_library_outlined),
+        label: const Text('Z galerie'),
+      ),
+    ];
     return Scaffold(
       appBar: AppBar(title: const Text('Co mám v ledničce')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
+          Text('1  Přidej potraviny', style: text.titleLarge),
+          const SizedBox(height: 8),
           if (!aiEnabled)
             Card(
               child: Padding(
@@ -280,25 +400,19 @@ class _FridgePageState extends State<FridgePage> {
                 ),
               ),
             ),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: working || !aiEnabled ? null : () => _scan(true),
-                  icon: const Icon(Icons.photo_camera_outlined),
-                  label: const Text('Vyfotit'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: working || !aiEnabled ? null : () => _scan(false),
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: const Text('Z galerie'),
-                ),
-              ),
-            ],
-          ),
+          if (largeText)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [photos.first, const SizedBox(height: 8), photos.last],
+            )
+          else
+            Row(
+              children: [
+                Expanded(child: photos.first),
+                const SizedBox(width: 12),
+                Expanded(child: photos.last),
+              ],
+            ),
           const SizedBox(height: 4),
           Text(
             'Vyfoť otevřenou ledničku nebo potraviny na stole. Seznam pak '
@@ -313,6 +427,11 @@ class _FridgePageState extends State<FridgePage> {
                   const LinearProgressIndicator(),
                   const SizedBox(height: 8),
                   Text(busy!),
+                  if (busy == 'Prohlížím fotku…' || busy == 'Vymýšlím jídla…')
+                    TextButton(
+                      onPressed: _cancel,
+                      child: const Text('Zrušit čekání'),
+                    ),
                 ],
               ),
             ),
@@ -322,67 +441,94 @@ class _FridgePageState extends State<FridgePage> {
               child: Text(error!, style: TextStyle(color: scheme.error)),
             ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  items.isEmpty ? 'Seznam je prázdný' : 'Potraviny doma',
-                  style: text.titleMedium,
-                ),
-              ),
-              TextButton.icon(
+          if (largeText) ...[
+            Text(
+              items.isEmpty ? '2  Zkontroluj seznam' : '2  Vyber potraviny',
+              style: text.titleMedium,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
                 onPressed: working ? null : () => _edit(),
                 icon: const Icon(Icons.add),
                 label: const Text('Přidat ručně'),
               ),
-            ],
-          ),
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    items.isEmpty
+                        ? '2  Zkontroluj seznam'
+                        : '2  Vyber potraviny',
+                    style: text.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: working ? null : () => _edit(),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Přidat ručně'),
+                ),
+              ],
+            ),
           for (final (index, item) in items.indexed)
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              value: !skipped.contains(item.name.toLowerCase()),
+              value: !skipped.contains(pantryKey(item.name)),
               onChanged: working
                   ? null
-                  : (on) => setState(() {
-                      final key = item.name.toLowerCase();
-                      on == true ? skipped.remove(key) : skipped.add(key);
-                    }),
+                  : (on) => _selection(name: item.name, include: on),
               title: Text(item.name),
               subtitle: itemAmount(item).isEmpty
                   ? null
                   : Text(itemAmount(item)),
-              secondary: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: 'Upravit ${item.name}',
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: working ? null : () => _edit(index),
-                  ),
-                  IconButton(
-                    tooltip: 'Odebrat ${item.name}',
-                    icon: const Icon(Icons.close),
-                    onPressed: working ? null : () => _remove(index),
+              secondary: PopupMenuButton<String>(
+                tooltip: 'Možnosti: ${item.name}',
+                enabled: !working,
+                onSelected: (action) =>
+                    action == 'edit' ? _edit(index) : _remove(index),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Upravit množství')),
+                  PopupMenuItem(
+                    value: 'remove',
+                    child: Text('Odebrat potravinu'),
                   ),
                 ],
               ),
             ),
           if (items.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text('Kolik máš času?', style: text.titleMedium),
+            Text('3  Vyber čas na přípravu', style: text.titleMedium),
             const SizedBox(height: 8),
-            SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(value: 10, label: Text('10 min')),
-                ButtonSegment(value: 20, label: Text('20 min')),
-                ButtonSegment(value: 40, label: Text('40 min')),
-              ],
-              selected: {minutes},
-              onSelectionChanged: working
-                  ? null
-                  : (s) => setState(() => minutes = s.first),
-            ),
+            if (largeText)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final time in [10, 20, 40])
+                    ChoiceChip(
+                      label: Text('$time min'),
+                      selected: minutes == time,
+                      onSelected: working
+                          ? null
+                          : (_) => _selection(time: time),
+                    ),
+                ],
+              )
+            else
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 10, label: Text('10 min')),
+                  ButtonSegment(value: 20, label: Text('20 min')),
+                  ButtonSegment(value: 40, label: Text('40 min')),
+                ],
+                selected: {minutes},
+                onSelectionChanged: working
+                    ? null
+                    : (s) => _selection(time: s.first),
+              ),
             if (left != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -401,10 +547,85 @@ class _FridgePageState extends State<FridgePage> {
               label: const Text('Navrhni jídlo'),
             ),
           ],
+          if (state.savedMealIdeas.isNotEmpty)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.history),
+              title: const Text('Poslední návrhy'),
+              subtitle: const Text(
+                'Uložené v zařízení, dostupné i bez internetu',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: working
+                  ? null
+                  : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            MealIdeasPage(state, state.savedMealIdeas),
+                      ),
+                    ),
+            ),
         ],
       ),
     );
   }
+}
+
+class _PhotoReviewPage extends StatefulWidget {
+  final List<PantryItem> items;
+  const _PhotoReviewPage(this.items);
+  @override
+  State<_PhotoReviewPage> createState() => _PhotoReviewPageState();
+}
+
+class _PhotoReviewPageState extends State<_PhotoReviewPage> {
+  late List<PantryItem> items = mergePantry([], widget.items);
+
+  Future<void> _edit(int index) async {
+    final item = await showDialog<PantryItem>(
+      context: context,
+      builder: (_) => _ItemDialog(items[index]),
+    );
+    if (item == null || !mounted) return;
+    setState(() => items = mergePantry([], [...items]..[index] = item));
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Zkontroluj rozpoznání')),
+    body: ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text(
+          'AI se může splést. Oprav názvy, množství a jednotky. Shodná potravina aktualizuje množství v tvém seznamu až po potvrzení.',
+        ),
+        const SizedBox(height: 16),
+        for (final (index, item) in items.indexed)
+          Card(
+            child: ListTile(
+              title: Text(item.name),
+              subtitle: Text(
+                itemAmount(item).isEmpty
+                    ? 'Množství neznámé'
+                    : itemAmount(item),
+              ),
+              onTap: () => _edit(index),
+              trailing: IconButton(
+                tooltip: 'Odebrat ${item.name}',
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() => items.removeAt(index)),
+              ),
+            ),
+          ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: items.isEmpty ? null : () => Navigator.pop(context, items),
+          child: const Text('Potvrdit seznam'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ItemDialog extends StatefulWidget {

@@ -17,8 +17,11 @@ void main() {
         final store = LocalStore();
         final state = AppState(
           store,
-          notifier: !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-              ? AndroidNotifier()
+          notifier:
+              !kIsWeb &&
+                  (defaultTargetPlatform == TargetPlatform.android ||
+                      defaultTargetPlatform == TargetPlatform.iOS)
+              ? MobileNotifier(platform: defaultTargetPlatform)
               : const NoopNotifier(),
         );
         try {

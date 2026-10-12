@@ -60,7 +60,7 @@ void main() {
     await tester.runAsync(state.load);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: HomePage(state))));
     expect(find.text('Začít trénink'), findsOneWidget);
-    expect(find.text('Vybrat program'), findsOneWidget);
+    expect(find.text('Program'), findsOneWidget);
     expect(find.text('Historie'), findsNothing);
     expect(find.text('0/3'), findsOneWidget);
   });

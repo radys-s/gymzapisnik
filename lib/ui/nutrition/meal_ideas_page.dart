@@ -7,7 +7,8 @@ import '../../state/app_state.dart';
 import 'fridge_page.dart';
 import 'food_form.dart';
 
-double _r(double? v) => v == null ? 0 : double.parse(v.toStringAsFixed(0));
+double? _r(double? v) => v == null ? null : double.parse(v.toStringAsFixed(0));
+String _value(double? v) => v == null ? '–' : '${v.round()}';
 
 /// Návrhy jídel z ledničky. Jen inspirace: nic se nezapíše bez potvrzení.
 class MealIdeasPage extends StatelessWidget {
@@ -62,10 +63,10 @@ class MealIdeasPage extends StatelessWidget {
                     Text(meal.title, style: text.titleMedium),
                     const SizedBox(height: 4),
                     Text(
-                      '${meal.minutes} min · ${_r(meal.estimate.kcal).round()} kcal'
-                      ' · B ${_r(meal.estimate.protein).round()} g'
-                      ' · S ${_r(meal.estimate.carbs).round()} g'
-                      ' · T ${_r(meal.estimate.fat).round()} g',
+                      '${meal.minutes} min · ${_value(meal.estimate.kcal)} kcal'
+                      ' · B ${_value(meal.estimate.protein)} g'
+                      ' · S ${_value(meal.estimate.carbs)} g'
+                      ' · T ${_value(meal.estimate.fat)} g',
                     ),
                     Text(
                       meal.source == EstimateSource.table

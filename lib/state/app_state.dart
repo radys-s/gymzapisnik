@@ -54,7 +54,7 @@ class AppState extends ChangeNotifier {
   /// Hledání produktů podle čárového kódu (v testech jde přepsat).
   final ProductLookup lookup;
 
-  /// Místní oznámení (na webu a iPhonu prázdná implementace).
+  /// Místní oznámení; ve webové verzi prázdná implementace.
   final Notifier notifier;
 
   /// Je zapnutý paywall (v testech jde přepsat).
@@ -102,6 +102,7 @@ class AppState extends ChangeNotifier {
       ..sort(_newestFood);
     notifyListeners();
     unawaited(syncReminders());
+    unawaited(syncRest());
   }
 
   /// Souhlas; s [welcomeVersion] zároveň uzavře uvítání jedním zápisem,
@@ -146,7 +147,7 @@ class AppState extends ChangeNotifier {
       type: type,
       custom: true,
     );
-    await store.put(Kinds.exercise, exercise.toJson());
+    await _enqueue(() => store.put(Kinds.exercise, exercise.toJson()));
     customExercises = [...customExercises, exercise]
       ..sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
@@ -340,6 +341,7 @@ class AppState extends ChangeNotifier {
       );
     }
     await saveActive();
+    await syncRest();
     return null;
   }
 
@@ -367,18 +369,62 @@ class AppState extends ChangeNotifier {
   }
 
   /// Prodlouží nebo zkrátí běžící pauzu; pod nulou ji ukončí.
-  Future<void> adjustRest(Duration delta, {DateTime? now}) {
+  Future<void> adjustRest(Duration delta, {DateTime? now}) async {
     final end = restEndsAt;
-    if (end == null) return Future.value();
+    if (end == null) return;
     final next = end.add(delta);
     _setRestEnd(next.isAfter(now ?? DateTime.now()) ? next : null);
-    return saveActive();
+    await saveActive();
+    await syncRest();
   }
 
-  Future<void> skipRest() {
-    if (restEndsAt == null) return Future.value();
+  Future<void> skipRest() async {
+    if (restEndsAt == null) return;
     _setRestEnd(null);
-    return saveActive();
+    await saveActive();
+    await syncRest();
+  }
+
+  bool get restAlerts => profile.extra['restAlerts'] == true;
+
+  Future<bool> setRestAlerts(bool enabled) async {
+    if (notifier is! RestNotifier) return false;
+    if (enabled && !await notifier.requestPermission()) return false;
+    await _updateProfile(
+      (p) => p.withExtra({'restAlerts': enabled ? true : null}),
+    );
+    await syncRest();
+    return true;
+  }
+
+  Future<void>? _restUpdates;
+
+  /// Vyhodnotit poslední stav až ve frontě, aby stará pauza nepřepsala
+  /// zrušení při dokončení tréninku. Chyba oznámení neblokuje zápis série.
+  Future<void> syncRest() {
+    final rest = notifier;
+    if (rest is! RestNotifier) return Future.value();
+    Future<void> update() async {
+      try {
+        final end = restEndsAt;
+        if (restAlerts && end != null && end.isAfter(DateTime.now())) {
+          await (rest as RestNotifier).scheduleRest(end);
+        } else {
+          await (rest as RestNotifier).cancelRest();
+        }
+      } catch (e) {
+        debugPrint('Upozornění na pauzu se nepodařilo naplánovat: $e');
+      }
+    }
+
+    final next = _restUpdates == null
+        ? update()
+        : _restUpdates!.then((_) => update());
+    _restUpdates = next;
+    next.whenComplete(() {
+      if (identical(_restUpdates, next)) _restUpdates = null;
+    });
+    return next;
   }
 
   Future<void> toggleWarmup(SetEntry set) {
@@ -445,6 +491,7 @@ class AppState extends ChangeNotifier {
       ..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
     unawaited(syncReminders());
+    unawaited(syncRest());
     return (workout: finished, error: null);
   }
 
@@ -459,6 +506,7 @@ class AppState extends ChangeNotifier {
       rethrow;
     }
     notifyListeners();
+    await syncRest();
   }
 
   // ---------------------------------------------------------------------
@@ -579,10 +627,7 @@ class AppState extends ChangeNotifier {
 
   /// Označí profil jako Pro (až bude hotová platba, volá se po nákupu).
   Future<void> setPro(bool value) async {
-    final next = profile.withExtra({'pro': value ? true : null});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile((p) => p.withExtra({'pro': value ? true : null}));
   }
 
   /// Týdenní cíl tréninků: vlastní, jinak podle splitu, jinak 3.
@@ -594,10 +639,9 @@ class AppState extends ChangeNotifier {
     if (minutes != null && !await notifier.requestPermission()) {
       return false;
     }
-    final next = profile.withExtra({'reminder': minutes?.clamp(0, 1439)});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile(
+      (p) => p.withExtra({'reminder': minutes?.clamp(0, 1439)}),
+    );
     await syncReminders();
     return true;
   }
@@ -639,10 +683,7 @@ class AppState extends ChangeNotifier {
 
   /// Zapamatuje, že záloha právě vznikla.
   Future<void> markBackedUp() async {
-    final next = profile.withExtra({'backupCount': workouts.length});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile((p) => p.withExtra({'backupCount': workouts.length}));
   }
 
   /// Týdenní cíl bez pevných dnů (`null` = podle programu).
@@ -855,12 +896,6 @@ class AppState extends ChangeNotifier {
   // AI kouč: spíž, cíle, kontext pro návrhy
   // ---------------------------------------------------------------------
 
-  Future<void> _saveProfile(Profile next) async {
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
-  }
-
   /// Změna profilu počítaná až ve frontě z posledního uloženého stavu:
   /// dvě rychlé změny (barva, souhlas) se navzájem nepřepíšou.
   Future<void> _updateProfile(Profile Function(Profile current) change) =>
@@ -874,10 +909,12 @@ class AppState extends ChangeNotifier {
   /// Náhodné ID instalace pro denní limit AI; vznikne při prvním použití.
   /// Nepatří do zálohy (jiné zařízení = jiná instalace).
   Future<String> installId() async {
-    final saved = profile.extra['installId'];
-    if (saved is String && saved.length == 36) return saved;
-    final id = newId();
-    await _saveProfile(profile.withExtra({'installId': id}));
+    late String id;
+    await _updateProfile((p) {
+      final saved = p.extra['installId'];
+      id = saved is String && saved.length == 36 ? saved : newId();
+      return p.withExtra({'installId': id});
+    });
     return id;
   }
 
@@ -888,9 +925,35 @@ class AppState extends ChangeNotifier {
     return [for (final i in raw) ?PantryItem.tryParse(i)];
   }
 
-  Future<void> savePantry(List<PantryItem> items) => _saveProfile(
-    profile.withExtra({
-      'pantry': items.isEmpty ? null : [for (final i in items) i.toJson()],
+  Future<void> savePantry(List<PantryItem> items) => _updateProfile(
+    (p) => p.withExtra({
+      'pantry': items.isEmpty
+          ? null
+          : [for (final i in mergePantry([], items)) i.toJson()],
+    }),
+  );
+
+  Set<String> get pantryExcluded => {
+    for (final name in (profile.extra['pantryExcluded'] as List? ?? const []))
+      if (name is String) pantryKey(name),
+  };
+  int get pantryMinutes => [10, 20, 40].contains(profile.extra['pantryMinutes'])
+      ? profile.extra['pantryMinutes'] as int
+      : 20;
+
+  Future<void> savePantrySelection(Set<String> excluded, int minutes) =>
+      _updateProfile(
+        (p) => p.withExtra({
+          'pantryExcluded': excluded.toList()..sort(),
+          'pantryMinutes': [10, 20, 40].contains(minutes) ? minutes : 20,
+        }),
+      );
+
+  List<MealIdea> get savedMealIdeas =>
+      parseMeals({'meals': profile.extra['mealIdeas']});
+  Future<void> saveMealIdeas(List<MealIdea> meals) => _updateProfile(
+    (p) => p.withExtra({
+      'mealIdeas': [for (final meal in meals.take(6)) meal.toJson()],
     }),
   );
 
@@ -904,24 +967,24 @@ class AppState extends ChangeNotifier {
 
   /// Zapamatuje si záložku; chyba uložení nesmí rozbít přepnutí.
   Future<void> setLastTab(int tab) async {
-    if (profile.lastTab == tab) return;
-    profile = profile.withExtra({'lastTab': tab == 1 ? 1 : null});
     try {
-      await _enqueue(() => store.put(Kinds.profile, profile.toJson()));
+      await _updateProfile(
+        (p) => p.withExtra({'lastTab': tab == 1 ? 1 : null}),
+      );
     } catch (e) {
       debugPrint('Záložku se nepodařilo uložit: $e');
     }
   }
 
   Future<void> acceptAiNotice() =>
-      _saveProfile(profile.withExtra({'aiNotice': true}));
+      _updateProfile((p) => p.withExtra({'aiNotice': true}));
 
   /// Nastaví cíle (`null` = bez cíle). Kalorický cíl jen pro dospělé.
   Future<void> setNutritionTargets({double? protein, double? kcal}) =>
-      _saveProfile(
-        profile.withExtra({
+      _updateProfile(
+        (p) => p.withExtra({
           'proteinTarget': protein?.clamp(20, 400).roundToDouble(),
-          'kcalTarget': profile.restrictWeightLoss
+          'kcalTarget': p.restrictWeightLoss
               ? null
               : kcal?.clamp(1000, 6000).roundToDouble(),
         }),
@@ -1069,5 +1132,7 @@ class AppState extends ChangeNotifier {
     foods = [];
     notifyListeners();
     if (notifier.supported) unawaited(notifier.cancelAll());
+    // Budík pauzy má vlastní id, cancelAll ho nezruší.
+    unawaited(syncRest());
   }
 }

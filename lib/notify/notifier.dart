@@ -1,6 +1,6 @@
 import '../coach/reminders.dart';
 
-/// Místní oznámení. Na Androidu skutečná, jinde (web, iPhone PWA) nic.
+/// Místní připomínky tréninku v nativních mobilních aplikacích.
 abstract class Notifier {
   /// Umí toto zařízení naplánovaná oznámení?
   bool get supported;
@@ -8,10 +8,15 @@ abstract class Notifier {
   /// Požádá o povolení; `true` = oznámení jsou povolená.
   Future<bool> requestPermission();
 
-  /// Nahradí všechna naplánovaná oznámení těmito.
+  /// Nahradí připomínky tréninku; oznámení pauzy zachová.
   Future<void> schedule(List<Reminder> reminders);
 
   Future<void> cancelAll();
+}
+
+abstract interface class RestNotifier {
+  Future<void> scheduleRest(DateTime end);
+  Future<void> cancelRest();
 }
 
 class NoopNotifier implements Notifier {

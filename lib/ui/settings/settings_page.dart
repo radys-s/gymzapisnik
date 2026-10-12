@@ -5,6 +5,7 @@ import '../../core/parse.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/version.dart';
+import '../../notify/notifier.dart';
 import '../../state/app_state.dart';
 import '../design/tokens.dart';
 import '../onboarding/accent_picker.dart';
@@ -308,12 +309,39 @@ class SettingsPage extends StatelessWidget {
                 leading: Icon(Icons.notifications_off_outlined),
                 title: Text('Připomínky tréninku'),
                 subtitle: Text(
-                  'Na iPhonu a ve webové verzi nejdou. Denní úkol od kouče '
+                  'Ve webové verzi nejsou dostupné. Denní úkol od kouče '
                   'uvidíš po otevření aplikace.',
                 ),
                 isThreeLine: true,
               )
             else ...[
+              if (state.notifier is RestNotifier)
+                SwitchListTile(
+                  secondary: const Icon(Icons.timer_outlined),
+                  title: const Text('Upozornit na konec pauzy'),
+                  subtitle: const Text(
+                    'Místní oznámení i při zamčeném telefonu. Android může doručení opozdit.',
+                  ),
+                  value: state.restAlerts,
+                  onChanged: (on) async {
+                    try {
+                      final ok = await state.setRestAlerts(on);
+                      if (!ok && context.mounted) {
+                        _toast(
+                          context,
+                          'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        _toast(
+                          context,
+                          'Nastavení se nepodařilo uložit. Zkus to znovu.',
+                        );
+                      }
+                    }
+                  },
+                ),
               SwitchListTile(
                 secondary: const Icon(Icons.notifications_outlined),
                 title: const Text('Připomínat trénink'),
