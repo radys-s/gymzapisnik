@@ -36,10 +36,18 @@ void main() {
     expect(find.text('Září 2026'), findsOneWidget);
     expect(find.text('Rekord'), findsNWidgets(2));
 
+    tester.view
+      ..physicalSize = const Size(390, 1600)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(app(ExerciseDetailPage(state, 'bench_press')));
     await tester.pumpAndSettle();
     expect(find.text('82,5 kg'), findsOneWidget);
     expect(find.text('Odhad 1RM v čase'), findsOneWidget);
     expect(find.textContaining('Lepší než minule'), findsOneWidget);
+    expect(find.text('Historie'), findsOneWidget);
+    await tester.tap(find.text('4. 10. 2026').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Zopakovat trénink'), findsOneWidget);
   });
 }
