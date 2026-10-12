@@ -5,6 +5,14 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
+## Co je nového v beta.4
+
+Nový vzhled a dvě záložky: **Cvičení** a **Strava**. Historie („Vše“), cviky a rekordy,
+program a tělesná váha jsou na stránce Cvičení; Nastavení otevře ozubené kolo vpravo
+nahoře na obou záložkách. Při prvním spuštění projdeš krátké uvítání a vybereš barvu.
+Program si můžeš sestavit sám (Cvičení → Program) včetně počtu tréninků za týden.
+Nativní aplikace (Android i iPhone) umí připomínku tréninku a upozornění na konec pauzy.
+
 ## Android (APK)
 
 1. Stáhni soubor `gymzapisnik.apk`, který ti poslal Tomáš.
@@ -22,7 +30,9 @@ Ověřené sestavení beta.3 a postup místního podpisu jsou v
 aplikace mají oddělené úložiště. Do aplikace přenes dokončené tréninky pomocí
 JSON zálohy, původní data nemaž. Fyzické ověření iPhonu zatím čeká na testera.
 Po instalaci proveď celý trénink níže, restart v režimu letadlo a zkus kameru
-i galerii včetně odmítnutí oprávnění. Tréninkové připomínky na iOS nejsou.
+i galerii včetně odmítnutí oprávnění. Zapni připomínky (Nastavení → Připomínky),
+povol oznámení a ověř upozornění na konec pauzy se zamčeným telefonem. Aplikace
+podepsaná zdarma po 7 dnech přestane běžet a s ní i oznámení; obnov ji v iLoaderu.
 
 ## iPhone (webová aplikace)
 
@@ -37,7 +47,8 @@ nesdílejí databázi IndexedDB. Pokud už máš tréninky v Safari, nejdřív t
 zálohu a potom ji obnov v aplikaci z plochy. Toto omezení popisuje
 [WebKit](https://webkit.org/blog/14787/webkit-features-in-safari-17-2/#web-apps).
 
-Tato beta na iPhonu nemá připomínky tréninku; denní úkol uvidíš po otevření.
+Webová aplikace na iPhonu nemá připomínky ani upozornění na konec pauzy; denní úkol
+uvidíš po otevření. Oznámení má jen nativní aplikace.
 Místní úložiště není záloha: může zmizet například při vyčištění dat nebo nedostatku
 místa ([pravidla WebKit](https://webkit.org/blog/14403/updates-to-storage-policy/)).
 Proto ukládej JSON do souboru. Aplikace připomíná zálohu po 10 nových trénincích, ne podle
@@ -49,19 +60,19 @@ Při nabídce nové verze klepni na **Načíst**: aplikace počká na uložení 
 Při chybě ukládání ji nezavírej a zkus uložení znovu. Používej stále stejnou adresu —
 jiná doména má jiné místní úložiště.
 
-## Jeden celý trénink na telefonu (beta.3)
+## Jeden celý trénink na telefonu (beta.4)
 
 Nejdřív zálohuj svoje data. Použij testovací váhy, nemusíš skutečně cvičit.
 
-1. Začni volný trénink, přidej Bench press. Potvrď rozcvičku 40 kg × 10 a pracovní
+1. Na Cvičení klepni na Začít trénink, přidej Bench press (označ ho a potvrď Přidat cvik). Potvrď rozcvičku 40 kg × 10 a pracovní
    sérii 80 kg × 8 rychlým dvojím klepnutím. Musí zůstat potvrzená. Zkus pauzu,
    +15 a Přeskočit.
-2. Oprav potvrzenou pracovní sérii na 82,5 kg × 6. Vrať se na Domů, zavři a znovu
+2. Oprav potvrzenou pracovní sérii na 82,5 kg × 6. Vrať se na Cvičení, zavři a znovu
    otevři aplikaci. Pokračuj: obě série i oprava musí zůstat.
 3. Přidej pracovní sérii 80 kg × 7, potvrď a hned klepni dvakrát na Dokončit.
    Musí vzniknout jediný souhrn: 2 pracovní série, objem 1 055 kg (495 + 560).
    Rozcvička se do objemu nepočítá.
-4. V Historii ověř stejné hodnoty a zopakuj trénink. Minulý výkon musí odpovídat
+4. V Historii (Cvičení → Vše) ověř stejné hodnoty a zopakuj trénink. Minulý výkon musí odpovídat
    historii; předvyplněné série musí být nepotvrzené. Potvrď pracovní sérii jedním
    klepnutím a dokonči. Dialog upozorní na zbývající nepotvrzené série.
 5. Ulož JSON zálohu a obnov ji dvakrát: historie se nesmí zdvojit. Cizí či poškozený
@@ -80,13 +91,14 @@ zkoušej jen v odděleném testovacím zařízení/profilu.
 ## Co zkoušet
 
 - Zapsat trénink (cvik → série → ✓) a podívat se na souhrn s porovnáním s minulým.
-- Vybrat split a sledovat denní úkol a streak na úvodní obrazovce.
+- Vybrat program (Cvičení → Program), nebo si sestavit vlastní, a sledovat denní úkol a týden.
+- Upravit hotový trénink (Cvičení → Vše → trénink → ⋯ → Upravit): smazání série jde vrátit.
 - Import z Hevy (Hevy → Profil → Nastavení → Export dat; pak Nastavení → Import z Hevy).
-- Zapsat tělesnou váhu.
-- Výživa (karta na Domů): přidat jídlo ručně, podle čárového kódu (např. 3017620422003 = Nutella, potřebuje
+- Zapsat tělesnou váhu (Cvičení → Tělesná váha).
+- Strava (záložka dole): přidat jídlo ručně, podle čárového kódu (např. 3017620422003 = Nutella, potřebuje
   internet; úpravu před uložením zkus) a podívat se na včerejší den. Bez internetu musí jít jídlo zapsat ručně
   a uložený deník zůstat vidět. Mobilní chování zatím nikdo neověřil.
-- Výživa → „Co mám v ledničce“ (jen ve verzi se zapnutou AI): vyfoť ledničku, oprav seznam, zvol čas a nech
+- Strava → „Co mám v ledničce“ (jen ve verzi se zapnutou AI): vyfoť ledničku, oprav seznam, zvol čas a nech
   si navrhnout jídlo. Napiš, co AI poznala špatně a jestli návrhy dávaly smysl. Limit je 8 fotek a 20 návrhů
   za UTC den na instalaci; jde o přibližné limity, ne ověření identity telefonu.
   Celková kapacita je omezená: strop 100 rezervovaných volání = nejvýš přibližně

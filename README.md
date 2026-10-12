@@ -3,7 +3,7 @@
 Česká mobilní aplikace pro zápis tréninků v gymu: rychlý zápis sérií, porovnání s minulým tréninkem,
 osobní rekordy, šablony splitů a denní mise. Nástupce zmrazeného projektu `athlete-os`.
 
-Běží jako Android aplikace (APK) a jako webová PWA (iPhone). Data jsou uložená v zařízení (SQLite přes Drift,
+Běží jako Android aplikace (APK), nativní iPhone aplikace (IPA z GitHub Actions, sideload) a webová PWA. Data jsou uložená v zařízení (SQLite přes Drift,
 na webu v IndexedDB).
 
 ## Stav
@@ -61,6 +61,15 @@ AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-a
 Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
 `ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
+UX1 (větev `cviceni`, verze 1.0.0-beta.4+13, čeká na test od Tomáše před merge do main): nový design
+systém `lib/ui/design/` (barvy, typografie, komponenty ve stylu iOS, světlý/tmavý režim podle systému,
+volitelná barva), dvě záložky Cvičení / Strava s vlastní navigací, spouštěcí obrazovka, uvítání s výběrem
+barvy a „Co je nového“. Cvičení: hlavní akce Začít / Pokračovat, týden, historie, program, cviky a rekordy,
+tělesná váha. Zápis: vícenásobný výběr cviků, typ série, popsané vstupy, „Vrátit“ po smazání, pořadí cviků.
+Vlastní programy (dny, cviky, série × rozsah opakování) a frekvence s tréninkovými dny. Souhrn, historie,
+detail cviku, úprava tréninku a Nastavení v novém designu. Oznámení na Androidu i iPhonu (připomínka
+tréninku, konec pauzy). Strava zatím jen přesunutá; její redesign je další větev.
+
 R hotovo (kód): verze 1.0.0-beta.3+12, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
 
 Navazující review C/D1 a stav nové AI bety: [docs/D1_REVIEW.md](docs/D1_REVIEW.md).
@@ -92,9 +101,12 @@ flutter build web --release
 python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
 ```
 
-E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka):
-`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` a
-`node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, souhrn, opakování série jedním klepnutím, historie, detail cviku).
+E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka
+s krátkou cestou, např. `C:/Temp/gz1`; dlouhá cesta na Windows rozbije Cache Storage a service worker):
+`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` (uvítání, souhlas,
+offline reload), `node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, souhrn, opakování
+série jedním klepnutím, historie, detail cviku, program, Nastavení, záloha, obnova, import z Hevy) a po něm
+`node tool/e2e_pwa.cjs <stejná složka>` (aktualizace service workeru, offline restart prohlížeče).
 AI lednička bez Cloudflare: `cd worker && npm run mock` (skutečný kód proxy, falešný model, port 8787), web build
 s `--dart-define=AI_URL=http://localhost:8787` a `node tool/e2e_fridge.cjs <složka profilu>` (fotka přes výběr
 souboru, upozornění, seznam, návrhy, zápis do deníku, reload).

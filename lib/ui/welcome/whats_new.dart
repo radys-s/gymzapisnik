@@ -6,7 +6,7 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.1';
+const whatsNewRelease = '1.2';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
@@ -24,6 +24,16 @@ const whatsNewItems = <(IconData, String, String)>[
     Icons.palette_outlined,
     'Vlastní barva',
     'Limetka, Laguna nebo Západ. Změníš ji v Nastavení.',
+  ),
+  (
+    Icons.edit_calendar_outlined,
+    'Vlastní programy',
+    'Poskládej si dny a cviky sám a nastav, kolikrát týdně trénuješ.',
+  ),
+  (
+    Icons.notifications_outlined,
+    'Oznámení i na iPhonu',
+    'Připomínka tréninku a upozornění na konec pauzy.',
   ),
 ];
 
