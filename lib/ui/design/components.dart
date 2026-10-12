@@ -621,11 +621,17 @@ class StatTile extends StatelessWidget {
       crossAxisAlignment: align,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          value,
-          style: text.titleLarge?.copyWith(fontFeatures: tabular),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        // Velké písmo hodnotu zmenší, místo aby ji usekl.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: align == CrossAxisAlignment.end
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+          child: Text(
+            value,
+            style: text.titleLarge?.copyWith(fontFeatures: tabular),
+            maxLines: 1,
+          ),
         ),
         Text(label, style: text.labelMedium),
       ],

@@ -60,5 +60,66 @@ void main() {
     expect(find.textContaining('Nové osobní rekordy'), findsOneWidget);
     expect(find.textContaining('Max váha: 82,5 kg'), findsOneWidget);
     expect(find.textContaining('(+20 kg)'), findsOneWidget);
+    expect(find.byType(BackButton), findsNothing);
+    expect(find.text('Hotovo'), findsOneWidget);
+  });
+
+  testWidgets('from history: delete asks first and closes the page', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    late Workout done;
+    await tester.runAsync(() async {
+      await state.load();
+      await state.startWorkout(now: DateTime(2026, 10, 1, 17));
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 60, reps: 8, done: true)];
+      done = (await state.finishActive(now: DateTime(2026, 10, 1, 18)))
+          .workout!;
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => SummaryPage(state, done)),
+              ),
+              child: const Text('Otevřít'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Otevřít'));
+    await tester.pumpAndSettle();
+    expect(find.text('Zopakovat trénink'), findsOneWidget);
+    expect(find.text('Hotovo'), findsNothing);
+
+    await tester.tap(find.byTooltip('Možnosti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Smazat'));
+    await tester.pumpAndSettle();
+    expect(find.text('Smazat trénink?'), findsOneWidget);
+    await tester.tap(find.text('Zrušit'));
+    await tester.pumpAndSettle();
+    expect(state.workouts, hasLength(1));
+
+    await tester.tap(find.byTooltip('Možnosti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Smazat'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Smazat').last);
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pumpAndSettle();
+    expect(state.workouts, isEmpty);
+    expect(find.text('Otevřít'), findsOneWidget);
+    expect(find.text('Trénink smazán.'), findsOneWidget);
   });
 }

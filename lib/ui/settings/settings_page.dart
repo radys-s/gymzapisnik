@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../core/version.dart';
 import '../../notify/notifier.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
 import '../design/tokens.dart';
 import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
@@ -134,18 +135,20 @@ class SettingsPage extends StatelessWidget {
   Future<void> _feedback(BuildContext context) async {
     await Clipboard.setData(const ClipboardData(text: feedbackContact));
     if (!context.mounted) return;
-    await showDialog<void>(
+    await showAdaptiveDialog<void>(
       context: context,
-      builder: (dialog) => AlertDialog(
+      builder: (dialog) => AlertDialog.adaptive(
         title: const Text('Zpětná vazba'),
         content: const Text(
           'Napiš na $feedbackContact (adresa je zkopírovaná). Připiš verzi '
           '$appVersion a co jsi dělal.',
         ),
         actions: [
-          TextButton(
+          adaptiveAction(
+            dialog,
+            label: 'Zavřít',
+            strong: true,
             onPressed: () => Navigator.pop(dialog),
-            child: const Text('Zavřít'),
           ),
         ],
       ),
@@ -153,31 +156,16 @@ class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _wipe(BuildContext context) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        title: const Text('Smazat všechna data?'),
-        content: const Text(
+    final ok = await confirmAction(
+      context,
+      title: 'Smazat všechna data?',
+      message:
           'Tréninky, vlastní cviky i nastavení v tomto zařízení se trvale '
           'smažou. Nejdřív si ulož zálohu do souboru.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('Zrušit'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(dialog).colorScheme.error,
-              foregroundColor: Theme.of(dialog).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('Smazat vše'),
-          ),
-        ],
-      ),
+      confirm: 'Smazat vše',
+      destructive: true,
     );
-    if (ok != true || !context.mounted) return;
+    if (!ok || !context.mounted) return;
     Navigator.popUntil(context, (r) => r.isFirst);
     await state.wipeAll();
   }
@@ -186,278 +174,343 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
     builder: (context, _) {
+      final p = context.palette;
       final profile = state.profile;
       final rest = profile.restSeconds;
-      final scheme = Theme.of(context).colorScheme;
-      final header = Theme.of(context).textTheme.titleSmall
-          ?.copyWith(color: scheme.primary);
-      Widget section(String title) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-        child: Text(title, style: header),
-      );
-      return Scaffold(
-        appBar: AppBar(title: const Text('Nastavení')),
-        body: ListView(
-          padding: const EdgeInsets.only(bottom: 32),
-          children: [
-            section('Trénink'),
-            ListTile(
-              leading: const Icon(Icons.timer_outlined),
-              title: const Text('Pauza mezi sériemi'),
-              trailing: DropdownButton<int>(
-                value: restOptions.contains(rest) ? rest : null,
-                hint: Text(restLabel(rest)),
-                underline: const SizedBox.shrink(),
-                items: [
-                  for (final s in restOptions)
-                    DropdownMenuItem(value: s, child: Text(restLabel(s))),
-                ],
-                onChanged: (s) => state.setPreferences(restSeconds: s),
+      return LargeTitlePage(
+        title: 'Nastavení',
+        children: [
+          GroupedSection(
+            header: 'Trénink',
+            dividerIndent: _indent,
+            children: [
+              GroupedRow(
+                icon: Icons.timer_outlined,
+                iconColor: _orange,
+                title: 'Pauza mezi sériemi',
+                trailing: DropdownButton<int>(
+                  value: restOptions.contains(rest) ? rest : null,
+                  hint: Text(restLabel(rest)),
+                  underline: const SizedBox.shrink(),
+                  borderRadius: BorderRadius.circular(Radii.card),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: p.secondaryLabel,
+                    fontFeatures: tabular,
+                  ),
+                  items: [
+                    for (final s in restOptions)
+                      DropdownMenuItem(value: s, child: Text(restLabel(s))),
+                  ],
+                  onChanged: (s) => state.setPreferences(restSeconds: s),
+                ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.flag_outlined),
-              title: const Text('Frekvence tréninku'),
-              subtitle: Text(
-                profile.trainingDays == null
+              GroupedRow(
+                icon: Icons.flag_outlined,
+                iconColor: _green,
+                title: 'Frekvence tréninku',
+                value: profile.trainingDays == null
                     ? perWeekLabel(state.weekGoal)
                     : [
                         for (final d in profile.trainingDays!)
                           weekdayShort[d - 1],
                       ].join(', '),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ProgramPage(state)),
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProgramPage(state)),
-              ),
-            ),
-            section('Výživa'),
-            ListTile(
-              leading: const Icon(Icons.egg_outlined),
-              title: const Text('Denní cíl bílkovin'),
-              subtitle: Text(
-                profile.proteinTarget == null
+            ],
+          ),
+          GroupedSection(
+            header: 'Výživa',
+            dividerIndent: _indent,
+            children: [
+              GroupedRow(
+                icon: Icons.egg_outlined,
+                iconColor: _teal,
+                title: 'Denní cíl bílkovin',
+                value: profile.proteinTarget == null
                     ? 'Bez cíle'
                     : '${profile.proteinTarget!.round()} g',
-              ),
-              onTap: () => _editTarget(
-                context,
-                title: 'Denní cíl bílkovin (g)',
-                current: profile.proteinTarget,
-                min: 20,
-                max: 400,
-                hint:
-                    'Číslo si zvol sám, třeba podle trenéra nebo lékaře. '
-                    'Prázdné pole = bez cíle.',
-                save: (v) => state.setNutritionTargets(
-                  protein: v,
-                  kcal: profile.kcalTarget,
-                ),
-              ),
-            ),
-            if (!profile.restrictWeightLoss)
-              ListTile(
-                leading: const Icon(Icons.local_fire_department_outlined),
-                title: const Text('Denní cíl energie'),
-                subtitle: Text(
-                  profile.kcalTarget == null
-                      ? 'Bez cíle'
-                      : '${profile.kcalTarget!.round()} kcal',
-                ),
                 onTap: () => _editTarget(
                   context,
-                  title: 'Denní cíl energie (kcal)',
-                  current: profile.kcalTarget,
-                  min: 1000,
-                  max: 6000,
-                  hint: 'Prázdné pole = bez cíle.',
+                  title: 'Denní cíl bílkovin (g)',
+                  current: profile.proteinTarget,
+                  min: 20,
+                  max: 400,
+                  hint:
+                      'Číslo si zvol sám, třeba podle trenéra nebo lékaře. '
+                      'Prázdné pole = bez cíle.',
                   save: (v) => state.setNutritionTargets(
-                    protein: profile.proteinTarget,
-                    kcal: v,
+                    protein: v,
+                    kcal: profile.kcalTarget,
                   ),
                 ),
               ),
-            section('Vzhled'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'dark', label: Text('Tmavý')),
-                  ButtonSegment(value: 'light', label: Text('Světlý')),
-                  ButtonSegment(value: 'system', label: Text('Systém')),
-                ],
-                selected: {profile.theme},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) =>
-                    state.setPreferences(theme: s.single),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.palette_outlined),
-              title: const Text('Barva'),
-              subtitle: Text(Accent.parse(profile.accent).label),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => AccentPage(state)),
-              ),
-            ),
-            section('Připomínky'),
-            if (!state.notifier.supported)
-              const ListTile(
-                leading: Icon(Icons.notifications_off_outlined),
-                title: Text('Připomínky tréninku'),
-                subtitle: Text(
-                  'Ve webové verzi nejsou dostupné. Denní úkol od kouče '
-                  'uvidíš po otevření aplikace.',
-                ),
-                isThreeLine: true,
-              )
-            else ...[
-              if (state.notifier is RestNotifier)
-                SwitchListTile(
-                  secondary: const Icon(Icons.timer_outlined),
-                  title: const Text('Upozornit na konec pauzy'),
-                  subtitle: const Text(
-                    'Místní oznámení i při zamčeném telefonu. Android může doručení opozdit.',
+              if (!profile.restrictWeightLoss)
+                GroupedRow(
+                  icon: Icons.local_fire_department_outlined,
+                  iconColor: _red,
+                  title: 'Denní cíl energie',
+                  value: profile.kcalTarget == null
+                      ? 'Bez cíle'
+                      : '${profile.kcalTarget!.round()} kcal',
+                  onTap: () => _editTarget(
+                    context,
+                    title: 'Denní cíl energie (kcal)',
+                    current: profile.kcalTarget,
+                    min: 1000,
+                    max: 6000,
+                    hint: 'Prázdné pole = bez cíle.',
+                    save: (v) => state.setNutritionTargets(
+                      protein: profile.proteinTarget,
+                      kcal: v,
+                    ),
                   ),
-                  value: state.restAlerts,
-                  onChanged: (on) async {
-                    try {
-                      final ok = await state.setRestAlerts(on);
-                      if (!ok && context.mounted) {
-                        _toast(
-                          context,
-                          'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
-                        );
-                      }
-                    } catch (_) {
-                      if (context.mounted) {
-                        _toast(
-                          context,
-                          'Nastavení se nepodařilo uložit. Zkus to znovu.',
-                        );
-                      }
-                    }
-                  },
-                ),
-              SwitchListTile(
-                secondary: const Icon(Icons.notifications_outlined),
-                title: const Text('Připomínat trénink'),
-                subtitle: const Text(
-                  'Jen v plánované dny a když týdenní cíl ještě není splněný',
-                ),
-                value: state.profile.reminderMinutes != null,
-                onChanged: (on) => _setReminder(context, on ? 18 * 60 : null),
-              ),
-              if (state.profile.reminderMinutes != null)
-                ListTile(
-                  leading: const Icon(Icons.schedule),
-                  title: const Text('Čas připomínky'),
-                  subtitle: Text(_clock(state.profile.reminderMinutes!)),
-                  onTap: () => _pickReminderTime(context),
                 ),
             ],
-            section('Gym zápisník Pro'),
-            ListTile(
-              leading: const Icon(Icons.workspace_premium_outlined),
-              title: const Text('Co obsahuje Pro'),
-              subtitle: Text(
-                state.paywall
-                    ? 'Zobrazit'
+          ),
+          GroupedSection(
+            header: 'Vzhled',
+            dividerIndent: _indent,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(Space.m),
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'system', label: Text('Systém')),
+                    ButtonSegment(value: 'light', label: Text('Světlý')),
+                    ButtonSegment(value: 'dark', label: Text('Tmavý')),
+                  ],
+                  selected: {profile.theme},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (s) =>
+                      state.setPreferences(theme: s.single),
+                ),
+              ),
+              GroupedRow(
+                icon: Icons.palette_outlined,
+                iconColor: p.accent,
+                title: 'Barva',
+                value: Accent.parse(profile.accent).label,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AccentPage(state)),
+                ),
+              ),
+            ],
+          ),
+          GroupedSection(
+            header: 'Připomínky',
+            footer: state.notifier.supported
+                ? 'Připomínka přijde jen v plánované dny a jen když týdenní '
+                      'cíl ještě není splněný.'
+                : null,
+            dividerIndent: _indent,
+            children: [
+              if (!state.notifier.supported)
+                const GroupedRow(
+                  icon: Icons.notifications_off_outlined,
+                  iconColor: _grey,
+                  title: 'Připomínky tréninku',
+                  subtitle:
+                      'Ve webové verzi nejsou dostupné. Denní úkol od kouče '
+                      'uvidíš po otevření aplikace.',
+                )
+              else ...[
+                if (state.notifier is RestNotifier)
+                  MergeSemantics(
+                    child: GroupedRow(
+                      onTap: () => _setRestAlerts(context, !state.restAlerts),
+                      icon: Icons.timer_outlined,
+                      iconColor: _orange,
+                      title: 'Upozornit na konec pauzy',
+                      subtitle:
+                          'Místní oznámení i při zamčeném telefonu. '
+                          'Android může doručení opozdit.',
+                      trailing: Switch.adaptive(
+                        value: state.restAlerts,
+                        onChanged: (on) => _setRestAlerts(context, on),
+                      ),
+                    ),
+                  ),
+                MergeSemantics(
+                  child: GroupedRow(
+                    onTap: () => _setReminder(
+                      context,
+                      profile.reminderMinutes == null ? 18 * 60 : null,
+                    ),
+                    icon: Icons.notifications_outlined,
+                    iconColor: _red,
+                    title: 'Připomínat trénink',
+                    trailing: Switch.adaptive(
+                      value: profile.reminderMinutes != null,
+                      onChanged: (on) =>
+                          _setReminder(context, on ? 18 * 60 : null),
+                    ),
+                  ),
+                ),
+                if (profile.reminderMinutes != null)
+                  GroupedRow(
+                    icon: Icons.schedule_rounded,
+                    iconColor: _blue,
+                    title: 'Čas připomínky',
+                    value: _clock(profile.reminderMinutes!),
+                    onTap: () => _pickReminderTime(context),
+                  ),
+              ],
+            ],
+          ),
+          GroupedSection(
+            header: 'Gym zápisník Pro',
+            dividerIndent: _indent,
+            children: [
+              GroupedRow(
+                icon: Icons.workspace_premium_outlined,
+                iconColor: _purple,
+                title: 'Co obsahuje Pro',
+                subtitle: state.paywall
+                    ? null
                     : 'Zatím odemčeno zdarma pro testery',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => PremiumPage(state)),
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => PremiumPage(state)),
+            ],
+          ),
+          GroupedSection(
+            header: 'Data',
+            footer:
+                'Data jsou jen v tomto zařízení. Zálohu si ulož do souboru '
+                'aspoň jednou za pár týdnů.',
+            dividerIndent: _indent,
+            children: [
+              GroupedRow(
+                icon: Icons.save_alt_rounded,
+                iconColor: _blue,
+                title: 'Uložit zálohu',
+                subtitle: 'Všechny tréninky a nastavení do souboru',
+                chevron: false,
+                onTap: () => _save(
+                  context,
+                  'gymzapisnik-zaloha-${_stamp()}.json',
+                  state.exportBackup,
+                  'application/json',
+                  onSaved: state.markBackedUp,
+                ),
               ),
-            ),
-            section('Data'),
-            ListTile(
-              leading: const Icon(Icons.save_alt),
-              title: const Text('Uložit zálohu'),
-              subtitle: const Text('Všechny tréninky a nastavení do souboru'),
-              onTap: () => _save(
-                context,
-                'gymzapisnik-zaloha-${_stamp()}.json',
-                state.exportBackup,
-                'application/json',
-                onSaved: state.markBackedUp,
+              GroupedRow(
+                icon: Icons.restore_rounded,
+                iconColor: _green,
+                title: 'Obnovit ze zálohy',
+                subtitle: 'Doplní tréninky ze souboru, nic nesmaže',
+                chevron: false,
+                onTap: () => _restore(context),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.restore),
-              title: const Text('Obnovit ze zálohy'),
-              subtitle: const Text('Doplní tréninky ze souboru, nic nesmaže'),
-              onTap: () => _restore(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.swap_horiz),
-              title: const Text('Import z Hevy'),
-              subtitle: const Text(
-                'Soubor workout_data.csv z Hevy (Export data), nic nesmaže',
+              GroupedRow(
+                icon: Icons.swap_horiz_rounded,
+                iconColor: _indigo,
+                title: 'Import z Hevy',
+                subtitle:
+                    'Soubor workout_data.csv z Hevy (Export data), nic nesmaže',
+                chevron: false,
+                onTap: () => _importHevy(context),
               ),
-              onTap: () => _importHevy(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.table_chart_outlined),
-              title: const Text('Export do Excelu (CSV)'),
-              subtitle: const Text('Jedna řádka na sérii'),
-              onTap: () => _save(
-                context,
-                'gymzapisnik-serie-${_stamp()}.csv',
-                state.exportCsv,
-                'text/csv',
+              GroupedRow(
+                icon: Icons.table_chart_outlined,
+                iconColor: _teal,
+                title: 'Export do Excelu (CSV)',
+                subtitle: 'Jedna řádka na sérii',
+                chevron: false,
+                onTap: () => _save(
+                  context,
+                  'gymzapisnik-serie-${_stamp()}.csv',
+                  state.exportCsv,
+                  'text/csv',
+                ),
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.delete_forever, color: scheme.error),
-              title: const Text('Smazat všechna data'),
-              onTap: () => _wipe(context),
-            ),
-            section('O aplikaci'),
-            ListTile(
-              leading: const Icon(Icons.mail_outline),
-              title: const Text('Napsat zpětnou vazbu'),
-              subtitle: const Text('Co tě zdrželo, co chybělo, co nefunguje'),
-              onTap: () => _feedback(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome_outlined),
-              title: const Text('Novinky'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const WhatsNewPage()),
+            ],
+          ),
+          GroupedSection(
+            children: [
+              GroupedRow(
+                title: 'Smazat všechna data',
+                destructive: true,
+                chevron: false,
+                onTap: () => _wipe(context),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.policy_outlined),
-              title: const Text('Podmínky a soukromí'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LegalPage()),
-              ),
-            ),
-            const ListTile(
-              leading: Icon(Icons.info_outline),
-              title: Text('Gym zápisník'),
-              subtitle: Text(
-                'Verze $appVersion\n'
-                'Data jsou jen v tomto zařízení. Aplikace nenahrazuje '
+            ],
+          ),
+          GroupedSection(
+            header: 'O aplikaci',
+            footer:
+                'Gym zápisník, verze $appVersion. Aplikace nenahrazuje '
                 'trenéra ani lékaře.',
+            dividerIndent: _indent,
+            children: [
+              GroupedRow(
+                icon: Icons.mail_outline_rounded,
+                iconColor: _blue,
+                title: 'Napsat zpětnou vazbu',
+                subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
+                chevron: false,
+                onTap: () => _feedback(context),
               ),
-              isThreeLine: true,
-            ),
-          ],
-        ),
+              GroupedRow(
+                icon: Icons.auto_awesome_outlined,
+                iconColor: _purple,
+                title: 'Novinky',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WhatsNewPage()),
+                ),
+              ),
+              GroupedRow(
+                icon: Icons.policy_outlined,
+                iconColor: _grey,
+                title: 'Podmínky a soukromí',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LegalPage()),
+                ),
+              ),
+            ],
+          ),
+        ],
       );
     },
   );
+
+  Future<void> _setRestAlerts(BuildContext context, bool on) async {
+    try {
+      final ok = await state.setRestAlerts(on);
+      if (!ok && context.mounted) {
+        _toast(
+          context,
+          'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _toast(context, 'Nastavení se nepodařilo uložit. Zkus to znovu.');
+      }
+    }
+  }
 }
+
+/// Odsazení oddělovače za barevnou ikonou řádku.
+const _indent = Space.l + 30 + Space.m;
+
+// Barvy ikon jako v Nastavení iPhonu (stejné ve světlém i tmavém).
+const _orange = Color(0xFFFF9500);
+const _green = Color(0xFF34C759);
+const _teal = Color(0xFF30B0C7);
+const _blue = Color(0xFF007AFF);
+const _indigo = Color(0xFF5856D6);
+const _purple = Color(0xFFAF52DE);
+const _red = Color(0xFFFF3B30);
+const _grey = Color(0xFF8E8E93);
 
 /// Dialog pro vlastní denní cíl. Prázdné pole cíl zruší.
 Future<void> _editTarget(

@@ -6,6 +6,8 @@ import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 
@@ -24,8 +26,8 @@ class ExerciseDetailPage extends StatelessWidget {
       final sessions = exerciseHistory(state.workouts, exerciseId);
       final records = allTimeRecords(state.workouts, exerciseId, type);
       final points = progressSeries(state.workouts, exerciseId, type);
+      final p = context.palette;
       final text = Theme.of(context).textTheme;
-      final muted = Theme.of(context).colorScheme.onSurfaceVariant;
       final last = sessions.lastOrNull;
       final previous = sessions.length > 1
           ? sessions[sessions.length - 2]
@@ -33,94 +35,110 @@ class ExerciseDetailPage extends StatelessWidget {
       final comparison = last == null
           ? null
           : compareExercise(type, last.entry, previous?.entry);
-      return Scaffold(
-        appBar: AppBar(title: Text(exercise.name)),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            Text(
+      final kinds = [
+        for (final kind in recordKinds(type))
+          if (records[kind] != null) kind,
+      ];
+      return LargeTitlePage(
+        title: exercise.name,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Space.xs, 0, Space.xs, Space.l),
+            child: Text(
               [
                 exercise.muscle,
                 type == ExerciseType.bodyweight ? 'vlastní váha' : 's váhou',
               ].join(' · '),
-              style: TextStyle(color: muted),
+              style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             ),
-            if (sessions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 24),
-                child: Text('Tenhle cvik zatím nemáš v historii.'),
-              ),
-            if (records.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Text('Osobní rekordy', style: text.titleMedium),
-              const SizedBox(height: 8),
-              Row(
+          ),
+          if (sessions.isEmpty)
+            const EmptyState(
+              icon: Icons.show_chart_rounded,
+              title: 'Zatím bez záznamu',
+              message: 'Tenhle cvik zatím nemáš v historii.',
+            ),
+          if (kinds.isNotEmpty)
+            HeroCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final kind in recordKinds(type))
-                    if (records[kind] != null)
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              recordLabel(kind, records[kind]!.value),
-                              style: text.titleLarge,
-                            ),
-                            Text(kind.label, style: TextStyle(color: muted)),
-                            Text(
-                              formatDate(records[kind]!.date),
-                              style: TextStyle(color: muted, fontSize: 12),
-                            ),
-                          ],
+                  Text('Osobní rekordy', style: text.titleMedium),
+                  const SizedBox(height: Space.m),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final kind in kinds)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              StatTile(
+                                recordLabel(kind, records[kind]!.value),
+                                kind.label,
+                              ),
+                              Text(
+                                formatDate(records[kind]!.date),
+                                style: text.bodySmall?.copyWith(
+                                  color: p.tertiaryLabel,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-            if (points.length >= 2) ...[
-              const SizedBox(height: 24),
-              Text(
-                type == ExerciseType.weighted
-                    ? 'Odhad 1RM v čase'
-                    : 'Max opakování v čase',
-                style: text.titleMedium,
+            ),
+          if (points.length >= 2) ...[
+            SectionHeader(
+              type == ExerciseType.weighted
+                  ? 'Odhad 1RM v čase'
+                  : 'Max opakování v čase',
+            ),
+            Panel(
+              padding: const EdgeInsets.fromLTRB(
+                Space.s,
+                Space.l,
+                Space.l,
+                Space.s,
               ),
-              const SizedBox(height: 12),
-              SizedBox(height: 200, child: _ProgressChart(points)),
-            ],
-            if (comparison != null && previous != null) ...[
-              const SizedBox(height: 24),
-              Text('Poslední proti předchozímu', style: text.titleMedium),
-              const SizedBox(height: 4),
-              Text(
+              child: SizedBox(height: 200, child: _ProgressChart(points)),
+            ),
+          ],
+          if (comparison != null && previous != null) ...[
+            const SectionHeader('Poslední proti předchozímu'),
+            Panel(
+              child: Text(
                 '${trendLabel(comparison.overall)} · '
                 'nejlepší série ${setLabel(type, comparison.bestToday!)}'
                 '${comparison.bestLast == null ? '' : ' (předtím ${setLabel(type, comparison.bestLast!)})'}',
+                style: text.bodyMedium?.copyWith(fontFeatures: tabular),
               ),
-            ],
-            if (sessions.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              Text('Historie', style: text.titleMedium),
-              for (final s in sessions.reversed)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(formatDate(s.date)),
-                  subtitle: Text(
-                    s.entry.countedSets
+            ),
+          ],
+          if (sessions.isNotEmpty) ...[
+            const SectionHeader('Historie'),
+            GroupedSection(
+              children: [
+                for (final s in sessions.reversed)
+                  GroupedRow(
+                    title: formatDate(s.date),
+                    subtitle: s.entry.countedSets
                         .map((x) => setLabel(type, x))
                         .join(', '),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SummaryPage(state, s.workout),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SummaryPage(state, s.workout),
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ],
-        ),
+        ],
       );
     },
   );
@@ -132,7 +150,8 @@ class _ProgressChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.palette;
+    final label = TextStyle(fontSize: 11, color: p.secondaryLabel);
     final values = points.map((p) => p.value);
     final minY = values.reduce((a, b) => a < b ? a : b);
     final maxY = values.reduce((a, b) => a > b ? a : b);
@@ -147,7 +166,11 @@ class _ProgressChart extends StatelessWidget {
         LineChartData(
           minY: (minY - pad).clamp(0, double.infinity),
           maxY: maxY + pad,
-          gridData: const FlGridData(drawVerticalLine: false),
+          gridData: FlGridData(
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: p.separator, strokeWidth: 0.5),
+          ),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             topTitles: const AxisTitles(),
@@ -168,10 +191,7 @@ class _ProgressChart extends StatelessWidget {
                     return const SizedBox.shrink();
                   }
                   final d = points[i].date.toLocal();
-                  return Text(
-                    '${d.day}. ${d.month}.',
-                    style: const TextStyle(fontSize: 11),
-                  );
+                  return Text('${d.day}. ${d.month}.', style: label);
                 },
               ),
             ),
@@ -179,10 +199,8 @@ class _ProgressChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (value, meta) => Text(
-                  formatKg(value.roundToDouble()),
-                  style: const TextStyle(fontSize: 11),
-                ),
+                getTitlesWidget: (value, meta) =>
+                    Text(formatKg(value.roundToDouble()), style: label),
               ),
             ),
           ),
@@ -192,12 +210,20 @@ class _ProgressChart extends StatelessWidget {
                 for (var i = 0; i < points.length; i++)
                   FlSpot(i.toDouble(), points[i].value),
               ],
-              color: scheme.primary,
+              gradient: LinearGradient(colors: p.gradient),
               barWidth: 3,
-              dotData: const FlDotData(show: true),
+              isStrokeCapRound: true,
+              dotData: FlDotData(
+                getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+                  radius: 3.5,
+                  color: p.accent,
+                  strokeWidth: 2,
+                  strokeColor: p.grouped,
+                ),
+              ),
               belowBarData: BarAreaData(
                 show: true,
-                color: scheme.primary.withValues(alpha: 0.12),
+                color: p.accent.withValues(alpha: 0.12),
               ),
             ),
           ],
