@@ -5,16 +5,22 @@ import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  test('every accent builds a light and dark theme with the palette', () {
+  test('every accent and look builds a light and dark theme', () {
     for (final accent in Accent.values) {
       for (final b in Brightness.values) {
-        final theme = buildTheme(b, accent);
-        final p = theme.extension<AppPalette>()!;
-        expect(theme.colorScheme.primary, accent.solid(b));
-        expect(theme.scaffoldBackgroundColor, p.background);
-        expect(p.gradient, hasLength(2));
+        for (final look in Look.values) {
+          final theme = buildTheme(b, accent, look);
+          final p = theme.extension<AppPalette>()!;
+          expect(theme.colorScheme.primary, p.accent);
+          expect(theme.scaffoldBackgroundColor, p.background);
+          expect(p.gradient, hasLength(3));
+          expect(p.look, look.resolve(b));
+        }
       }
     }
+    // Automaticky: ve dne Aurora, v noci Studio.
+    expect(Look.auto.resolve(Brightness.light), Look.aurora);
+    expect(Look.auto.resolve(Brightness.dark), Look.studio);
   });
 
   test('profile defaults: system theme, lime accent, first tab', () {
@@ -33,7 +39,10 @@ void main() {
     expect(next.theme, 'dark');
     expect(next.lastTab, 1);
     expect(next.welcomeSeen, isTrue);
-    expect(p.withExtra({'accent': 'neon'}).accent, 'lime');
+    expect(p.withExtra({'accent': 'bogus'}).accent, 'lime');
+    expect(p.look, 'auto');
+    expect(p.withExtra({'look': 'studio'}).look, 'studio');
+    expect(p.withExtra({'look': 'bogus'}).look, 'auto');
     expect(Accent.parse('lagoon'), Accent.lagoon);
     expect(Accent.parse(null), Accent.lime);
   });

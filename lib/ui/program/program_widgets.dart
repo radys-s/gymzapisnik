@@ -199,7 +199,7 @@ class _DayToggle extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.titleSmall
-                ?.copyWith(color: selected ? p.onAccent : p.secondaryLabel),
+                ?.copyWith(color: selected ? p.onGradient : p.secondaryLabel),
           ),
         ),
       ),

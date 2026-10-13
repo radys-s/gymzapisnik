@@ -183,7 +183,10 @@ class _TodayCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      HeroCard(vivid: true, child: Builder(builder: _content));
+
+  Widget _content(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final active = state.active;
@@ -303,18 +306,16 @@ class _TodayCard extends StatelessWidget {
       ]);
     }
 
-    return HeroCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ...children,
-          ProGate(
-            state,
-            ProFeature.mission,
-            child: _MissionLine(state.mission(now)),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...children,
+        ProGate(
+          state,
+          ProFeature.mission,
+          child: _MissionLine(state.mission(now)),
+        ),
+      ],
     );
   }
 
@@ -373,7 +374,10 @@ class _MissionLine extends StatelessWidget {
             Icon(
               MissionCard.icon(mission.kind),
               size: 20,
-              color: urgent ? const Color(0xFFFF9F0A) : p.accent,
+              // Na světlé barevné kartě by oranžová splynula.
+              color: urgent && p.surface != HeroSurface.bright
+                  ? const Color(0xFFFF9F0A)
+                  : p.accent,
             ),
             const SizedBox(width: Space.m),
             Expanded(

@@ -207,7 +207,7 @@ class _IntroStep extends StatelessWidget {
                             child: Icon(
                               intro.icon,
                               size: 52,
-                              color: Colors.black.withValues(alpha: 0.85),
+                              color: p.onGradient,
                             ),
                           ),
                         const SizedBox(height: Space.xxxl),
@@ -282,13 +282,13 @@ class _AccentStep extends StatelessWidget {
                             container: true,
                             header: true,
                             child: Text(
-                              'Vyber si barvu',
+                              'Vyber si vzhled',
                               style: text.headlineLarge,
                             ),
                           ),
                           const SizedBox(height: Space.m),
                           Text(
-                            'Změníš ji kdykoli v Nastavení.',
+                            'Změníš ho kdykoli v Nastavení.',
                             style: text.bodyLarge?.copyWith(
                               color: p.secondaryLabel,
                             ),
@@ -297,16 +297,7 @@ class _AccentStep extends StatelessWidget {
                         ],
                       ),
                     ),
-                    ListenableBuilder(
-                      listenable: state,
-                      builder: (context, _) => AccentPicker(
-                        selected: Accent.parse(state.profile.accent),
-                        onChanged: (a) => saveAccent(context, state, a),
-                      ),
-                    ),
-                    // Náhled na hlavním tlačítku a kruhu, ne na ikoně:
-                    // ikona aplikace na ploše barvu nemění.
-                    const AccentPreview(),
+                    AppearanceOptions(state),
                   ],
                 ),
               ),

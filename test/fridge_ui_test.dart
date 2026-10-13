@@ -116,12 +116,10 @@ void main() {
     'unknown unit is visible and editing requires an explicit choice',
     (tester) async {
       final state = await pump(tester);
-      await tester.runAsync(
-        () async {
-          await state.savePantry(const [PantryItem('chléb', amount: 200)]);
-          await state.savePantrySelection({pantryKey('chléb')}, 20);
-        },
-      );
+      await tester.runAsync(() async {
+        await state.savePantry(const [PantryItem('chléb', amount: 200)]);
+        await state.savePantrySelection({pantryKey('chléb')}, 20);
+      });
       await tester.pumpWidget(
         MaterialApp(
           theme: buildTheme(Brightness.dark),

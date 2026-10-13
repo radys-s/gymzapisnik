@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart' show CupertinoDialogAction;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'tokens.dart';
+import '../theme.dart';
 
 /// Stránka s velkým nadpisem (iOS): nadpis 34 pt v obsahu, po posunu
 /// se objeví malý nadpis v liště a pod ní tenká linka.
@@ -326,11 +326,17 @@ class IconTile extends StatelessWidget {
       color: color,
       borderRadius: BorderRadius.circular(size * 0.26),
     ),
-    child: Icon(icon, size: size * 0.6, color: Colors.white),
+    // Na světlé dlaždici (Studio v tmavém režimu) tmavá ikona.
+    child: Icon(
+      icon,
+      size: size * 0.6,
+      color: color.computeLuminance() > 0.179 ? Colors.black : Colors.white,
+    ),
   );
 }
 
-/// Hlavní akce obrazovky: přechod barev motivu, černý text.
+/// Hlavní akce obrazovky. Aurora ve dne: přechod barev motivu.
+/// Ve tmě a ve Studiu plná bílá / černá, na výrazné kartě kontrastní.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? icon;
@@ -349,7 +355,8 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
-    final fg = enabled ? p.onAccent : p.tertiaryLabel;
+    final fg = enabled ? p.onCta : p.tertiaryLabel;
+    final radius = BorderRadius.circular(p.studio ? 26 : Radii.control);
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -360,12 +367,12 @@ class PrimaryButton extends StatelessWidget {
         child: Ink(
           height: 52,
           decoration: BoxDecoration(
-            gradient: enabled ? p.linear : null,
-            color: enabled ? null : p.fill,
-            borderRadius: BorderRadius.circular(Radii.control),
+            gradient: enabled && p.cta == null ? p.linear : null,
+            color: enabled ? p.cta : p.fill,
+            borderRadius: radius,
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(Radii.control),
+            borderRadius: radius,
             onTap: enabled
                 ? () {
                     HapticFeedback.lightImpact();
@@ -440,24 +447,123 @@ class SecondaryButton extends StatelessWidget {
 }
 
 /// Výrazná karta pro to nejdůležitější na obrazovce (větší zaoblení).
+///
+/// `vivid` = barevná karta: v Auroře ve dne celá v přechodu motivu,
+/// jinak tmavá s měkkou září, která plynule mizí do podkladu. Obsah
+/// dostane vlastní motiv, proto barvy čti z `context` uvnitř karty
+/// (např. přes [Builder]), ne zvenku.
 class HeroCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
+  final bool vivid;
   const HeroCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(Space.xl),
+    this.vivid = false,
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: padding,
-    decoration: BoxDecoration(
-      color: context.palette.grouped,
-      borderRadius: BorderRadius.circular(Radii.hero),
-    ),
-    child: child,
-  );
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final radius = BorderRadius.circular(Radii.hero);
+    if (!vivid) {
+      return Container(
+        padding: padding,
+        decoration: BoxDecoration(color: p.grouped, borderRadius: radius),
+        child: child,
+      );
+    }
+    final brightness = Theme.of(context).brightness;
+    // Světlý přechod jen u motivů, na kterých je čitelný tmavý text.
+    final bright =
+        !p.studio &&
+        brightness == Brightness.light &&
+        p.preset.onGradient == Colors.black;
+    final surface = bright ? HeroSurface.bright : HeroSurface.glow;
+    final theme = buildTheme(brightness, p.preset, p.look, surface);
+    final inner = theme.extension<AppPalette>()!;
+    Widget content = Theme(
+      data: theme,
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: inner.label),
+        child: IconTheme.merge(
+          data: IconThemeData(color: inner.label),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+    DecoratedBox layer(Gradient g, Widget c) => DecoratedBox(
+      decoration: BoxDecoration(gradient: g),
+      child: c,
+    );
+    RadialGradient glow(Alignment at, double r, Color c, double a) =>
+        RadialGradient(
+          center: at,
+          radius: r,
+          colors: [
+            c.withValues(alpha: a),
+            c.withValues(alpha: 0),
+          ],
+        );
+    final g = inner.gradient;
+    if (bright) {
+      // Přechod motivu a světlý odlesk vlevo nahoře („aurora“).
+      content = layer(
+        LinearGradient(
+          colors: g,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        layer(
+          glow(const Alignment(-0.9, -1.1), 1.1, Colors.white, 0.45),
+          content,
+        ),
+      );
+    } else {
+      // Tmavý podklad a záře v sytých tmavých odstínech motivu: barva
+      // plynule mizí do podkladu, bílý text zůstane čitelný a světlé
+      // barvy (limetka) nezešednou do olivové.
+      final base = brightness == Brightness.dark
+          ? p.grouped
+          : const Color(0xFF111113);
+      content = DecoratedBox(
+        decoration: BoxDecoration(color: base),
+        child: layer(
+          // Úhlopříčný přechod nezávisí na poměru stran karty.
+          LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              deepTone(g.last).withValues(alpha: 0.95),
+              deepTone(g[1]).withValues(alpha: 0.4),
+              deepTone(g[1]).withValues(alpha: 0),
+            ],
+            stops: const [0, 0.55, 1],
+          ),
+          layer(
+            glow(const Alignment(1.0, 1.25), 1.6, deepTone(g[1]), 0.55),
+            content,
+          ),
+        ),
+      );
+    }
+    return ClipRRect(borderRadius: radius, child: content);
+  }
+}
+
+/// Sytý tmavý odstín barvy pro záři pod bílým textem.
+Color deepTone(Color c) {
+  var h = HSLColor.fromColor(c);
+  h = h
+      .withLightness((h.lightness * 0.6).clamp(0.22, 0.4))
+      .withSaturation(math.min(1, h.saturation * 1.1));
+  // Zelené a žluté tóny jsou při stejné světlosti jasnější: ztmavit,
+  // dokud bílý text nemá kontrast aspoň 4,5:1 i s průhledností.
+  while (h.toColor().computeLuminance() > 0.1 && h.lightness > 0.1) {
+    h = h.withLightness(h.lightness - 0.01);
+  }
+  return h.toColor();
 }
 
 /// Obyčejná seskupená karta.
@@ -696,21 +802,24 @@ class AppMark extends StatelessWidget {
         gradient: p.linear,
         borderRadius: BorderRadius.circular(size * 0.23),
       ),
-      child: CustomPaint(painter: _MarkPainter()),
+      child: CustomPaint(painter: _MarkPainter(p.onGradient)),
     );
   }
 }
 
 /// Značka: osa činky se dvěma kotouči.
 class _MarkPainter extends CustomPainter {
+  final Color color;
+  _MarkPainter(this.color);
+
   @override
   void paint(Canvas canvas, Size size) {
     final u = size.width / 100;
-    final paint = Paint()..color = Colors.black;
+    final paint = Paint()..color = color;
     // Průhlednost na celou vrstvu, aby překryvy osy a kotoučů neztmavly.
     canvas.saveLayer(
       Offset.zero & size,
-      Paint()..color = Colors.black.withValues(alpha: 0.85),
+      Paint()..color = color.withValues(alpha: 0.85),
     );
     RRect r(double x, double y, double w, double h, double rad) =>
         RRect.fromRectAndRadius(
@@ -727,7 +836,7 @@ class _MarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_MarkPainter old) => false;
+  bool shouldRepaint(_MarkPainter old) => old.color != color;
 }
 
 /// Potvrzení před nevratnou akcí. Vrací `true` jen po potvrzení.

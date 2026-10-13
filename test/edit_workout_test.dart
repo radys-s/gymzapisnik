@@ -79,9 +79,7 @@ void main() {
     expect(sets.last.reps, 9);
   });
 
-  testWidgets('removed set and exercise come back with Vrátit', (
-    tester,
-  ) async {
+  testWidgets('removed set and exercise come back with Vrátit', (tester) async {
     await _setup(tester);
     await tester.tap(find.byTooltip('Série 2, změnit typ'));
     await tester.pumpAndSettle();
