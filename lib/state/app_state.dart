@@ -816,11 +816,13 @@ class AppState extends ChangeNotifier {
     int? restSeconds,
     String? theme,
     String? accent,
+    String? look,
   }) => _updateProfile(
     (p) => p.withExtra({
       'restSeconds': ?restSeconds?.clamp(15, 600),
       'theme': ?theme,
       'accent': ?accent,
+      'look': ?look,
     }),
   );
 

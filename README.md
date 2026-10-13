@@ -63,8 +63,8 @@ Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc po
 
 UX1 (větev `cviceni`, verze 1.0.0-beta.4+13, čeká na test od Tomáše před merge do main): nový design
 systém `lib/ui/design/` (barvy, typografie, komponenty ve stylu iOS, světlý/tmavý režim podle systému,
-volitelná barva), dvě záložky Cvičení / Strava s vlastní navigací, spouštěcí obrazovka, uvítání s výběrem
-barvy a „Co je nového“. Cvičení: hlavní akce Začít / Pokračovat, týden, historie, program, cviky a rekordy,
+dva vzhledy Aurora a Studio — automaticky Aurora ve dne, Studio v noci — a čtyři barvy; kontrast hlídá `test/contrast_test.dart`), dvě záložky Cvičení / Strava s vlastní navigací, spouštěcí obrazovka, uvítání s výběrem
+vzhledu a barvy a „Co je nového“. Cvičení: hlavní akce Začít / Pokračovat, týden, historie, program, cviky a rekordy,
 tělesná váha. Zápis: vícenásobný výběr cviků, typ série, popsané vstupy, „Vrátit“ po smazání, pořadí cviků.
 Vlastní programy (dny, cviky, série × rozsah opakování) a frekvence s tréninkovými dny. Souhrn, historie,
 detail cviku, úprava tréninku a Nastavení v novém designu. Oznámení na Androidu i iPhonu (připomínka

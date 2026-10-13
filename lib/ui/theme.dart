@@ -8,17 +8,23 @@ export 'design/tokens.dart';
 /// Celý vzhled aplikace z jednoho místa: barvy ve stylu iOS, systémové
 /// písmo (na iPhonu SF Pro) a zvolený barevný motiv. Žádná obrazovka
 /// nemá spadnout do výchozího vzhledu Materialu.
-ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
-  final p = AppPalette.of(brightness, accent);
+ThemeData buildTheme(
+  Brightness brightness, [
+  Accent accent = Accent.lime,
+  Look look = Look.auto,
+  HeroSurface? surface,
+]) {
+  final p = AppPalette.of(brightness, accent, look, surface);
+  final studio = p.studio;
   final dark = brightness == Brightness.dark;
   final scheme = ColorScheme(
     brightness: brightness,
     primary: p.accent,
-    onPrimary: dark ? Colors.black : Colors.white,
+    onPrimary: p.onAccent,
     primaryContainer: p.gradient.first,
-    onPrimaryContainer: Colors.black,
+    onPrimaryContainer: p.onGradient,
     secondary: p.accent,
-    onSecondary: dark ? Colors.black : Colors.white,
+    onSecondary: p.onAccent,
     secondaryContainer: p.fill,
     onSecondaryContainer: p.label,
     tertiary: p.gradient.last,
@@ -65,10 +71,10 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
       );
   final text = t.copyWith(
     displaySmall: s(t.displaySmall, 40, FontWeight.w700, -0.8),
-    headlineLarge: s(t.headlineLarge, 34, FontWeight.w700, -0.6),
+    headlineLarge: s(t.headlineLarge, 34, FontWeight.w800, -1.0),
     headlineMedium: s(t.headlineMedium, 28, FontWeight.w700, -0.4),
-    headlineSmall: s(t.headlineSmall, 22, FontWeight.w700, -0.3),
-    titleLarge: s(t.titleLarge, 20, FontWeight.w600, -0.2),
+    headlineSmall: s(t.headlineSmall, 24, FontWeight.w800, -0.6),
+    titleLarge: s(t.titleLarge, 20, FontWeight.w700, -0.4),
     titleMedium: s(t.titleMedium, 17, FontWeight.w600, -0.2),
     titleSmall: s(t.titleSmall, 15, FontWeight.w600),
     bodyLarge: s(t.bodyLarge, 17, FontWeight.w400, -0.2),
@@ -94,6 +100,8 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
   final control = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(Radii.control),
   );
+  // Studio má tlačítka jako tablety, Aurora zaoblené obdélníky.
+  final OutlinedBorder buttonShape = studio ? const StadiumBorder() : control;
   const buttonSize = Size(minTap, 52);
   final buttonText = text.labelLarge;
 
@@ -115,7 +123,7 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
       actionsIconTheme: IconThemeData(color: p.accent),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: p.grouped,
+      backgroundColor: studio ? p.background : p.grouped,
       surfaceTintColor: Colors.transparent,
       indicatorColor: Colors.transparent,
       elevation: 0,
@@ -207,7 +215,7 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
         disabledForegroundColor: p.tertiaryLabel,
         minimumSize: buttonSize,
         textStyle: buttonText,
-        shape: control,
+        shape: buttonShape,
         elevation: 0,
       ),
     ),
@@ -218,7 +226,7 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
         disabledForegroundColor: p.tertiaryLabel,
         minimumSize: buttonSize,
         textStyle: buttonText,
-        shape: control,
+        shape: buttonShape,
         side: BorderSide.none,
       ),
     ),
@@ -228,7 +236,7 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
         foregroundColor: p.label,
         minimumSize: buttonSize,
         textStyle: buttonText,
-        shape: control,
+        shape: buttonShape,
         elevation: 0,
       ),
     ),
@@ -257,14 +265,17 @@ ThemeData buildTheme(Brightness brightness, [Accent accent = Accent.lime]) {
         minimumSize: const WidgetStatePropertyAll(Size(minTap, 40)),
         side: WidgetStatePropertyAll(BorderSide(color: p.fill, width: 2)),
         backgroundColor: WidgetStateProperty.resolveWith(
-          (st) => st.contains(WidgetState.selected) ? p.elevated : p.fill,
+          (st) => st.contains(WidgetState.selected)
+              ? (studio ? p.accent : p.elevated)
+              : p.fill,
         ),
         foregroundColor: WidgetStateProperty.resolveWith(
-          (st) =>
-              st.contains(WidgetState.selected) ? p.label : p.secondaryLabel,
+          (st) => st.contains(WidgetState.selected)
+              ? (studio ? p.onAccent : p.label)
+              : p.secondaryLabel,
         ),
         textStyle: WidgetStatePropertyAll(text.titleSmall),
-        shape: WidgetStatePropertyAll(control),
+        shape: WidgetStatePropertyAll(buttonShape),
       ),
       selectedIcon: const SizedBox.shrink(),
     ),

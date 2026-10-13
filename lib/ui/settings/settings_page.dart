@@ -290,12 +290,14 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.palette_outlined,
-                iconColor: p.accent,
-                title: 'Barva',
-                value: Accent.parse(profile.accent).label,
+                iconColor: p.gradient.last,
+                title: 'Vzhled a barva',
+                subtitle:
+                    '${Look.parse(profile.look).label} · '
+                    '${Accent.parse(profile.accent).label}',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => AccentPage(state)),
+                  MaterialPageRoute(builder: (_) => AppearancePage(state)),
                 ),
               ),
             ],

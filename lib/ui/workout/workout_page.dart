@@ -470,46 +470,81 @@ class _RestBarState extends State<_RestBar> {
     final left = widget.endsAt.difference(DateTime.now());
     final seconds = (left.inMilliseconds / 1000).ceil();
     final finished = seconds <= 0;
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.palette;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    // Plovoucí tableta: ve světlém režimu tmavá, v tmavém bílá.
+    final bg = dark ? Colors.white : const Color(0xFF18181A);
+    final fg = dark ? Colors.black : Colors.white;
+    final chipFg = finished ? p.onGradient : fg;
     final text = finished
         ? 'Pauza hotová'
         : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
-    return Material(
-      color: finished ? scheme.primaryContainer : scheme.surfaceContainerHigh,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              const Icon(Icons.timer_outlined),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  text,
-                  semanticsLabel: finished ? text : 'Pauza $text',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
+    Widget chip(String label, VoidCallback onTap) => Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          foregroundColor: chipFg,
+          backgroundColor: chipFg.withValues(alpha: 0.12),
+          minimumSize: const Size(minTap, minTap),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: const StadiumBorder(),
+          textStyle: Theme.of(context).textTheme.titleSmall
+              ?.copyWith(fontFeatures: tabular),
+        ),
+        child: Text(label),
+      ),
+    );
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Space.m, Space.xs, Space.m, Space.s),
+        child: Material(
+          color: bg,
+          borderRadius: BorderRadius.circular(Radii.hero),
+          clipBehavior: Clip.antiAlias,
+          child: DecoratedBox(
+            // Hotová pauza se rozsvítí přechodem motivu.
+            decoration: BoxDecoration(gradient: finished ? p.linear : null),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    color: finished ? p.onGradient : fg,
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      text,
+                      semanticsLabel: finished ? text : 'Pauza $text',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: finished ? p.onGradient : fg,
+                            fontFeatures: tabular,
+                          ),
+                    ),
+                  ),
+                  if (!finished) ...[
+                    chip(
+                      '−15',
+                      () =>
+                          widget.state.adjustRest(const Duration(seconds: -15)),
+                    ),
+                    chip(
+                      '+15',
+                      () =>
+                          widget.state.adjustRest(const Duration(seconds: 15)),
+                    ),
+                  ],
+                  chip(
+                    finished ? 'Zavřít' : 'Přeskočit',
+                    widget.state.skipRest,
+                  ),
+                ],
               ),
-              if (!finished) ...[
-                TextButton(
-                  onPressed: () =>
-                      widget.state.adjustRest(const Duration(seconds: -15)),
-                  child: const Text('−15'),
-                ),
-                TextButton(
-                  onPressed: () =>
-                      widget.state.adjustRest(const Duration(seconds: 15)),
-                  child: const Text('+15'),
-                ),
-              ],
-              TextButton(
-                onPressed: widget.state.skipRest,
-                child: Text(finished ? 'Zavřít' : 'Přeskočit'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -938,18 +973,26 @@ class _SetRowState extends State<_SetRow> {
               width: _doneWidth,
               height: 48,
               padding: const EdgeInsets.only(left: Space.xs),
-              child: IconButton(
-                tooltip: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
-                onPressed: _saving ? null : _toggleDone,
-                padding: EdgeInsets.zero,
-                style: IconButton.styleFrom(
-                  backgroundColor: set.done ? p.accent : p.fill,
-                  foregroundColor: set.done ? p.onAccent : p.secondaryLabel,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Radii.control),
-                  ),
+              // Potvrzená série svítí přechodem motivu.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: set.done ? p.linear : null,
+                  color: set.done ? null : p.fill,
+                  borderRadius: BorderRadius.circular(Radii.control),
                 ),
-                icon: const Icon(Icons.check_rounded),
+                child: IconButton(
+                  tooltip: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
+                  onPressed: _saving ? null : _toggleDone,
+                  padding: EdgeInsets.zero,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: set.done ? p.onGradient : p.secondaryLabel,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(Radii.control),
+                    ),
+                  ),
+                  icon: const Icon(Icons.check_rounded),
+                ),
               ),
             ),
           ],

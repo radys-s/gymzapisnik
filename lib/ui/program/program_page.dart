@@ -132,61 +132,62 @@ class _CurrentCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      HeroCard(vivid: true, child: Builder(builder: _content));
+
+  Widget _content(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final program = this.program;
     final next = state.nextSplitDay;
-    return HeroCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Aktuální program',
-            style: text.labelMedium?.copyWith(
-              color: p.accent,
-              fontWeight: FontWeight.w600,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Aktuální program',
+          style: text.labelMedium?.copyWith(
+            color: p.accent,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 2),
-          Text(program?.name ?? 'Volné tréninky', style: text.headlineSmall),
-          const SizedBox(height: 2),
-          Text(
-            program == null
-                ? 'Žádné dny na řadě. Vyber hotový program, nebo si slož '
-                      'vlastní.'
-                : '${programSummary(program)} · ${perWeekLabel(state.weekGoal)}',
-            style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+        ),
+        const SizedBox(height: 2),
+        Text(program?.name ?? 'Volné tréninky', style: text.headlineSmall),
+        const SizedBox(height: 2),
+        Text(
+          program == null
+              ? 'Žádné dny na řadě. Vyber hotový program, nebo si slož '
+                    'vlastní.'
+              : '${programSummary(program)} · ${perWeekLabel(state.weekGoal)}',
+          style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+        ),
+        if (program != null) ...[
+          const SizedBox(height: Space.m),
+          Wrap(
+            spacing: Space.s,
+            runSpacing: Space.s,
+            children: [
+              for (var i = 0; i < program.days.length; i++)
+                Pill(
+                  i == next % program.days.length
+                      ? 'Na řadě: ${program.days[i].name}'
+                      : program.days[i].name,
+                  color: i == next % program.days.length
+                      ? p.accent
+                      : p.secondaryLabel,
+                ),
+            ],
           ),
-          if (program != null) ...[
-            const SizedBox(height: Space.m),
-            Wrap(
-              spacing: Space.s,
-              runSpacing: Space.s,
-              children: [
-                for (var i = 0; i < program.days.length; i++)
-                  Pill(
-                    i == next % program.days.length
-                        ? 'Na řadě: ${program.days[i].name}'
-                        : program.days[i].name,
-                    color: i == next % program.days.length
-                        ? p.accent
-                        : p.secondaryLabel,
-                  ),
-              ],
-            ),
-            const SizedBox(height: Space.l),
-            SecondaryButton('Zobrazit dny a cviky', onPressed: onOpen),
-          ] else ...[
-            const SizedBox(height: Space.l),
-            PrimaryButton(
-              'Vytvořit vlastní program',
-              icon: Icons.add_rounded,
-              onPressed: onCreate,
-            ),
-          ],
+          const SizedBox(height: Space.l),
+          SecondaryButton('Zobrazit dny a cviky', onPressed: onOpen),
+        ] else ...[
+          const SizedBox(height: Space.l),
+          PrimaryButton(
+            'Vytvořit vlastní program',
+            icon: Icons.add_rounded,
+            onPressed: onCreate,
+          ),
         ],
-      ),
+      ],
     );
   }
 }

@@ -23,6 +23,7 @@ class GymApp extends StatelessWidget {
     listenable: state,
     builder: (context, _) => appFrame(
       accent: Accent.parse(state.profile.accent),
+      look: Look.parse(state.profile.look),
       theme: state.profile.theme,
       home: state.profile.hasValidConsent
           ? AppShell(state)
@@ -35,12 +36,13 @@ class GymApp extends StatelessWidget {
 MaterialApp appFrame({
   required Widget home,
   Accent accent = Accent.lime,
+  Look look = Look.auto,
   String theme = 'system',
 }) => MaterialApp(
   title: 'Gym zápisník',
   debugShowCheckedModeBanner: false,
-  theme: buildTheme(Brightness.light, accent),
-  darkTheme: buildTheme(Brightness.dark, accent),
+  theme: buildTheme(Brightness.light, accent, look),
+  darkTheme: buildTheme(Brightness.dark, accent, look),
   themeMode: switch (theme) {
     'light' => ThemeMode.light,
     'dark' => ThemeMode.dark,

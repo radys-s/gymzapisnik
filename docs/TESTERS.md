@@ -9,7 +9,7 @@ Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
 Nový vzhled a dvě záložky: **Cvičení** a **Strava**. Historie („Vše“), cviky a rekordy,
 program a tělesná váha jsou na stránce Cvičení; Nastavení otevře ozubené kolo vpravo
-nahoře na obou záložkách. Při prvním spuštění projdeš krátké uvítání a vybereš barvu.
+nahoře na obou záložkách. Při prvním spuštění projdeš krátké uvítání a vybereš vzhled (Automaticky, Aurora, Studio) a barvu; obojí změníš v Nastavení → Vzhled a barva.
 Program si můžeš sestavit sám (Cvičení → Program) včetně počtu tréninků za týden.
 Nativní aplikace (Android i iPhone) umí připomínku tréninku a upozornění na konec pauzy.
 

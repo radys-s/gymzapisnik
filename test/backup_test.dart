@@ -110,6 +110,21 @@ void main() {
     expect(b.workouts, isEmpty); // rozepsaný trénink se neobnovuje
   });
 
+  test('backup keeps look and accent, rejects a wrong type', () {
+    final b = decodeBackup(
+      '{"format":"$backupFormat","version":1,'
+      '"settings":{"look":"studio","accent":"neon"},"workouts":[]}',
+    );
+    expect(b.settings, {'look': 'studio', 'accent': 'neon'});
+    expect(
+      () => decodeBackup(
+        '{"format":"$backupFormat","version":1,'
+        '"settings":{"look":1},"workouts":[]}',
+      ),
+      throwsA(anything),
+    );
+  });
+
   test('csv for Czech Excel', () {
     final w = Workout(
       id: 'w',

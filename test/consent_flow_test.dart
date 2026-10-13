@@ -43,7 +43,11 @@ void main() {
     // Přeskočit vede na výběr barvy, ne rovnou na souhlas.
     await tester.tap(find.text('Přeskočit'));
     await tester.pumpAndSettle();
-    expect(find.text('Vyber si barvu'), findsOneWidget);
+    expect(find.text('Vyber si vzhled'), findsOneWidget);
+    await _tapAndSave(tester, find.text('Studio'));
+    expect(state.profile.look, 'studio');
+    await tester.ensureVisible(find.text('Západ'));
+    await tester.pumpAndSettle();
     await _tapAndSave(tester, find.text('Západ'));
     expect(state.profile.accent, 'sunset');
 

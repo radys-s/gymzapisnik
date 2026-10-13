@@ -79,11 +79,19 @@ class Profile {
     _ => 'system',
   };
 
-  /// Barevný motiv (`lime`, `lagoon`, `sunset`); neznámý = výchozí.
+  /// Barevný motiv (`lime`, `lagoon`, `sunset`, `neon`); neznámý = výchozí.
   String get accent => switch (extra['accent']) {
     'lagoon' => 'lagoon',
     'sunset' => 'sunset',
+    'neon' => 'neon',
     _ => 'lime',
+  };
+
+  /// Vzhled (`auto`, `aurora`, `studio`); neznámý = `auto`.
+  String get look => switch (extra['look']) {
+    'aurora' => 'aurora',
+    'studio' => 'studio',
+    _ => 'auto',
   };
 
   /// Uživatel prošel úvodem (ukazuje se jen jednou).

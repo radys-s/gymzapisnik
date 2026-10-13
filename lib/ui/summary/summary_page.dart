@@ -105,7 +105,6 @@ class _SummaryPageState extends State<SummaryPage> {
 
   Widget _page(BuildContext context, Workout workout) {
     final p = context.palette;
-    final text = Theme.of(context).textTheme;
     final records = newRecords(workout, state.workouts, state.typeOf);
     final sets = workout.exercises.fold<int>(
       0,
@@ -160,31 +159,42 @@ class _SummaryPageState extends State<SummaryPage> {
       ),
       children: [
         HeroCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (finished) ...[
-                Text(workout.name, style: text.titleLarge),
-                const SizedBox(height: 2),
-              ],
-              Text(
-                formatDateTime(workout.date),
-                style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
-              ),
-              const SizedBox(height: Space.l),
-              Row(
+          vivid: true,
+          child: Builder(
+            builder: (context) {
+              final p = context.palette;
+              final text = Theme.of(context).textTheme;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (duration != null)
-                    Expanded(child: StatTile(durationLabel(duration), 'Délka')),
-                  Expanded(child: StatTile('$sets', 'Série')),
-                  Expanded(child: StatTile('${formatVolume(kg)} kg', 'Objem')),
+                  if (finished) ...[
+                    Text(workout.name, style: text.titleLarge),
+                    const SizedBox(height: 2),
+                  ],
+                  Text(
+                    formatDateTime(workout.date),
+                    style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+                  ),
+                  const SizedBox(height: Space.l),
+                  Row(
+                    children: [
+                      if (duration != null)
+                        Expanded(
+                          child: StatTile(durationLabel(duration), 'Délka'),
+                        ),
+                      Expanded(child: StatTile('$sets', 'Série')),
+                      Expanded(
+                        child: StatTile('${formatVolume(kg)} kg', 'Objem'),
+                      ),
+                    ],
+                  ),
+                  if (workout.note.isNotEmpty) ...[
+                    const SizedBox(height: Space.l),
+                    Text(workout.note, style: text.bodyMedium),
+                  ],
                 ],
-              ),
-              if (workout.note.isNotEmpty) ...[
-                const SizedBox(height: Space.l),
-                Text(workout.note, style: text.bodyMedium),
-              ],
-            ],
+              );
+            },
           ),
         ),
         if (records.isNotEmpty) ...[
