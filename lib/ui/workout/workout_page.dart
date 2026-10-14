@@ -7,11 +7,13 @@ import '../../coach/progression.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/models.dart';
+import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import 'alternatives_page.dart';
 import 'exercise_picker.dart';
+import 'plates_sheet.dart';
 
 /// Rozepsaný trénink. Každá změna se hned ukládá (přežije zavření aplikace).
 class WorkoutPage extends StatefulWidget {
@@ -222,6 +224,26 @@ class _WorkoutPageState extends State<WorkoutPage> {
         } catch (_) {
           _snack('Cvik se nepodařilo nahradit. Zkus to znovu.');
         }
+      case 'warmups':
+        try {
+          final added = await state.addWarmups(entry);
+          _snack(switch (added) {
+            null => 'Rozcvička už je potvrzená, nebo chybí pracovní váha.',
+            0 => 'Na takhle lehkou váhu rozcvička není potřeba.',
+            final n => 'Přidáno $n rozcvičovacích sérií.',
+          });
+        } catch (_) {
+          _snack('Rozcvičku se nepodařilo přidat. Zkus to znovu.');
+        }
+      case 'plates':
+        final next = entry.sets.where((s) => !s.warmup && !s.done);
+        final any = entry.sets.where((s) => !s.warmup);
+        final weight = next.isNotEmpty
+            ? next.first.weight
+            : any.isNotEmpty
+            ? any.last.weight
+            : 0.0;
+        await showPlates(context, weight);
       case 'up' || 'down':
         try {
           await state.moveExercise(entry, action == 'up' ? -1 : 1);
@@ -518,6 +540,7 @@ class _RestBarState extends State<_RestBar> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       text,
                       semanticsLabel: finished ? text : 'Pauza $text',
@@ -528,21 +551,36 @@ class _RestBarState extends State<_RestBar> {
                           ),
                     ),
                   ),
-                  if (!finished) ...[
-                    chip(
-                      '−15',
-                      () =>
-                          widget.state.adjustRest(const Duration(seconds: -15)),
+                  // Úzký displej nebo velké písmo: tlačítka se zmenší.
+                  Flexible(
+                    flex: 3,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!finished) ...[
+                            chip(
+                              '−15',
+                              () => widget.state.adjustRest(
+                                const Duration(seconds: -15),
+                              ),
+                            ),
+                            chip(
+                              '+15',
+                              () => widget.state.adjustRest(
+                                const Duration(seconds: 15),
+                              ),
+                            ),
+                          ],
+                          chip(
+                            finished ? 'Zavřít' : 'Přeskočit',
+                            widget.state.skipRest,
+                          ),
+                        ],
+                      ),
                     ),
-                    chip(
-                      '+15',
-                      () =>
-                          widget.state.adjustRest(const Duration(seconds: 15)),
-                    ),
-                  ],
-                  chip(
-                    finished ? 'Zavřít' : 'Přeskočit',
-                    widget.state.skipRest,
                   ),
                 ],
               ),
@@ -624,6 +662,16 @@ class _ExerciseCard extends StatelessWidget {
                   onSelected: onMenu,
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'note', child: Text('Poznámka')),
+                    if (!bodyweight) ...[
+                      const PopupMenuItem(
+                        value: 'warmups',
+                        child: Text('Přidat rozcvičku'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'plates',
+                        child: Text('Kotouče na činku'),
+                      ),
+                    ],
                     const PopupMenuItem(
                       value: 'replace',
                       child: Text('Nahradit'),
@@ -814,6 +862,15 @@ class _SetRowState extends State<_SetRow> {
     try {
       final error = await widget.state.toggleDone(widget.set);
       if (error != null && mounted) widget.onError(error);
+      final records = widget.state.liveRecords(widget.set);
+      if (error == null && widget.set.done && mounted) {
+        if (records.isEmpty) {
+          HapticFeedback.selectionClick();
+        } else {
+          HapticFeedback.heavyImpact();
+          _celebrate(records);
+        }
+      }
     } catch (_) {
       if (mounted) {
         widget.onError(
@@ -823,6 +880,27 @@ class _SetRowState extends State<_SetRow> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  void _celebrate(List<RecordKind> records) {
+    final p = context.palette;
+    // Bez hideCurrentSnackBar: nabídka „Vrátit“ po smazání musí zůstat.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.emoji_events_rounded, color: p.gold),
+            const SizedBox(width: Space.s),
+            Expanded(
+              child: Text(
+                'Nový osobní rekord: '
+                '${records.map((r) => r.label.toLowerCase()).join(', ')}',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _typeMenu(String action) => switch (action) {
@@ -844,6 +922,8 @@ class _SetRowState extends State<_SetRow> {
         controller: c,
         textAlign: TextAlign.center,
         keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+        // Z kg rovnou na opakování.
+        textInputAction: decimal ? TextInputAction.next : TextInputAction.done,
         inputFormatters: [
           FilteringTextInputFormatter.allow(
             decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
@@ -872,6 +952,7 @@ class _SetRowState extends State<_SetRow> {
     final set = widget.set;
     final prev = widget.previous;
     final kgLabel = widget.bodyweight ? 'Přidaná váha v kg' : 'Váha v kg';
+    final record = set.done && widget.state.liveRecords(set).isNotEmpty;
     return Dismissible(
       key: ObjectKey(set),
       direction: DismissDirection.endToStart,
@@ -933,19 +1014,29 @@ class _SetRowState extends State<_SetRow> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: set.warmup
+                        color: record
+                            ? p.gold.withValues(alpha: 0.2)
+                            : set.warmup
                             ? p.accent.withValues(alpha: 0.16)
                             : p.fill,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        widget.label,
-                        textAlign: TextAlign.center,
-                        style: text.titleSmall?.copyWith(
-                          color: set.warmup ? p.accent : p.label,
-                          fontFeatures: tabular,
-                        ),
-                      ),
+                      // Rekordní série má místo čísla pohár.
+                      child: record
+                          ? Icon(
+                              Icons.emoji_events_rounded,
+                              size: 18,
+                              color: p.gold,
+                              semanticLabel: 'Osobní rekord',
+                            )
+                          : Text(
+                              widget.label,
+                              textAlign: TextAlign.center,
+                              style: text.titleSmall?.copyWith(
+                                color: set.warmup ? p.accent : p.label,
+                                fontFeatures: tabular,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -953,16 +1044,20 @@ class _SetRowState extends State<_SetRow> {
             ),
             Expanded(
               flex: 3,
-              child: Text(
-                prev == null ? '–' : '${formatKg(prev.weight)}×${prev.reps}',
-                semanticsLabel: prev == null
-                    ? 'Minule nic'
-                    : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.bodyMedium?.copyWith(
-                  color: p.secondaryLabel,
-                  fontFeatures: tabular,
+              // Celé číslo i na úzkém displeji: radši menší než useknuté.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  prev == null ? '–' : '${formatKg(prev.weight)}×${prev.reps}',
+                  semanticsLabel: prev == null
+                      ? 'Minule nic'
+                      : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
+                  maxLines: 1,
+                  style: text.bodyMedium?.copyWith(
+                    color: p.secondaryLabel,
+                    fontFeatures: tabular,
+                  ),
                 ),
               ),
             ),

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../ai/ai_config.dart';
 import '../ai/fridge_coach.dart';
 import '../coach/missions.dart';
+import '../coach/plates.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
 import '../coach/streak.dart';
@@ -21,6 +22,7 @@ import '../domain/models.dart';
 import '../domain/nutrition.dart';
 import '../domain/profile.dart';
 import '../domain/set_match.dart';
+import '../domain/stats.dart';
 import '../coach/reminders.dart';
 import '../notify/notifier.dart';
 import '../premium/entitlements.dart';
@@ -240,6 +242,42 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  List<Workout>? _recordsOf;
+  final _records = <String, Map<RecordKind, PersonalRecord>>{};
+
+  /// Nejlepší výkony cviku z dokončených tréninků (v mezipaměti, dokud se
+  /// seznam tréninků nezmění; ten se při každé změně vytváří nový).
+  Map<RecordKind, PersonalRecord> recordsOf(String exerciseId) {
+    if (!identical(_recordsOf, workouts)) {
+      _records.clear();
+      _recordsOf = workouts;
+    }
+    return _records.putIfAbsent(
+      exerciseId,
+      () => allTimeRecords(workouts, exerciseId, typeOf(exerciseId)),
+    );
+  }
+
+  /// Rekordy, které potvrzená série v aktivním tréninku právě drží.
+  List<RecordKind> liveRecords(SetEntry set) {
+    final workout = active;
+    if (workout == null || !set.counts) return const [];
+    String? exerciseId;
+    for (final e in workout.exercises) {
+      if (e.sets.any((s) => identical(s, set))) exerciseId = e.exerciseId;
+    }
+    if (exerciseId == null) return const [];
+    return liveRecordKinds(
+      set: set,
+      sessionSets: [
+        for (final e in workout.exercises)
+          if (e.exerciseId == exerciseId) ...e.sets,
+      ],
+      before: recordsOf(exerciseId),
+      type: typeOf(exerciseId),
+    );
+  }
+
   /// Série z posledního dokončeného provedení cviku (pro „minule“).
   List<SetEntry> lastSetsOf(String exerciseId) {
     final session = lastPerformance(workouts, exerciseId);
@@ -266,6 +304,24 @@ class AppState extends ChangeNotifier {
       // Návrh kouče patřil původnímu cviku.
       ..extra.remove(coachKey);
     return saveActive();
+  }
+
+  /// Přidá rozcvičovací série podle první pracovní váhy cviku. Dřívější
+  /// nepotvrzené rozcvičky nahradí. Vrací počet přidaných sérií; `null`,
+  /// když už je nějaká rozcvička potvrzená nebo chybí pracovní váha.
+  Future<int?> addWarmups(WorkoutExercise entry) async {
+    if (entry.sets.any((s) => s.warmup && s.done)) return null;
+    final working = entry.sets.where((s) => !s.warmup && s.weight > 0);
+    if (working.isEmpty) return null;
+    final plan = warmupPlan(working.first.weight);
+    if (plan.isEmpty) return 0;
+    entry.sets = [
+      for (final w in plan)
+        SetEntry(weight: w.weight, reps: w.reps, warmup: true),
+      ...entry.sets.where((s) => !s.warmup),
+    ];
+    await saveActive();
+    return plan.length;
   }
 
   Future<void> removeExercise(WorkoutExercise entry) {

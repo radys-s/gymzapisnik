@@ -116,6 +116,11 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Obsah leží na výrazné kartě (jinak `null`).
   final HeroSurface? surface;
 
+  /// Zlatá pro rekordy a odznaky (ikony, ne text).
+  Color get gold => background.computeLuminance() < 0.2
+      ? const Color(0xFFFFD60A)
+      : const Color(0xFFB07800);
+
   const AppPalette({
     required this.background,
     required this.grouped,
