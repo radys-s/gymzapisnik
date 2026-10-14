@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/text.dart';
+import '../../domain/anatomy.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
@@ -150,6 +151,16 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
 
 class _ExerciseRow extends StatelessWidget {
   final Exercise exercise;
+
+  /// Hlava svalu, na kterou cvik míří, a vlastní váha.
+  String? get _subtitle {
+    final parts = [
+      headsLabel(exercise.id),
+      if (exercise.type == ExerciseType.bodyweight) 'vlastní váha',
+    ].where((s) => s.isNotEmpty);
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
   final bool selected;
   final bool multiple;
   final VoidCallback onTap;
@@ -169,9 +180,7 @@ class _ExerciseRow extends StatelessWidget {
       selected: multiple ? selected : null,
       child: GroupedRow(
         title: exercise.name,
-        subtitle: exercise.type == ExerciseType.bodyweight
-            ? 'vlastní váha'
-            : null,
+        subtitle: _subtitle,
         chevron: false,
         trailing: !multiple
             ? null

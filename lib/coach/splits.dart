@@ -4,6 +4,9 @@
 /// opakování pro dvojitou progresi (viz `progression.dart`).
 library;
 
+import '../domain/anatomy.dart';
+import '../domain/catalog.dart';
+
 class PlannedExercise {
   final String exerciseId;
   final int sets;
@@ -266,6 +269,12 @@ SplitDay dayFromFocuses(Iterable<String> focusIds) {
   ];
   if (chosen.isEmpty) return const SplitDay('', []);
   final per = chosen.length == 1 ? 5 : (6 ~/ chosen.length).clamp(1, 3);
+  return SplitDay(_dayName(chosen), [
+    for (final f in chosen) ...f.exercises.take(per),
+  ]);
+}
+
+String _dayName(List<DayFocus> chosen) {
   final names = [chosen.first.name, for (final f in chosen.skip(1)) f.inner];
   var name = names.length == 1
       ? names.single
@@ -274,7 +283,117 @@ SplitDay dayFromFocuses(Iterable<String> focusIds) {
   if (name.length > maxNameLength) {
     name = '${chosen.first.name} a ${chosen.length - 1} další';
   }
-  return SplitDay(name, [for (final f in chosen) ...f.exercises.take(per)]);
+  return name;
+}
+
+/// Hlavy svalů, které partie ve výběru zahrnuje.
+const focusHeads = <String, List<String>>{
+  'chest': ['chest_upper', 'chest_mid'],
+  'back': ['lats', 'upper_back', 'lower_back'],
+  'legs': ['quads', 'hamstrings'],
+  'glutes': ['glutes'],
+  'shoulders': ['delt_front', 'delt_side', 'delt_rear'],
+  'biceps': ['biceps_long', 'biceps_short', 'brachialis'],
+  'triceps': ['triceps_long', 'triceps_lateral'],
+  'calves': ['calves_gastro', 'calves_soleus'],
+  'core': ['abs', 'abs_lower'],
+};
+
+/// Nejvíc cviků v sestaveném tréninku.
+const maxBuiltExercises = 10;
+
+/// Trénink sestavený ze zvolených partií a počtu cviků. Partie se střídají
+/// (velké první), takže se cviky rozdělí rovnoměrně; když jedné partii
+/// dojdou cviky, zbytek dostanou ostatní. Každá partie začne těžkým
+/// vícekloubovým cvikem a další cviky míří na hlavy svalu, které ještě
+/// nejsou pokryté.
+SplitDay buildDay(Iterable<String> focusIds, int count) {
+  final chosen = [
+    for (final f in dayFocuses)
+      if (focusIds.contains(f.id)) f,
+  ];
+  final total = count.clamp(0, maxBuiltExercises);
+  if (chosen.isEmpty || total == 0) return const SplitDay('', []);
+  final pools = [for (final f in chosen) _FocusPool(f)];
+  final picked = <String>{};
+  final result = <PlannedExercise>[];
+  var progress = true;
+  while (result.length < total && progress) {
+    progress = false;
+    for (final pool in pools) {
+      if (result.length >= total) break;
+      final next = pool.take(picked);
+      if (next == null) continue;
+      picked.add(next.exerciseId);
+      result.add(next);
+      progress = true;
+    }
+  }
+  // Vícekloubové cviky celého tréninku dopředu (dokud jsou čerstvé síly).
+  final ordered = [
+    ...result.where((p) => anatomyOf(p.exerciseId)?.compound ?? false),
+    ...result.where((p) => !(anatomyOf(p.exerciseId)?.compound ?? false)),
+  ];
+  return SplitDay(
+    _dayName([
+      for (final pool in pools)
+        if (pool.taken > 0) pool.focus,
+    ]),
+    ordered,
+  );
+}
+
+/// Kandidáti jedné partie a výběr dalšího cviku.
+class _FocusPool {
+  final DayFocus focus;
+  final List<String> heads;
+  final Map<String, PlannedExercise> curated;
+  final List<String> candidates;
+  final covered = <String>{};
+  int taken = 0;
+
+  _FocusPool(this.focus)
+    : heads = focusHeads[focus.id] ?? const <String>[],
+      curated = {for (final p in focus.exercises) p.exerciseId: p},
+      candidates = [] {
+    // Vybrané cviky partie, pak ostatní z katalogu na její hlavy.
+    candidates.addAll([
+      ...curated.keys,
+      for (final e in builtInExercises)
+        if (!curated.containsKey(e.id) &&
+            heads.contains(anatomyOf(e.id)?.primary.first))
+          e.id,
+    ]);
+  }
+
+  PlannedExercise? take(Set<String> picked) {
+    candidates.removeWhere(picked.contains);
+    if (candidates.isEmpty) return null;
+    var best = 0;
+    var bestScore = -1;
+    for (var j = 0; j < candidates.length; j++) {
+      final a = anatomyOf(candidates[j]);
+      final fresh = [
+        for (final h in a?.primary ?? const <String>[])
+          if (heads.contains(h) && !covered.contains(h)) h,
+      ].length;
+      // První cvik partie vícekloubový, pak co nejvíc nových hlav.
+      final score =
+          (taken == 0 && (a?.compound ?? false) ? 100 : 0) +
+          fresh * 10 +
+          (curated.containsKey(candidates[j]) ? 1 : 0);
+      if (score > bestScore) {
+        bestScore = score;
+        best = j;
+      }
+    }
+    final id = candidates.removeAt(best);
+    covered.addAll(anatomyOf(id)?.primary ?? const []);
+    final compound = anatomyOf(id)?.compound ?? false;
+    final first = taken == 0;
+    taken++;
+    return curated[id] ?? (compound ? (first ? _h(id) : _m(id)) : _l(id));
+  }
 }
 
 // Silové základy: méně opakování, víc sérií.

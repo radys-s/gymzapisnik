@@ -11,6 +11,7 @@ import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
 import '../bodyweight/bodyweight_page.dart';
+import '../coach/growth_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../exercises/exercises_page.dart';
@@ -20,6 +21,7 @@ import '../program/program_page.dart';
 import '../settings/settings_button.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
+import '../workout/builder_page.dart';
 import '../workout/workout_page.dart';
 import 'dashboard.dart';
 
@@ -77,6 +79,16 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Sestavení tréninku z partií; hotový den rovnou začne.
+  Future<void> _build() async {
+    final day = await Navigator.push<SplitDay>(
+      context,
+      MaterialPageRoute(builder: (_) => WorkoutBuilderPage(state)),
+    );
+    if (day == null || !mounted) return;
+    await _run(() => state.startPlanned(day));
+  }
+
   void _push(Widget page) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => page));
 
@@ -103,6 +115,7 @@ class _HomePageState extends State<HomePage> {
               overrideSplit = state.split?.id;
             }),
             onProgram: () => _push(ProgramPage(state)),
+            onBuild: _build,
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
@@ -146,6 +159,13 @@ class _HomePageState extends State<HomePage> {
                     : '${formatKg(state.bodyweights.first.kg)} kg',
                 onTap: () => _push(BodyweightPage(state)),
               ),
+              GroupedRow(
+                icon: Icons.lightbulb_outline_rounded,
+                iconColor: const Color(0xFF34C759),
+                title: 'Rady pro růst svalů',
+                subtitle: 'Objem, technika, jídlo, spánek',
+                onTap: () => _push(GrowthPage(state, now: widget.now)),
+              ),
             ],
           ),
         ],
@@ -171,6 +191,7 @@ class _TodayCard extends StatelessWidget {
   final Future<void> Function(Future<void> Function() start) onStart;
   final ValueChanged<int> onPickDay;
   final VoidCallback onProgram;
+  final VoidCallback onBuild;
 
   const _TodayCard({
     required this.state,
@@ -180,6 +201,7 @@ class _TodayCard extends StatelessWidget {
     required this.onStart,
     required this.onPickDay,
     required this.onProgram,
+    required this.onBuild,
   });
 
   @override
@@ -279,11 +301,18 @@ class _TodayCard extends StatelessWidget {
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
         ),
         const SizedBox(height: Space.xs),
-        Center(
-          child: TextButton(
-            onPressed: busy ? null : () => onStart(state.startWorkout),
-            child: const Text('Volný trénink'),
-          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            TextButton(
+              onPressed: busy ? null : () => onStart(state.startWorkout),
+              child: const Text('Volný trénink'),
+            ),
+            TextButton(
+              onPressed: busy ? null : onBuild,
+              child: const Text('Sestavit trénink'),
+            ),
+          ],
         ),
       ]);
     } else {
@@ -302,6 +331,13 @@ class _TodayCard extends StatelessWidget {
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(state.startWorkout),
+        ),
+        const SizedBox(height: Space.xs),
+        Center(
+          child: TextButton(
+            onPressed: busy ? null : onBuild,
+            child: const Text('Sestavit trénink z partií'),
+          ),
         ),
       ]);
     }

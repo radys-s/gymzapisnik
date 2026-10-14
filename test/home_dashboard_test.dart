@@ -54,12 +54,18 @@ void main() {
   testWidgets('empty home: one start action, no history section', (
     tester,
   ) async {
+    tester.view
+      ..physicalSize = const Size(390, 1400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final state = AppState(LocalStore(db));
     await tester.runAsync(state.load);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: HomePage(state))));
     expect(find.text('Začít trénink'), findsOneWidget);
+    expect(find.text('Sestavit trénink z partií'), findsOneWidget);
+    expect(find.text('Rady pro růst svalů'), findsOneWidget);
     expect(find.text('Program'), findsOneWidget);
     expect(find.text('Historie'), findsNothing);
     expect(find.text('0/3'), findsOneWidget);

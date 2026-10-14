@@ -6,6 +6,7 @@ import '../../coach/splits.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../workout/alternatives_page.dart';
 import '../workout/exercise_picker.dart';
 import 'program_widgets.dart';
 
@@ -226,15 +227,14 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
           },
         );
       case 'replace':
-        final ids = await Navigator.push<List<String>>(
+        final id = await pickAlternative(
           context,
-          MaterialPageRoute(
-            builder: (_) => ExercisePickerPage(state, multiple: false),
-          ),
+          state,
+          day.exercises[index].exerciseId,
         );
-        if (ids == null || ids.isEmpty || !mounted) return;
+        if (id == null || !mounted) return;
         if (index < day.exercises.length) {
-          apply(day.exercises[index].copyWith(exerciseId: ids.first));
+          apply(day.exercises[index].copyWith(exerciseId: id));
         }
     }
   }

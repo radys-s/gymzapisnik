@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'coach/tips.dart';
 import 'state/app_state.dart';
 import 'ui/home/home_page.dart';
 import 'ui/nutrition/nutrition_page.dart';
@@ -148,12 +150,23 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-/// Spuštění: značka hned (navazuje na nativní spouštěcí obrazovku),
-/// ukazatel načítání jen když opravdu čekáme. Žádné umělé zdržení.
+/// Spuštění: značka hned (navazuje na nativní spouštěcí obrazovku) a pod
+/// ní rada nebo motivační věta. Obrazovka zůstane aspoň [minShow], aby
+/// šla přečíst; klepnutí ji po načtení přeskočí.
 class AppLoader extends StatefulWidget {
   final Future<AppState> Function() open;
   final void Function(AppState state)? onReady;
-  const AppLoader({super.key, required this.open, this.onReady});
+  final Duration minShow;
+
+  /// Číslo rady (jinak náhodně).
+  final int? tipSeed;
+  const AppLoader({
+    super.key,
+    required this.open,
+    this.onReady,
+    this.minShow = const Duration(milliseconds: 2200),
+    this.tipSeed,
+  });
 
   @override
   State<AppLoader> createState() => _AppLoaderState();
@@ -162,11 +175,32 @@ class AppLoader extends StatefulWidget {
 class _AppLoaderState extends State<AppLoader> {
   AppState? state;
   Object? error;
+  late final Tip tip = tipAt(widget.tipSeed ?? Random().nextInt(1 << 16));
+
+  /// Rada ještě musí zůstat vidět.
+  late bool held = widget.minShow > Duration.zero;
+  Timer? _hold;
 
   @override
   void initState() {
     super.initState();
+    if (held) {
+      _hold = Timer(widget.minShow, () {
+        if (mounted) setState(() => held = false);
+      });
+    }
     _load();
+  }
+
+  @override
+  void dispose() {
+    _hold?.cancel();
+    super.dispose();
+  }
+
+  void _skip() {
+    _hold?.cancel();
+    if (held) setState(() => held = false);
   }
 
   Future<void> _load() async {
@@ -183,20 +217,23 @@ class _AppLoaderState extends State<AppLoader> {
   @override
   Widget build(BuildContext context) {
     final ready = state;
-    if (ready != null) return GymApp(ready);
+    if (ready != null && !held) return GymApp(ready);
     return appFrame(
       home: error == null
-          ? const BootScreen()
+          ? BootScreen(tip: tip, onSkip: _skip)
           : StartupErrorPage(error: error!, onRetry: _load),
     );
   }
 }
 
-/// Značka uprostřed; kolečko se objeví, jen když načítání trvá déle.
+/// Značka uprostřed, pod ní rada; kolečko se objeví, jen když načítání
+/// trvá déle.
 class BootScreen extends StatefulWidget {
   /// Po jaké době čekání ukázat ukazatel (rychlé načtení ho nezobrazí).
   static const indicatorAfter = Duration(milliseconds: 400);
-  const BootScreen({super.key});
+  final Tip? tip;
+  final VoidCallback? onSkip;
+  const BootScreen({super.key, this.tip, this.onSkip});
 
   @override
   State<BootScreen> createState() => _BootScreenState();
@@ -223,31 +260,85 @@ class _BootScreenState extends State<BootScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final tip = widget.tip;
     return Scaffold(
-      body: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Stejná velikost a místo jako nativní značka: bez poskoku.
-          const AppMark(size: 96),
-          Align(
-            alignment: const Alignment(0, 0.3),
-            child: AnimatedOpacity(
-              opacity: slow ? 1 : 0,
-              duration: const Duration(milliseconds: 250),
-              child: Semantics(
-                container: true,
-                label: 'Načítám',
-                child: SizedBox.square(
-                  dimension: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: p.secondaryLabel,
+      body: Semantics(
+        button: widget.onSkip != null,
+        label: widget.onSkip != null ? 'Přeskočit' : null,
+        onTap: widget.onSkip,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onSkip,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Stejná velikost a místo jako nativní značka: bez poskoku.
+              const AppMark(size: 96),
+              if (tip != null)
+                Align(
+                  alignment: const Alignment(0, 0.62),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: MediaQuery.of(context).disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 500),
+                    builder: (context, t, child) => Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 8 * (1 - t)),
+                        child: child,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Semantics(
+                        container: true,
+                        liveRegion: true,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              tip.kind.toUpperCase(),
+                              style: text.labelMedium?.copyWith(
+                                color: p.accent,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              tip.text,
+                              textAlign: TextAlign.center,
+                              style: text.titleMedium?.copyWith(height: 1.35),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              Align(
+                alignment: const Alignment(0, 0.3),
+                child: AnimatedOpacity(
+                  opacity: slow ? 1 : 0,
+                  duration: const Duration(milliseconds: 250),
+                  child: Semantics(
+                    container: true,
+                    label: 'Načítám',
+                    child: SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: p.secondaryLabel,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

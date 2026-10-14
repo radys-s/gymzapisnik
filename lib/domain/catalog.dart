@@ -330,4 +330,47 @@ const builtInExercises = <Exercise>[
     muscle: 'Střed těla',
     type: ExerciseType.bodyweight,
   ),
+  // Doplněno, aby hlavy svalů měly aspoň dvě možnosti (soleus jen jednu).
+  Exercise(
+    id: 'incline_dumbbell_curl',
+    name: 'Incline dumbbell curl',
+    muscle: 'Paže',
+    type: ExerciseType.weighted,
+  ),
+  Exercise(
+    id: 'low_to_high_cable_fly',
+    name: 'Low-to-high cable fly',
+    muscle: 'Hrudník',
+    type: ExerciseType.weighted,
+  ),
+  Exercise(
+    id: 'shrug',
+    name: 'Shrug',
+    muscle: 'Záda',
+    type: ExerciseType.weighted,
+  ),
+  Exercise(
+    id: 'back_extension',
+    name: 'Back extension',
+    muscle: 'Záda',
+    type: ExerciseType.weighted,
+  ),
+  Exercise(
+    id: 'calf_press',
+    name: 'Calf press (leg press)',
+    muscle: 'Nohy',
+    type: ExerciseType.weighted,
+  ),
+  Exercise(
+    id: 'reverse_curl',
+    name: 'Reverse curl',
+    muscle: 'Paže',
+    type: ExerciseType.weighted,
+  ),
+  Exercise(
+    id: 'lying_leg_raise',
+    name: 'Lying leg raise',
+    muscle: 'Střed těla',
+    type: ExerciseType.bodyweight,
+  ),
 ];

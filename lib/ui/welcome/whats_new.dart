@@ -13,7 +13,8 @@ const whatsNewItems = <(IconData, String, String)>[
   (
     Icons.auto_awesome_outlined,
     'Nový vzhled',
-    'Čistší obrazovky a světlý nebo tmavý režim podle telefonu.',
+    'Aurora a Studio, světlý i tmavý režim a vlastní barva. '
+        'Změníš v Nastavení → Vzhled a barva.',
   ),
   (
     Icons.view_agenda_outlined,
@@ -21,14 +22,21 @@ const whatsNewItems = <(IconData, String, String)>[
     'Historie, cviky, rekordy a tělesná váha jsou teď na stránce Cvičení.',
   ),
   (
-    Icons.palette_outlined,
-    'Vlastní barva',
-    'Limetka, Laguna nebo Západ. Změníš ji v Nastavení.',
-  ),
-  (
     Icons.edit_calendar_outlined,
     'Vlastní programy',
     'Poskládej si dny a cviky sám a nastav, kolikrát týdně trénuješ.',
+  ),
+  (
+    Icons.tune_rounded,
+    'Sestav si trénink',
+    'Vyber partie a počet cviků. Cvik, který nechceš, vyměníš za jiný '
+        'na stejnou hlavu svalu.',
+  ),
+  (
+    Icons.lightbulb_outline_rounded,
+    'Rady pro růst svalů',
+    'Základy tréninku, jídla a spánku a kolik sérií na partii jsi dal '
+        'tento týden. Při spuštění uvidíš krátkou radu.',
   ),
   (
     Icons.notifications_outlined,

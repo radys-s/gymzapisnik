@@ -12,6 +12,10 @@ program a tělesná váha jsou na stránce Cvičení; Nastavení otevře ozuben�
 nahoře na obou záložkách. Při prvním spuštění projdeš krátké uvítání a vybereš vzhled (Automaticky, Aurora, Studio) a barvu; obojí změníš v Nastavení → Vzhled a barva.
 Program si můžeš sestavit sám (Cvičení → Program) včetně počtu tréninků za týden.
 Nativní aplikace (Android i iPhone) umí připomínku tréninku a upozornění na konec pauzy.
+**Sestavit trénink** (Cvičení): vyber partie a počet cviků, aplikace navrhne trénink; každý cvik
+můžeš vyměnit. **Nahradit** cvik v tréninku ukáže alternativy podle hlavy svalu (např. boční delt).
+**Rady pro růst svalů** (Cvičení) shrnou základy a ukážou tvoje série za posledních 7 dní.
+Při spuštění uvidíš krátkou radu nebo motivační větu; klepnutím ji přeskočíš.
 
 ## Android (APK)
 
