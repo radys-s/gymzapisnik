@@ -93,6 +93,27 @@ Suggestion suggest(
   final minReps = atTop.map((s) => s.reps).reduce((a, b) => a < b ? a : b);
   final maxReps = working.map((s) => s.reps).reduce((a, b) => a > b ? a : b);
 
+  // Po odlehčení zpět na váhu před ním, jak slibuje jeho vysvětlení.
+  if (_wasDeload(last) &&
+      history.length >= 2 &&
+      type == ExerciseType.weighted) {
+    final before = history[history.length - 2].entry.countedSets;
+    final back = before.isEmpty
+        ? 0.0
+        : before.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
+    if (back > topWeight) {
+      return Suggestion(
+        kind: SuggestionKind.hold,
+        weight: back,
+        reps: plan.repMin,
+        sets: plan.sets,
+        reason:
+            'Po lehčím tréninku zpět na ${_kg(back)} kg s čerstvou silou, '
+            'začni na ${plan.repMin} opakováních.',
+      );
+    }
+  }
+
   // Odlehčení: tři poslední provedení bez zlepšení nejlepší série,
   // a žádné z nich nebylo samo odlehčením.
   if (history.length >= 3 && type == ExerciseType.weighted) {

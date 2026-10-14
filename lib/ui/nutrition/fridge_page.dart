@@ -218,6 +218,8 @@ class _FridgePageState extends State<FridgePage> {
   }
 
   Future<void> _remove(int index) async {
+    // Během ukládání nic neměnit, jinak se výběr tiše rozejde se seznamem.
+    if (inFlight) return;
     final removed = items[index];
     final wasSkipped = skipped.remove(pantryKey(removed.name));
     await _saveList([...items]..removeAt(index));

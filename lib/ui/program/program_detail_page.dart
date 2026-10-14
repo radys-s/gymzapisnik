@@ -38,19 +38,30 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
     if (mounted) showToast(context, 'Program ${program.name} je aktivní.');
   }, 'Program se nepodařilo zvolit. Zkus to znovu.');
 
+  bool _editing = false;
+
   Future<void> _edit(SplitTemplate program) async {
-    // Editor přes celou obrazovku, bez lišty záložek.
-    final id = await Navigator.of(context, rootNavigator: true).push<String>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => ProgramEditorPage(state, initial: program),
-      ),
-    );
+    // Dvojí klepnutí by otevřelo dva editory a uložilo dvě kopie.
+    if (_editing) return;
+    _editing = true;
+    final String? id;
+    try {
+      // Editor přes celou obrazovku, bez lišty záložek.
+      id = await Navigator.of(context, rootNavigator: true).push<String>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => ProgramEditorPage(state, initial: program),
+        ),
+      );
+    } finally {
+      _editing = false;
+    }
     // Z hotového programu vznikla kopie: ukaž rovnou ji.
-    if (id == null || id == program.id || !mounted) return;
+    final copy = id;
+    if (copy == null || copy == program.id || !mounted) return;
     await Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => ProgramDetailPage(state, id)),
+      MaterialPageRoute(builder: (_) => ProgramDetailPage(state, copy)),
     );
   }
 

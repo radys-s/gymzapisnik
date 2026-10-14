@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/bodyweight.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
 
 /// Dialog „Zapsat váhu". Vrací `true`, když se váha uložila.
 Future<bool> addBodyweightDialog(BuildContext context, AppState state) async {
@@ -30,6 +31,7 @@ class _WeightDialogState extends State<_WeightDialog> {
         : formatKg(widget.state.bodyweights.first.kg),
   );
   String? error;
+  bool busy = false;
 
   @override
   void dispose() {
@@ -38,12 +40,20 @@ class _WeightDialogState extends State<_WeightDialog> {
   }
 
   Future<void> _save() async {
+    if (busy) return;
     final kg = parseNum(controller.text);
-    if (kg == null || !await widget.state.addBodyweight(kg)) {
-      if (mounted) setState(() => error = 'Zadej váhu mezi 20 a 400 kg.');
-      return;
+    setState(() => busy = true);
+    try {
+      if (kg == null || !await widget.state.addBodyweight(kg)) {
+        if (mounted) setState(() => error = 'Zadej váhu mezi 20 a 400 kg.');
+        return;
+      }
+      if (mounted) popOnce(context, true);
+    } catch (_) {
+      if (mounted) setState(() => error = 'Váhu se nepodařilo uložit.');
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
-    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -60,7 +70,7 @@ class _WeightDialogState extends State<_WeightDialog> {
         onPressed: () => Navigator.pop(context, false),
         child: const Text('Zrušit'),
       ),
-      FilledButton(onPressed: _save, child: const Text('Uložit')),
+      FilledButton(onPressed: busy ? null : _save, child: const Text('Uložit')),
     ],
   );
 }

@@ -40,8 +40,18 @@ class _WorkoutPageState extends State<WorkoutPage> {
         ),
       );
 
+  bool _picking = false;
+
   Future<void> _addExercises() async {
-    final ids = await _pickExercises();
+    // Dvojí klepnutí by otevřelo dva výběry nad sebou.
+    if (_picking) return;
+    _picking = true;
+    final List<String>? ids;
+    try {
+      ids = await _pickExercises();
+    } finally {
+      _picking = false;
+    }
     if (ids == null) return;
     var failed = 0;
     for (final id in ids) {
@@ -88,7 +98,13 @@ class _WorkoutPageState extends State<WorkoutPage> {
           ),
         ],
       ),
-    ).whenComplete(controller.dispose);
+      // Dialog ještě dobíhá animací s polem: uvolnit až potom.
+    ).whenComplete(
+      () => Future<void>.delayed(
+        const Duration(milliseconds: 500),
+        controller.dispose,
+      ),
+    );
   }
 
   Future<void> _save() async {

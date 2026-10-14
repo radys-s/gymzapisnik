@@ -919,3 +919,11 @@ void showUndo(BuildContext context, String message, VoidCallback onUndo) =>
           action: SnackBarAction(label: 'Vrátit', onPressed: onUndo),
         ),
       );
+
+/// Zavře obrazovku jen jednou: druhé rychlé klepnutí během animace by
+/// jinak zavřelo i obrazovku pod ní (a s ní neuložené změny).
+void popOnce<T extends Object?>(BuildContext context, [T? result]) {
+  final route = ModalRoute.of(context);
+  if (route != null && !(route.isActive && route.isCurrent)) return;
+  Navigator.pop(context, result);
+}

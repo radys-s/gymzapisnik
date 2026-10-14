@@ -30,7 +30,7 @@ class AlternativesPage extends StatelessWidget {
       ),
     );
     if (ids == null || ids.isEmpty || !context.mounted) return;
-    Navigator.pop(context, ids.first);
+    popOnce(context, ids.first);
   }
 
   @override
@@ -73,7 +73,7 @@ class AlternativesPage extends StatelessWidget {
                     title: e.name,
                     subtitle: _subtitle(e.id),
                     chevron: false,
-                    onTap: () => Navigator.pop(context, e.id),
+                    onTap: () => popOnce(context, e.id),
                   ),
               ],
             ),

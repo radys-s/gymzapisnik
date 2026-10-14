@@ -54,7 +54,14 @@ class _HomePageState extends State<HomePage> {
     try {
       await start();
     } catch (e) {
-      if (mounted) showToast(context, 'Trénink se nepodařilo začít: $e');
+      if (mounted) {
+        showToast(
+          context,
+          e is StateError
+              ? e.message
+              : 'Trénink se nepodařilo začít. Zkus to znovu.',
+        );
+      }
       if (mounted) setState(() => _starting = false);
       return;
     }
