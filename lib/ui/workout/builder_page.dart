@@ -157,7 +157,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                 child: PrimaryButton(
                   'Začít trénink',
                   icon: Icons.play_arrow_rounded,
-                  onPressed: () => Navigator.pop(context, current),
+                  onPressed: () => popOnce(context, current),
                 ),
               ),
             ),

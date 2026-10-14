@@ -642,17 +642,17 @@ class _AddDaySheetState extends State<_AddDaySheet> {
               _picked.isEmpty
                   ? 'Vyber partie'
                   : 'Přidat den · ${day.exercises.length} '
-                        '${day.exercises.length < 5 ? 'cviky' : 'cviků'}',
-              onPressed: _picked.isEmpty
-                  ? null
-                  : () => Navigator.pop(context, day),
+                        '${day.exercises.length == 1
+                            ? 'cvik'
+                            : day.exercises.length < 5
+                            ? 'cviky'
+                            : 'cviků'}',
+              onPressed: _picked.isEmpty ? null : () => popOnce(context, day),
             ),
             const SizedBox(height: Space.s),
             TextButton(
-              onPressed: () => Navigator.pop(
-                context,
-                SplitDay('Den ${widget.number}', const []),
-              ),
+              onPressed: () =>
+                  popOnce(context, SplitDay('Den ${widget.number}', const [])),
               child: const Text('Prázdný den, cviky vyberu sám'),
             ),
           ],
@@ -770,28 +770,28 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
                 GroupedRow(
                   icon: Icons.swap_horiz_rounded,
                   title: 'Nahradit jiným cvikem',
-                  onTap: () => Navigator.pop(context, 'replace'),
+                  onTap: () => popOnce(context, 'replace'),
                 ),
                 if (widget.canUp)
                   GroupedRow(
                     icon: Icons.arrow_upward_rounded,
                     title: 'Posunout výš',
                     chevron: false,
-                    onTap: () => Navigator.pop(context, 'up'),
+                    onTap: () => popOnce(context, 'up'),
                   ),
                 if (widget.canDown)
                   GroupedRow(
                     icon: Icons.arrow_downward_rounded,
                     title: 'Posunout níž',
                     chevron: false,
-                    onTap: () => Navigator.pop(context, 'down'),
+                    onTap: () => popOnce(context, 'down'),
                   ),
                 GroupedRow(
                   icon: Icons.delete_outline_rounded,
                   title: 'Odebrat ze dne',
                   destructive: true,
                   chevron: false,
-                  onTap: () => Navigator.pop(context, 'remove'),
+                  onTap: () => popOnce(context, 'remove'),
                 ),
               ],
             ),

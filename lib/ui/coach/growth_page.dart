@@ -123,7 +123,7 @@ class GrowthPage extends StatelessWidget {
                 'urychlí; velký přidá hlavně tuk.'
           : 'Jez pravidelně a dost, ať máš energii na trénink i růst. '
                 'Bílkoviny ber z běžného jídla (maso, vejce, mléčné výrobky, '
-                'luštěniny). Kalorie nepočítej a nehubni bez lékaře.',
+                'luštěniny). Nedrž diety a nehubni bez lékaře.',
     ),
     const _Rule(
       Icons.bedtime_rounded,

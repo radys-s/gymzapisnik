@@ -145,18 +145,29 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
         if (e.id == equipment) return e;
       }
     }
+    // Jednoručky, kettlebell nebo guma bez vlastního cviku v katalogu
+    // nejsou varianta s tyčí: vlastní cvik, ať se nemíchají rekordy.
+    final variant = RegExp(
+      r'\((dumbbell|kettlebell|band|resistance band)\)',
+      caseSensitive: false,
+    ).firstMatch(hevyName)?.group(1)?.toLowerCase();
+    bool fits(Exercise e) =>
+        variant == null ||
+        e.custom ||
+        e.name.toLowerCase().contains(variant.split(' ').last);
     final known = byName[key];
-    if (known != null) return known;
+    if (known != null && fits(known)) return known;
     final aliased = _aliases[key];
     if (aliased != null) {
       for (final e in builtInExercises) {
-        if (e.id == aliased) return e;
+        if (e.id == aliased && fits(e)) return e;
       }
     }
+    final newKey = variant == null ? key : '$key ($variant)';
     return newExercises.putIfAbsent(
-      key,
+      newKey,
       () => Exercise(
-        id: 'hevy_${_uuid.v5(Namespace.url.value, 'gymzapisnik/hevy-exercise/$key')}',
+        id: 'hevy_${_uuid.v5(Namespace.url.value, 'gymzapisnik/hevy-exercise/$newKey')}',
         name: hevyName.trim(),
         muscle: 'Ostatní',
         type: bodyweight ? ExerciseType.bodyweight : ExerciseType.weighted,
@@ -200,6 +211,11 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
       r'\((bodyweight|assisted[^)]*)\)',
       caseSensitive: false,
     ).hasMatch(name);
+    // Hevy u „Assisted“ zapisuje odlehčení, ne zátěž navíc.
+    final assist = RegExp(r'assisted', caseSensitive: false).hasMatch(name)
+        ? weight
+        : 0.0;
+    if (assist > 0) weight = 0;
     final exercise = resolve(name, bodyweight: bodyweight);
     WorkoutExercise? entry;
     for (final e in workout.exercises) {
@@ -220,6 +236,7 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
         reps: reps,
         warmup: cell(row, iType).toLowerCase() == 'warmup',
         done: true,
+        extra: {if (assist > 0) 'assistKg': assist},
       ),
     );
   }

@@ -40,7 +40,7 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
 
   void _tap(Exercise e) {
     if (!widget.multiple) {
-      Navigator.pop(context, [e.id]);
+      popOnce(context, [e.id]);
       return;
     }
     setState(() {
@@ -141,7 +141,7 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
                 ),
                 child: PrimaryButton(
                   count == 1 ? 'Přidat cvik' : 'Přidat cviky ($count)',
-                  onPressed: () => Navigator.pop(context, [...selected]),
+                  onPressed: () => popOnce(context, [...selected]),
                 ),
               ),
             ),

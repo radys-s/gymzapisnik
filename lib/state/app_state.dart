@@ -86,25 +86,42 @@ class AppState extends ChangeNotifier {
     await store.open();
     final json = await store.get(Profile.id);
     profile = json == null ? const Profile() : Profile.fromJson(json);
-    final all = [
-      for (final w in await store.all(Kinds.workout)) Workout.fromJson(w),
-    ];
+    final all = _parsed(await store.all(Kinds.workout), Workout.fromJson);
     workouts = all.where((w) => w.finished).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
     final unfinished = all.where((w) => !w.finished).toList()
       ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
     active = unfinished.firstOrNull;
-    customExercises = [
-      for (final e in await store.all(Kinds.exercise)) Exercise.fromJson(e),
-    ]..sort((a, b) => a.name.compareTo(b.name));
-    bodyweights = [
-      for (final b in await store.all(Kinds.bodyweight)) BodyWeight.fromJson(b),
-    ]..sort((a, b) => b.date.compareTo(a.date));
-    foods = [for (final f in await store.all(Kinds.food)) FoodEntry.fromJson(f)]
+    customExercises = _parsed(
+      await store.all(Kinds.exercise),
+      Exercise.fromJson,
+    )..sort((a, b) => a.name.compareTo(b.name));
+    bodyweights = _parsed(
+      await store.all(Kinds.bodyweight),
+      BodyWeight.fromJson,
+    )..sort((a, b) => b.date.compareTo(a.date));
+    foods = _parsed(await store.all(Kinds.food), FoodEntry.fromJson)
       ..sort(_newestFood);
     notifyListeners();
     unawaited(syncReminders());
     unawaited(syncRest());
+  }
+
+  /// Načte dokumenty; poškozený řádek přeskočí (zůstane v databázi beze
+  /// změny), aby jeden vadný záznam nezablokoval spuštění aplikace.
+  static List<T> _parsed<T>(
+    Iterable<Map<String, dynamic>> rows,
+    T Function(Map<String, dynamic>) parse,
+  ) {
+    final result = <T>[];
+    for (final row in rows) {
+      try {
+        result.add(parse(row));
+      } catch (e) {
+        debugPrint('Přeskočen poškozený záznam ${row['id']}: $e');
+      }
+    }
+    return result;
   }
 
   /// Souhlas; s [welcomeVersion] zároveň uzavře uvítání jedním zápisem,
@@ -258,6 +275,15 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  bool _isWeighted(SetEntry set) {
+    for (final e in active?.exercises ?? const <WorkoutExercise>[]) {
+      if (e.sets.any((s) => identical(s, set))) {
+        return typeOf(e.exerciseId) == ExerciseType.weighted;
+      }
+    }
+    return false;
+  }
+
   /// Rekordy, které potvrzená série v aktivním tréninku právě drží.
   List<RecordKind> liveRecords(SetEntry set) {
     final workout = active;
@@ -389,6 +415,9 @@ class AppState extends ChangeNotifier {
     if (!set.done) {
       if (set.reps <= 0) return 'Zadej počet opakování.';
       if (set.weight < 0 || !set.weight.isFinite) return 'Neplatná váha.';
+      if (!set.warmup && set.weight == 0 && _isWeighted(set)) {
+        return 'Zadej váhu v kg.';
+      }
     }
     set.done = !set.done;
     if (set.done) {
@@ -611,25 +640,21 @@ class AppState extends ChangeNotifier {
     final error = programError(cleaned);
     if (error != null) throw ArgumentError(error);
     await _updateProfile((p) {
-      final list = [
-        for (final json in p.extra['programs'] as List? ?? const [])
-          ?SplitTemplate.tryCustom(json),
-      ];
-      final at = list.indexWhere((e) => e.id == cleaned.id);
+      // Ostatní programy zůstanou tak, jak jsou uložené (i ty, které
+      // novější verze neumí přečíst), aby se uložením jednoho neztratily.
+      final list = [...p.extra['programs'] as List? ?? const []];
+      final at = list.indexWhere((e) => e is Map && e['id'] == cleaned.id);
       if (at >= 0) {
-        list[at] = cleaned;
+        list[at] = cleaned.toJson();
       } else {
         if (list.length >= maxCustomPrograms) {
           throw ArgumentError(
             'Vlastních programů může být nejvýš $maxCustomPrograms.',
           );
         }
-        list.add(cleaned);
+        list.add(cleaned.toJson());
       }
-      return p.withExtra({
-        'programs': [for (final e in list) e.toJson()],
-        if (activate) 'split': cleaned.id,
-      });
+      return p.withExtra({'programs': list, if (activate) 'split': cleaned.id});
     });
     unawaited(syncReminders());
     return cleaned;
@@ -1118,7 +1143,25 @@ class AppState extends ChangeNotifier {
         for (final e in backup.exercises)
           if (!haveExercises.contains(e.id)) e,
       ];
-      final nextProfile = profile.withExtra(backup.settings);
+      // Nic místního se nepřepíše: ze zálohy se doplní jen chybějící
+      // nastavení a programy, které tu ještě nejsou.
+      final localPrograms = [...profile.extra['programs'] as List? ?? const []];
+      final localIds = {
+        for (final e in localPrograms)
+          if (e is Map) e['id'],
+      };
+      final backupPrograms = backup.settings['programs'];
+      final nextProfile = profile.withExtra({
+        for (final e in backup.settings.entries)
+          if (e.key != 'programs' && !profile.extra.containsKey(e.key))
+            e.key: e.value,
+        if (backupPrograms is List)
+          'programs': [
+            ...localPrograms,
+            for (final e in backupPrograms)
+              if (e is Map && !localIds.contains(e['id'])) e,
+          ],
+      });
       final haveWeights = {for (final b in bodyweights) b.id};
       final newWeights = [
         for (final b in backup.bodyweights)
@@ -1167,7 +1210,12 @@ class AppState extends ChangeNotifier {
   Future<int> importHevy(String source) async {
     final count = await _enqueue(() async {
       final parsed = parseHevyCsv(source, custom: customExercises);
-      final haveWorkouts = {for (final w in workouts) w.id};
+      // Smazaný trénink se opakovaným importem nevrací.
+      final deleted = <String>{
+        for (final w in parsed.workouts)
+          if ((await store.raw(w.id))?['deleted'] == 1) w.id,
+      };
+      final haveWorkouts = {for (final w in workouts) w.id, ...deleted};
       final haveExercises = {for (final e in customExercises) e.id};
       final newWorkouts = [
         for (final w in parsed.workouts)

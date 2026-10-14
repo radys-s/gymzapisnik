@@ -166,8 +166,15 @@ class SettingsPage extends StatelessWidget {
       destructive: true,
     );
     if (!ok || !context.mounted) return;
-    Navigator.popUntil(context, (r) => r.isFirst);
-    await state.wipeAll();
+    try {
+      await state.wipeAll();
+    } catch (_) {
+      if (context.mounted) {
+        showToast(context, 'Data se nepodařilo smazat. Zkus to znovu.');
+      }
+      return;
+    }
+    if (context.mounted) Navigator.popUntil(context, (r) => r.isFirst);
   }
 
   @override
