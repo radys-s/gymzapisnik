@@ -70,6 +70,12 @@ Vlastní programy (dny, cviky, série × rozsah opakování) a frekvence s trén
 detail cviku, úprava tréninku a Nastavení v novém designu. Oznámení na Androidu i iPhonu (připomínka
 tréninku, konec pauzy). Strava zatím jen přesunutá; její redesign je další větev.
 
+V2 (větev `cviceni`): anatomie cviků podle hlav svalů (`lib/domain/anatomy.dart`), „Nahradit“ v tréninku
+i v editoru programu nabízí alternativy seřazené podle hlavy svalu, „Sestavit trénink“ z partií a počtu
+cviků (`buildDay` v `lib/coach/splits.dart`), stránka „Rady pro růst svalů“ s týdenním počtem těžkých sérií
+na partii a spouštěcí obrazovka s vlastní radou nebo motivační větou (aspoň 2,2 s, klepnutím přeskočíš;
+`lib/coach/tips.dart`). Pod 18 let bez rad o dávkování jídla a přebytku.
+
 R hotovo (kód): verze 1.0.0-beta.3+12, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
 
 Navazující review C/D1 a stav nové AI bety: [docs/D1_REVIEW.md](docs/D1_REVIEW.md).

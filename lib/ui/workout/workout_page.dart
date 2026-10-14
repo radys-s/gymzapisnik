@@ -10,6 +10,7 @@ import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import 'alternatives_page.dart';
 import 'exercise_picker.dart';
 
 /// Rozepsaný trénink. Každá změna se hned ukládá (přežije zavření aplikace).
@@ -212,11 +213,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
             )) {
           return;
         }
-        final ids = await _pickExercises(multiple: false);
-        if (ids == null || ids.isEmpty) return;
+        if (!mounted) return;
+        final id = await pickAlternative(context, state, entry.exerciseId);
+        if (id == null || !mounted) return;
         _hideUndo();
         try {
-          await state.replaceExercise(entry, ids.first);
+          await state.replaceExercise(entry, id);
         } catch (_) {
           _snack('Cvik se nepodařilo nahradit. Zkus to znovu.');
         }

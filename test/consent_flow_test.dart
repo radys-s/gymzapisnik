@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymzapisnik/app.dart';
+import 'package:gymzapisnik/coach/tips.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/profile.dart';
@@ -137,6 +138,8 @@ void main() {
     await tester.pumpWidget(GymApp(state));
     await tester.pumpAndSettle();
     expect(find.text('Co je nového'), findsOneWidget);
+    await tester.ensureVisible(find.text('Pokračovat'));
+    await tester.pumpAndSettle();
     await _tapAndSave(tester, find.text('Pokračovat'));
     expect(find.text('Co je nového'), findsNothing);
     expect(state.profile.seenVersion, whatsNewRelease);
@@ -157,7 +160,9 @@ void main() {
     });
 
     // Rychlé načtení: žádné kolečko, rovnou aplikace.
-    await tester.pumpWidget(AppLoader(open: () async => state));
+    await tester.pumpWidget(
+      AppLoader(open: () async => state, minShow: Duration.zero),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('Cvičení'), findsWidgets);
@@ -165,13 +170,52 @@ void main() {
     // Pomalé načtení: značka hned, kolečko až po chvíli.
     await tester.pumpWidget(const SizedBox());
     final slow = Completer<AppState>();
-    await tester.pumpWidget(AppLoader(open: () => slow.future));
+    await tester.pumpWidget(
+      AppLoader(open: () => slow.future, minShow: Duration.zero),
+    );
     expect(find.byType(AppMark), findsOneWidget);
     final ring = find.byType(AnimatedOpacity);
     expect(tester.widget<AnimatedOpacity>(ring).opacity, 0);
     await tester.pump(const Duration(milliseconds: 450));
     expect(tester.widget<AnimatedOpacity>(ring).opacity, 1);
     slow.complete(state);
+    await tester.pumpAndSettle();
+    expect(find.text('Cvičení'), findsWidgets);
+  });
+
+  testWidgets('boot keeps a tip readable, a tap skips it', (tester) async {
+    final state = await _fresh(tester);
+    await tester.runAsync(() async {
+      await state.acceptConsent(adult: true, guardianConsent: false);
+      await state.markVersionSeen(whatsNewRelease);
+    });
+    await tester.pumpWidget(
+      AppLoader(
+        open: () async => state,
+        minShow: const Duration(seconds: 2),
+        tipSeed: 0,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('RADA'), findsOneWidget);
+    expect(find.text(trainingTips.first), findsOneWidget);
+    expect(find.text('Cvičení'), findsNothing);
+    // Po minimální době aplikace sama naběhne.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(find.text('Cvičení'), findsWidgets);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      AppLoader(
+        open: () async => state,
+        minShow: const Duration(seconds: 30),
+        tipSeed: trainingTips.length,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('MOTIVACE'), findsOneWidget);
+    await tester.tap(find.byType(BootScreen));
     await tester.pumpAndSettle();
     expect(find.text('Cvičení'), findsWidgets);
   });
@@ -185,6 +229,7 @@ void main() {
     var attempts = 0;
     await tester.pumpWidget(
       AppLoader(
+        minShow: Duration.zero,
         open: () async {
           attempts++;
           if (attempts == 1) throw StateError('úložiště je zamčené');

@@ -745,6 +745,20 @@ class AppState extends ChangeNotifier {
     workout.extra
       ..['split'] = s.id
       ..['splitDay'] = index;
+    await _fillPlanned(workout, day);
+    return workout;
+  }
+
+  /// Začne trénink sestavený mimo program (výběr partií a počtu cviků).
+  Future<Workout> startPlanned(SplitDay day, {DateTime? now}) async {
+    if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
+    if (day.exercises.isEmpty) throw StateError('Trénink nemá žádný cvik.');
+    final workout = await startWorkout(name: day.name, now: now);
+    await _fillPlanned(workout, day);
+    return workout;
+  }
+
+  Future<void> _fillPlanned(Workout workout, SplitDay day) async {
     for (final (p, suggestion) in plan(day)) {
       workout.exercises.add(
         WorkoutExercise(
@@ -756,7 +770,6 @@ class AppState extends ChangeNotifier {
       );
     }
     await saveActive();
-    return workout;
   }
 
   // ---------------------------------------------------------------------
