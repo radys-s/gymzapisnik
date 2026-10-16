@@ -6,42 +6,43 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.2';
+const whatsNewRelease = '1.3';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
   (
-    Icons.auto_awesome_outlined,
-    'Nový vzhled',
-    'Aurora a Studio, světlý i tmavý režim a vlastní barva. '
-        'Změníš v Nastavení → Vzhled a barva.',
+    Icons.emoji_events_outlined,
+    'Rekord hned v tréninku',
+    'Když série překoná tvůj rekord, uvidíš to po potvrzení hned u série.',
   ),
   (
-    Icons.view_agenda_outlined,
-    'Dvě záložky: Cvičení a Strava',
-    'Historie, cviky, rekordy a tělesná váha jsou teď na stránce Cvičení.',
+    Icons.fitness_center_rounded,
+    'Kotouče a rozcvička',
+    'V nabídce cviku spočítáš kotouče na každou stranu a přidáš rozcvičkové '
+        'série jedním klepnutím.',
   ),
   (
-    Icons.edit_calendar_outlined,
-    'Vlastní programy',
-    'Poskládej si dny a cviky sám a nastav, kolikrát týdně trénuješ.',
+    Icons.military_tech_outlined,
+    'Odznaky',
+    '24 odznaků za tréninky, pravidelnost, rekordy a objem. Nové uvidíš '
+        'v souhrnu tréninku.',
   ),
   (
-    Icons.tune_rounded,
-    'Sestav si trénink',
-    'Vyber partie a počet cviků. Cvik, který nechceš, vyměníš za jiný '
-        'na stejnou hlavu svalu.',
+    Icons.ios_share_rounded,
+    'Sdílej trénink',
+    'Souhrn ukáže, kolikátý trénink to byl a jak jsi na tom s týdnem. '
+        'Kartu tréninku pošleš jako obrázek.',
   ),
   (
-    Icons.lightbulb_outline_rounded,
-    'Rady pro růst svalů',
-    'Základy tréninku, jídla a spánku a kolik sérií na partii jsi dal '
-        'tento týden. Při spuštění uvidíš krátkou radu.',
+    Icons.battery_charging_full_rounded,
+    'Regenerace svalů',
+    'Cvičení ukáže, které partie jsou odpočaté, a sestaví z nich trénink.',
   ),
   (
-    Icons.notifications_outlined,
-    'Oznámení i na iPhonu',
-    'Připomínka tréninku a upozornění na konec pauzy.',
+    Icons.insights_rounded,
+    'Statistiky',
+    'Kalendář tréninků, týdenní grafy, série na partii a tento měsíc '
+        'proti minulému.',
   ),
 ];
 
