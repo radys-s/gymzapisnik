@@ -25,6 +25,7 @@ import '../widgets/labels.dart';
 import '../workout/builder_page.dart';
 import '../workout/workout_page.dart';
 import 'dashboard.dart';
+import 'recovery_card.dart';
 
 /// Záložka Cvičení: jedna hlavní akce, týden, poslední tréninky
 /// a cesty k programu, cvikům a váze. Pevné složení, nic nepřibývá.
@@ -88,13 +89,25 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Sestavení tréninku z partií; hotový den rovnou začne.
-  Future<void> _build() async {
-    final day = await Navigator.push<SplitDay>(
-      context,
-      MaterialPageRoute(builder: (_) => WorkoutBuilderPage(state)),
-    );
-    if (day == null || !mounted) return;
-    await _run(() => state.startPlanned(day));
+  bool _opening = false;
+
+  Future<void> _build([List<String> focuses = const []]) async {
+    if (_opening || _starting) return;
+    _opening = true;
+    final SplitDay? day;
+    try {
+      day = await Navigator.push<SplitDay>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WorkoutBuilderPage(state, initialFocuses: focuses),
+        ),
+      );
+    } finally {
+      _opening = false;
+    }
+    final picked = day;
+    if (picked == null || !mounted) return;
+    await _run(() => state.startPlanned(picked));
   }
 
   void _push(Widget page) =>
@@ -127,6 +140,10 @@ class _HomePageState extends State<HomePage> {
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
+          if (state.workouts.isNotEmpty && state.active == null) ...[
+            const SectionHeader('Regenerace svalů'),
+            RecoveryPanel(state: state, now: now, onBuild: _build),
+          ],
           if (recent.isNotEmpty) ...[
             SectionHeader(
               'Historie',

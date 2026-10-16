@@ -12,14 +12,21 @@ import 'alternatives_page.dart';
 /// cvik za alternativu. Vrací hotový den přes `Navigator.pop`.
 class WorkoutBuilderPage extends StatefulWidget {
   final AppState state;
-  const WorkoutBuilderPage(this.state, {super.key});
+
+  /// Předvybrané partie (např. odpočaté svaly z domovské stránky).
+  final Iterable<String> initialFocuses;
+  const WorkoutBuilderPage(
+    this.state, {
+    super.key,
+    this.initialFocuses = const [],
+  });
 
   @override
   State<WorkoutBuilderPage> createState() => _WorkoutBuilderPageState();
 }
 
 class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
-  final focuses = <String>{};
+  late final focuses = <String>{...widget.initialFocuses};
   int count = 5;
 
   /// Ruční výměny cviků (index v náhledu → ID cviku). Po změně partií
