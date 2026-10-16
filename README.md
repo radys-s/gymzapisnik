@@ -63,7 +63,7 @@ Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc po
 
 V3 (větev `cviceni`, verze 1.0.0-beta.5+14, čeká na test od Tomáše před merge do main): důvody,
 proč se do aplikace vracet. Rekord se ukáže hned po potvrzení série, v nabídce cviku jsou kotouče na
-činku a rozcvička jedním klepnutím. 24 odznaků (`lib/coach/achievements.dart`) za tréninky, pravidelnost,
+činku a rozcvičkové série z nabídky cviku. 24 odznaků (`lib/coach/achievements.dart`) za tréninky, pravidelnost,
 rekordy, objem a zvyky; nové odznaky ukáže souhrn. Souhrn ukazuje pořadí tréninku a týdenní postup a
 kartu tréninku pošle jako obrázek (`share_plus`; na webu se stáhne). Regenerace partií podle těžkých sérií
 z posledních 3 dnů (`lib/coach/recovery.dart`) s tlačítkem „Sestavit z odpočatých“. Stránka Statistiky

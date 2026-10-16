@@ -93,6 +93,26 @@ void main() {
     expect(ids.skip(firstIso).every((id) => !anatomyOf(id)!.compound), isTrue);
   });
 
+  test('buildDay skips exercises loading tired focuses', () {
+    final ids = buildDay(
+      ['back'],
+      4,
+      avoidFocuses: ['glutes', 'legs'],
+    ).exercises.map((e) => e.exerciseId);
+    expect(ids, isNotEmpty);
+    expect(ids, isNot(contains('deadlift')));
+    // Partie, kterou uživatel sám vybral, se nevynechává.
+    final picked = buildDay(
+      ['back', 'glutes'],
+      6,
+      avoidFocuses: ['glutes'],
+    ).exercises.map((e) => e.exerciseId);
+    expect(
+      picked.any((id) => anatomyOf(id)!.primary.contains('glutes')),
+      isTrue,
+    );
+  });
+
   test('built day handles limits', () {
     expect(buildDay([], 4).exercises, isEmpty);
     expect(buildDay(['chest'], 0).exercises, isEmpty);

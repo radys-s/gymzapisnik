@@ -246,6 +246,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
           _snack(switch (added) {
             null => 'Rozcvička už je potvrzená, nebo chybí pracovní váha.',
             0 => 'Na takhle lehkou váhu rozcvička není potřeba.',
+            1 => 'Přidána 1 rozcvičovací série.',
+            final n when n < 5 => 'Přidány $n rozcvičovací série.',
             final n => 'Přidáno $n rozcvičovacích sérií.',
           });
         } catch (_) {
@@ -901,8 +903,10 @@ class _SetRowState extends State<_SetRow> {
   void _celebrate(List<RecordKind> records) {
     final p = context.palette;
     // Bez hideCurrentSnackBar: nabídka „Vrátit“ po smazání musí zůstat.
+    // Krátké trvání, ať se série rekordů nehromadí ve frontě.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        duration: const Duration(seconds: 2),
         content: Row(
           children: [
             Icon(Icons.emoji_events_rounded, color: p.gold),

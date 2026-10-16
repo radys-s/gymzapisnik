@@ -137,7 +137,7 @@ class ShareCard extends StatelessWidget {
   });
 
   static const _bg = Color(0xFF0C0C10);
-  static const _muted = Color(0xFFA1A1AA);
+  static const _muted = Color(0xFFB4B4BC);
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +168,12 @@ class ShareCard extends StatelessWidget {
           gradient: RadialGradient(
             center: const Alignment(0.9, -1),
             radius: 1.2,
-            colors: [p.gradient.first.withValues(alpha: 0.45), _bg],
+            // Neprůhledné barvy: průhledná záře by v PNG i ve světlém sheetu
+            // propustila pozadí. Jen 30 % akcentu, ať je šedý text čitelný.
+            colors: [
+              Color.alphaBlend(p.gradient.first.withValues(alpha: 0.3), _bg),
+              _bg,
+            ],
           ),
         ),
         child: Padding(

@@ -174,14 +174,15 @@ class StatsPage extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(Space.l, 6, Space.l, 0),
-            child: Text(
-              'Pro růst zhruba ${weeklySetsMin * 4}–${weeklySetsMax * 4} '
-              'sérií na partii za 30 dní.',
-              style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+          if (state.profile.adult)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Space.l, 6, Space.l, 0),
+              child: Text(
+                'Pro růst zhruba ${weeklySetsMin * 4}–${weeklySetsMax * 4} '
+                'sérií na partii za 30 dní.',
+                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+              ),
             ),
-          ),
         ],
       );
     },

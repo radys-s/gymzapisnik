@@ -92,7 +92,10 @@ class _HomePageState extends State<HomePage> {
   /// Sestavení tréninku z partií; hotový den rovnou začne.
   bool _opening = false;
 
-  Future<void> _build([List<String> focuses = const []]) async {
+  Future<void> _build([
+    List<String> focuses = const [],
+    List<String> avoid = const [],
+  ]) async {
     if (_opening || _starting) return;
     _opening = true;
     final SplitDay? day;
@@ -100,7 +103,11 @@ class _HomePageState extends State<HomePage> {
       day = await Navigator.push<SplitDay>(
         context,
         MaterialPageRoute(
-          builder: (_) => WorkoutBuilderPage(state, initialFocuses: focuses),
+          builder: (_) => WorkoutBuilderPage(
+            state,
+            initialFocuses: focuses,
+            avoidFocuses: avoid,
+          ),
         ),
       );
     } finally {
@@ -137,7 +144,7 @@ class _HomePageState extends State<HomePage> {
               overrideSplit = state.split?.id;
             }),
             onProgram: () => _push(ProgramPage(state)),
-            onBuild: _build,
+            onBuild: () => _build(),
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),

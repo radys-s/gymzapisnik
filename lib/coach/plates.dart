@@ -18,6 +18,9 @@ class PlateLoad {
   double get loaded => perSide.fold(0.0, (a, b) => a + b);
 }
 
+/// Nad touto vahou se kotouče nepočítají.
+const maxPlateTotal = 1000.0;
+
 /// Kotouče na každou stranu osy, aby dohromady dávaly [total].
 PlateLoad platesFor(
   double total, {
@@ -27,6 +30,8 @@ PlateLoad platesFor(
   if (!total.isFinite || total <= bar) {
     return PlateLoad(const [], total > bar ? total - bar : 0);
   }
+  // Nesmyslně velký vstup by ve smyčce níž zamrazil aplikaci.
+  if (total > maxPlateTotal) return PlateLoad(const [], total - bar);
   // V setinách kg, ať 1,25 nesčítá zaokrouhlovací chyby.
   var side = ((total - bar) * 50).round(); // = půlka v setinách
   final result = <double>[];

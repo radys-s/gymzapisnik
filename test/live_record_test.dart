@@ -78,6 +78,7 @@ void main() {
       expect(platesFor(100).perSide, [25.0, 15.0]);
       expect(platesFor(102.5).perSide, [25.0, 15.0, 1.25]);
       expect(platesFor(20).perSide, isEmpty);
+      expect(platesFor(1e15).perSide, isEmpty); // bez zamrznutí
       expect(platesFor(61, bar: 20).missing, closeTo(1, 0.001));
       expect(platesFor(60, bar: 15).perSide, [20.0, 2.5]);
     });
