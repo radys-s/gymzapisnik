@@ -19,7 +19,7 @@ String recoveryLeftLabel(FocusRecovery r, DateTime now) {
 class RecoveryPanel extends StatelessWidget {
   final AppState state;
   final DateTime now;
-  final void Function(List<String> focuses) onBuild;
+  final void Function(List<String> focuses, List<String> avoid) onBuild;
   const RecoveryPanel({
     super.key,
     required this.state,
@@ -84,7 +84,10 @@ class RecoveryPanel extends StatelessWidget {
             SecondaryButton(
               'Sestavit z odpočatých',
               icon: Icons.auto_awesome_rounded,
-              onPressed: () => onBuild(suggested),
+              onPressed: () => onBuild(suggested, [
+                for (final r in recovery.values)
+                  if (!r.isReady) r.focusId,
+              ]),
             ),
             const SizedBox(height: Space.xs),
             Text(

@@ -139,6 +139,7 @@ void main() {
       await state.finishActive(now: start.add(const Duration(hours: 1)));
     });
     List<String>? built;
+    List<String>? avoid;
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.light),
@@ -146,7 +147,10 @@ void main() {
           body: RecoveryPanel(
             state: state,
             now: now,
-            onBuild: (f) => built = f,
+            onBuild: (f, a) {
+              built = f;
+              avoid = a;
+            },
           ),
         ),
       ),
@@ -156,6 +160,7 @@ void main() {
     expect(find.textContaining('Návrh: Záda, Nohy'), findsOneWidget);
     await tester.tap(find.text('Sestavit z odpočatých'));
     expect(built, ['back', 'legs', 'shoulders']);
+    expect(avoid, contains('chest'));
 
     await tester.pumpWidget(
       MaterialApp(

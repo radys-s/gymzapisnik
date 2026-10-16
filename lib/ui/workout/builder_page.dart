@@ -15,10 +15,15 @@ class WorkoutBuilderPage extends StatefulWidget {
 
   /// Předvybrané partie (např. odpočaté svaly z domovské stránky).
   final Iterable<String> initialFocuses;
+
+  /// Partie, které ještě regenerují: jejich cviky se nenabídnou, dokud
+  /// je uživatel sám nevybere.
+  final Iterable<String> avoidFocuses;
   const WorkoutBuilderPage(
     this.state, {
     super.key,
     this.initialFocuses = const [],
+    this.avoidFocuses = const [],
   });
 
   @override
@@ -34,7 +39,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
   final swaps = <int, String>{};
 
   SplitDay get day {
-    final built = buildDay(focuses, count);
+    final built = buildDay(focuses, count, avoidFocuses: widget.avoidFocuses);
     return built.copyWith(
       exercises: [
         for (var i = 0; i < built.exercises.length; i++)

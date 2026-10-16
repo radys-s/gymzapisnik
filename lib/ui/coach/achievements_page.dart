@@ -33,7 +33,7 @@ String badgeProgressLabel(BadgeState s) {
     BadgeMetric.earlyStarts || BadgeMetric.lateStarts => '',
     BadgeMetric.distinctExercises => 'cviků',
   };
-  if (unit.isEmpty) return 'Stačí jednou';
+  if (unit.isEmpty || s.badge.target == 1) return 'Stačí jednou';
   final value = s.value > s.badge.target ? s.badge.target : s.value;
   return '$value / ${s.badge.target} $unit';
 }

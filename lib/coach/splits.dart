@@ -306,15 +306,24 @@ const maxBuiltExercises = 10;
 /// (velké první), takže se cviky rozdělí rovnoměrně; když jedné partii
 /// dojdou cviky, zbytek dostanou ostatní. Každá partie začne těžkým
 /// vícekloubovým cvikem a další cviky míří na hlavy svalu, které ještě
-/// nejsou pokryté.
-SplitDay buildDay(Iterable<String> focusIds, int count) {
+/// nejsou pokryté. Cviky, jejichž hlavní hlava patří do [avoidFocuses]
+/// (partie, které ještě regenerují), se vynechají.
+SplitDay buildDay(
+  Iterable<String> focusIds,
+  int count, {
+  Iterable<String> avoidFocuses = const [],
+}) {
   final chosen = [
     for (final f in dayFocuses)
       if (focusIds.contains(f.id)) f,
   ];
   final total = count.clamp(0, maxBuiltExercises);
   if (chosen.isEmpty || total == 0) return const SplitDay('', []);
-  final pools = [for (final f in chosen) _FocusPool(f)];
+  final avoidHeads = {
+    for (final f in avoidFocuses)
+      if (!focusIds.contains(f)) ...?focusHeads[f],
+  };
+  final pools = [for (final f in chosen) _FocusPool(f, avoidHeads)];
   final picked = <String>{};
   final result = <PlannedExercise>[];
   var progress = true;
@@ -352,7 +361,7 @@ class _FocusPool {
   final covered = <String>{};
   int taken = 0;
 
-  _FocusPool(this.focus)
+  _FocusPool(this.focus, Set<String> avoidHeads)
     : heads = focusHeads[focus.id] ?? const <String>[],
       curated = {for (final p in focus.exercises) p.exerciseId: p},
       candidates = [] {
@@ -364,6 +373,9 @@ class _FocusPool {
             heads.contains(anatomyOf(e.id)?.primary.first))
           e.id,
     ]);
+    candidates.removeWhere(
+      (id) => anatomyOf(id)?.primary.any(avoidHeads.contains) ?? false,
+    );
   }
 
   PlannedExercise? take(Set<String> picked) {

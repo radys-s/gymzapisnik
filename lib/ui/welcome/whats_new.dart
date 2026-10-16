@@ -18,8 +18,8 @@ const whatsNewItems = <(IconData, String, String)>[
   (
     Icons.fitness_center_rounded,
     'Kotouče a rozcvička',
-    'V nabídce cviku spočítáš kotouče na každou stranu a přidáš rozcvičkové '
-        'série jedním klepnutím.',
+    'V nabídce cviku spočítáš kotouče na každou stranu a přidáš '
+        'rozcvičkové série.',
   ),
   (
     Icons.military_tech_outlined,

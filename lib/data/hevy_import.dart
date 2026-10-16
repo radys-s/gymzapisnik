@@ -151,9 +151,10 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
       r'\((dumbbell|kettlebell|band|resistance band)\)',
       caseSensitive: false,
     ).firstMatch(hevyName)?.group(1)?.toLowerCase();
+    // Platí i pro vlastní cviky: „Bench Press“ s tyčí nesmí pohltit
+    // jednoručky. Dřív importovaná varianta má typ v názvu, takže sedí.
     bool fits(Exercise e) =>
         variant == null ||
-        e.custom ||
         e.name.toLowerCase().contains(variant.split(' ').last);
     final known = byName[key];
     if (known != null && fits(known)) return known;
