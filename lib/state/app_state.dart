@@ -8,6 +8,7 @@ import '../coach/missions.dart';
 import '../coach/plates.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
+import '../coach/achievements.dart';
 import '../coach/streak.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
@@ -258,6 +259,29 @@ class AppState extends ChangeNotifier {
           : [for (final s in last) s.copy(done: false)],
     );
   }
+
+  List<Workout>? _badgesOf;
+  List<Exercise>? _badgesExercises;
+  List<BadgeState> _badges = const [];
+
+  /// Stav odznaků (v mezipaměti, dokud se nezmění tréninky nebo cviky).
+  /// Platí jen proto, že `workouts` i `customExercises` se při každé změně
+  /// nahrazují novým seznamem; úprava na místě by mezipaměť nezneplatnila.
+  List<BadgeState> get badgeStates {
+    if (!identical(_badgesOf, workouts) ||
+        !identical(_badgesExercises, customExercises)) {
+      _badges = computeBadges(workouts, typeOf);
+      _badgesOf = workouts;
+      _badgesExercises = customExercises;
+    }
+    return _badges;
+  }
+
+  /// Odznaky odemčené daným tréninkem.
+  List<BadgeState> badgesFrom(String workoutId) => [
+    for (final b in badgeStates)
+      if (b.workoutId == workoutId) b,
+  ];
 
   List<Workout>? _recordsOf;
   final _records = <String, Map<RecordKind, PersonalRecord>>{};
