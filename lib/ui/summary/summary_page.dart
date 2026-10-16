@@ -12,6 +12,7 @@ import '../design/tokens.dart';
 import '../history/edit_workout_page.dart';
 import '../widgets/labels.dart';
 import '../workout/workout_page.dart';
+import 'share_card.dart';
 
 /// Souhrn dokončeného tréninku: dnes proti minulému provedení a nové rekordy.
 class SummaryPage extends StatefulWidget {
@@ -120,10 +121,35 @@ class _SummaryPageState extends State<SummaryPage> {
     }
     final duration = workout.finishedAt?.difference(workout.startedAt);
     final finished = widget.justFinished;
+    // Pořadí a týden jen do tohoto tréninku (stejný čas rozhodne id).
+    final ordered = state.workouts.where((w) => w.finished).toList()
+      ..sort((a, b) {
+        final byDate = a.date.compareTo(b.date);
+        return byDate != 0 ? byDate : a.id.compareTo(b.id);
+      });
+    final index = ordered.indexWhere((w) => w.id == workout.id);
+    final upTo = index < 0 ? ordered : ordered.sublist(0, index + 1);
+    final number = index < 0 ? ordered.length + 1 : index + 1;
+    final week = weekSummary(
+      [...upTo, if (index < 0) workout],
+      workout.date,
+      state.typeOf,
+    );
     return LargeTitlePage(
       title: finished ? 'Trénink hotový' : workout.name,
       implyLeading: !finished,
       actions: [
+        IconButton(
+          tooltip: 'Sdílet',
+          icon: const Icon(Icons.ios_share_rounded),
+          onPressed: () => showShareCard(
+            context,
+            state,
+            workout,
+            number: number,
+            records: records.length,
+          ),
+        ),
         if (!finished)
           PopupMenuButton<String>(
             tooltip: 'Možnosti',
@@ -176,6 +202,20 @@ class _SummaryPageState extends State<SummaryPage> {
                   Text(
                     formatDateTime(workout.date),
                     style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+                  ),
+                  const SizedBox(height: Space.s),
+                  Wrap(
+                    spacing: Space.s,
+                    runSpacing: Space.xs,
+                    children: [
+                      Pill('$number. trénink', icon: Icons.flag_rounded),
+                      Pill(
+                        'Týden ${week.workouts}/${state.weekGoal}',
+                        icon: week.workouts >= state.weekGoal
+                            ? Icons.check_circle_rounded
+                            : Icons.date_range_rounded,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: Space.l),
                   Row(
@@ -245,7 +285,7 @@ class _RecordsPanel extends StatelessWidget {
                 child: Text(
                   records.length == 1
                       ? 'Nový osobní rekord'
-                      : 'Nové osobní rekordy (${records.length})',
+                      : 'Nové osobní rekordy: ${records.length}',
                   style: text.titleMedium,
                 ),
               ),
