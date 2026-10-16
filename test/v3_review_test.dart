@@ -120,7 +120,7 @@ void main() {
         const SplitTemplate(
           id: '',
           name: 'Můj',
-        description: '',
+          description: '',
           perWeek: 1,
           days: [
             SplitDay('Den', [PlannedExercise('squat')]),

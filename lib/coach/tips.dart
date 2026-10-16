@@ -88,15 +88,19 @@ const _groupFocus = {
   'Střed těla': 'core',
 };
 
-/// Těžké (pracovní, potvrzené) série za posledních 7 dní podle partie.
+/// Partie vlastního cviku podle jeho skupiny (`null` = nejde poznat).
+String? focusOfMuscle(String muscle) => _groupFocus[muscle];
+
+/// Těžké (pracovní, potvrzené) série za posledních [days] dní podle partie.
 /// Série se počítá jednou, partii hlavní hlavy cviku (mrtvý tah = záda),
 /// aby se týdenní součet nenafukoval.
 Map<String, int> weeklyHardSets(
   Iterable<Workout> workouts,
   DateTime now,
-  String Function(String exerciseId) muscleOf,
-) {
-  final from = now.subtract(const Duration(days: 7));
+  String Function(String exerciseId) muscleOf, {
+  int days = 7,
+}) {
+  final from = now.subtract(Duration(days: days));
   final result = <String, int>{};
   for (final w in workouts) {
     if (!w.finished || w.date.isBefore(from) || w.date.isAfter(now)) continue;
