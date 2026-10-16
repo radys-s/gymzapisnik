@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../coach/achievements.dart';
 import '../../core/format.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
+import '../coach/achievements_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../history/edit_workout_page.dart';
@@ -201,6 +203,11 @@ class _SummaryPageState extends State<SummaryPage> {
           const SizedBox(height: Space.m),
           _RecordsPanel(state: state, records: records),
         ],
+        if (state.badgesFrom(workout.id) case final badges
+            when badges.isNotEmpty) ...[
+          const SizedBox(height: Space.m),
+          _BadgesPanel(state: state, badges: badges, fresh: finished),
+        ],
         const SizedBox(height: Space.xl),
         SectionHeader('Cviky (${workout.exercises.length})'),
         for (final entry in workout.exercises)
@@ -252,6 +259,66 @@ class _RecordsPanel extends StatelessWidget {
                 '${state.exercise(r.exerciseId).name} – ${r.kind.label}: '
                 '${recordLabel(r.kind, r.value)}',
                 style: text.bodyMedium?.copyWith(fontFeatures: tabular),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgesPanel extends StatelessWidget {
+  final AppState state;
+  final List<BadgeState> badges;
+
+  /// Hned po tréninku „Nové odznaky“, z historie jen čím se odemkly.
+  final bool fresh;
+  const _BadgesPanel({
+    required this.state,
+    required this.badges,
+    required this.fresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            !fresh
+                ? 'Odznaky z tohoto tréninku'
+                : badges.length == 1
+                ? 'Nový odznak'
+                : 'Nové odznaky (${badges.length})',
+            style: text.titleMedium,
+          ),
+          const SizedBox(height: Space.m),
+          for (final b in badges)
+            InkWell(
+              borderRadius: BorderRadius.circular(Radii.control),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AchievementsPage(state)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: Space.xs),
+                child: Row(
+                  children: [
+                    BadgeMedal(b, size: 44),
+                    const SizedBox(width: Space.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(b.badge.title, style: text.bodyLarge),
+                          Text(b.badge.detail, style: text.bodySmall),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],

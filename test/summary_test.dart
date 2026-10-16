@@ -30,6 +30,10 @@ void main() {
   testWidgets('summary compares with last time and shows new record', (
     tester,
   ) async {
+    tester.view
+      ..physicalSize = const Size(390, 3000)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final state = AppState(LocalStore(db));

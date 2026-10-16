@@ -11,6 +11,7 @@ import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
 import '../bodyweight/bodyweight_page.dart';
+import '../coach/achievements_page.dart';
 import '../coach/growth_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -156,6 +157,15 @@ class _HomePageState extends State<HomePage> {
                 title: 'Cviky a rekordy',
                 subtitle: _recordHint(),
                 onTap: () => _push(ExercisesPage(state)),
+              ),
+              GroupedRow(
+                icon: Icons.military_tech_rounded,
+                iconColor: const Color(0xFFFFB300),
+                title: 'Odznaky',
+                value:
+                    '${state.badgeStates.where((b) => b.unlocked).length}'
+                    ' / ${state.badgeStates.length}',
+                onTap: () => _push(AchievementsPage(state)),
               ),
               GroupedRow(
                 icon: Icons.monitor_weight_outlined,
