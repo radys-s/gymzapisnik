@@ -5,7 +5,17 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.4
+## Co je nového v beta.5
+
+**Rekord hned v tréninku**: po potvrzení série, která překoná tvůj rekord, uvidíš pohár u série.
+V nabídce cviku (⋯) najdeš **Kotouče na činku** a **Přidat rozcvičku**. **Odznaky** (Cvičení → Odznaky)
+sbíráš za tréninky, pravidelnost, rekordy a objem; nové ukáže souhrn tréninku. Souhrn ukazuje,
+kolikátý trénink to byl a kolik jich máš tento týden; ikonou **Sdílet** pošleš kartu tréninku jako obrázek.
+**Regenerace svalů** na stránce Cvičení ukáže odpočaté partie a umí z nich sestavit trénink.
+**Statistiky** (Cvičení → Statistiky) mají kalendář tréninků, týdenní grafy a srovnání s minulým měsícem.
+Napiš, jestli tě odznaky a regenerace motivují, nebo jen překáží.
+
+## Co bylo nového v beta.4
 
 Nový vzhled a dvě záložky: **Cvičení** a **Strava**. Historie („Vše“), cviky a rekordy,
 program a tělesná váha jsou na stránce Cvičení; Nastavení otevře ozubené kolo vpravo

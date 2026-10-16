@@ -61,6 +61,16 @@ AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-a
 Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
 `ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
+V3 (větev `cviceni`, verze 1.0.0-beta.5+14, čeká na test od Tomáše před merge do main): důvody,
+proč se do aplikace vracet. Rekord se ukáže hned po potvrzení série, v nabídce cviku jsou kotouče na
+činku a rozcvička jedním klepnutím. 24 odznaků (`lib/coach/achievements.dart`) za tréninky, pravidelnost,
+rekordy, objem a zvyky; nové odznaky ukáže souhrn. Souhrn ukazuje pořadí tréninku a týdenní postup a
+kartu tréninku pošle jako obrázek (`share_plus`; na webu se stáhne). Regenerace partií podle těžkých sérií
+z posledních 3 dnů (`lib/coach/recovery.dart`) s tlačítkem „Sestavit z odpočatých“. Stránka Statistiky
+(`lib/coach/overview.dart`): součty, tento měsíc proti stejnému počtu dní minulého, kalendář 16 týdnů,
+tréninky a tuny po týdnech, série na partii za 30 dní. Sociální feed a silové úrovně zůstávají jen nápady
+(potřebují server, moderaci a ochranu nezletilých, resp. normy podle pohlaví a váhy).
+
 UX1 (větev `cviceni`, verze 1.0.0-beta.4+13, čeká na test od Tomáše před merge do main): nový design
 systém `lib/ui/design/` (barvy, typografie, komponenty ve stylu iOS, světlý/tmavý režim podle systému,
 dva vzhledy Aurora a Studio — automaticky Aurora ve dne, Studio v noci — a čtyři barvy; kontrast hlídá `test/contrast_test.dart`), dvě záložky Cvičení / Strava s vlastní navigací, spouštěcí obrazovka, uvítání s výběrem
