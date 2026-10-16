@@ -20,6 +20,7 @@ import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
 import '../settings/settings_button.dart';
+import '../stats/stats_page.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 import '../workout/builder_page.dart';
@@ -174,6 +175,13 @@ class _HomePageState extends State<HomePage> {
                 title: 'Cviky a rekordy',
                 subtitle: _recordHint(),
                 onTap: () => _push(ExercisesPage(state)),
+              ),
+              GroupedRow(
+                icon: Icons.insights_rounded,
+                iconColor: const Color(0xFF30B0C7),
+                title: 'Statistiky',
+                subtitle: 'Kalendář, grafy, měsíc proti minulému',
+                onTap: () => _push(StatsPage(state, now: widget.now)),
               ),
               GroupedRow(
                 icon: Icons.military_tech_rounded,
