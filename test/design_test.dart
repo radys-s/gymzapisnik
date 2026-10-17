@@ -23,9 +23,13 @@ void main() {
     expect(Look.auto.resolve(Brightness.dark), Look.studio);
   });
 
-  test('profile defaults: system theme, lime accent, first tab', () {
+  test('profile defaults: dark theme, lime accent, first tab', () {
     const p = Profile();
-    expect(p.theme, 'system');
+    expect(p.theme, 'dark');
+    expect(p.withExtra({'theme': 'system'}).theme, 'system');
+    expect(p.weightStep, 2.5);
+    expect(p.withExtra({'weightStep': 1.25}).weightStep, 1.25);
+    expect(p.withExtra({'weightStep': 3}).weightStep, 2.5);
     expect(p.accent, 'lime');
     expect(p.welcomeSeen, isFalse);
     expect(p.lastTab, 0);

@@ -16,6 +16,7 @@ const backupVersion = 1;
 /// Klíče profilu, které jsou nastavením a patří do zálohy.
 const backupSettingsKeys = {
   'restSeconds',
+  'weightStep',
   'split',
   'theme',
   'accent',
@@ -144,11 +145,15 @@ Backup decodeBackup(String source) {
               days.any((d) => d is! num || d < 1 || d > 7 || d != d.toInt()))) {
         throw const FormatException('Záloha obsahuje neplatné dny tréninku.');
       }
-      for (final key in ['restSeconds', 'weekGoal']) {
+      for (final key in ['restSeconds', 'weekGoal', 'weightStep']) {
         final value = rawSettings[key];
         if (value != null && (value is! num || !value.isFinite)) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
+      }
+      final step = rawSettings['weightStep'];
+      if (step != null && !weightSteps.contains(step)) {
+        throw const FormatException('Záloha obsahuje neplatný krok váhy.');
       }
     }
     final ids = <String>{};

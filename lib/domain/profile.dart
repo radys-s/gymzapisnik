@@ -2,6 +2,9 @@
 const currentConsentVersion = 1;
 
 /// Uživatelský profil uložený v zařízení (jeden dokument `profile`).
+/// Nabízené kroky tlačítek +/− u váhy.
+const weightSteps = [1.0, 1.25, 2.5, 5.0];
+
 class Profile {
   static const id = 'profile';
 
@@ -72,11 +75,12 @@ class Profile {
     return v is num ? v.toInt().clamp(0, 1439) : null;
   }
 
-  /// Motiv: `system` (výchozí, podle telefonu), `dark` nebo `light`.
+  /// Motiv: `dark` (výchozí, hlavní režim aplikace), `light` nebo `system`
+  /// (podle telefonu).
   String get theme => switch (extra['theme']) {
-    'dark' => 'dark',
     'light' => 'light',
-    _ => 'system',
+    'system' => 'system',
+    _ => 'dark',
   };
 
   /// Barevný motiv (`lime`, `lagoon`, `sunset`, `neon`); neznámý = výchozí.
@@ -107,6 +111,12 @@ class Profile {
   int get restSeconds {
     final v = extra['restSeconds'];
     return v is num ? v.toInt().clamp(15, 600) : 120;
+  }
+
+  /// Krok tlačítek +/− u váhy v kg.
+  double get weightStep {
+    final v = extra['weightStep'];
+    return v is num && weightSteps.contains(v.toDouble()) ? v.toDouble() : 2.5;
   }
 
   /// Nezletilým aplikace nikdy nenastaví kalorický deficit ani hubnutí.
