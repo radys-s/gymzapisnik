@@ -69,6 +69,7 @@ void main() {
     await tester.tap(find.byTooltip('Přidat 2,5 kg, Bench press, Série 2'));
     await tester.pump();
     expect(tester.widget<TextField>(field).controller!.text, '1,2,5');
+    expect(find.textContaining('Nejdřív oprav váhu'), findsOneWidget);
 
     await tester.runAsync(() => state.setPreferences(weightStep: 1.25));
     await tester.pumpAndSettle();
