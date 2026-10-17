@@ -61,7 +61,14 @@ AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-a
 Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
 `ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
-V3 (větev `cviceni`, verze 1.0.0-beta.5+14, čeká na test od Tomáše před merge do main): důvody,
+V4 (větev `cviceni`, verze 1.0.0-beta.6+15, čeká na test od Tomáše před merge do main): pod další
+nepotvrzenou sérií jsou tlačítka −/+ pro váhu a opakování (krok 1 / 1,25 / 2,5 / 5 kg v Nastavení,
+`Profile.weightStep`, v záloze). Výchozí motiv je tmavý, když si uživatel nevybral. Stránka Nápady
+(`lib/ui/ideas/ideas_page.dart`, stejný seznam v [docs/napady](docs/napady/README.md)) bez hlasování a sítě.
+Kotouče na činku jen u cviků s osou (`barbellExercises` v `lib/coach/plates.dart`) a u vlastních cviků;
+trénink bez platného začátku se při načítání přeskočí.
+
+V3 (verze 1.0.0-beta.5+14): důvody,
 proč se do aplikace vracet. Rekord se ukáže hned po potvrzení série, v nabídce cviku jsou kotouče na
 činku a rozcvičkové série z nabídky cviku. 24 odznaků (`lib/coach/achievements.dart`) za tréninky, pravidelnost,
 rekordy, objem a zvyky; nové odznaky ukáže souhrn. Souhrn ukazuje pořadí tréninku a týdenní postup a
