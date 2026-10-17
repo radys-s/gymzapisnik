@@ -39,7 +39,7 @@ MaterialApp appFrame({
   required Widget home,
   Accent accent = Accent.lime,
   Look look = Look.auto,
-  String theme = 'system',
+  String theme = 'dark',
 }) => MaterialApp(
   title: 'Gym zápisník',
   debugShowCheckedModeBanner: false,

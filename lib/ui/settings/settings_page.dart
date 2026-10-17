@@ -4,11 +4,14 @@ import '../../core/parse.dart';
 
 import 'package:flutter/services.dart';
 
+import '../../core/format.dart';
 import '../../core/version.dart';
+import '../../domain/profile.dart';
 import '../../notify/notifier.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../ideas/ideas_page.dart';
 import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
 import '../program/program_page.dart';
@@ -209,6 +212,28 @@ class SettingsPage extends StatelessWidget {
                       DropdownMenuItem(value: s, child: Text(restLabel(s))),
                   ],
                   onChanged: (s) => state.setPreferences(restSeconds: s),
+                ),
+              ),
+              GroupedRow(
+                icon: Icons.exposure_rounded,
+                iconColor: p.accent,
+                title: 'Krok tlačítek +/−',
+                trailing: DropdownButton<double>(
+                  value: profile.weightStep,
+                  underline: const SizedBox.shrink(),
+                  borderRadius: BorderRadius.circular(Radii.card),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: p.secondaryLabel,
+                    fontFeatures: tabular,
+                  ),
+                  items: [
+                    for (final s in weightSteps)
+                      DropdownMenuItem(
+                        value: s,
+                        child: Text('${formatKg(s)} kg'),
+                      ),
+                  ],
+                  onChanged: (s) => state.setPreferences(weightStep: s),
                 ),
               ),
               GroupedRow(
@@ -465,6 +490,15 @@ class SettingsPage extends StatelessWidget {
                 subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
                 chevron: false,
                 onTap: () => _feedback(context),
+              ),
+              GroupedRow(
+                icon: Icons.tips_and_updates_outlined,
+                iconColor: _purple,
+                title: 'Nápady',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const IdeasPage()),
+                ),
               ),
               GroupedRow(
                 icon: Icons.auto_awesome_outlined,

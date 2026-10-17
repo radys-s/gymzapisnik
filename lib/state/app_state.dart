@@ -935,9 +935,12 @@ class AppState extends ChangeNotifier {
     String? theme,
     String? accent,
     String? look,
+    double? weightStep,
   }) => _updateProfile(
     (p) => p.withExtra({
       'restSeconds': ?restSeconds?.clamp(15, 600),
+      if (weightStep != null && weightSteps.contains(weightStep))
+        'weightStep': weightStep,
       'theme': ?theme,
       'accent': ?accent,
       'look': ?look,

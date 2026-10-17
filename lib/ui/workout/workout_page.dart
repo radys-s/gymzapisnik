@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../coach/plates.dart';
 import '../../coach/progression.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
@@ -685,10 +687,11 @@ class _ExerciseCard extends StatelessWidget {
                         value: 'warmups',
                         child: Text('Přidat rozcvičku'),
                       ),
-                      const PopupMenuItem(
-                        value: 'plates',
-                        child: Text('Kotouče na činku'),
-                      ),
+                      if (usesPlates(exercise.id, custom: exercise.custom))
+                        const PopupMenuItem(
+                          value: 'plates',
+                          child: Text('Kotouče na činku'),
+                        ),
                     ],
                     const PopupMenuItem(
                       value: 'replace',
@@ -778,6 +781,9 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: Space.xs),
             for (var i = 0; i < entry.sets.length; i++)
               _SetRow(
+                // +/− jen u další nepotvrzené série, ať karta zůstane čistá.
+                active: i == entry.sets.indexWhere((s) => !s.done),
+                exercise: exercise.name,
                 key: ObjectKey(entry.sets[i]),
                 state: state,
                 set: entry.sets[i],
@@ -817,8 +823,16 @@ class _SetRow extends StatefulWidget {
   final VoidCallback onRemove;
   final ValueChanged<String> onError;
 
+  /// Další série na řadě: pod ní jsou tlačítka +/−.
+  final bool active;
+
+  /// Název cviku do popisků +/−, ať se karty pro čtečku neslijí.
+  final String exercise;
+
   const _SetRow({
     super.key,
+    this.active = false,
+    this.exercise = '',
     required this.state,
     required this.set,
     required this.label,
@@ -923,6 +937,27 @@ class _SetRowState extends State<_SetRow> {
     );
   }
 
+  /// Tlačítko +/−: změní pole stejně jako psaní a uloží.
+  void _step({double kg = 0, int count = 0}) {
+    // Nečitelný text tlačítko nepřepíše, opraví ho uživatel sám.
+    final cur = weight.text.trim().isEmpty ? 0.0 : parseNum(weight.text);
+    final curReps = reps.text.trim().isEmpty ? 0 : int.tryParse(reps.text);
+    if (kg != 0) {
+      if (cur == null) return;
+      // Ručně zadanou vyšší hodnotu + nesrazí dolů.
+      final next = (cur + kg).clamp(0.0, math.max(cur, maxStepKg));
+      weight.text = _kgText(double.parse(next.toStringAsFixed(2)));
+    }
+    if (count != 0) {
+      if (curReps == null) return;
+      reps.text = _repsText(
+        (curReps + count).clamp(0, math.max(curReps, 999)).toInt(),
+      );
+    }
+    HapticFeedback.selectionClick();
+    _changed();
+  }
+
   void _typeMenu(String action) => switch (action) {
     'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
     'warmup' => _persist(() => widget.state.setWarmup(widget.set, true)),
@@ -973,7 +1008,7 @@ class _SetRowState extends State<_SetRow> {
     final prev = widget.previous;
     final kgLabel = widget.bodyweight ? 'Přidaná váha v kg' : 'Váha v kg';
     final record = set.done && widget.state.liveRecords(set).isNotEmpty;
-    return Dismissible(
+    final row = Dismissible(
       key: ObjectKey(set),
       direction: DismissDirection.endToStart,
       background: Container(
@@ -1115,6 +1150,115 @@ class _SetRowState extends State<_SetRow> {
           ],
         ),
       ),
+    );
+    // +/− mimo Dismissible: tah po tlačítkách nesmí smazat sérii.
+    if (!widget.active || set.done) return row;
+    return Column(
+      children: [
+        row,
+        _Steppers(
+          step: widget.state.profile.weightStep,
+          name: widget.exercise.isEmpty ? _name : '${widget.exercise}, $_name',
+          onStep: _step,
+        ),
+      ],
+    );
+  }
+}
+
+/// Nejvíc kg, kam se dá dojít tlačítkem +.
+const maxStepKg = 999.0;
+
+/// Řada tlačítek − / + pro váhu a opakování pod další sérií.
+class _Steppers extends StatelessWidget {
+  final double step;
+  final String name;
+  final void Function({double kg, int count}) onStep;
+  const _Steppers({
+    required this.step,
+    required this.name,
+    required this.onStep,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(Space.xs, 2, 0, Space.xs),
+    child: Row(
+      children: [
+        Expanded(
+          child: _StepGroup(
+            label: '${formatKg(step)} kg',
+            minus: 'Ubrat ${formatKg(step)} kg, $name',
+            plus: 'Přidat ${formatKg(step)} kg, $name',
+            onMinus: () => onStep(kg: -step),
+            onPlus: () => onStep(kg: step),
+          ),
+        ),
+        const SizedBox(width: Space.s),
+        Expanded(
+          child: _StepGroup(
+            label: '1 opak.',
+            minus: 'Ubrat opakování, $name',
+            plus: 'Přidat opakování, $name',
+            onMinus: () => onStep(count: -1),
+            onPlus: () => onStep(count: 1),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _StepGroup extends StatelessWidget {
+  final String label;
+  final String minus;
+  final String plus;
+  final VoidCallback onMinus;
+  final VoidCallback onPlus;
+  const _StepGroup({
+    required this.label,
+    required this.minus,
+    required this.plus,
+    required this.onMinus,
+    required this.onPlus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    Widget button(IconData icon, String tooltip, VoidCallback onTap) =>
+        SizedBox.square(
+          dimension: minTap,
+          child: IconButton(
+            tooltip: tooltip,
+            onPressed: onTap,
+            padding: EdgeInsets.zero,
+            style: IconButton.styleFrom(
+              backgroundColor: p.fill,
+              foregroundColor: p.label,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(Radii.control),
+              ),
+            ),
+            icon: Icon(icon, size: 20),
+          ),
+        );
+    return Row(
+      children: [
+        button(Icons.remove_rounded, minus, onMinus),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: p.secondaryLabel, fontFeatures: tabular),
+            ),
+          ),
+        ),
+        button(Icons.add_rounded, plus, onPlus),
+      ],
     );
   }
 }

@@ -7,6 +7,28 @@ const standardPlates = [25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25];
 /// Běžné osy: olympijská, ženská/technická, EZ.
 const barWeights = [20.0, 15.0, 10.0];
 
+/// Cviky z katalogu, které se cvičí s osou a kotouči.
+const barbellExercises = {
+  'bench_press',
+  'incline_press',
+  'squat',
+  'front_squat',
+  'deadlift',
+  'romanian_deadlift',
+  'hip_thrust',
+  'barbell_row',
+  'overhead_press',
+  'barbell_curl',
+  'reverse_curl',
+  'skull_crusher',
+  'shrug',
+};
+
+/// Má smysl počítat kotouče? U vlastního cviku to aplikace nepozná,
+/// tak ho nabídne.
+bool usesPlates(String exerciseId, {required bool custom}) =>
+    custom || barbellExercises.contains(exerciseId);
+
 class PlateLoad {
   /// Kotouče na jednu stranu, od největšího.
   final List<double> perSide;
