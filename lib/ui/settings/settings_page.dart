@@ -11,7 +11,6 @@ import '../../notify/notifier.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
-import '../ideas/ideas_page.dart';
 import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
 import '../program/program_page.dart';
@@ -490,15 +489,6 @@ class SettingsPage extends StatelessWidget {
                 subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
                 chevron: false,
                 onTap: () => _feedback(context),
-              ),
-              GroupedRow(
-                icon: Icons.tips_and_updates_outlined,
-                iconColor: _purple,
-                title: 'Nápady',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const IdeasPage()),
-                ),
               ),
               GroupedRow(
                 icon: Icons.auto_awesome_outlined,

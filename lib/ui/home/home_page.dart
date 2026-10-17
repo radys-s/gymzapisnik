@@ -17,7 +17,6 @@ import '../design/components.dart';
 import '../design/tokens.dart';
 import '../exercises/exercises_page.dart';
 import '../history/history_page.dart';
-import '../ideas/ideas_page.dart';
 import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
 import '../settings/settings_button.dart';
@@ -215,13 +214,6 @@ class _HomePageState extends State<HomePage> {
                 title: 'Rady pro růst svalů',
                 subtitle: 'Objem, technika, jídlo, spánek',
                 onTap: () => _push(GrowthPage(state, now: widget.now)),
-              ),
-              GroupedRow(
-                icon: Icons.tips_and_updates_outlined,
-                iconColor: const Color(0xFFAF52DE),
-                title: 'Nápady',
-                subtitle: 'Co by se dalo přidat',
-                onTap: () => _push(const IdeasPage()),
               ),
             ],
           ),

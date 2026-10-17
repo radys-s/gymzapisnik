@@ -1,36 +1,99 @@
-# Nápady do budoucna
+# Nápady od Clauda
 
-Seznam věcí, které by se do Gym zápisníku daly přidat. Nic z toho není slib ani plán
-s termínem. Stejný seznam ukazuje aplikace v **Cvičení → Nápady** (zdroj:
-`lib/ui/ideas/ideas_page.dart`, při změně uprav obojí).
+Sem Claude zapisuje nápady na další funkce. V aplikaci se nezobrazují. Tomáš u každého
+rozhodne a změní stav; do aplikace jde jen to, co je **Schváleno**.
 
-## Trénink
-- **Supersety a drop sety** – spojit dva cviky nebo série bez pauzy.
-- **Návody k cvikům** – krátký popis techniky a nejčastější chyby.
-- **Cviky na čas** – plank, kardio nebo strečink v minutách.
-- **Přesun cviku tažením** – pořadí cviků změnit prstem.
-- **Kalkulačka 1RM** – odhad maxima z libovolné série.
+**Stavy:** `Návrh` (čeká na Tomáše) · `Schváleno` (Claude ho naplánuje do dalšího updatu) ·
+`Zamítnuto` (zůstává tu, ať se znovu nenavrhuje) · `Hotovo` (verze, ve které vyšel).
 
-## Pokrok
-- **Shrnutí roku** – tréninky, tuny, rekordy a nejlepší měsíc na jedné kartě.
-- **Mapa těla** – postava, na které svítí unavené a odpočaté partie.
-- **Trend tělesné váhy** – vyhlazená křivka.
-- **Porovnání dvou tréninků** – libovolné dva vedle sebe.
+**Jak rozhodnout:** stačí napsat do chatu třeba „schvaluju 3 a 7, 12 zamítám". Claude upraví stav.
 
-## Motivace
-- **Týdenní výzvy** – malý cíl navíc.
-- **Sdílení odznaků** – odznak jako obrázek.
-- **Plán na příští týden** – návrh podle toho, co chybělo.
+U každého nápadu: proč by pomohl, odhad práce (S = do jednoho večera, M = jeden update,
+L = několik updatů nebo server) a riziko.
 
-## Strava
-- **Nový vzhled Stravy** – stejně čistý jako Cvičení.
-- **Oblíbená jídla** – běžné jídlo jedním klepnutím.
+## Ke schválení
 
-## Telefon a zařízení
-- **Widget na plochu** – týdenní cíl a další trénink.
-- **Hodinky** – potvrzení série a pauza na zápěstí.
-- **Záloha do cloudu** – data v bezpečí i při ztrátě telefonu.
+### Trénink
 
-## S ostatními (potřebuje server)
-- **Přátelé a jejich tréninky** – potřebuje server, moderaci a ochranu mladších uživatelů.
-- **Silové úrovně** – srovnání síly podle váhy a pohlaví.
+1. **Superset jedním klepnutím** · M · `Návrh`
+   Dva cviky se střídají bez pauzy, časovač běží až po druhém. Šetří čas v posilovně a Hevy to umí.
+   Riziko: složitější karta tréninku, musí zůstat čitelná na 320 px.
+
+2. **Drop set a série do selhání** · S · `Návrh`
+   Další typ série vedle Pracovní a Rozcvička. Rekordy a objem by ho počítaly zvlášť.
+
+3. **Cviky na čas** · M · `Návrh`
+   Plank, kardio a strečink v minutách místo kg × opakování. Potřebuje nový typ cviku a jiný řádek série.
+
+4. **Přesun cviku tažením** · S · `Návrh`
+   Dnes se cvik posouvá přes menu. Tažení prstem je rychlejší.
+
+5. **Návody k cvikům** · M · `Návrh`
+   Tři věty k technice a nejčastější chyby, vlastní text. Riziko: hodně psaní a kontrola správnosti.
+
+6. **Kalkulačka 1RM** · S · `Návrh`
+   Z libovolné série odhad maxima a tabulka vah pro 3–12 opakování. Data už aplikace počítá.
+
+### Pokrok
+
+7. **Shrnutí roku** · M · `Návrh`
+   Jedna sdílitelná karta: tréninky, tuny, rekordy, nejlepší měsíc. Dobré na konec prosince.
+
+8. **Mapa těla** · M · `Návrh`
+   Postava, na které svítí unavené a odpočaté partie. Navazuje na regeneraci svalů.
+
+9. **Trend tělesné váhy** · S · `Návrh`
+   Vyhlazená křivka (průměr za 7 dní) místo skákajících bodů.
+
+10. **Porovnání dvou tréninků** · S · `Návrh`
+    Libovolné dva tréninky vedle sebe, série po sérii.
+
+### Motivace
+
+11. **Týdenní výzva** · S · `Návrh`
+    Malý cíl navíc, třeba „o 1 opakování víc u benche". Bez trestu, když se nesplní.
+
+12. **Plán na příští týden** · M · `Návrh`
+    Na konci týdne návrh, co přidat podle partií s malým objemem.
+
+13. **Sdílení odznaku** · S · `Návrh`
+    Odznak jako obrázek, stejně jako karta tréninku.
+
+### Strava
+
+14. **Nový vzhled Stravy** · M · `Návrh`
+    Stejně čistý jako Cvičení. Dnes je Strava vizuálně o krok pozadu.
+
+15. **Oblíbená jídla** · S · `Návrh`
+    Běžné jídlo zapsat jedním klepnutím.
+
+### Telefon a zařízení
+
+16. **Widget na plochu** · M · `Návrh`
+    Týdenní cíl a další trénink bez otevření aplikace. Android i iPhone zvlášť.
+
+17. **Záloha do cloudu** · L · `Návrh`
+    Data v bezpečí i při ztrátě telefonu. Potřebuje účet a server, zásadní hlavně pro iPhone.
+
+18. **Hodinky** · L · `Návrh`
+    Potvrzení série a pauza na zápěstí. Hodně práce na dvou platformách.
+
+### S ostatními
+
+19. **Přátelé a jejich tréninky** · L · `Návrh`
+    Potřebuje server, moderaci a ochranu nezletilých uživatelů. Doporučuju až po cloudové záloze.
+
+20. **Silové úrovně** · M · `Návrh`
+    Srovnání síly podle váhy a pohlaví. Potřebuje ověřené tabulky a nesmí tlačit mladší uživatele.
+
+## Schváleno
+
+Zatím nic.
+
+## Zamítnuto
+
+Zatím nic.
+
+## Hotovo
+
+Zatím nic.
