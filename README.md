@@ -63,8 +63,8 @@ Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc po
 
 V4 (větev `cviceni`, verze 1.0.0-beta.6+15, čeká na test od Tomáše před merge do main): pod další
 nepotvrzenou sérií jsou tlačítka −/+ pro váhu a opakování (krok 1 / 1,25 / 2,5 / 5 kg v Nastavení,
-`Profile.weightStep`, v záloze). Výchozí motiv je tmavý, když si uživatel nevybral. Stránka Nápady
-(`lib/ui/ideas/ideas_page.dart`, stejný seznam v [docs/napady](docs/napady/README.md)) bez hlasování a sítě.
+`Profile.weightStep`, v záloze). Výchozí motiv je tmavý, když si uživatel nevybral. Nápady na další
+funkce sbírá Claude v [docs/napady](docs/napady/README.md); do aplikace jdou jen ty, které Tomáš schválí.
 Kotouče na činku jen u cviků s osou (`barbellExercises` v `lib/coach/plates.dart`) a u vlastních cviků;
 trénink bez platného začátku se při načítání přeskočí.
 

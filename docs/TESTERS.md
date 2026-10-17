@@ -10,7 +10,6 @@ Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 **Tlačítka + a −** pod další sérií přidají nebo uberou váhu a opakování. Krok váhy
 (1 / 1,25 / 2,5 / 5 kg) nastavíš v Nastavení, řádek Krok tlačítek +/−.
 Aplikace je teď **tmavá**, pokud sis motiv nevybral; světlý zapneš v Nastavení → Vzhled.
-**Nápady** (Cvičení → Nápady) jsou seznam věcí, které by se daly přidat. Napiš, co z nich chceš nejvíc.
 Kotouče na činku se nabízí jen u cviků s osou.
 
 ## Co bylo nového v beta.5

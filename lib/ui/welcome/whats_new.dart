@@ -23,12 +23,6 @@ const whatsNewItems = <(IconData, String, String)>[
         'v Nastavení.',
   ),
   (
-    Icons.tips_and_updates_outlined,
-    'Nápady',
-    'Seznam věcí, které by se daly přidat. Najdeš ho na stránce Cvičení '
-        'a v Nastavení.',
-  ),
-  (
     Icons.fitness_center_rounded,
     'Kotouče jen u činky',
     'Výpočet kotoučů se nabízí jen u cviků s osou a u vlastních cviků.',
