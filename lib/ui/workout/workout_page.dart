@@ -943,13 +943,19 @@ class _SetRowState extends State<_SetRow> {
     final cur = weight.text.trim().isEmpty ? 0.0 : parseNum(weight.text);
     final curReps = reps.text.trim().isEmpty ? 0 : int.tryParse(reps.text);
     if (kg != 0) {
-      if (cur == null) return;
+      if (cur == null) {
+        widget.onError('Nejdřív oprav váhu, tlačítko jí nerozumí.');
+        return;
+      }
       // Ručně zadanou vyšší hodnotu + nesrazí dolů.
       final next = (cur + kg).clamp(0.0, math.max(cur, maxStepKg));
       weight.text = _kgText(double.parse(next.toStringAsFixed(2)));
     }
     if (count != 0) {
-      if (curReps == null) return;
+      if (curReps == null) {
+        widget.onError('Nejdřív oprav opakování, tlačítko jim nerozumí.');
+        return;
+      }
       reps.text = _repsText(
         (curReps + count).clamp(0, math.max(curReps, 999)).toInt(),
       );

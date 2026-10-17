@@ -188,10 +188,11 @@ class Workout {
   factory Workout.fromJson(Map<String, dynamic> json) => Workout(
     id: json['id'] as String,
     name: json['name'] as String? ?? 'Trénink',
-    // Bez platného začátku trénink nedává smysl (jinak by spadl do roku
-    // 1970); načítání takový záznam přeskočí.
+    // Bez začátku se vezme konec; bez obou trénink nedává smysl (jinak by
+    // spadl do roku 1970) a načítání záznam přeskočí.
     startedAt:
         _date(json['startedAt']) ??
+        _date(json['finishedAt']) ??
         (throw const FormatException('Trénink bez platného začátku.')),
     finishedAt: _date(json['finishedAt']),
     note: json['note'] as String? ?? '',

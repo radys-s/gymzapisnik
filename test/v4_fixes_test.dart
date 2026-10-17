@@ -19,5 +19,12 @@ void main() {
       () => Workout.fromJson({'id': 'x', 'name': 'x', 'startedAt': 'nope'}),
       throwsFormatException,
     );
+    final end = DateTime(2026, 10, 1, 18);
+    final w = Workout.fromJson({
+      'id': 'x',
+      'name': 'x',
+      'finishedAt': end.toIso8601String(),
+    });
+    expect(w.startedAt, end);
   });
 }
