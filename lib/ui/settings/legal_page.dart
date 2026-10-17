@@ -51,9 +51,9 @@ class LegalPage extends StatelessWidget {
     (
       'Záloha a smazání',
       'Protože data nejsou nikde jinde, ulož si zálohu do souboru '
-          '(Nastavení → Uložit zálohu). Smazáním dat prohlížeče, odinstalací '
+          '(Nastavení, řádek Uložit zálohu). Smazáním dat prohlížeče, odinstalací '
           'nebo vyčištěním úložiště data zmizí. Všechno v zařízení smažeš '
-          'v Nastavení → Smazat všechna data.',
+          'v Nastavení, řádek Smazat všechna data.',
     ),
     (
       'Zodpovědnost',
@@ -64,7 +64,7 @@ class LegalPage extends StatelessWidget {
     (
       'Změny a kontakt',
       'Podmínky se mohou změnit; o podstatné změně se dozvíš v aplikaci. '
-          'Dotazy a zpětnou vazbu pošli přes Nastavení → Napsat zpětnou vazbu.',
+          'Dotazy a zpětnou vazbu pošli v Nastavení, řádek Napsat zpětnou vazbu.',
     ),
   ];
 
