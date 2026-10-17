@@ -6,43 +6,32 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.3';
+const whatsNewRelease = '1.4';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
   (
-    Icons.emoji_events_outlined,
-    'Rekord hned v tréninku',
-    'Když série překoná tvůj rekord, uvidíš to po potvrzení hned u série.',
+    Icons.exposure_rounded,
+    'Tlačítka + a −',
+    'Pod další sérií přidáš nebo ubereš váhu a opakování jedním klepnutím. '
+        'Krok váhy nastavíš v Nastavení.',
+  ),
+  (
+    Icons.dark_mode_outlined,
+    'Tmavý režim jako výchozí',
+    'Kdo si motiv nevybral, má tmavý. Světlý nebo podle systému zapneš '
+        'v Nastavení.',
+  ),
+  (
+    Icons.tips_and_updates_outlined,
+    'Nápady',
+    'Seznam věcí, které by se daly přidat. Najdeš ho na stránce Cvičení '
+        'a v Nastavení.',
   ),
   (
     Icons.fitness_center_rounded,
-    'Kotouče a rozcvička',
-    'V nabídce cviku spočítáš kotouče na každou stranu a přidáš '
-        'rozcvičkové série.',
-  ),
-  (
-    Icons.military_tech_outlined,
-    'Odznaky',
-    '24 odznaků za tréninky, pravidelnost, rekordy a objem. Nové uvidíš '
-        'v souhrnu tréninku.',
-  ),
-  (
-    Icons.ios_share_rounded,
-    'Sdílej trénink',
-    'Souhrn ukáže, kolikátý trénink to byl a jak jsi na tom s týdnem. '
-        'Kartu tréninku pošleš jako obrázek.',
-  ),
-  (
-    Icons.battery_charging_full_rounded,
-    'Regenerace svalů',
-    'Cvičení ukáže, které partie jsou odpočaté, a sestaví z nich trénink.',
-  ),
-  (
-    Icons.insights_rounded,
-    'Statistiky',
-    'Kalendář tréninků, týdenní grafy, série na partii a tento měsíc '
-        'proti minulému.',
+    'Kotouče jen u činky',
+    'Výpočet kotoučů se nabízí jen u cviků s osou a u vlastních cviků.',
   ),
 ];
 

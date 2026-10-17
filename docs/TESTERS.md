@@ -5,7 +5,15 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.5
+## Co je nového v beta.6
+
+**Tlačítka + a −** pod další sérií přidají nebo uberou váhu a opakování. Krok váhy
+(1 / 1,25 / 2,5 / 5 kg) nastavíš v Nastavení, řádek Krok tlačítek +/−.
+Aplikace je teď **tmavá**, pokud sis motiv nevybral; světlý zapneš v Nastavení → Vzhled.
+**Nápady** (Cvičení → Nápady) jsou seznam věcí, které by se daly přidat. Napiš, co z nich chceš nejvíc.
+Kotouče na činku se nabízí jen u cviků s osou.
+
+## Co bylo nového v beta.5
 
 **Rekord hned v tréninku**: po potvrzení série, která překoná tvůj rekord, uvidíš pohár u série.
 V nabídce cviku (⋯) najdeš **Kotouče na činku** a **Přidat rozcvičku**. **Odznaky** (Cvičení → Odznaky)
