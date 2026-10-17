@@ -1181,84 +1181,85 @@ class _Steppers extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(Space.xs, 2, 0, Space.xs),
-    child: Row(
-      children: [
-        Expanded(
-          child: _StepGroup(
-            label: '${formatKg(step)} kg',
-            minus: 'Ubrat ${formatKg(step)} kg, $name',
-            plus: 'Přidat ${formatKg(step)} kg, $name',
-            onMinus: () => onStep(kg: -step),
-            onPlus: () => onStep(kg: step),
-          ),
-        ),
-        const SizedBox(width: Space.s),
-        Expanded(
-          child: _StepGroup(
-            label: '1 opak.',
-            minus: 'Ubrat opakování, $name',
-            plus: 'Přidat opakování, $name',
-            onMinus: () => onStep(count: -1),
-            onPlus: () => onStep(count: 1),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _StepGroup extends StatelessWidget {
-  final String label;
-  final String minus;
-  final String plus;
-  final VoidCallback onMinus;
-  final VoidCallback onPlus;
-  const _StepGroup({
-    required this.label,
-    required this.minus,
-    required this.plus,
-    required this.onMinus,
-    required this.onPlus,
-  });
-
-  @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    Widget button(IconData icon, String tooltip, VoidCallback onTap) =>
-        SizedBox.square(
-          dimension: minTap,
-          child: IconButton(
-            tooltip: tooltip,
-            onPressed: onTap,
-            padding: EdgeInsets.zero,
-            style: IconButton.styleFrom(
-              backgroundColor: p.fill,
-              foregroundColor: p.label,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(Radii.control),
-              ),
-            ),
-            icon: Icon(icon, size: 20),
-          ),
-        );
-    return Row(
-      children: [
-        button(Icons.remove_rounded, minus, onMinus),
-        Expanded(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              maxLines: 1,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: p.secondaryLabel, fontFeatures: tabular),
-            ),
-          ),
-        ),
-        button(Icons.add_rounded, plus, onPlus),
-      ],
+    final kg = formatKg(step);
+    final minusKg = _stepButton(
+      context,
+      Icons.remove_rounded,
+      'Ubrat $kg kg, $name',
+      () => onStep(kg: -step),
+    );
+    final plusKg = _stepButton(
+      context,
+      Icons.add_rounded,
+      'Přidat $kg kg, $name',
+      () => onStep(kg: step),
+    );
+    final minusReps = _stepButton(
+      context,
+      Icons.remove_rounded,
+      'Ubrat opakování, $name',
+      () => onStep(count: -1),
+    );
+    final plusReps = _stepButton(
+      context,
+      Icons.add_rounded,
+      'Přidat opakování, $name',
+      () => onStep(count: 1),
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 2, Space.s, Space.xs),
+      child: Row(
+        children: [
+          minusKg,
+          Expanded(child: _stepLabel(context, '$kg kg', center: true)),
+          plusKg,
+          const SizedBox(width: Space.s),
+          minusReps,
+          Expanded(child: _stepLabel(context, '1 opak.', center: true)),
+          plusReps,
+        ],
+      ),
     );
   }
+}
+
+Widget _stepLabel(BuildContext context, String text, {bool center = false}) =>
+    FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: center ? Alignment.center : Alignment.centerLeft,
+      child: Text(
+        text,
+        maxLines: 1,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: context.palette.secondaryLabel,
+          fontFeatures: tabular,
+        ),
+      ),
+    );
+
+/// Lehčí než pole pro zápis, aby se nepletlo s hodnotami série.
+Widget _stepButton(
+  BuildContext context,
+  IconData icon,
+  String tooltip,
+  VoidCallback onTap,
+) {
+  final p = context.palette;
+  return SizedBox.square(
+    dimension: minTap,
+    child: IconButton(
+      tooltip: tooltip,
+      onPressed: onTap,
+      padding: EdgeInsets.zero,
+      style: IconButton.styleFrom(
+        foregroundColor: p.label,
+        side: BorderSide(color: p.fill, width: 1.5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.control),
+        ),
+      ),
+      icon: Icon(icon, size: 20),
+    ),
+  );
 }

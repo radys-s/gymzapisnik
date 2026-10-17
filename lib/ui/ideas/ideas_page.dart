@@ -89,24 +89,17 @@ class IdeasPage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.m),
           child: Text(
             'Co by se do aplikace dalo přidat. Nic z toho zatím není slib. '
-            'Chybí ti něco? Napiš v Nastavení → Napsat zpětnou vazbu.',
+            'Chybí ti něco? Napiš v Nastavení, řádek Napsat zpětnou vazbu.',
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: p.secondaryLabel),
           ),
         ),
-        for (final (name, icon, ideas) in ideaGroups)
+        for (final (name, _, ideas) in ideaGroups)
           GroupedSection(
             header: name,
-            dividerIndent: 58,
             children: [
               for (final (title, detail) in ideas)
-                GroupedRow(
-                  icon: icon,
-                  iconColor: p.accent,
-                  title: title,
-                  subtitle: detail,
-                  chevron: false,
-                ),
+                GroupedRow(title: title, subtitle: detail, chevron: false),
             ],
           ),
       ],

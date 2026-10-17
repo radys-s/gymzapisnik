@@ -216,7 +216,7 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.exposure_rounded,
-                iconColor: p.accent,
+                iconColor: _indigo,
                 title: 'Krok tlačítek +/−',
                 trailing: DropdownButton<double>(
                   value: profile.weightStep,
