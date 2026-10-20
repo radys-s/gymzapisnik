@@ -8,6 +8,7 @@ import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../widgets/chart_axis.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 
@@ -182,16 +183,11 @@ class _ProgressChart extends StatelessWidget {
                 reservedSize: 24,
                 getTitlesWidget: (value, meta) {
                   final i = value.round();
-                  if (i != value || i < 0 || i >= points.length) {
-                    return const SizedBox.shrink();
-                  }
-                  // Jen první, poslední a pár mezi, ať se popisky nepřekrývají.
-                  final step = (points.length / 4).ceil();
-                  if (i != points.length - 1 && i % step != 0) {
+                  if (i != value || !showDateLabel(i, points.length)) {
                     return const SizedBox.shrink();
                   }
                   final d = points[i].date.toLocal();
-                  return Text('${d.day}. ${d.month}.', style: label);
+                  return axisLabel(meta, '${d.day}. ${d.month}.', label);
                 },
               ),
             ),
@@ -199,8 +195,12 @@ class _ProgressChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (value, meta) =>
-                    Text(formatKg(value.roundToDouble()), style: label),
+                getTitlesWidget: (value, meta) => valueAxisLabel(
+                  value,
+                  meta,
+                  formatKg(value.roundToDouble()),
+                  label,
+                ),
               ),
             ),
           ),

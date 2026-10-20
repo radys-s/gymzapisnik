@@ -197,6 +197,7 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.timer_outlined,
                 iconColor: _orange,
                 title: 'Pauza mezi sériemi',
+                verticalPadding: 0,
                 trailing: DropdownButton<int>(
                   value: restOptions.contains(rest) ? rest : null,
                   hint: Text(restLabel(rest)),
@@ -217,6 +218,7 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.exposure_rounded,
                 iconColor: _indigo,
                 title: 'Krok tlačítek +/−',
+                verticalPadding: 0,
                 trailing: DropdownButton<double>(
                   value: profile.weightStep,
                   underline: const SizedBox.shrink(),

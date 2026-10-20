@@ -28,8 +28,8 @@ String durationLabel(Duration d) {
 /// Objem s jednotkou podle typu cviku.
 String volumeLabel(ExerciseType type, double value) =>
     type == ExerciseType.weighted
-    ? '${formatKg(value.roundToDouble())} kg'
-    : '${value.round()} opak.';
+    ? '${formatVolume(value)} kg'
+    : '${formatVolume(value)} opak.';
 
 /// „1 série", „3 série", „5 sérií".
 String setsLabel(int n) => '$n ${setsNoun(n)}';

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../design/components.dart';
+import '../design/tokens.dart';
+
 /// Podmínky používání a zásady soukromí (beta verze).
 class LegalPage extends StatelessWidget {
   const LegalPage({super.key});
@@ -71,19 +74,22 @@ class LegalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Podmínky a soukromí')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-        children: [
-          for (final (title, body) in sections) ...[
-            const SizedBox(height: 12),
-            Text(title, style: text.titleMedium),
-            const SizedBox(height: 4),
-            Text(body),
-          ],
-        ],
+    return LargeTitlePage(
+      title: 'Podmínky a soukromí',
+      padding: const EdgeInsets.fromLTRB(
+        Space.page + Space.xs,
+        Space.s,
+        Space.page,
+        Space.xxxl,
       ),
+      children: [
+        for (final (title, body) in sections) ...[
+          const SizedBox(height: Space.m),
+          Text(title, style: text.titleMedium),
+          const SizedBox(height: Space.xs),
+          Text(body),
+        ],
+      ],
     );
   }
 }
