@@ -125,6 +125,8 @@ class _StepFooter extends StatelessWidget {
     final p = context.palette;
     return Column(
       children: [
+        // Odstup od posouvaného obsahu, ať tečky nesedí na seznamu.
+        const SizedBox(height: Space.l),
         Semantics(
           container: true,
           label: 'Krok ${index + 1} z $count',

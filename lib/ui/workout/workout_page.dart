@@ -305,6 +305,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
           absorbing: _busy,
           child: Scaffold(
             appBar: AppBar(
+              // Název vlevo vedle křížku: na úzkém displeji se vejde víc.
+              centerTitle: false,
+              titleSpacing: 0,
               title: Semantics(
                 container: true,
                 button: true,
@@ -315,7 +318,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(workout.name, overflow: TextOverflow.ellipsis),
+                      Text(
+                        workout.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.titleMedium,
+                      ),
                       _Elapsed(workout.startedAt),
                     ],
                   ),
@@ -623,6 +631,11 @@ String? _coachReason(WorkoutExercise entry) {
 /// Šířky sloupců řádku série (záhlaví a řádky musí sedět).
 const _typeWidth = minTap;
 const _doneWidth = 52.0;
+const _badgeWidth = 30.0;
+
+/// Odsazení od okraje zvýraznění série: odznak vlevo, ✓ vpravo i řádek
+/// +/− pod sérií mají od kraje stejnou mezeru.
+const _edgeInset = (_typeWidth - _badgeWidth) / 2;
 
 class _ExerciseCard extends StatelessWidget {
   final AppState state;
@@ -751,7 +764,7 @@ class _ExerciseCard extends StatelessWidget {
               ),
             ExcludeSemantics(
               child: Padding(
-                padding: const EdgeInsets.only(right: Space.s),
+                padding: const EdgeInsets.only(right: _edgeInset),
                 child: DefaultTextStyle.merge(
                   style: text.labelMedium,
                   child: Row(
@@ -1029,7 +1042,7 @@ class _SetRowState extends State<_SetRow> {
       onDismissed: (_) => widget.onRemove(),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.only(right: Space.s),
+        padding: const EdgeInsets.only(right: _edgeInset),
         decoration: BoxDecoration(
           color: set.done ? p.accent.withValues(alpha: 0.12) : null,
           borderRadius: BorderRadius.circular(Radii.control),
@@ -1069,7 +1082,7 @@ class _SetRowState extends State<_SetRow> {
                   ],
                   child: Center(
                     child: Container(
-                      constraints: const BoxConstraints(minWidth: 30),
+                      constraints: const BoxConstraints(minWidth: _badgeWidth),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
                         vertical: 4,
@@ -1214,7 +1227,7 @@ class _Steppers extends StatelessWidget {
       () => onStep(count: 1),
     );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 2, Space.s, Space.xs),
+      padding: const EdgeInsets.fromLTRB(_edgeInset, 2, _edgeInset, Space.xs),
       child: Row(
         children: [
           minusKg,

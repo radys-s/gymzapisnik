@@ -6,6 +6,8 @@ import '../../core/parse.dart';
 import '../../domain/bodyweight.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
+import '../design/tokens.dart';
+import '../widgets/chart_axis.dart';
 
 /// Dialog „Zapsat váhu". Vrací `true`, když se váha uložila.
 Future<bool> addBodyweightDialog(BuildContext context, AppState state) async {
@@ -130,37 +132,48 @@ class BodyweightPage extends StatelessWidget {
     listenable: state,
     builder: (context, _) {
       final list = state.bodyweights;
-      return Scaffold(
-        appBar: AppBar(title: const Text('Tělesná váha')),
+      return LargeTitlePage(
+        title: 'Tělesná váha',
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => addBodyweightDialog(context, state),
           icon: const Icon(Icons.add),
           label: const Text('Zapsat váhu'),
         ),
-        body: list.isEmpty
-            ? const Center(child: Text('Zatím žádná váha.'))
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                children: [
-                  if (list.length >= 2) ...[
-                    SizedBox(
-                      height: 200,
-                      child: _Chart(list.reversed.toList()),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  for (final b in list)
-                    ListTile(
-                      title: Text('${formatKg(b.kg)} kg'),
-                      subtitle: Text(formatDate(b.date)),
-                      trailing: IconButton(
-                        tooltip: 'Smazat záznam',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => state.removeBodyweight(b.id),
-                      ),
-                    ),
-                ],
+        padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
+        children: [
+          if (list.isEmpty)
+            const EmptyState(
+              icon: Icons.monitor_weight_outlined,
+              title: 'Zatím žádná váha',
+              message: 'Zapiš si váhu a uvidíš, jak se mění.',
+            )
+          else ...[
+            if (list.length >= 2)
+              Panel(
+                child: SizedBox(
+                  height: 200,
+                  child: _Chart(list.reversed.toList()),
+                ),
               ),
+            if (list.length >= 2) const SizedBox(height: Space.xxl),
+            GroupedSection(
+              header: 'Záznamy',
+              children: [
+                for (final b in list)
+                  GroupedRow(
+                    title: '${formatKg(b.kg)} kg',
+                    subtitle: formatDate(b.date),
+                    chevron: false,
+                    trailing: IconButton(
+                      tooltip: 'Smazat záznam',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => state.removeBodyweight(b.id),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
       );
     },
   );
@@ -198,17 +211,14 @@ class _Chart extends StatelessWidget {
                 reservedSize: 24,
                 getTitlesWidget: (value, meta) {
                   final i = value.round();
-                  if (i != value || i < 0 || i >= points.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final step = (points.length / 4).ceil();
-                  if (i != points.length - 1 && i % step != 0) {
+                  if (i != value || !showDateLabel(i, points.length)) {
                     return const SizedBox.shrink();
                   }
                   final d = points[i].date.toLocal();
-                  return Text(
+                  return axisLabel(
+                    meta,
                     '${d.day}. ${d.month}.',
-                    style: const TextStyle(fontSize: 11),
+                    const TextStyle(fontSize: 11),
                   );
                 },
               ),
@@ -217,9 +227,11 @@ class _Chart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (value, meta) => Text(
+                getTitlesWidget: (value, meta) => valueAxisLabel(
+                  value,
+                  meta,
                   formatKg(value.roundToDouble()),
-                  style: const TextStyle(fontSize: 11),
+                  const TextStyle(fontSize: 11),
                 ),
               ),
             ),

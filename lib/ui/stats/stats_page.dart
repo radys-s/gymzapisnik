@@ -417,15 +417,7 @@ class _WeekBars extends StatelessWidget {
                     style: text.labelSmall,
                   ),
                 ),
-                Flexible(
-                  child: Text(
-                    'tento týden',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: text.labelSmall,
-                  ),
-                ),
+                Text('tento týden', maxLines: 1, style: text.labelSmall),
               ],
             ),
           ],

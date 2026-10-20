@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
 import '../settings/settings_button.dart';
 import 'barcode_dialog.dart';
 import 'food_form.dart';
@@ -213,20 +215,19 @@ class _NutritionPageState extends State<NutritionPage> {
               totals.carbsMissing ||
               totals.fatMissing);
       String lower(bool missing) => missing && entries.isNotEmpty ? '≥ ' : '';
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.root ? 'Strava' : 'Výživa'),
-          actions: [if (widget.root) SettingsButton(state)],
-        ),
+      return LargeTitlePage(
+        title: widget.root ? 'Strava' : 'Výživa',
+        actions: [if (widget.root) SettingsButton(state)],
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => addFoodFlow(context, state, key),
           icon: const Icon(Icons.add),
           label: const Text('Přidat jídlo'),
         ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-          children: [
-            Row(
+        padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
+        children: [
+          Panel(
+            padding: const EdgeInsets.all(Space.xs),
+            child: Row(
               children: [
                 IconButton(
                   tooltip: 'Předchozí den',
@@ -249,92 +250,101 @@ class _NutritionPageState extends State<NutritionPage> {
                 ),
               ],
             ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${lower(totals.kcalMissing)}${_n(totals.kcal)} kcal',
-                      style: text.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Bílkoviny ${lower(totals.proteinMissing)}'
-                      '${_g(totals.protein)} · '
-                      'Sacharidy ${lower(totals.carbsMissing)}'
-                      '${_g(totals.carbs)} · '
-                      'Tuky ${lower(totals.fatMissing)}${_g(totals.fat)}',
-                    ),
-                    if (state.profile.proteinTarget != null)
-                      _Progress(
-                        label: 'Bílkoviny',
-                        value: totals.protein,
-                        target: state.profile.proteinTarget!,
-                        unit: 'g',
-                      ),
-                    if (state.profile.kcalTarget != null)
-                      _Progress(
-                        label: 'Energie',
-                        value: totals.kcal,
-                        target: state.profile.kcalTarget!,
-                        unit: 'kcal',
-                      ),
-                    if (anyMissing)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '≥ = u některého jídla hodnota chybí, skutečný '
-                          'součet může být vyšší.',
-                          style: text.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                  ],
+          ),
+          const SizedBox(height: Space.m),
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${lower(totals.kcalMissing)}${_n(totals.kcal)} kcal',
+                  style: text.headlineMedium,
                 ),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  'Bílkoviny ${lower(totals.proteinMissing)}'
+                  '${_g(totals.protein)} · '
+                  'Sacharidy ${lower(totals.carbsMissing)}'
+                  '${_g(totals.carbs)} · '
+                  'Tuky ${lower(totals.fatMissing)}${_g(totals.fat)}',
+                ),
+                if (state.profile.proteinTarget != null)
+                  _Progress(
+                    label: 'Bílkoviny',
+                    value: totals.protein,
+                    target: state.profile.proteinTarget!,
+                    unit: 'g',
+                  ),
+                if (state.profile.kcalTarget != null)
+                  _Progress(
+                    label: 'Energie',
+                    value: totals.kcal,
+                    target: state.profile.kcalTarget!,
+                    unit: 'kcal',
+                  ),
+                if (anyMissing)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      '≥ = u některého jídla hodnota chybí, skutečný '
+                      'součet může být vyšší.',
+                      style: text.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.kitchen_outlined),
-                title: const Text('Co mám v ledničce'),
-                subtitle: const Text(
-                  'Vyfoť ledničku a nech si navrhnout jídlo',
-                ),
-                trailing: const Icon(Icons.chevron_right),
+          ),
+          const SizedBox(height: Space.xxl),
+          GroupedSection(
+            children: [
+              GroupedRow(
+                icon: Icons.kitchen_outlined,
+                title: 'Co mám v ledničce',
+                subtitle: 'Vyfoť ledničku a nech si navrhnout jídlo',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => FridgePage(state)),
                 ),
               ),
+            ],
+          ),
+          if (entries.isEmpty)
+            const EmptyState(
+              icon: Icons.restaurant_outlined,
+              title: 'Tento den nic nezapsáno.',
+              message: 'Jídlo přidáš tlačítkem dole nebo čárovým kódem.',
+            )
+          else
+            GroupedSection(
+              header: 'Snědeno',
+              children: [
+                for (final e in entries)
+                  GroupedRow(
+                    title: e.name,
+                    subtitle: _subtitle(e),
+                    onTap: () =>
+                        openFoodForm(context, state, day: key, entry: e),
+                    chevron: false,
+                    trailing: IconButton(
+                      tooltip: 'Smazat záznam',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => _delete(e),
+                    ),
+                  ),
+              ],
             ),
-            if (entries.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: Text('Tento den nic nezapsáno.')),
-              ),
-            for (final e in entries)
-              ListTile(
-                title: Text(e.name),
-                subtitle: Text(_subtitle(e)),
-                onTap: () => openFoodForm(context, state, day: key, entry: e),
-                trailing: IconButton(
-                  tooltip: 'Smazat záznam',
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _delete(e),
-                ),
-              ),
-            const SizedBox(height: 16),
-            Text(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Space.l),
+            child: Text(
               'Orientační hodnoty, žádné zdravotní doporučení. Údaje z '
               'čárových kódů pocházejí z databáze Open Food Facts (ODbL) '
               'a mohou být nepřesné.',
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     },
   );

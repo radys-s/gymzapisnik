@@ -13,6 +13,7 @@ class LargeTitlePage extends StatefulWidget {
   final List<Widget> actions;
   final List<Widget> children;
   final Widget? bottom;
+  final Widget? floatingActionButton;
   final EdgeInsets padding;
   final ScrollController? controller;
 
@@ -25,6 +26,7 @@ class LargeTitlePage extends StatefulWidget {
     required this.children,
     this.actions = const [],
     this.bottom,
+    this.floatingActionButton,
     this.padding = const EdgeInsets.fromLTRB(
       Space.page,
       Space.s,
@@ -57,6 +59,7 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
     final text = Theme.of(context).textTheme;
     return Scaffold(
       bottomNavigationBar: widget.bottom,
+      floatingActionButton: widget.floatingActionButton,
       body: NotificationListener<ScrollNotification>(
         onNotification: _onScroll,
         child: CustomScrollView(
@@ -224,6 +227,10 @@ class GroupedRow extends StatelessWidget {
   final bool destructive;
   final bool? chevron;
 
+  /// Svislé odsazení; řádek s vysokým prvkem vpravo (rozbalovací menu
+  /// 48 dp) dá 0, ať je stejně vysoký jako ostatní.
+  final double verticalPadding;
+
   const GroupedRow({
     super.key,
     this.icon,
@@ -236,6 +243,7 @@ class GroupedRow extends StatelessWidget {
     this.onTap,
     this.destructive = false,
     this.chevron,
+    this.verticalPadding = 10,
   });
 
   @override
@@ -248,9 +256,9 @@ class GroupedRow extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: minTap + 4),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
             horizontal: Space.l,
-            vertical: 10,
+            vertical: verticalPadding,
           ),
           child: Row(
             children: [

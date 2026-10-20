@@ -125,7 +125,9 @@ void main() {
     await tester.pumpWidget(GymApp(state));
     await tester.tap(find.text('Přečíst podmínky a soukromí'));
     await tester.pumpAndSettle();
-    expect(find.text('Podmínky a soukromí'), findsOneWidget);
+    // Velký nadpis + skrytý malý v liště.
+    expect(find.text('Podmínky a soukromí'), findsNWidgets(2));
+    expect(find.text('Co aplikace je'), findsOneWidget);
   });
 
   testWidgets('what is new shows once per release after an update', (
