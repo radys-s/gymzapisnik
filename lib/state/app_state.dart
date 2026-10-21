@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../ai/ai_config.dart';
 import '../ai/fridge_coach.dart';
 import '../coach/missions.dart';
+import '../coach/plan_quiz.dart';
 import '../coach/plates.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
@@ -622,7 +623,51 @@ class AppState extends ChangeNotifier {
   // Split a progrese
   // ---------------------------------------------------------------------
 
-  SplitTemplate? get split => findSplit(profile.splitId, customPrograms);
+  /// Zvolený program. Hotová šablona se přizpůsobí doporučenému počtu
+  /// cviků z dotazníku „Tvůj plán“; vlastní program zůstává, jak je.
+  SplitTemplate? get split {
+    if (!identical(_splitOf, profile)) {
+      final base = findSplit(profile.splitId, customPrograms);
+      _split = base == null ? null : fitted(base);
+      _splitOf = profile;
+    }
+    return _split;
+  }
+
+  /// Hotový program s dny upravenými na doporučený počet cviků
+  /// z dotazníku. Vlastní programy zůstávají, jak si je uživatel složil.
+  SplitTemplate fitted(SplitTemplate base) {
+    final answers = planAnswers;
+    if (base.custom || answers == null) return base;
+    final count = recommendPlan(answers).exercises;
+    return base.copyWith(days: [for (final d in base.days) fitDay(d, count)]);
+  }
+
+  Profile? _splitOf;
+  SplitTemplate? _split;
+
+  /// Odpovědi z dotazníku „Tvůj plán“; `null` = ještě nevyplněný.
+  PlanAnswers? get planAnswers => PlanAnswers.tryParse(profile.extra['plan']);
+
+  /// Uloží odpovědi a zapne doporučený program, počet tréninků týdně
+  /// a pauzu podle cíle. Bez [answers] (doporučení bez dotazníku) zapne
+  /// jen výchozí doporučený program a odpovědi neuloží.
+  Future<PlanRecommendation> applyPlan(PlanAnswers? answers) async {
+    final r = recommendPlan(answers ?? const PlanAnswers());
+    await _updateProfile((p) {
+      // Vybrané dny zůstanou, když jich je tolik, kolik plán chce.
+      final days = p.trainingDays;
+      return p.withExtra({
+        'plan': ?answers?.toJson(),
+        'split': r.splitId,
+        'weekGoal': r.perWeek,
+        if (days != null && days.length != r.perWeek) 'trainingDays': null,
+        'restSeconds': r.restSeconds,
+      });
+    });
+    unawaited(syncReminders());
+    return r;
+  }
 
   Profile? _programsOf;
   List<SplitTemplate> _programs = const [];

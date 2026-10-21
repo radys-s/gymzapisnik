@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../coach/plan_quiz.dart';
 import '../coach/splits.dart';
 import '../domain/bodyweight.dart';
 import '../domain/models.dart';
@@ -27,6 +28,7 @@ const backupSettingsKeys = {
   'pantry',
   'programs',
   'trainingDays',
+  'plan',
 };
 
 class Backup {
@@ -150,6 +152,10 @@ Backup decodeBackup(String source) {
         if (value != null && (value is! num || !value.isFinite)) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
+      }
+      final plan = rawSettings['plan'];
+      if (plan != null && PlanAnswers.tryParse(plan) == null) {
+        throw const FormatException('Záloha obsahuje neplatný plán.');
       }
       final step = rawSettings['weightStep'];
       if (step != null && !weightSteps.contains(step)) {

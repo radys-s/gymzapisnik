@@ -51,7 +51,7 @@ void main() {
     expect(find.text('Rekord'), findsNWidgets(2)); // první trénink není rekord
   });
 
-  testWidgets('empty home: one start action, no history section', (
+  testWidgets('empty home: recommends a program first, no history section', (
     tester,
   ) async {
     tester.view
@@ -63,11 +63,25 @@ void main() {
     final state = AppState(LocalStore(db));
     await tester.runAsync(state.load);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: HomePage(state))));
-    expect(find.text('Začít trénink'), findsOneWidget);
-    expect(find.text('Sestavit trénink z partií'), findsOneWidget);
+    expect(find.text('Vyber si plán'), findsOneWidget);
+    expect(find.text('Použít Full body 3×'), findsOneWidget);
+    expect(find.text('Vybrat podle sebe'), findsOneWidget);
+    expect(find.text('Volný trénink'), findsOneWidget);
     expect(find.text('Rady pro růst svalů'), findsOneWidget);
     expect(find.text('Program'), findsOneWidget);
     expect(find.text('Historie'), findsNothing);
     expect(find.text('0/3'), findsOneWidget);
+
+    // Jedno klepnutí nastaví doporučený program.
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Použít Full body 3×'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(state.split?.id, 'full_body_3');
+    // Bez dotazníku se výchozí odpovědi neuloží jako by je vyplnil.
+    expect(state.planAnswers, isNull);
+    expect(find.text('Vybrat podle sebe'), findsNothing);
+    expect(find.textContaining('Začít '), findsOneWidget);
   });
 }

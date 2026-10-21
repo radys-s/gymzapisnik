@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../coach/plan_quiz.dart';
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import 'program_detail_page.dart';
+import 'plan_quiz.dart';
 import 'program_editor_page.dart';
 import 'program_widgets.dart';
 
@@ -45,6 +47,9 @@ class ProgramPage extends StatelessWidget {
       final p = context.palette;
       final current = state.split;
       final mine = state.customPrograms;
+      final answers = state.planAnswers;
+      final rec = recommendPlan(answers ?? const PlanAnswers());
+      final recSplit = findSplit(rec.splitId);
       Widget check(SplitTemplate t) => t.id == current?.id
           ? Icon(Icons.check_rounded, color: p.accent)
           : const SizedBox.shrink();
@@ -56,6 +61,33 @@ class ProgramPage extends StatelessWidget {
             program: current,
             onOpen: current == null ? null : () => _open(context, current),
             onCreate: () => _create(context),
+          ),
+          const SectionHeader('Doporučeno pro tebe'),
+          GroupedSection(
+            footer: answers == null
+                ? 'Odpověz na čtyři otázky a doporučení sedne přesně tobě.'
+                : rec.why,
+            children: [
+              if (recSplit != null)
+                GroupedRow(
+                  icon: Icons.auto_awesome_rounded,
+                  iconColor: p.accent,
+                  title: recSplit.name,
+                  subtitle: planFacts(rec),
+                  trailing: check(recSplit),
+                  chevron: true,
+                  onTap: () => _open(context, recSplit),
+                ),
+              GroupedRow(
+                leading: Icon(Icons.tune_rounded, color: p.accent),
+                title: answers == null ? 'Vyplnit dotazník' : 'Změnit plán',
+                chevron: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => PlanQuizPage(state)),
+                ),
+              ),
+            ],
           ),
           const SectionHeader('Frekvence'),
           FrequencyPanel(state),

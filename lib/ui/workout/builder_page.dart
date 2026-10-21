@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../coach/plan_quiz.dart';
 import '../../coach/splits.dart';
 import '../../domain/anatomy.dart';
 import '../../state/app_state.dart';
@@ -32,7 +33,12 @@ class WorkoutBuilderPage extends StatefulWidget {
 
 class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
   late final focuses = <String>{...widget.initialFocuses};
-  int count = 5;
+  late final PlanAnswers answers =
+      widget.state.planAnswers ?? const PlanAnswers();
+
+  /// Doporučený počet cviků podle času a zkušenosti z dotazníku.
+  late final int recommended = recommendedCount(answers.minutes, answers.level);
+  late int count = recommended;
 
   /// Ruční výměny cviků (index v náhledu → ID cviku). Po změně partií
   /// nebo počtu se zahodí, protože se náhled sestaví znovu.
@@ -110,13 +116,37 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
           ),
           const SizedBox(height: Space.l),
           Panel(
-            child: StepperControl(
-              label: 'Počet cviků',
-              value: count,
-              min: 1,
-              max: maxBuiltExercises,
-              onChanged: (n) => _change(() => count = n),
-              spoken: (n) => '$n cviků',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StepperControl(
+                  label: 'Počet cviků',
+                  value: count,
+                  min: 1,
+                  max: maxBuiltExercises,
+                  onChanged: (n) => _change(() => count = n),
+                  spoken: (n) => '$n cviků',
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Doporučeno: $recommended '
+                        '(na ${answers.minutes} min, '
+                        '${answers.level.label.toLowerCase()})',
+                        style: text.bodySmall?.copyWith(
+                          color: p.secondaryLabel,
+                        ),
+                      ),
+                    ),
+                    if (count != recommended)
+                      TextButton(
+                        onPressed: () => _change(() => count = recommended),
+                        child: const Text('Vrátit'),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
           if (current.exercises.isNotEmpty) ...[
