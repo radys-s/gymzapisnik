@@ -37,7 +37,7 @@ void main() {
     expect(find.text('Rekord'), findsNWidgets(2));
 
     tester.view
-      ..physicalSize = const Size(390, 1600)
+      ..physicalSize = const Size(390, 3600)
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(app(ExerciseDetailPage(state, 'bench_press')));
