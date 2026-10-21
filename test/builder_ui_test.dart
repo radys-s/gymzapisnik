@@ -58,10 +58,13 @@ void main() {
 
     await tester.tap(find.widgetWithText(FilterChip, 'Ramena'));
     await tester.pumpAndSettle();
+    expect(find.text('Doporučeno: 5 (na 60 min, začínám)'), findsOneWidget);
+    expect(find.text('Vrátit'), findsNothing);
     await tester.tap(find.byTooltip('Méně: Počet cviků'));
     await tester.pump();
     await tester.tap(find.byTooltip('Méně: Počet cviků'));
     await tester.pumpAndSettle();
+    expect(find.text('Vrátit'), findsOneWidget);
     expect(find.text('Lateral raise'), findsOneWidget);
 
     // Výměna bočního deltu za alternativu na stejnou hlavu.

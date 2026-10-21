@@ -86,8 +86,10 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
     builder: (context, _) {
-      final program = findSplit(widget.programId, state.customPrograms);
-      if (program == null) return const Scaffold();
+      final raw = findSplit(widget.programId, state.customPrograms);
+      if (raw == null) return const Scaffold();
+      // Stejné dny a cviky, jaké se pak opravdu cvičí.
+      final program = state.fitted(raw);
       final p = context.palette;
       final text = Theme.of(context).textTheme;
       final active = state.split?.id == program.id;

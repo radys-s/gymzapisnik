@@ -54,6 +54,26 @@ void main() {
 
     await tester.tap(find.text('Pokračovat'));
     await tester.pumpAndSettle();
+    // Dotazník doporučí program podle počtu dnů a zkušenosti.
+    expect(find.text('Tvůj plán'), findsOneWidget);
+    await tester.tap(find.text('4×'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Upper / Lower'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('Upper / Lower'), findsOneWidget);
+    await _tapAndSave(tester, find.text('Použít plán'));
+    // Přechod na souhlas začne až po uložení plánu.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
+    await tester.pumpAndSettle();
+    expect(state.profile.splitId, 'upper_lower');
+    expect(state.profile.weekGoal, 4);
+    expect(state.planAnswers?.days, 4);
+
     expect(find.text('Než začneš'), findsOneWidget);
     await tester.tap(find.text('Souhlasím s podmínkami používání'));
     await tester.tap(find.text('Je mi 18 let nebo víc'));

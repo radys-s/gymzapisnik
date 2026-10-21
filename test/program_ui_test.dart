@@ -134,7 +134,9 @@ void main() {
     await _pump(tester, state);
     final other = splitTemplates.firstWhere((t) => t.id != 'ppl');
 
-    await tester.tap(find.text(other.name));
+    // Poslední výskyt je řádek v Hotových programech (první je doporučení).
+    await tester.ensureVisible(find.text(other.name).last);
+    await tester.tap(find.text(other.name).last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Upravit jako vlastní'));
     await tester.pumpAndSettle();

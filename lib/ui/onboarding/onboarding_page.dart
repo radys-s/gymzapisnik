@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../coach/plan_quiz.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../program/plan_quiz.dart';
 import '../welcome/whats_new.dart';
 import 'accent_picker.dart';
 import 'consent_page.dart';
@@ -35,7 +37,7 @@ const _intro = <_Intro>[
   ),
 ];
 
-/// První spuštění: uvítání (jednou), výběr barvy, souhlas.
+/// První spuštění: uvítání (jednou), výběr barvy, plán, souhlas.
 /// Když uvítání už proběhlo (např. nové podmínky), ukáže jen souhlas.
 class OnboardingPage extends StatefulWidget {
   final AppState state;
@@ -53,10 +55,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
       widget.state.profile.consentAt == null;
   final _pages = PageController();
   int page = 0;
+  PlanAnswers plan = const PlanAnswers();
+  bool savingPlan = false;
 
-  /// Tečky postupu patří uvítání a výběru barvy (souhlas je samostatný).
-  int get _dots => _intro.length + 1;
+  /// Tečky postupu patří uvítání, vzhledu a plánu (souhlas je samostatný).
+  int get _dots => _intro.length + 2;
   int get _accentStep => _intro.length;
+  int get _planStep => _intro.length + 1;
+
+  Future<void> _applyPlan() async {
+    setState(() => savingPlan = true);
+    try {
+      await widget.state.applyPlan(plan);
+      if (mounted) _go(_planStep + 1);
+    } catch (_) {
+      if (mounted) {
+        showToast(context, 'Plán se nepodařilo uložit. Zkus to znovu.');
+      }
+    } finally {
+      if (mounted) setState(() => savingPlan = false);
+    }
+  }
 
   void _go(int to) => _pages.animateToPage(
     to,
@@ -100,7 +119,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
             state: widget.state,
             index: _accentStep,
             count: _dots,
-            onNext: () => _go(_accentStep + 1),
+            onNext: () => _go(_planStep),
+          ),
+          _PlanStep(
+            answers: plan,
+            onChanged: (a) => setState(() => plan = a),
+            index: _planStep,
+            count: _dots,
+            busy: savingPlan,
+            onNext: _applyPlan,
+            onSkip: () => _go(_planStep + 1),
           ),
           consent,
         ],
@@ -114,10 +142,14 @@ class _StepFooter extends StatelessWidget {
   final int index;
   final int count;
   final VoidCallback onNext;
+  final String label;
+  final bool busy;
   const _StepFooter({
     required this.index,
     required this.count,
     required this.onNext,
+    this.label = 'Pokračovat',
+    this.busy = false,
   });
 
   @override
@@ -148,7 +180,7 @@ class _StepFooter extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Space.xxl),
-        PrimaryButton('Pokračovat', onPressed: onNext),
+        PrimaryButton(label, busy: busy, onPressed: onNext),
       ],
     );
   }
@@ -304,6 +336,94 @@ class _AccentStep extends StatelessWidget {
                 ),
               ),
               _StepFooter(index: index, count: count, onNext: onNext),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Krátký dotazník: z odpovědí vybere program a počet cviků.
+class _PlanStep extends StatelessWidget {
+  final PlanAnswers answers;
+  final ValueChanged<PlanAnswers> onChanged;
+  final int index;
+  final int count;
+  final bool busy;
+  final VoidCallback onNext;
+  final VoidCallback onSkip;
+  const _PlanStep({
+    required this.answers,
+    required this.onChanged,
+    required this.index,
+    required this.count,
+    required this.busy,
+    required this.onNext,
+    required this.onSkip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            0,
+            Space.page,
+            Space.xxl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: busy ? null : onSkip,
+                  child: const Text('Přeskočit'),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Space.xs),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Semantics(
+                            container: true,
+                            header: true,
+                            child: Text('Tvůj plán', style: text.headlineLarge),
+                          ),
+                          const SizedBox(height: Space.m),
+                          Text(
+                            'Čtyři otázky a doporučím ti program. Změníš ho '
+                            'kdykoli v Programu.',
+                            style: text.bodyLarge?.copyWith(
+                              color: p.secondaryLabel,
+                            ),
+                          ),
+                          const SizedBox(height: Space.l),
+                        ],
+                      ),
+                    ),
+                    PlanQuizForm(answers: answers, onChanged: onChanged),
+                    const SizedBox(height: Space.l),
+                    PlanPreview(recommendPlan(answers)),
+                  ],
+                ),
+              ),
+              _StepFooter(
+                index: index,
+                count: count,
+                label: 'Použít plán',
+                busy: busy,
+                onNext: onNext,
+              ),
             ],
           ),
         ),

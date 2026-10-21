@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../coach/missions.dart';
+import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
 import '../../core/format.dart';
@@ -18,6 +19,7 @@ import '../design/tokens.dart';
 import '../exercises/exercises_page.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
+import '../program/plan_quiz.dart';
 import '../program/program_page.dart';
 import '../settings/settings_button.dart';
 import '../stats/stats_page.dart';
@@ -50,6 +52,20 @@ class _HomePageState extends State<HomePage> {
   bool _starting = false;
 
   AppState get state => widget.state;
+
+  Future<void> _usePlan(PlanAnswers? answers) async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    try {
+      await state.applyPlan(answers);
+    } catch (_) {
+      if (mounted) {
+        showToast(context, 'Plán se nepodařilo uložit. Zkus to znovu.');
+      }
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
 
   Future<void> _run(Future<void> Function() start) async {
     if (_starting) return;
@@ -145,6 +161,8 @@ class _HomePageState extends State<HomePage> {
             }),
             onProgram: () => _push(ProgramPage(state)),
             onBuild: () => _build(),
+            onQuiz: () => _push(PlanQuizPage(state)),
+            onUsePlan: _usePlan,
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
@@ -241,6 +259,8 @@ class _TodayCard extends StatelessWidget {
   final ValueChanged<int> onPickDay;
   final VoidCallback onProgram;
   final VoidCallback onBuild;
+  final VoidCallback onQuiz;
+  final ValueChanged<PlanAnswers?> onUsePlan;
 
   const _TodayCard({
     required this.state,
@@ -251,6 +271,8 @@ class _TodayCard extends StatelessWidget {
     required this.onPickDay,
     required this.onProgram,
     required this.onBuild,
+    required this.onQuiz,
+    required this.onUsePlan,
   });
 
   @override
@@ -365,28 +387,43 @@ class _TodayCard extends StatelessWidget {
         ),
       ]);
     } else {
+      // Bez programu: doporučení podle dotazníku (nebo výchozích odpovědí).
+      final answers = state.planAnswers;
+      final r = recommendPlan(answers ?? const PlanAnswers());
+      final pick = findSplit(r.splitId);
       children.addAll([
-        const _Eyebrow('Dnes'),
-        Text('Začni trénink', style: text.headlineSmall),
+        _Eyebrow('Vyber si plán', color: p.accent),
+        Text(pick?.name ?? 'Program', style: text.headlineSmall),
         const SizedBox(height: 2),
         Text(
-          'Přidej cviky a zapisuj série. Minulé váhy a opakování '
-          'se předvyplní při dalším tréninku.',
+          answers == null
+              ? 'Program ti řekne, co který den cvičit, a hlídá postup '
+                    'vah. Odpověz na čtyři otázky, nebo začni tímhle.'
+              : r.why,
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
         ),
         const SizedBox(height: Space.l),
         PrimaryButton(
-          'Začít trénink',
-          icon: Icons.play_arrow_rounded,
+          'Použít ${pick?.name ?? 'program'}',
+          icon: Icons.check_rounded,
           busy: busy,
-          onPressed: () => onStart(state.startWorkout),
+          onPressed: () => onUsePlan(answers),
         ),
         const SizedBox(height: Space.xs),
-        Center(
-          child: TextButton(
-            onPressed: busy ? null : onBuild,
-            child: const Text('Sestavit trénink z partií'),
-          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            TextButton(
+              onPressed: busy ? null : onQuiz,
+              child: Text(
+                answers == null ? 'Vybrat podle sebe' : 'Změnit odpovědi',
+              ),
+            ),
+            TextButton(
+              onPressed: busy ? null : () => onStart(state.startWorkout),
+              child: const Text('Volný trénink'),
+            ),
+          ],
         ),
       ]);
     }
