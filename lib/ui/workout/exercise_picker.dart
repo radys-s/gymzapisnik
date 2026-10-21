@@ -5,6 +5,7 @@ import '../../domain/anatomy.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/exercise_media.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 
@@ -179,6 +180,7 @@ class _ExerciseRow extends StatelessWidget {
       button: true,
       selected: multiple ? selected : null,
       child: GroupedRow(
+        leading: ExerciseThumb(exercise.id),
         title: exercise.name,
         subtitle: _subtitle,
         chevron: false,

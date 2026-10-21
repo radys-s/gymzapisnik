@@ -2,17 +2,21 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../domain/anatomy.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
+import '../../domain/technique.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../widgets/chart_axis.dart';
+import '../widgets/exercise_media.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 
-/// Detail cviku: rekordy, graf progresu, poslední vs předchozí a historie.
+/// Detail cviku: fotky, svaly, technika a alternativy, pak rekordy,
+/// graf progresu, poslední vs předchozí a historie.
 class ExerciseDetailPage extends StatelessWidget {
   final AppState state;
   final String exerciseId;
@@ -53,6 +57,7 @@ class ExerciseDetailPage extends StatelessWidget {
               style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             ),
           ),
+          ..._about(context, exercise),
           if (sessions.isEmpty)
             const EmptyState(
               icon: Icons.show_chart_rounded,
@@ -143,6 +148,111 @@ class ExerciseDetailPage extends StatelessWidget {
       );
     },
   );
+
+  /// Jak cvik vypadá, co posiluje, jak ho dělat a čím ho nahradit.
+  List<Widget> _about(BuildContext context, Exercise exercise) {
+    final p = context.palette;
+    final anatomy = anatomyOf(exercise.id);
+    final technique = techniqueOf(exercise.id);
+    final alternatives = [
+      for (final s in alternativesFor(exercise.id, state.allExercises))
+        ...s.exercises,
+    ].take(5).toList();
+    String heads(List<String> ids) =>
+        ids.map((id) => headById(id)?.name).nonNulls.join(', ');
+    return [
+      if (exerciseImages(exercise.id).isNotEmpty) ...[
+        ExerciseGallery(exercise.id),
+        const SizedBox(height: Space.l),
+      ],
+      if (anatomy != null)
+        GroupedSection(
+          header: 'Svaly',
+          children: [
+            GroupedRow(
+              icon: Icons.bolt_rounded,
+              iconColor: p.accent,
+              title: heads(anatomy.primary),
+              subtitle: 'Hlavně posiluje',
+            ),
+            if (anatomy.secondary.isNotEmpty)
+              GroupedRow(
+                icon: Icons.add_rounded,
+                iconColor: p.secondaryLabel,
+                title: heads(anatomy.secondary),
+                subtitle: 'Pomáhají',
+              ),
+          ],
+        ),
+      if (technique != null) ...[
+        GroupedSection(
+          header: 'Technika',
+          children: [
+            for (var i = 0; i < technique.steps.length; i++)
+              GroupedRow(
+                leading: _StepNumber(i + 1),
+                title: technique.steps[i],
+              ),
+          ],
+        ),
+        GroupedSection(
+          header: 'Časté chyby',
+          children: [
+            for (final m in technique.mistakes)
+              GroupedRow(
+                icon: Icons.close_rounded,
+                iconColor: p.negative,
+                title: m,
+              ),
+          ],
+        ),
+      ],
+      if (alternatives.isNotEmpty)
+        GroupedSection(
+          header: 'Alternativy',
+          footer: 'Když je stroj obsazený nebo cvik nesedí.',
+          children: [
+            for (final a in alternatives)
+              GroupedRow(
+                leading: ExerciseThumb(a.id, size: 36),
+                title: a.name,
+                subtitle: headsLabel(a.id),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExerciseDetailPage(state, a.id),
+                  ),
+                ),
+              ),
+          ],
+        ),
+    ];
+  }
+}
+
+/// Číslo kroku techniky v kroužku.
+class _StepNumber extends StatelessWidget {
+  final int n;
+  const _StepNumber(this.n);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Container(
+      width: 26,
+      height: 26,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: p.accent.withValues(alpha: 0.16),
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        '$n',
+        style: Theme.of(context).textTheme.labelMedium
+            ?.copyWith(color: p.accent, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
 }
 
 class _ProgressChart extends StatelessWidget {

@@ -7,6 +7,7 @@ import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
+import '../widgets/exercise_media.dart';
 import '../design/components.dart';
 import '../widgets/labels.dart';
 import 'exercise_detail_page.dart';
@@ -48,6 +49,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
       GroupedRow row(Exercise e) {
         final count = trained[e.id] ?? 0;
         return GroupedRow(
+          leading: ExerciseThumb(e.id),
           title: e.name,
           subtitle: [
             e.muscle,

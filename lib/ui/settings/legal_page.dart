@@ -52,6 +52,14 @@ class LegalPage extends StatelessWidget {
           'funkce se nic neodesílá.',
     ),
     (
+      'Fotky a technika cviků',
+      'Fotky cviků pocházejí z projektu free-exercise-db '
+          '(github.com/yuhonas/free-exercise-db), který je volné dílo '
+          '(public domain, Unlicense). Jsou přibalené v aplikaci, nic se kvůli '
+          'nim nestahuje. Popisy techniky a častých chyb jsou naše vlastní '
+          'a nenahrazují vedení trenéra.',
+    ),
+    (
       'Záloha a smazání',
       'Protože data nejsou nikde jinde, ulož si zálohu do souboru '
           '(Nastavení, řádek Uložit zálohu). Smazáním dat prohlížeče, odinstalací '
