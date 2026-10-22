@@ -14,6 +14,7 @@ import '../../state/app_state.dart';
 import '../bodyweight/bodyweight_page.dart';
 import '../coach/achievements_page.dart';
 import '../coach/growth_page.dart';
+import '../coach/trainer_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../exercises/exercises_page.dart';
@@ -145,7 +146,14 @@ class _HomePageState extends State<HomePage> {
       final recent = state.workouts.take(3).toList();
       return LargeTitlePage(
         title: 'Cvičení',
-        actions: [SettingsButton(state)],
+        actions: [
+          IconButton(
+            tooltip: 'Trenér',
+            icon: const Icon(Icons.forum_outlined),
+            onPressed: () => _push(TrainerPage(state, now: widget.now)),
+          ),
+          SettingsButton(state),
+        ],
         children: [
           _TodayCard(
             state: state,
@@ -163,6 +171,18 @@ class _HomePageState extends State<HomePage> {
             onBuild: () => _build(),
             onQuiz: () => _push(PlanQuizPage(state)),
             onUsePlan: _usePlan,
+          ),
+          const SizedBox(height: Space.m),
+          GroupedSection(
+            children: [
+              GroupedRow(
+                icon: Icons.forum_rounded,
+                iconColor: context.palette.accent,
+                title: 'Zeptej se trenéra',
+                subtitle: 'Co dnes, proč stagnuju, čím nahradit cvik',
+                onTap: () => _push(TrainerPage(state, now: widget.now)),
+              ),
+            ],
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
