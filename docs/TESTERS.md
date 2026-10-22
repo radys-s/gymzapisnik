@@ -5,7 +5,23 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.6
+## Co je nového v beta.7
+
+**Plán na míru**: po uvítání odpovíš na čtyři otázky (cíl, dny v týdnu, zkušenost, čas)
+a aplikace doporučí program i počet cviků. Bez programu ho hlavní karta nabídne jedním klepnutím;
+změníš ho v Cvičení → Program → Změnit plán.
+**Trenér** (ikona bublin vpravo nahoře nebo řádek Zeptej se trenéra): chat s AI, která vidí
+souhrn tvých tréninků, rekordů a regenerace. Jméno, poznámky ani vlastní názvy cviků se neposílají.
+**Vyfotit stroj** při přidávání cviku: AI navrhne 1 až 3 cviky ze seznamu.
+**Obrazovka cviku**: obrázky, zapojené svaly, technika, časté chyby a alternativy. V tréninku
+cvik vyměníš ikonou vedle názvu; váhu a opakování nastavíš klepnutím na pole.
+**Regenerace** je mapa těla zepředu a zezadu; klepnutím na partii uvidíš detail.
+**Strava**: kruh bílkovin (a energie u dospělých), Rychle přidat a jídla podle snídaně, oběda,
+svačiny a večeře.
+Trenér a fotka stroje fungují, až Tomáš nasadí novou verzi serveru; do té doby aplikace řekne,
+že funkce ještě není zapnutá.
+
+## Co bylo nového v beta.6
 
 **Tlačítka + a −** pod další sérií přidají nebo uberou váhu a opakování. Krok váhy
 (1 / 1,25 / 2,5 / 5 kg) nastavíš v Nastavení, řádek Krok tlačítek +/−.
