@@ -69,7 +69,7 @@ plan) are optional environment variables. Build the app with
 `https://gymzapisnik-ai.gymzapisnik-ai.workers.dev` (Workers Free plan, KV
 namespace `QUOTA` id in `wrangler.toml`). First live check 2026-10-08: fridge
 photo ~4 s, meal ideas ~13 s, `guided_json` with nullable types accepted.
-Redeploy after changes: `npx wrangler deploy`.
+Redeploy after changes, from `worker/`: `npx wrangler deploy` (wrangler is a local dev dependency, not global). Routes `/v1/machine` and `/v1/coach` deployed 2026-10-22, coach answered live in Czech.
 
 ## Deploy from scratch (needs a Cloudflare account)
 

@@ -66,7 +66,7 @@ krok „Tvůj plán“ s doporučeným programem a počtem cviků (`lib/coach/pl
 s obrázky z free-exercise-db (Unlicense), zadání váhy a opakování přes spodní panel, fotka stroje
 (`POST /v1/machine`) a chat s trenérem (`POST /v1/coach`, souhrn z `lib/coach/coach_context.dart`
 bez jmen, poznámek a vlastních názvů), mapa regenerace (`lib/ui/home/body_map.dart`) a nová Strava
-(kruhy cílů, Rychle přidat, skupiny podle části dne). Nové cesty proxy potřebují `wrangler deploy`.
+(kruhy cílů, Rychle přidat, skupiny podle části dne). Nové cesty proxy jsou nasazené od 2026-10-22 (`cd worker`, `npx wrangler deploy`).
 
 V4 (verze 1.0.0-beta.6+15): pod další
 nepotvrzenou sérií jsou tlačítka −/+ pro váhu a opakování (krok 1 / 1,25 / 2,5 / 5 kg v Nastavení,
