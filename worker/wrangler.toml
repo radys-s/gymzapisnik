@@ -22,6 +22,8 @@ MODEL = "@cf/mistralai/mistral-small-3.1-24b-instruct"
 ALLOWED_ORIGINS = "http://localhost:8080,http://127.0.0.1:8080,http://localhost:8099,http://127.0.0.1:8099"
 FRIDGE_PER_INSTALL = "8"
 MEALS_PER_INSTALL = "20"
+MACHINE_PER_INSTALL = "10"
+COACH_PER_INSTALL = "20"
 # Reserved model calls per day for all testers (2 per request for a retry).
 # KV counts are approximate under concurrent traffic; the provider Free plan
 # is the cost boundary. Tokens and image size determine Neuron consumption.

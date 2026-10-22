@@ -11,11 +11,13 @@ export interface QuotaStore {
   ): Promise<void>;
 }
 
-export type Feature = "fridge" | "meals";
+export type Feature = "fridge" | "meals" | "machine" | "coach";
 
 export interface Limits {
   fridge: number;
   meals: number;
+  machine: number;
+  coach: number;
   global: number;
 }
 

@@ -1,8 +1,15 @@
-// Gym zápisník AI proxy: fridge photo -> items, items -> meal suggestions.
+// Gym zápisník AI proxy: fridge photo -> items, items -> meal suggestions,
+// machine photo -> catalog exercises, trainer chat.
 // Runs Workers AI; the app holds no secret. Images and texts are never logged
 // or stored, only daily counters per install ID.
 
-import { FRIDGE_SYSTEM, mealsSystem, mealsUser } from "./prompts";
+import {
+  FRIDGE_SYSTEM,
+  MACHINE_SYSTEM,
+  coachSystem,
+  mealsSystem,
+  mealsUser,
+} from "./prompts";
 import {
   isExhausted,
   markExhausted,
@@ -13,11 +20,19 @@ import {
 import {
   MAX_IMAGE_B64,
   fridgeSchema,
+  machineSchema,
   mealsSchema,
+  parseCoachRequest,
   parseFridgeRequest,
+  parseMachineRequest,
   parseMealsRequest,
+  validateCoach,
   validateFridge,
+  validateMachine,
   validateMeals,
+  type CoachRequest,
+  type MachineRequest,
+  type MealsRequest,
 } from "./schema";
 
 export interface AiBinding {
@@ -31,6 +46,8 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
   FRIDGE_PER_INSTALL?: string;
   MEALS_PER_INSTALL?: string;
+  MACHINE_PER_INSTALL?: string;
+  COACH_PER_INSTALL?: string;
   GLOBAL_DAILY_CAP?: string;
 }
 
@@ -38,6 +55,29 @@ const DEFAULT_MODEL = "@cf/mistralai/mistral-small-3.1-24b-instruct";
 const INSTALL_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY = MAX_IMAGE_B64 + 4_096;
 const MAX_MEALS_BODY = 16_384;
+const MAX_COACH_BODY = 24_576;
+
+const ROUTES: Record<string, Feature> = {
+  "/v1/fridge": "fridge",
+  "/v1/meals": "meals",
+  "/v1/machine": "machine",
+  "/v1/coach": "coach",
+};
+
+const BODY_LIMIT: Record<Feature, number> = {
+  fridge: MAX_BODY,
+  meals: MAX_MEALS_BODY,
+  // Photo plus the exercise list.
+  machine: MAX_BODY + 16_384,
+  coach: MAX_COACH_BODY,
+};
+
+const QUOTA_MESSAGE: Record<Feature, string> = {
+  fridge: "Dnešní limit fotek je vyčerpaný. Zkus to zítra, nebo uprav seznam ručně.",
+  meals: "Dnešní limit návrhů je vyčerpaný. Zkus to zítra.",
+  machine: "Dnešní limit fotek strojů je vyčerpaný. Najdi cvik v seznamu.",
+  coach: "Dnešní limit otázek na trenéra je vyčerpaný. Zkus to zítra.",
+};
 
 type ErrorCode =
   | "bad_request"
@@ -196,9 +236,10 @@ async function handle(
     return new Response(null, { status: 204, headers: corsHeaders(origin) });
   }
   const path = new URL(request.url).pathname;
-  const feature: Feature | null =
-    path === "/v1/fridge" ? "fridge" : path === "/v1/meals" ? "meals" : null;
-  if (feature === null) {
+  const feature: Feature | undefined = Object.hasOwn(ROUTES, path)
+    ? ROUTES[path]
+    : undefined;
+  if (feature === undefined) {
     return fail("not_found", "Neznámá adresa.", 404, origin);
   }
   if (request.method !== "POST") {
@@ -209,18 +250,26 @@ async function handle(
     return fail("bad_request", "Chybí identifikátor aplikace.", 400, origin);
   }
 
-  const body = await readJson(
-    request,
-    feature === "fridge" ? MAX_BODY : MAX_MEALS_BODY,
-  );
+  const body = await readJson(request, BODY_LIMIT[feature]);
   if (body === "too_large") {
     return fail("too_large", "Požadavek je moc velký.", 413, origin);
   }
   if (body === "bad") {
     return fail("bad_request", "Neplatný požadavek.", 400, origin);
   }
-  const parsed =
-    feature === "fridge" ? parseFridgeRequest(body) : parseMealsRequest(body);
+  const parsed:
+    | { image: string }
+    | MealsRequest
+    | MachineRequest
+    | CoachRequest
+    | string =
+    feature === "fridge"
+      ? parseFridgeRequest(body)
+      : feature === "meals"
+        ? parseMealsRequest(body)
+        : feature === "machine"
+          ? parseMachineRequest(body)
+          : parseCoachRequest(body);
   if (typeof parsed === "string") {
     return fail("bad_request", parsed, 400, origin);
   }
@@ -232,6 +281,8 @@ async function handle(
     {
       fridge: limitOf(env.FRIDGE_PER_INSTALL, 8),
       meals: limitOf(env.MEALS_PER_INSTALL, 20),
+      machine: limitOf(env.MACHINE_PER_INSTALL, 10),
+      coach: limitOf(env.COACH_PER_INSTALL, 20),
       global: limitOf(env.GLOBAL_DAILY_CAP, 100),
     },
     installId,
@@ -239,16 +290,81 @@ async function handle(
     now,
   );
   if (quota === "install") {
-    return fail(
-      "quota_install",
-      feature === "fridge"
-        ? "Dnešní limit fotek je vyčerpaný. Zkus to zítra, nebo uprav seznam ručně."
-        : "Dnešní limit návrhů je vyčerpaný. Zkus to zítra.",
-      429,
-      origin,
-    );
+    return fail("quota_install", QUOTA_MESSAGE[feature], 429, origin);
   }
   if (quota === "global") return exhausted(origin);
+
+  // MachineRequest also has `image`, so branch on the route, not the shape.
+  if (feature === "machine") {
+    const req = parsed as MachineRequest;
+    const known = new Set(req.exercises.map((e) => e.id));
+    const result = await runValidated(
+      env,
+      {
+        messages: [
+          { role: "system", content: MACHINE_SYSTEM },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ cviky: req.exercises }),
+              },
+              {
+                type: "image_url",
+                image_url: { url: `data:image/jpeg;base64,${req.image}` },
+              },
+            ],
+          },
+        ],
+        guided_json: machineSchema,
+        max_tokens: 300,
+        temperature: 0.1,
+      },
+      (raw) => validateMachine(raw, known),
+      now,
+    );
+    if (result === "exhausted") return exhausted(origin);
+    if (result === null) {
+      return fail(
+        "ai_failed",
+        "AI stroj nepoznala. Zkus jinou fotku, nebo najdi cvik v seznamu.",
+        502,
+        origin,
+      );
+    }
+    return json(result, 200, origin);
+  }
+
+  if ("messages" in parsed) {
+    const reply = await runValidated(
+      env,
+      {
+        messages: [
+          { role: "system", content: coachSystem(parsed.adult) },
+          {
+            role: "system",
+            content: `Data o tréninku uživatele (JSON): ${parsed.context}`,
+          },
+          ...parsed.messages,
+        ],
+        max_tokens: 600,
+        temperature: 0.4,
+      },
+      validateCoach,
+      now,
+    );
+    if (reply === "exhausted") return exhausted(origin);
+    if (reply === null) {
+      return fail(
+        "ai_failed",
+        "Trenér teď neodpověděl. Zkus to znovu.",
+        502,
+        origin,
+      );
+    }
+    return json({ reply }, 200, origin);
+  }
 
   if ("image" in parsed) {
     const items = await runValidated(
