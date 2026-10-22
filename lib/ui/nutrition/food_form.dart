@@ -198,7 +198,11 @@ class _FoodFormPageState extends State<FoodFormPage> {
       day: day,
       loggedAt:
           existing?.loggedAt ??
-          loggedAtFor(day, DateTime.now(), timeOf: widget.copyOf?.loggedAt),
+          loggedAtFor(
+            day,
+            DateTime.now(),
+            timeOf: widget.copyOf?.loggedAt.toLocal(),
+          ),
       name: name.text.trim(),
       brand: brand,
       barcode: barcode,
