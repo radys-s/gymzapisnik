@@ -18,8 +18,7 @@ cvik vyměníš ikonou vedle názvu; váhu a opakování nastavíš klepnutím n
 **Regenerace** je mapa těla zepředu a zezadu; klepnutím na partii uvidíš detail.
 **Strava**: kruh bílkovin (a energie u dospělých), Rychle přidat a jídla podle snídaně, oběda,
 svačiny a večeře.
-Trenér a fotka stroje fungují, až Tomáš nasadí novou verzi serveru; do té doby aplikace řekne,
-že funkce ještě není zapnutá.
+Trenér a fotka stroje potřebují internet; při vyčerpání denního limitu to aplikace řekne.
 
 ## Co bylo nového v beta.6
 
