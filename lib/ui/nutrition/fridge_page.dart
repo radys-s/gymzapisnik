@@ -5,6 +5,8 @@ import '../../ai/photo.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../state/app_state.dart';
+import '../design/tokens.dart';
+import '../design/components.dart';
 import '../widgets/ai_photo.dart';
 import 'meal_ideas_page.dart';
 
@@ -343,19 +345,21 @@ class _FridgePageState extends State<FridgePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Co mám v ledničce')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.s,
+          Space.page,
+          Space.xxl,
+        ),
         children: [
           Text('1  Přidej potraviny', style: text.titleLarge),
           const SizedBox(height: 8),
           if (!aiEnabled)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'AI v této verzi aplikace zatím není zapnutá. Seznam '
-                  'potravin si můžeš vést ručně.',
-                  style: text.bodyMedium,
-                ),
+            Panel(
+              child: Text(
+                'AI v této verzi aplikace zatím není zapnutá. Seznam '
+                'potravin si můžeš vést ručně.',
+                style: text.bodyMedium,
               ),
             ),
           if (largeText)
@@ -498,32 +502,34 @@ class _FridgePageState extends State<FridgePage> {
                   style: text.bodySmall,
                 ),
               ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
+            const SizedBox(height: Space.l),
+            PrimaryButton(
+              'Navrhni jídlo',
+              icon: Icons.restaurant_menu,
               onPressed: working || !aiEnabled ? null : _suggest,
-              icon: const Icon(Icons.restaurant_menu),
-              label: const Text('Navrhni jídlo'),
             ),
           ],
-          if (state.savedMealIdeas.isNotEmpty)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.history),
-              title: const Text('Poslední návrhy'),
-              subtitle: const Text(
-                'Uložené v zařízení, dostupné i bez internetu',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: working
-                  ? null
-                  : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            MealIdeasPage(state, state.savedMealIdeas),
-                      ),
-                    ),
+          if (state.savedMealIdeas.isNotEmpty) ...[
+            const SizedBox(height: Space.l),
+            GroupedSection(
+              children: [
+                GroupedRow(
+                  icon: Icons.history,
+                  title: 'Poslední návrhy',
+                  subtitle: 'Uložené v zařízení, dostupné i bez internetu',
+                  onTap: working
+                      ? null
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                MealIdeasPage(state, state.savedMealIdeas),
+                          ),
+                        ),
+                ),
+              ],
             ),
+          ],
         ],
       ),
     );
@@ -553,33 +559,39 @@ class _PhotoReviewPageState extends State<_PhotoReviewPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Zkontroluj rozpoznání')),
     body: ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        Space.page,
+        Space.s,
+        Space.page,
+        Space.xxl,
+      ),
       children: [
         const Text(
           'AI se může splést. Oprav názvy, množství a jednotky. Shodná potravina aktualizuje množství v tvém seznamu až po potvrzení.',
         ),
-        const SizedBox(height: 16),
-        for (final (index, item) in items.indexed)
-          Card(
-            child: ListTile(
-              title: Text(item.name),
-              subtitle: Text(
-                itemAmount(item).isEmpty
-                    ? 'Množství neznámé'
-                    : itemAmount(item),
-              ),
-              onTap: () => _edit(index),
-              trailing: IconButton(
-                tooltip: 'Odebrat ${item.name}',
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() => items.removeAt(index)),
-              ),
-            ),
+        if (items.isNotEmpty)
+          GroupedSection(
+            children: [
+              for (final (index, item) in items.indexed)
+                GroupedRow(
+                  title: item.name,
+                  subtitle: itemAmount(item).isEmpty
+                      ? 'Množství neznámé'
+                      : itemAmount(item),
+                  onTap: () => _edit(index),
+                  chevron: false,
+                  trailing: IconButton(
+                    tooltip: 'Odebrat ${item.name}',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => setState(() => items.removeAt(index)),
+                  ),
+                ),
+            ],
           ),
-        const SizedBox(height: 16),
-        FilledButton(
+        const SizedBox(height: Space.l),
+        PrimaryButton(
+          'Potvrdit seznam',
           onPressed: items.isEmpty ? null : () => Navigator.pop(context, items),
-          child: const Text('Potvrdit seznam'),
         ),
       ],
     ),

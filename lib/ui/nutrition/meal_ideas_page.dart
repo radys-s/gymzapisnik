@@ -4,6 +4,8 @@ import '../../ai/fridge_coach.dart';
 import '../../core/ids.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
+import '../design/tokens.dart';
+import '../design/components.dart';
 import 'fridge_page.dart';
 import 'food_form.dart';
 
@@ -47,20 +49,25 @@ class MealIdeasPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.palette;
     return Scaffold(
       appBar: AppBar(title: const Text('Návrhy jídel')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.s,
+          Space.page,
+          Space.xxl,
+        ),
         children: [
           for (final meal in meals)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: Space.m),
+              child: Panel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(meal.title, style: text.titleMedium),
+                    Text(meal.title, style: text.titleLarge),
                     const SizedBox(height: 4),
                     Text(
                       '${meal.minutes} min · ${_value(meal.estimate.kcal)} kcal'
@@ -72,9 +79,7 @@ class MealIdeasPage extends StatelessWidget {
                       meal.source == EstimateSource.table
                           ? 'Odhad podle tabulky potravin'
                           : 'Odhad AI, může být hodně nepřesný',
-                      style: text.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                      style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                     ),
                     const SizedBox(height: 8),
                     Text('Suroviny', style: text.labelLarge),
@@ -90,14 +95,11 @@ class MealIdeasPage extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text('${n + 1}. $step'),
                       ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.tonalIcon(
-                        onPressed: () => _log(context, meal),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Zapsat do deníku'),
-                      ),
+                    const SizedBox(height: Space.l),
+                    SecondaryButton(
+                      'Zapsat do deníku',
+                      icon: Icons.add,
+                      onPressed: () => _log(context, meal),
                     ),
                   ],
                 ),
@@ -107,7 +109,7 @@ class MealIdeasPage extends StatelessWidget {
           Text(
             'Návrhy vytvořila AI z tvého seznamu. Jsou to nápady, ne výživové '
             'ani zdravotní doporučení. Zkontroluj suroviny a hodnoty.',
-            style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
         ],
       ),
