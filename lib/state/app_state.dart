@@ -52,9 +52,11 @@ class AppState extends ChangeNotifier {
     FridgeCoach? coach,
     TrainerAi? trainer,
   }) : lookup = lookup ?? OffClient() {
-    final http = HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
-    this.coach = coach ?? http;
-    this.trainer = trainer ?? http;
+    // Dva klienti: zrušení u trenéra nesmí přerušit fotku ledničky.
+    this.coach =
+        coach ?? HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
+    this.trainer =
+        trainer ?? HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
   }
 
   /// AI kouč pro ledničku a návrhy jídel (v testech jde přepsat).
@@ -1154,8 +1156,8 @@ class AppState extends ChangeNotifier {
 
   /// Chat s AI trenérem: posledních [maxCoachChat] zpráv v zařízení.
   List<ChatMessage> get coachChat => [
-    for (final m in (profile.extra['coachChat'] as List? ?? const []))
-      ?ChatMessage.tryParse(m),
+    if (profile.extra['coachChat'] case final List list)
+      for (final m in list) ?ChatMessage.tryParse(m),
   ];
 
   Future<void> saveCoachChat(List<ChatMessage> messages) => _updateProfile(

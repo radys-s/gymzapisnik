@@ -129,6 +129,17 @@ void main() {
     expect(await empty.ask(messages, {}, adult: true), isA<AiError>());
   });
 
+  test('old proxy without the route says the feature is not on yet', () async {
+    final coach = HttpFridgeCoach(
+      baseUrl: 'https://example.test',
+      installId: () async => 'id',
+      client: MockClient((_) async => http.Response('{"error":{}}', 404)),
+    );
+    final r = await coach.recognizeMachine(jpeg, builtInExercises) as AiError;
+    expect(r.kind, AiErrorKind.disabled);
+    expect(r.message, contains('ještě není zapnutá'));
+  });
+
   test('chat message survives JSON and rejects junk', () {
     final m = ChatMessage(ChatRole.assistant, 'Ahoj', DateTime(2026, 1, 2));
     final back = ChatMessage.tryParse(m.toJson())!;

@@ -59,6 +59,18 @@ class LegalPage extends StatelessWidget {
           'vybíráš ty; může se splést.',
     ),
     (
+      'AI: trenér',
+      'Chat s trenérem odešle tvoji otázku, posledních až 12 zpráv chatu '
+          'a krátký souhrn tréninků (program, poslední tréninky a série, '
+          'rekordy, regeneraci, odpovědi z dotazníku plánu a u dospělých '
+          'i tělesnou váhu) stejnou cestou do Cloudflare Workers AI. Jméno, '
+          'poznámky ani celá historie se neposílají a nic z toho se na '
+          'serveru neukládá. Chat (posledních 30 zpráv) zůstává v zařízení '
+          'a je v záloze. Trenér je AI: může se splést a nenahrazuje lékaře '
+          'ani trenéra naživo. Pod 18 let nedává rady k hubnutí ani '
+          'doplňkům stravy.',
+    ),
+    (
       'Fotky a technika cviků',
       'Fotky cviků pocházejí z projektu free-exercise-db '
           '(github.com/yuhonas/free-exercise-db), který je volné dílo '

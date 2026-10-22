@@ -44,10 +44,26 @@ void main() {
     ];
     workouts.last.exercises.first.note = 'tajná poznámka';
     workouts.last.note = 'tajná';
+    workouts.last.name = 'Trénink s Petrem';
+    workouts.last.exercises.add(
+      WorkoutExercise(
+        id: 'mine',
+        exerciseId: 'custom_petr',
+        sets: [SetEntry(weight: 10, reps: 12, done: true)],
+      ),
+    );
+    Exercise any(String id) => id == 'custom_petr'
+        ? const Exercise(
+            id: 'custom_petr',
+            name: 'Petrův zdvih',
+            muscle: 'Ramena',
+            custom: true,
+          )
+        : ex(id);
     final c = coachContext(
       now: now,
       workouts: workouts,
-      exercise: ex,
+      exercise: any,
       adult: false,
       weekGoal: 3,
       bodyweightKg: 70,
@@ -55,11 +71,13 @@ void main() {
     final text = jsonEncode(c);
     expect(text.length, lessThanOrEqualTo(5500));
     expect(text, isNot(contains('tajná')));
+    expect(text, isNot(contains('Petr')));
+    expect(text, contains('vlastní cvik (Ramena)'));
     expect(c['adult'], false);
     expect(c.containsKey('bodyweightKg'), isFalse);
     expect(c['today'], '2026-10-22 čt');
     final recent = c['recentWorkouts'] as List;
-    expect((recent.first as Map)['name'], 'Trénink 39');
+    expect((recent.first as Map).containsKey('name'), isFalse);
     final sets = ((recent.first as Map)['exercises'] as List).first as Map;
     expect(sets['sets'], '99×8, 99×8, 99×8');
     final lifts = c['lifts'] as List;
@@ -69,7 +87,7 @@ void main() {
     final tiny = coachContext(
       now: now,
       workouts: workouts,
-      exercise: ex,
+      exercise: any,
       adult: true,
       weekGoal: 3,
       bodyweightKg: 70,

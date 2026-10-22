@@ -48,20 +48,26 @@ Map<String, dynamic> coachContext({
   int maxChars = 5500,
 }) {
   final finished = finishedNewestFirst(workouts);
+  // Vlastní názvy píše uživatel (může v nich být jméno): posílá se jen
+  // partie, ne text.
+  String name(String id) {
+    final e = exercise(id);
+    return e.custom ? 'vlastní cvik (${e.muscle})' : e.name;
+  }
+
   final week = weekSummary(workouts, now, (id) => exercise(id).type);
 
   final recent = <Map<String, dynamic>>[
     for (final w in finished.take(5))
       {
         'date': _day(w.date),
-        'name': w.name,
         if (w.finishedAt case final end?)
           'minutes': end.difference(w.startedAt).inMinutes.clamp(0, 600),
         'exercises': [
           for (final e in w.exercises)
             if (e.countedSets.isNotEmpty)
               {
-                'name': exercise(e.exerciseId).name,
+                'name': name(e.exerciseId),
                 'sets': [
                   for (final s in e.countedSets.take(6))
                     _set(exercise(e.exerciseId).type, s),
@@ -90,7 +96,7 @@ Map<String, dynamic> coachContext({
         final history = exerciseHistory(workouts, id);
         final records = allTimeRecords(workouts, id, ex.type);
         return {
-          'name': ex.name,
+          'name': name(id),
           'last': [
             for (final s in history.reversed.take(3))
               if (bestSet(ex.type, s.entry.countedSets) case final b?)
@@ -119,13 +125,13 @@ Map<String, dynamic> coachContext({
     'thisWeek': {'workouts': week.workouts, 'sets': week.sets},
     if (finished.isNotEmpty)
       'daysSinceLast': now.difference(finished.first.date).inDays.clamp(0, 999),
-    if (split != null) 'program': split.name,
+    if (split != null) 'program': split.custom ? 'vlastní program' : split.name,
     if (day != null)
       'nextDay': {
-        'name': day.name,
+        if (!split!.custom) 'name': day.name,
         'exercises': [
           for (final p in day.exercises)
-            '${exercise(p.exerciseId).name} ${p.sets}×${p.repMin}–${p.repMax}',
+            '${name(p.exerciseId)} ${p.sets}×${p.repMin}–${p.repMax}',
         ],
       },
     if (adult && bodyweightKg != null) 'bodyweightKg': _num(bodyweightKg),

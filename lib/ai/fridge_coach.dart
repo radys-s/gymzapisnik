@@ -245,6 +245,13 @@ AiError<T> errorFromResponse<T>(int status, String body) {
   } on FormatException {
     // Prázdné nebo nečitelné tělo: obecná zpráva níž.
   }
+  // Starší nasazená proxy novou cestu nezná.
+  if (status == 404) {
+    return const AiError(
+      AiErrorKind.disabled,
+      'Tahle AI funkce na serveru ještě není zapnutá. Zkus to později.',
+    );
+  }
   if (code == 'service_busy' || status == 503) {
     return AiError(
       AiErrorKind.busy,

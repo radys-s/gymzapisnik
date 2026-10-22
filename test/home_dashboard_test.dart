@@ -26,7 +26,7 @@ void main() {
         await state.finishActive(now: at.add(const Duration(hours: 1)));
       }
     });
-    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
