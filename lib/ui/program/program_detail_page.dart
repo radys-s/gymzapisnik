@@ -141,7 +141,7 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
           SecondaryButton(
             program.custom ? 'Upravit program' : 'Upravit jako vlastní',
             icon: Icons.edit_outlined,
-            onPressed: _busy ? null : () => _edit(program),
+            onPressed: _busy ? null : () => _edit(raw),
           ),
           if (program.custom) ...[
             const SizedBox(height: Space.s),
