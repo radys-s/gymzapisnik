@@ -97,9 +97,7 @@ void main() {
         home: WorkoutPage(state),
       ),
     );
-    await tester.tap(find.byTooltip('Možnosti cviku').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Nahradit'));
+    await tester.tap(find.byTooltip('Vyměnit cvik').first);
     await tester.pumpAndSettle();
     expect(find.text('Stejná hlava: Boční delt'), findsOneWidget);
     expect(find.text('Zadní delt'), findsWidgets);

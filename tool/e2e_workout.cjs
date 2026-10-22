@@ -36,12 +36,19 @@ let page, context;
   if(role==='button'&&!(await p.getByRole(role,{name}).count())) l=p.getByRole('group',{name}).last();
   for(let i=0;i<12;i++){
    const box=await l.boundingBox({timeout:1500}).catch(()=>null);
-   if(box&&box.y>=0&&box.y+box.height<=p.viewportSize().height) break;
+   // Spodní lišta (~90 px) překrývá konec stránky.
+   if(box&&box.y>=60&&box.y+box.height<=p.viewportSize().height-90) break;
    await p.mouse.move(200,400);
    await p.mouse.wheel(0,box&&box.y<40?-300:300);
    await p.waitForTimeout(250);
   }
   await l.click();
+ };
+ // Dlouhé stránky staví řádky až při posunu: posouvat, dokud text není na stránce.
+ const scrollTo=async re=>{
+  for(let i=0;i<15&&!re.test(await txt());i++){
+   await p.mouse.move(200,400); await p.mouse.wheel(0,500); await p.waitForTimeout(300);
+  }
  };
  // Klik, který se mohl ztratit při přestavbě sémantiky, zopakuje.
  const tapUntil=async(role,name,test,msg)=>{
@@ -56,7 +63,9 @@ let page, context;
  const onboard=async()=>{
   await see(has(/Gym zápisník/),'welcome');
   for(let i=0;i<4;i++){ await tap('button','Pokračovat'); await p.waitForTimeout(400); }
-  await see(has(/Než začneš/),'consent');
+  // Dotazník „Tvůj plán“ jde přeskočit.
+  await see(has(/Tvůj plán/),'plan step');
+  await tapUntil('button','Přeskočit',has(/Než začneš/),'consent');
   await tap('checkbox',/Souhlasím/);
   await tap('radio',/18 let nebo/);
   await tap('button','Pokračovat');
@@ -65,7 +74,7 @@ let page, context;
  await onboard();
 
  // první trénink
- await tap('button',/Začít trénink/);
+ await tap('button',/Začít trénink|Volný trénink/);
  await tap('button',/Přidat cvik/);
  await see(has(/Přidat cviky/),'picker open');
  await p.getByRole('textbox').last().click();
@@ -73,22 +82,26 @@ let page, context;
  await see(t=>/Bench press/.test(t)&&!/Deadlift/.test(t),'picker search');
  await pick(/^Bench press/);
  await see(has(/Potvrdit sérii/),'exercise added');
- const boxes=p.getByRole('textbox');
- await boxes.nth(1).waitFor();
- // Flutter otevře skryté <input> až po kliknutí; psát až když má fokus.
- const typeInto=async(i,value)=>{
+ // Pole série otevře list s velkými čísly; v něm se píše (kg je zaostřené).
+ await tap('button',/Váha v kg, Série 1/);
+ await see(has(/Hotovo/),'set sheet opened');
+ const sheetBoxes=p.getByRole('textbox');
+ const typeSheet=async(i,value)=>{
   for(let a=0;a<5;a++){
-   await boxes.nth(i).click();
+   await sheetBoxes.nth(i).click();
    const focused=await p.waitForFunction(()=>document.activeElement?.tagName==='INPUT',null,{timeout:2000}).then(()=>true,()=>false);
    if(!focused) continue;
    await p.keyboard.press('Control+A');
    await p.keyboard.type(value,{delay:30});
    if(await p.waitForFunction(v=>document.activeElement?.value===v,value,{timeout:2000}).then(()=>true,()=>false)) return;
   }
-  throw new Error('typing into field '+i+' failed');
+  throw new Error('typing into sheet field '+i+' failed');
  };
- await typeInto(0,'77,5');
- await typeInto(1,'8');
+ // V listu jsou jediná textová pole na stránce: váha a opakování.
+ await typeSheet(0,'77,5');
+ await typeSheet(1,'8');
+ await tap('button','Hotovo');
+ await see(t=>!/Hotovo/.test(t),'set sheet closed');
  await tapUntil('button','Potvrdit sérii',has(/Zrušit potvrzení/),'set confirmed');
  await see(has(/Pauza [12]:\d\d/),'rest timer started');
  await tap('button','+15');
@@ -107,7 +120,7 @@ let page, context;
 
  // druhý trénink: předvyplněno, 1 klepnutí
  await p.reload(); await sem();
- await tap('button',/Začít trénink/);
+ await tap('button',/Začít trénink|Volný trénink/);
  await tap('button',/Přidat cvik/);
  await see(has(/Nedávné/),'recent exercises first');
  await pick(/^Bench press/);
@@ -118,7 +131,8 @@ let page, context;
  await tap('button','Hotovo');
  await see(has(/Tento týden 2 z/),'week on home');
  // tělesná váha z řádku na domovské stránce
- await p.mouse.wheel(0,2000);
+ // Domovská stránka je dlouhá a řádky se staví až při posunu.
+ await scrollTo(/Tělesná váha/);
  await tap('button',/Tělesná váha/);
  await tap('button',/Zapsat váhu/);
  await p.waitForFunction(()=>document.activeElement?.tagName==='INPUT',null,{timeout:5000});
@@ -133,14 +147,20 @@ let page, context;
  await tap('button',/Cviky a rekordy/);
  await see(has(/Cvičené/),'trained exercises on top');
  await tap('button',/^Bench press/);
+ await see(t=>/Svaly/.test(t)&&/Technika/.test(t),'exercise screen with technique');
+ await scrollTo(/Odhad 1RM v čase/);
  await see(t=>/Osobní rekordy/.test(t)&&/Odhad 1RM v čase/.test(t),'exercise detail with chart');
  // program: výběr, dnešní den a trénink s návrhem kouče
  await p.goBack(); await p.goBack();
+ await scrollTo(/Program/);
  await tap('button',/^Program/);
+ await scrollTo(/Push \/ Pull \/ Legs/);
  await tap('button',/Push \/ Pull \/ Legs/);
  await tap('button','Používat tento program');
  await see(has(/Tento program používáš/),'program active');
  await p.goBack(); await p.goBack();
+ // Domov si pamatuje posun: zpátky nahoru k hlavní kartě.
+ for(let i=0;i<6;i++){ await p.mouse.move(200,400); await p.mouse.wheel(0,-1500); await p.waitForTimeout(200); }
  await see(has(/Začít Push/),'today card for program');
  await tap('button',/Začít Push/);
  await see(t=>/přidej 2,5 kg|Drž|Poprvé/.test(t),'coach reason in workout');
@@ -148,7 +168,8 @@ let page, context;
  await p.goBack().catch(()=>{});
  await p.reload(); await sem();
  await tap('button','Nastavení');
- await see(t=>/Uložit zálohu/.test(t)&&/Frekvence tréninku/.test(t),'settings open');
+ await see(has(/Pauza mezi sériemi/),'settings open');
+ await scrollTo(/Co obsahuje Pro/);
  await tap('button',/Co obsahuje Pro/);
  await see(t=>/Kouč, který za tebou chodí/.test(t)&&/Zatím zdarma pro testery/.test(t),'pro overview');
  await tap('button','Zatím zdarma pro testery');

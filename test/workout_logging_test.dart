@@ -131,9 +131,7 @@ void main() {
     final state = await _state(tester);
     await _pump(tester, state);
 
-    await tester.tap(find.byTooltip('Možnosti cviku').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Nahradit'));
+    await tester.tap(find.byTooltip('Vyměnit cvik').first);
     await tester.pumpAndSettle();
     expect(find.text('Nahradit cvik?'), findsOneWidget);
     await tester.tap(find.text('Zrušit'));
