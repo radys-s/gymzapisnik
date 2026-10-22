@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,9 +12,12 @@ import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../exercises/exercise_detail_page.dart';
+import '../widgets/exercise_media.dart';
 import 'alternatives_page.dart';
 import 'exercise_picker.dart';
 import 'plates_sheet.dart';
+import 'set_sheet.dart';
 
 /// Rozepsaný trénink. Každá změna se hned ukládá (přežije zavření aplikace).
 class WorkoutPage extends StatefulWidget {
@@ -680,14 +682,43 @@ class _ExerciseCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: Space.xs),
-                    child: Semantics(
-                      container: true,
-                      header: true,
-                      child: Text(exercise.name, style: text.titleMedium),
+                  // Fotka a název otevřou kartu cviku: technika, svaly.
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(Radii.control),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ExerciseDetailPage(state, exercise.id),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Space.xs,
+                        vertical: Space.xs,
+                      ),
+                      child: Row(
+                        children: [
+                          ExerciseThumb(exercise.id, size: 36),
+                          const SizedBox(width: Space.s),
+                          Expanded(
+                            child: Semantics(
+                              container: true,
+                              header: true,
+                              hint: 'Otevře techniku cviku',
+                              child: Text(
+                                exercise.name,
+                                style: text.titleMedium,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ),
+                IconButton(
+                  tooltip: 'Vyměnit cvik',
+                  onPressed: () => onMenu('replace'),
+                  icon: Icon(Icons.swap_horiz_rounded, color: p.accent),
                 ),
                 PopupMenuButton<String>(
                   tooltip: 'Možnosti cviku',
@@ -706,10 +737,6 @@ class _ExerciseCard extends StatelessWidget {
                           child: Text('Kotouče na činku'),
                         ),
                     ],
-                    const PopupMenuItem(
-                      value: 'replace',
-                      child: Text('Nahradit'),
-                    ),
                     if (canMoveUp)
                       const PopupMenuItem(
                         value: 'up',
@@ -794,8 +821,6 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: Space.xs),
             for (var i = 0; i < entry.sets.length; i++)
               _SetRow(
-                // +/− jen u další nepotvrzené série, ať karta zůstane čistá.
-                active: i == entry.sets.indexWhere((s) => !s.done),
                 exercise: exercise.name,
                 key: ObjectKey(entry.sets[i]),
                 state: state,
@@ -836,15 +861,11 @@ class _SetRow extends StatefulWidget {
   final VoidCallback onRemove;
   final ValueChanged<String> onError;
 
-  /// Další série na řadě: pod ní jsou tlačítka +/−.
-  final bool active;
-
-  /// Název cviku do popisků +/−, ať se karty pro čtečku neslijí.
+  /// Název cviku do nadpisu listu úprav.
   final String exercise;
 
   const _SetRow({
     super.key,
-    this.active = false,
     this.exercise = '',
     required this.state,
     required this.set,
@@ -877,13 +898,6 @@ class _SetRowState extends State<_SetRow> {
     weight.dispose();
     reps.dispose();
     super.dispose();
-  }
-
-  void _changed() {
-    widget.set
-      ..weight = parseNum(weight.text) ?? 0
-      ..reps = int.tryParse(reps.text.trim()) ?? 0;
-    unawaited(_persist(widget.state.saveActive));
   }
 
   Future<void> _persist(Future<void> Function() save) async {
@@ -950,32 +964,35 @@ class _SetRowState extends State<_SetRow> {
     );
   }
 
-  /// Tlačítko +/−: změní pole stejně jako psaní a uloží.
-  void _step({double kg = 0, int count = 0}) {
-    // Nečitelný text tlačítko nepřepíše, opraví ho uživatel sám.
-    final cur = weight.text.trim().isEmpty ? 0.0 : parseNum(weight.text);
-    final curReps = reps.text.trim().isEmpty ? 0 : int.tryParse(reps.text);
-    if (kg != 0) {
-      if (cur == null) {
-        widget.onError('Nejdřív oprav váhu, tlačítko jí nerozumí.');
-        return;
+  /// List s velkými čísly a − / +. Změny se ukládají hned jako psaní.
+  Future<void> _openSheet({bool focusReps = false}) => showSetSheet(
+    context,
+    title: widget.exercise.isEmpty ? _name : '${widget.exercise} · $_name',
+    weight: weight.text,
+    reps: reps.text,
+    step: widget.state.profile.weightStep,
+    bodyweight: widget.bodyweight,
+    focusReps: focusReps,
+    // Zapisuje rovnou do série, i kdyby se řádek mezitím přestavěl.
+    // List čísla ověří předem; chybu uložení ukáže sám.
+    onChanged: (w, r) async {
+      final set = widget.set;
+      final state = widget.state;
+      set
+        ..weight = parseNum(w) ?? 0
+        ..reps = int.tryParse(r.trim()) ?? 0;
+      if (mounted) {
+        weight.text = w;
+        reps.text = r;
       }
-      // Ručně zadanou vyšší hodnotu + nesrazí dolů.
-      final next = (cur + kg).clamp(0.0, math.max(cur, maxStepKg));
-      weight.text = _kgText(double.parse(next.toStringAsFixed(2)));
-    }
-    if (count != 0) {
-      if (curReps == null) {
-        widget.onError('Nejdřív oprav opakování, tlačítko jim nerozumí.');
-        return;
+      try {
+        await state.saveActive();
+        return true;
+      } catch (_) {
+        return false;
       }
-      reps.text = _repsText(
-        (curReps + count).clamp(0, math.max(curReps, 999)).toInt(),
-      );
-    }
-    HapticFeedback.selectionClick();
-    _changed();
-  }
+    },
+  );
 
   void _typeMenu(String action) => switch (action) {
     'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
@@ -989,20 +1006,26 @@ class _SetRowState extends State<_SetRow> {
     bool decimal = false,
   }) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 3),
-    child: Semantics(
-      container: true,
-      label: label,
+    child: ListenableBuilder(
+      listenable: c,
+      builder: (context, field) => Semantics(
+        container: true,
+        label: label,
+        value: c.text.isEmpty ? '0' : c.text,
+        hint: 'Otevře úpravu série',
+        button: true,
+        onTap: () => _openSheet(focusReps: !decimal),
+        child: ExcludeSemantics(child: field),
+      ),
+      // Pole jen ukazuje hodnotu, klepnutí otevře list s − / +.
       child: TextField(
         controller: c,
+        readOnly: true,
+        // Bez fokusu: po zavření listu nezůstane pole zvýrazněné.
+        canRequestFocus: false,
+        showCursor: false,
+        enableInteractiveSelection: false,
         textAlign: TextAlign.center,
-        keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-        // Z kg rovnou na opakování.
-        textInputAction: decimal ? TextInputAction.next : TextInputAction.done,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(
-            decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
-          ),
-        ],
         style: Theme.of(context).textTheme.bodyLarge
             ?.copyWith(fontFeatures: tabular),
         decoration: const InputDecoration(
@@ -1010,11 +1033,7 @@ class _SetRowState extends State<_SetRow> {
           isDense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         ),
-        onTap: () => c.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: c.text.length,
-        ),
-        onChanged: (_) => _changed(),
+        onTap: () => _openSheet(focusReps: !decimal),
       ),
     ),
   );
@@ -1027,7 +1046,7 @@ class _SetRowState extends State<_SetRow> {
     final prev = widget.previous;
     final kgLabel = widget.bodyweight ? 'Přidaná váha v kg' : 'Váha v kg';
     final record = set.done && widget.state.liveRecords(set).isNotEmpty;
-    final row = Dismissible(
+    return Dismissible(
       key: ObjectKey(set),
       direction: DismissDirection.endToStart,
       background: Container(
@@ -1170,115 +1189,5 @@ class _SetRowState extends State<_SetRow> {
         ),
       ),
     );
-    // +/− mimo Dismissible: tah po tlačítkách nesmí smazat sérii.
-    if (!widget.active || set.done) return row;
-    return Column(
-      children: [
-        row,
-        _Steppers(
-          step: widget.state.profile.weightStep,
-          name: widget.exercise.isEmpty ? _name : '${widget.exercise}, $_name',
-          onStep: _step,
-        ),
-      ],
-    );
   }
-}
-
-/// Nejvíc kg, kam se dá dojít tlačítkem +.
-const maxStepKg = 999.0;
-
-/// Řada tlačítek − / + pro váhu a opakování pod další sérií.
-class _Steppers extends StatelessWidget {
-  final double step;
-  final String name;
-  final void Function({double kg, int count}) onStep;
-  const _Steppers({
-    required this.step,
-    required this.name,
-    required this.onStep,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final kg = formatKg(step);
-    final minusKg = _stepButton(
-      context,
-      Icons.remove_rounded,
-      'Ubrat $kg kg, $name',
-      () => onStep(kg: -step),
-    );
-    final plusKg = _stepButton(
-      context,
-      Icons.add_rounded,
-      'Přidat $kg kg, $name',
-      () => onStep(kg: step),
-    );
-    final minusReps = _stepButton(
-      context,
-      Icons.remove_rounded,
-      'Ubrat opakování, $name',
-      () => onStep(count: -1),
-    );
-    final plusReps = _stepButton(
-      context,
-      Icons.add_rounded,
-      'Přidat opakování, $name',
-      () => onStep(count: 1),
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(_edgeInset, 2, _edgeInset, Space.xs),
-      child: Row(
-        children: [
-          minusKg,
-          Expanded(child: _stepLabel(context, '$kg kg', center: true)),
-          plusKg,
-          const SizedBox(width: Space.s),
-          minusReps,
-          Expanded(child: _stepLabel(context, '1 opak.', center: true)),
-          plusReps,
-        ],
-      ),
-    );
-  }
-}
-
-Widget _stepLabel(BuildContext context, String text, {bool center = false}) =>
-    FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: center ? Alignment.center : Alignment.centerLeft,
-      child: Text(
-        text,
-        maxLines: 1,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: context.palette.secondaryLabel,
-          fontFeatures: tabular,
-        ),
-      ),
-    );
-
-/// Lehčí než pole pro zápis, aby se nepletlo s hodnotami série.
-Widget _stepButton(
-  BuildContext context,
-  IconData icon,
-  String tooltip,
-  VoidCallback onTap,
-) {
-  final p = context.palette;
-  return SizedBox.square(
-    dimension: minTap,
-    child: IconButton(
-      tooltip: tooltip,
-      onPressed: onTap,
-      padding: EdgeInsets.zero,
-      style: IconButton.styleFrom(
-        foregroundColor: p.label,
-        side: BorderSide(color: p.fill, width: 1.5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radii.control),
-        ),
-      ),
-      icon: Icon(icon, size: 20),
-    ),
-  );
 }

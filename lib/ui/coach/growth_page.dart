@@ -97,7 +97,7 @@ class GrowthPage extends StatelessWidget {
       'Všechny hlavy svalu',
       'Kombinuj vícekloubové a izolované cviky. Dlouhá hlava tricepsu '
           'potřebuje cvik nad hlavou, boční delt upažování. V tréninku najdeš '
-          'u cviku „Nahradit“ alternativy podle hlavy svalu.',
+          'u cviku tlačítko Vyměnit nabídne alternativy podle hlavy svalu.',
     ),
     const _Rule(
       Icons.open_in_full_rounded,
