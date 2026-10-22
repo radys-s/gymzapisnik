@@ -747,7 +747,13 @@ class StatTile extends StatelessWidget {
             maxLines: 1,
           ),
         ),
-        Text(label, style: text.labelMedium),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: align == CrossAxisAlignment.end
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+          child: Text(label, style: text.labelMedium, maxLines: 1),
+        ),
       ],
     );
   }

@@ -158,6 +158,16 @@ DateTime? parseDayKey(String key) {
   return date.year == y && date.month == mo && date.day == d ? date : null;
 }
 
+/// Čas zápisu do dne [day]. Dnes je to [now]; u jiného dne datum toho dne
+/// a čas z [timeOf] (třeba původního jídla), jinak z [now]. Podle času se
+/// jídlo řadí do snídaně, oběda a dalších.
+DateTime loggedAtFor(String day, DateTime now, {DateTime? timeOf}) {
+  final d = parseDayKey(day);
+  if (d == null || dayKey(now) == day) return now;
+  final t = timeOf ?? now;
+  return DateTime(d.year, d.month, d.day, t.hour, t.minute);
+}
+
 /// Denní součet. U každé veličiny `*Missing` říká, že alespoň jednomu
 /// záznamu hodnota chyběla, takže součet je spodní odhad.
 class DayTotals {

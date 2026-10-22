@@ -6,6 +6,8 @@ import '../../core/parse.dart';
 import '../../data/off_client.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
 
 /// Otevře formulář jídla. Vrací `true`, když se záznam uložil.
 ///
@@ -194,7 +196,9 @@ class _FoodFormPageState extends State<FoodFormPage> {
     final next = FoodEntry(
       id: existing?.id ?? newId(),
       day: day,
-      loggedAt: existing?.loggedAt ?? DateTime.now(),
+      loggedAt:
+          existing?.loggedAt ??
+          loggedAtFor(day, DateTime.now(), timeOf: widget.copyOf?.loggedAt),
       name: name.text.trim(),
       brand: brand,
       barcode: barcode,
@@ -228,7 +232,7 @@ class _FoodFormPageState extends State<FoodFormPage> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final pal = context.palette;
     final p = product;
     final (values, bad) = _values();
     final amountValue = parseNum(amount.text);
@@ -251,7 +255,12 @@ class _FoodFormPageState extends State<FoodFormPage> {
         title: Text(widget.entry == null ? 'Přidat jídlo' : 'Upravit jídlo'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.s,
+          Space.page,
+          Space.xxl,
+        ),
         children: [
           if (p != null)
             Padding(
@@ -259,7 +268,7 @@ class _FoodFormPageState extends State<FoodFormPage> {
               child: Text(
                 'Údaje z Open Food Facts${p.brand == null ? '' : ' (${p.brand})'}'
                 '. Zkontroluj je s obalem, mohou být nepřesné.',
-                style: text.bodySmall?.copyWith(color: scheme.primary),
+                style: text.bodySmall?.copyWith(color: pal.accent),
               ),
             ),
           if (p == null && widget.barcode != null && widget.entry == null)
@@ -275,16 +284,18 @@ class _FoodFormPageState extends State<FoodFormPage> {
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(labelText: 'Název jídla'),
           ),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event_outlined),
-            title: Text(
-              'Den: ${formatDate(parseDayKey(day) ?? DateTime.now())}',
-            ),
-            onTap: _pickDay,
+          const SizedBox(height: Space.m),
+          GroupedSection(
+            children: [
+              GroupedRow(
+                icon: Icons.event_outlined,
+                title: 'Den',
+                value: formatDate(parseDayKey(day) ?? DateTime.now()),
+                onTap: _pickDay,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SectionHeader('Množství'),
           SegmentedButton<FoodBasis>(
             segments: [
               ButtonSegment(
@@ -304,9 +315,10 @@ class _FoodFormPageState extends State<FoodFormPage> {
             per100
                 ? 'Hodnoty níž jsou na 100 $unitText, množství v $unitText.'
                 : 'Hodnoty níž jsou na jednu porci, množství je počet porcí.',
-            style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: text.bodySmall?.copyWith(color: pal.secondaryLabel),
           ),
-          if (per100)
+          if (per100) ...[
+            const SizedBox(height: Space.s),
             Align(
               alignment: Alignment.centerLeft,
               child: SegmentedButton<FoodUnit>(
@@ -319,7 +331,8 @@ class _FoodFormPageState extends State<FoodFormPage> {
                 onSelectionChanged: (s) => setState(() => unit = s.first),
               ),
             ),
-          const SizedBox(height: 12),
+          ],
+          const SizedBox(height: Space.m),
           _numberField(amount, per100 ? 'Množství ($unitText)' : 'Počet porcí'),
           if (per100 && p?.servingAmount != null)
             Align(
@@ -331,47 +344,47 @@ class _FoodFormPageState extends State<FoodFormPage> {
                 onPressed: () => amount.text = _fmt(p.servingAmount),
               ),
             ),
-          const SizedBox(height: 12),
+          SectionHeader('Hodnoty ${per100 ? 'na 100 $unitText' : 'na porci'}'),
           _numberField(
             kcal,
             'Energie (kcal)${per100 ? ' na 100 $unitText' : ' na porci'}',
           ),
+          const SizedBox(height: Space.m),
+          _numberField(protein, 'Bílkoviny (g)'),
+          const SizedBox(height: Space.m),
           Row(
             children: [
-              Expanded(child: _numberField(protein, 'Bílkoviny (g)')),
-              const SizedBox(width: 12),
               Expanded(child: _numberField(carbs, 'Sacharidy (g)')),
-              const SizedBox(width: 12),
+              const SizedBox(width: Space.m),
               Expanded(child: _numberField(fat, 'Tuky (g)')),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             'Prázdné pole = hodnotu neznáme. Nula = je opravdu nulová.',
-            style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: text.bodySmall?.copyWith(color: pal.secondaryLabel),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.l),
           if (preview != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'Snědeno: ${preview.kcal == null ? '– kcal' : '${preview.kcal!.round()} kcal'}'
-                  ' · B ${preview.protein == null ? '–' : preview.protein!.round()} g'
-                  ' · S ${preview.carbs == null ? '–' : preview.carbs!.round()} g'
-                  ' · T ${preview.fat == null ? '–' : preview.fat!.round()} g',
-                ),
+            Panel(
+              child: Text(
+                'Snědeno: ${preview.kcal == null ? '– kcal' : '${preview.kcal!.round()} kcal'}'
+                ' · B ${preview.protein == null ? '–' : preview.protein!.round()} g'
+                ' · S ${preview.carbs == null ? '–' : preview.carbs!.round()} g'
+                ' · T ${preview.fat == null ? '–' : preview.fat!.round()} g',
+                style: text.bodyLarge,
               ),
             ),
           if (error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(error!, style: TextStyle(color: scheme.error)),
+              child: Text(error!, style: TextStyle(color: pal.negative)),
             ),
-          const SizedBox(height: 16),
-          FilledButton(
+          const SizedBox(height: Space.l),
+          PrimaryButton(
+            widget.entry == null ? 'Uložit' : 'Uložit změny',
+            busy: saving,
             onPressed: saving ? null : _save,
-            child: Text(widget.entry == null ? 'Uložit' : 'Uložit změny'),
           ),
         ],
       ),
