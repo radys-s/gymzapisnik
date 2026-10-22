@@ -61,7 +61,14 @@ AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-a
 Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
 `ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
-V4 (větev `cviceni`, verze 1.0.0-beta.6+15, čeká na test od Tomáše před merge do main): pod další
+V5 (větev `cviceni`, verze 1.0.0-beta.7+16, čeká na test od Tomáše před merge do main): onboarding
+krok „Tvůj plán“ s doporučeným programem a počtem cviků (`lib/coach/plan_quiz.dart`), obrazovka cviku
+s obrázky z free-exercise-db (Unlicense), zadání váhy a opakování přes spodní panel, fotka stroje
+(`POST /v1/machine`) a chat s trenérem (`POST /v1/coach`, souhrn z `lib/coach/coach_context.dart`
+bez jmen, poznámek a vlastních názvů), mapa regenerace (`lib/ui/home/body_map.dart`) a nová Strava
+(kruhy cílů, Rychle přidat, skupiny podle části dne). Nové cesty proxy potřebují `wrangler deploy`.
+
+V4 (verze 1.0.0-beta.6+15): pod další
 nepotvrzenou sérií jsou tlačítka −/+ pro váhu a opakování (krok 1 / 1,25 / 2,5 / 5 kg v Nastavení,
 `Profile.weightStep`, v záloze). Výchozí motiv je tmavý, když si uživatel nevybral. Nápady na další
 funkce sbírá Claude v [docs/napady](docs/napady/README.md); do aplikace jdou jen ty, které Tomáš schválí.

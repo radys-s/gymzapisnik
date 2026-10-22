@@ -6,26 +6,42 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.4';
+const whatsNewRelease = '1.5';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
   (
-    Icons.exposure_rounded,
-    'Tlačítka + a −',
-    'Pod další sérií přidáš nebo ubereš váhu a opakování jedním klepnutím. '
-        'Krok váhy nastavíš v Nastavení.',
+    Icons.flag_outlined,
+    'Plán na míru',
+    'Odpověz na čtyři otázky a aplikace doporučí program a počet cviků. '
+        'Změníš ho v Program, Změnit plán.',
   ),
   (
-    Icons.dark_mode_outlined,
-    'Tmavý režim jako výchozí',
-    'Kdo si motiv nevybral, má tmavý. Světlý nebo podle systému zapneš '
-        'v Nastavení.',
+    Icons.forum_outlined,
+    'Trenér',
+    'Zeptej se, co dnes cvičit, proč stagnuješ nebo čím nahradit cvik. '
+        'Trenér vidí tvoje tréninky, ne jméno ani poznámky.',
   ),
   (
-    Icons.fitness_center_rounded,
-    'Kotouče jen u činky',
-    'Výpočet kotoučů se nabízí jen u cviků s osou a u vlastních cviků.',
+    Icons.photo_camera_outlined,
+    'Cvik podle fotky',
+    'Při přidávání cviku vyfoť stroj a AI navrhne cvik ze seznamu.',
+  ),
+  (
+    Icons.image_outlined,
+    'Obrazovka cviku',
+    'Obrázky, zapojené svaly, technika a alternativy. Cvik v tréninku '
+        'vyměníš ikonou vedle názvu.',
+  ),
+  (
+    Icons.accessibility_new_rounded,
+    'Mapa regenerace',
+    'Postava zepředu a zezadu ukáže, které partie jsou odpočaté.',
+  ),
+  (
+    Icons.restaurant_outlined,
+    'Nová Strava',
+    'Kruh bílkovin, rychlé přidání a jídla podle části dne.',
   ),
 ];
 
