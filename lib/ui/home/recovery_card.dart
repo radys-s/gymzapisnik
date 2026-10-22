@@ -6,6 +6,7 @@ import '../../coach/tips.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import 'body_map.dart';
 
 /// Kolik zbývá do připravenosti („za 20 h“).
 String recoveryLeftLabel(FocusRecovery r, DateTime now) {
@@ -43,51 +44,67 @@ class RecoveryPanel extends StatelessWidget {
     );
     final suggested = suggestFocuses(recovery, weekly);
     final names = {for (final f in dayFocuses) f.id: f.name};
-    final tired = recovery.values.where((r) => !r.isReady).length;
+    final tired = [
+      for (final f in dayFocuses)
+        if (recovery[f.id] case final r? when !r.isReady) r,
+    ];
+    final avoid = [for (final r in tired) r.focusId];
     return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            tired == 0
-                ? 'Všechny partie jsou odpočaté.'
-                : 'Fajfka = odpočaté, přesýpací hodiny = ještě regeneruje. '
-                      'Odhad podle posledních 3 dnů.',
-            style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+          Center(
+            child: BodyMap(
+              recovery: recovery,
+              names: names,
+              status: (r) => r.isReady
+                  ? 'odpočaté'
+                  : 'regeneruje, ${recoveryLeftLabel(r, now)}',
+              onTap: (id) => _detail(
+                context,
+                id,
+                recovery[id],
+                weekly[id] ?? 0,
+                names,
+                avoid,
+              ),
+            ),
           ),
           const SizedBox(height: Space.m),
-          Wrap(
-            spacing: Space.s,
-            runSpacing: Space.s,
-            children: [
-              for (final f in dayFocuses)
-                if (recovery[f.id] case final r?)
-                  Semantics(
-                    label:
-                        '${f.name}: ${r.isReady ? 'odpočaté' : 'regeneruje, ${recoveryLeftLabel(r, now)}'}',
-                    child: ExcludeSemantics(
-                      child: Pill(
-                        r.isReady
-                            ? f.name
-                            : '${f.name} · ${recoveryLeftLabel(r, now)}',
-                        icon: r.isReady
-                            ? Icons.check_circle_rounded
-                            : Icons.hourglass_bottom_rounded,
-                        color: r.isReady ? p.positive : const Color(0xFFFF9F0A),
-                      ),
-                    ),
+          ExcludeSemantics(
+            child: Wrap(
+              spacing: Space.l,
+              runSpacing: Space.xs,
+              children: [
+                for (final (color, label) in [
+                  (p.positive, 'odpočaté'),
+                  (recoveringColor, 'regeneruje'),
+                ])
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _Dot(color),
+                      const SizedBox(width: Space.xs),
+                      Text(label, style: text.bodySmall),
+                    ],
                   ),
-            ],
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.s),
+          Text(
+            tired.isEmpty
+                ? 'Všechny partie jsou odpočaté. Klepni na partii pro detail.'
+                : 'Regeneruje: ${tired.map((r) => '${names[r.focusId]} ${recoveryLeftLabel(r, now)}').join(', ')}. '
+                      'Odhad podle posledních 3 dnů.',
+            style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
           if (suggested.isNotEmpty) ...[
             const SizedBox(height: Space.l),
             SecondaryButton(
               'Sestavit z odpočatých',
               icon: Icons.auto_awesome_rounded,
-              onPressed: () => onBuild(suggested, [
-                for (final r in recovery.values)
-                  if (!r.isReady) r.focusId,
-              ]),
+              onPressed: () => onBuild(suggested, avoid),
             ),
             const SizedBox(height: Space.xs),
             Text(
@@ -99,4 +116,91 @@ class RecoveryPanel extends StatelessWidget {
       ),
     );
   }
+
+  void _detail(
+    BuildContext context,
+    String id,
+    FocusRecovery? r,
+    int sets,
+    Map<String, String> names,
+    List<String> avoid,
+  ) {
+    final name = names[id] ?? id;
+    final ready = r == null || r.isReady;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) {
+        final p = sheet.palette;
+        final text = Theme.of(sheet).textTheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              0,
+              Space.page,
+              Space.l,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(name, style: text.titleLarge),
+                const SizedBox(height: Space.xs),
+                Text(
+                  ready
+                      ? 'Odpočaté, můžeš ji dnes trénovat.'
+                      : 'Ještě regeneruje, připravená ${recoveryLeftLabel(r, now)}.',
+                  style: text.bodyLarge?.copyWith(
+                    color: ready ? p.positive : recoveringColor,
+                  ),
+                ),
+                const SizedBox(height: Space.s),
+                Text(
+                  // Série se počítají jen jako hlavní partie; únava může
+                  // přijít i z cviků, kde partie jen pomáhá.
+                  sets == 0
+                      ? (ready
+                            ? 'Za posledních 7 dní na ni nemáš žádnou sérii.'
+                            : 'Unavená z cviků, ve kterých pomáhá.')
+                      : 'Za posledních 7 dní: $sets ${_sets(sets)}. '
+                            'Pro růst se hodí zhruba 10–20 týdně.',
+                  style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+                ),
+                const SizedBox(height: Space.l),
+                if (ready)
+                  PrimaryButton(
+                    'Sestavit trénink: $name',
+                    onPressed: () {
+                      Navigator.pop(sheet);
+                      onBuild([id], avoid);
+                    },
+                  )
+                else
+                  Text(
+                    'Dej jí čas. Těžký trénink na unavenou partii '
+                    'přidá víc únavy než růstu.',
+                    style: text.bodyMedium,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static String _sets(int n) => n < 5 ? 'pracovní série' : 'pracovních sérií';
+}
+
+class _Dot extends StatelessWidget {
+  final Color color;
+  const _Dot(this.color);
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 10,
+    height: 10,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
 }

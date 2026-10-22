@@ -155,8 +155,26 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Hrudník · za 47 h'), findsOneWidget);
-    expect(find.text('Záda'), findsOneWidget);
+    expect(find.textContaining('Regeneruje: Hrudník za 47 h'), findsOneWidget);
+    expect(find.bySemanticsLabel('Záda, odpočaté'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Hrudník, regeneruje, za 47 h'),
+      findsOneWidget,
+    );
+    // Detail partie: unavená nenabízí trénink, odpočatá ano.
+    await tester.tap(find.bySemanticsLabel('Hrudník, regeneruje, za 47 h'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ještě regeneruje'), findsOneWidget);
+    expect(find.textContaining('6 pracovních sérií'), findsOneWidget);
+    expect(find.textContaining('Sestavit trénink:'), findsNothing);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Záda, odpočaté'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sestavit trénink: Záda'));
+    await tester.pumpAndSettle();
+    expect(built, ['back']);
+    expect(avoid, contains('chest'));
     expect(find.textContaining('Návrh: Záda, Nohy'), findsOneWidget);
     await tester.tap(find.text('Sestavit z odpočatých'));
     expect(built, ['back', 'legs', 'shoulders']);
@@ -174,5 +192,27 @@ void main() {
     );
     expect(chip.selected, isTrue);
     expect(find.text('Vyber aspoň jednu partii'), findsNothing);
+
+    // Úzký displej a velké písmo: nic nepřeteče, partie z obou stran
+    // čtečka hlásí jednou.
+    tester.view.physicalSize = const Size(320, 1600);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 1600),
+            textScaler: TextScaler.linear(1.5),
+          ),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: RecoveryPanel(state: state, now: now, onBuild: (_, _) {}),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel('Nohy, odpočaté'), findsOneWidget);
   });
 }
