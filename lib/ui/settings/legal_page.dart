@@ -52,6 +52,13 @@ class LegalPage extends StatelessWidget {
           'funkce se nic neodesílá.',
     ),
     (
+      'AI: fotka stroje',
+      'Funkce „Vyfotit stroj“ při výběru cviku odešle fotku a seznam názvů '
+          'cviků z katalogu stejnou cestou do Cloudflare Workers AI. Fotka se '
+          'neukládá ani neloguje. AI jen navrhne až tři cviky z katalogu, '
+          'vybíráš ty; může se splést.',
+    ),
+    (
       'Fotky a technika cviků',
       'Fotky cviků pocházejí z projektu free-exercise-db '
           '(github.com/yuhonas/free-exercise-db), který je volné dílo '

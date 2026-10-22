@@ -1,64 +1,20 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../ai/fridge_coach.dart';
 import '../../ai/photo.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../state/app_state.dart';
+import '../widgets/ai_photo.dart';
 import 'meal_ideas_page.dart';
 
-/// Vybere fotku (`camera` = fotoaparát, jinak galerie). `null` = zrušeno.
-typedef PhotoPicker = Future<Uint8List?> Function(bool camera);
-
-Future<Uint8List?> pickPhoto(bool camera) async {
-  final file = await ImagePicker().pickImage(
-    source: camera ? ImageSource.camera : ImageSource.gallery,
-    maxWidth: maxPhotoSide.toDouble(),
-    maxHeight: maxPhotoSide.toDouble(),
-    imageQuality: 80,
-  );
-  return file?.readAsBytes();
-}
+export '../widgets/ai_photo.dart' show PhotoPicker, confirmAiNotice, pickPhoto;
 
 String itemAmount(PantryItem i) {
   final a = i.amount;
   if (a == null) return '';
   return '${formatKg(double.parse(a.toStringAsFixed(1)))} '
       '${i.unit ?? '(jednotka neznámá)'}';
-}
-
-/// Upozornění před prvním použitím AI. Vrací `true`, když uživatel souhlasí.
-Future<bool> confirmAiNotice(BuildContext context, AppState state) async {
-  if (state.profile.aiNoticeAccepted) return true;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (dialog) => AlertDialog(
-      title: const Text('Než použiješ AI'),
-      content: const Text(
-        'Fotka nebo seznam potravin se odešle přes server aplikace do '
-        'Cloudflare Workers AI kvůli rozpoznání nebo návrhu jídel. '
-        'Potvrzený seznam a poslední návrhy si aplikace pamatuje v zařízení.\n\n'
-        'AI se může splést: seznam i hodnoty si vždy zkontroluj. Návrhy jídel '
-        'jsou jen inspirace, ne výživové ani zdravotní doporučení.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialog, false),
-          child: const Text('Zrušit'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialog, true),
-          child: const Text('Rozumím'),
-        ),
-      ],
-    ),
-  );
-  if (ok != true) return false;
-  await state.acceptAiNotice();
-  return true;
 }
 
 /// „Co mám v ledničce“: fotka -> seznam potravin -> návrhy jídel.

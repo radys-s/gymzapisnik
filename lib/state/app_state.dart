@@ -4,12 +4,15 @@ import 'package:flutter/foundation.dart';
 
 import '../ai/ai_config.dart';
 import '../ai/fridge_coach.dart';
+import '../ai/trainer.dart';
 import '../coach/missions.dart';
 import '../coach/plan_quiz.dart';
 import '../coach/plates.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
 import '../coach/achievements.dart';
+import '../coach/coach_context.dart';
+import '../coach/recovery.dart';
 import '../coach/streak.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
@@ -47,13 +50,18 @@ class AppState extends ChangeNotifier {
     this.notifier = const NoopNotifier(),
     ProductLookup? lookup,
     FridgeCoach? coach,
+    TrainerAi? trainer,
   }) : lookup = lookup ?? OffClient() {
-    this.coach =
-        coach ?? HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
+    final http = HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
+    this.coach = coach ?? http;
+    this.trainer = trainer ?? http;
   }
 
   /// AI kouč pro ledničku a návrhy jídel (v testech jde přepsat).
   late final FridgeCoach coach;
+
+  /// AI trenér: fotka stroje a chat (v testech jde přepsat).
+  late final TrainerAi trainer;
 
   /// Hledání produktů podle čárového kódu (v testech jde přepsat).
   final ProductLookup lookup;
@@ -1142,6 +1150,49 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       debugPrint('Záložku se nepodařilo uložit: $e');
     }
+  }
+
+  /// Chat s AI trenérem: posledních [maxCoachChat] zpráv v zařízení.
+  List<ChatMessage> get coachChat => [
+    for (final m in (profile.extra['coachChat'] as List? ?? const []))
+      ?ChatMessage.tryParse(m),
+  ];
+
+  Future<void> saveCoachChat(List<ChatMessage> messages) => _updateProfile(
+    (p) => p.withExtra({
+      'coachChat': messages.isEmpty
+          ? null
+          : [
+              for (final m in messages.skip(
+                messages.length > maxCoachChat
+                    ? messages.length - maxCoachChat
+                    : 0,
+              ))
+                m.toJson(),
+            ],
+    }),
+  );
+
+  /// Souhrn tréninků pro trenéra (bez jména a poznámek).
+  Map<String, dynamic> trainerContext([DateTime? now]) {
+    final at = now ?? DateTime.now();
+    return coachContext(
+      now: at,
+      workouts: workouts,
+      exercise: exercise,
+      adult: profile.adult,
+      weekGoal: weekGoal,
+      split: split,
+      nextDay: nextSplitDay,
+      plan: planAnswers,
+      bodyweightKg: bodyweights.firstOrNull?.kg,
+      recovery: recoveryByFocus(
+        workouts,
+        at,
+        muscleOf: (id) => exercise(id).muscle,
+      ),
+      focusNames: {for (final f in dayFocuses) f.id: f.name},
+    );
   }
 
   Future<void> acceptAiNotice() =>
