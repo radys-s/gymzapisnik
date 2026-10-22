@@ -1,10 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
+import '../../ai/fridge_coach.dart';
+import '../../ai/photo.dart';
+import '../../ai/trainer.dart';
 import '../../core/text.dart';
 import '../../domain/anatomy.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/ai_photo.dart';
 import '../widgets/exercise_media.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -15,7 +21,15 @@ import '../design/tokens.dart';
 class ExercisePickerPage extends StatefulWidget {
   final AppState state;
   final bool multiple;
-  const ExercisePickerPage(this.state, {super.key, this.multiple = true});
+
+  /// Výběr fotky stroje (v testech jde přepsat).
+  final PhotoPicker picker;
+  const ExercisePickerPage(
+    this.state, {
+    super.key,
+    this.multiple = true,
+    this.picker = pickPhoto,
+  });
 
   @override
   State<ExercisePickerPage> createState() => _ExercisePickerPageState();
@@ -38,6 +52,136 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
     }
     return [for (final id in ids.take(8)) widget.state.exercise(id)];
   }();
+
+  /// Běží rozpoznání fotky stroje.
+  bool scanning = false;
+
+  /// Otevřený fotoaparát nebo galerie: druhé klepnutí nic nespustí.
+  bool picking = false;
+  String? scanError;
+  int scanId = 0;
+
+  void _cancelScan() {
+    scanId++;
+    final trainer = widget.state.trainer;
+    if (trainer is CancellableFridgeCoach) {
+      (trainer as CancellableFridgeCoach).cancelPending();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (scanning) _cancelScan();
+    super.dispose();
+  }
+
+  /// Fotka stroje: AI navrhne 1–3 cviky z katalogu. Chyba nebo offline
+  /// nechá hledání v seznamu, nic se nepřidá samo.
+  Future<void> _photo() async {
+    if (picking) return;
+    if (scanning) {
+      _cancelScan();
+      setState(() => scanning = false);
+      return;
+    }
+    final camera = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            0,
+            Space.page,
+            Space.l,
+          ),
+          child: GroupedSection(
+            header: 'Fotka stroje',
+            footer:
+                'Vyfoť celý stroj nebo činku zboku. AI navrhne cviky '
+                'z katalogu, vybereš si sám.',
+            children: [
+              GroupedRow(
+                icon: Icons.photo_camera_rounded,
+                title: 'Vyfotit',
+                chevron: false,
+                onTap: () => Navigator.pop(sheet, true),
+              ),
+              GroupedRow(
+                icon: Icons.photo_library_rounded,
+                title: 'Vybrat z galerie',
+                chevron: false,
+                onTap: () => Navigator.pop(sheet, false),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (camera == null || !mounted) return;
+    if (!await confirmAiNotice(context, widget.state) || !mounted) return;
+    final request = ++scanId;
+    setState(() => scanError = null);
+    String? problem;
+    MachineResult? found;
+    try {
+      picking = true;
+      final Uint8List? raw;
+      try {
+        raw = await widget.picker(camera);
+      } finally {
+        picking = false;
+      }
+      if (!mounted || request != scanId) return;
+      if (raw != null) setState(() => scanning = true);
+      final jpeg = raw == null ? null : prepareJpeg(raw);
+      if (raw == null) {
+        // Zrušený výběr fotky není chyba.
+      } else if (jpeg == null) {
+        problem = 'Tenhle formát fotky neumím přečíst. Zkus jinou.';
+      } else {
+        final result = await widget.state.trainer.recognizeMachine(
+          jpeg,
+          builtInExercises,
+        );
+        if (!mounted || request != scanId) return;
+        switch (result) {
+          case AiError(:final message):
+            problem = '$message Cvik zatím najdi v seznamu.';
+          case AiOk(:final value) when value.matches.isEmpty:
+            problem =
+                'Na fotce jsem stroj nepoznal. Zkus fotku z větší dálky, '
+                'nebo cvik najdi v seznamu.';
+          case AiOk(:final value):
+            found = value;
+        }
+      }
+    } catch (_) {
+      problem = 'Fotku se nepodařilo načíst. Zkus to znovu.';
+    } finally {
+      if (mounted && request == scanId) {
+        setState(() {
+          scanning = false;
+          scanError = problem;
+        });
+      }
+    }
+    final result = found;
+    if (result == null || !mounted || request != scanId) return;
+    final id = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _MachineSheet(state: widget.state, result: result),
+    );
+    if (id == null || !mounted) return;
+    if (!widget.multiple) {
+      popOnce(context, [id]);
+      return;
+    }
+    if (!selected.contains(id)) setState(() => selected.add(id));
+    showToast(context, '${widget.state.exercise(id).name} vybrán.');
+  }
 
   void _tap(Exercise e) {
     if (!widget.multiple) {
@@ -107,8 +251,37 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
                 chevron: false,
                 onTap: _createCustom,
               ),
+              if (widget.state.trainer.enabled)
+                GroupedRow(
+                  leading: scanning
+                      ? const SizedBox.square(
+                          dimension: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : Icon(Icons.photo_camera_rounded, color: p.accent),
+                  title: scanning
+                      ? 'Hledám cvik podle fotky…'
+                      : 'Vyfotit stroj',
+                  subtitle: scanning
+                      ? 'Klepnutím hledání zrušíš'
+                      : 'AI podle fotky navrhne cvik',
+                  chevron: false,
+                  onTap: _photo,
+                ),
             ],
           ),
+          if (scanError case final e?)
+            Semantics(
+              liveRegion: true,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: Space.l),
+                child: Text(
+                  e,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: p.negative),
+                ),
+              ),
+            ),
           if (sections.isEmpty)
             const EmptyState(
               icon: Icons.search_off_rounded,
@@ -191,6 +364,44 @@ class _ExerciseRow extends StatelessWidget {
                 color: selected ? p.accent : p.tertiaryLabel,
               ),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Návrhy cviků podle fotky stroje. Vrací ID vybraného cviku.
+class _MachineSheet extends StatelessWidget {
+  final AppState state;
+  final MachineResult result;
+  const _MachineSheet({required this.state, required this.result});
+
+  static String _sure(double c) => c >= 0.7
+      ? 'Nejspíš tohle'
+      : c >= 0.4
+      ? 'Možná'
+      : 'Spíš ne, ale podobné';
+
+  @override
+  Widget build(BuildContext context) {
+    final machine = result.machine;
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.l),
+        child: GroupedSection(
+          header: machine == null ? 'Návrhy podle fotky' : 'Na fotce: $machine',
+          footer:
+              'AI se může splést. Když tu cvik není, zavři návrhy a najdi ho '
+              'v seznamu.',
+          children: [
+            for (final m in result.matches)
+              GroupedRow(
+                leading: ExerciseThumb(m.id),
+                title: state.exercise(m.id).name,
+                subtitle: _sure(m.confidence),
+                onTap: () => Navigator.pop(context, m.id),
+              ),
+          ],
+        ),
       ),
     );
   }

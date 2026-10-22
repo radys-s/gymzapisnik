@@ -11,7 +11,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../domain/food_table.dart';
+import '../domain/models.dart';
 import '../domain/nutrition.dart';
+import 'trainer.dart';
 
 /// Potravina v ledničce / spíži. [amount] a [unit] (`g`, `ml`, `ks`) jsou
 /// volitelné.
@@ -261,7 +263,8 @@ AiError<T> errorFromResponse<T>(int status, String body) {
   );
 }
 
-class HttpFridgeCoach implements FridgeCoach, CancellableFridgeCoach {
+class HttpFridgeCoach
+    implements FridgeCoach, CancellableFridgeCoach, TrainerAi {
   HttpFridgeCoach({
     required this.baseUrl,
     required this.installId,
@@ -386,4 +389,68 @@ class HttpFridgeCoach implements FridgeCoach, CancellableFridgeCoach {
     parseMeals,
     (meals) => meals.isNotEmpty,
   );
+
+  @override
+  Future<AiResult<MachineResult>> recognizeMachine(
+    Uint8List jpeg,
+    List<Exercise> catalog,
+  ) {
+    final sent = catalog.take(maxMachineCatalog).toList();
+    final known = {for (final e in sent) e.id};
+    return _post(
+      '/v1/machine',
+      {
+        'image': base64Encode(jpeg),
+        'exercises': [
+          for (final e in sent) {'id': e.id, 'name': e.name},
+        ],
+      },
+      (json) => parseMachine(json, known),
+      (_) => true,
+    );
+  }
+
+  @override
+  Future<AiResult<String>> ask(
+    List<ChatMessage> messages,
+    Map<String, dynamic> context, {
+    required bool adult,
+  }) {
+    final recent = messages.length > maxChatSent
+        ? messages.sublist(messages.length - maxChatSent)
+        : messages;
+    if (recent.isEmpty || recent.last.role != ChatRole.user) {
+      return Future.value(
+        const AiError(AiErrorKind.failed, 'Chybí otázka pro trenéra.'),
+      );
+    }
+    if (jsonEncode(context).length > maxCoachContext) {
+      return Future.value(
+        const AiError(
+          AiErrorKind.failed,
+          'Souhrn tréninků je moc dlouhý. Zkus to znovu.',
+        ),
+      );
+    }
+    return _post(
+      '/v1/coach',
+      {
+        'messages': [
+          for (final m in recent)
+            {
+              'role': m.role.name,
+              'content': m.content.length > maxChatMessage
+                  ? m.content.substring(0, maxChatMessage)
+                  : m.content,
+            },
+        ],
+        'context': context,
+        'adult': adult,
+      },
+      (json) => json is Map && json['reply'] is String
+          ? (json['reply'] as String).trim()
+          : throw const FormatException('Chybí odpověď.'),
+      (reply) => reply.isNotEmpty,
+    );
+  }
 }

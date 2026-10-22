@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../ai/trainer.dart';
 import '../coach/plan_quiz.dart';
 import '../coach/splits.dart';
 import '../domain/bodyweight.dart';
@@ -29,6 +30,7 @@ const backupSettingsKeys = {
   'programs',
   'trainingDays',
   'plan',
+  'coachChat',
 };
 
 class Backup {
@@ -156,6 +158,13 @@ Backup decodeBackup(String source) {
       final plan = rawSettings['plan'];
       if (plan != null && PlanAnswers.tryParse(plan) == null) {
         throw const FormatException('Záloha obsahuje neplatný plán.');
+      }
+      final chat = rawSettings['coachChat'];
+      if (chat != null &&
+          (chat is! List || chat.any((m) => ChatMessage.tryParse(m) == null))) {
+        throw const FormatException(
+          'Záloha obsahuje neplatný chat s trenérem.',
+        );
       }
       final step = rawSettings['weightStep'];
       if (step != null && !weightSteps.contains(step)) {
