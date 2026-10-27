@@ -150,9 +150,28 @@ class BodyweightPage extends StatelessWidget {
           else ...[
             if (list.length >= 2)
               Panel(
-                child: SizedBox(
-                  height: 200,
-                  child: _Chart(list.reversed.toList()),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (list.length >= 3) ...[
+                      Text(
+                        'Průměr za 7 dní: ${formatKg(double.parse(trailingAverage(list.reversed.toList()).last.toStringAsFixed(1)))} kg',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        'Čára je průměr, tečky jednotlivá vážení. '
+                        'Váha během dne kolísá, průměr ukáže skutečný směr.',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: context.palette.secondaryLabel),
+                      ),
+                      const SizedBox(height: Space.l),
+                    ],
+                    SizedBox(
+                      height: 200,
+                      child: _Chart(list.reversed.toList()),
+                    ),
+                  ],
                 ),
               ),
             if (list.length >= 2) const SizedBox(height: Space.xxl),
@@ -187,6 +206,8 @@ class _Chart extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final values = [for (final p in points) p.kg];
+    final smooth = points.length >= 3;
+    final average = trailingAverage(points);
     final minY = values.reduce((a, b) => a < b ? a : b);
     final maxY = values.reduce((a, b) => a > b ? a : b);
     final pad = ((maxY - minY) * 0.2).clamp(1.0, 10.0);
@@ -237,19 +258,38 @@ class _Chart extends StatelessWidget {
             ),
           ),
           lineBarsData: [
+            // Jednotlivá vážení jen jako tečky; u dvou záznamů ještě bez průměru.
             LineChartBarData(
               spots: [
                 for (var i = 0; i < points.length; i++)
                   FlSpot(i.toDouble(), points[i].kg),
               ],
-              color: scheme.primary,
-              barWidth: 3,
+              color: smooth
+                  ? scheme.primary.withValues(alpha: 0.45)
+                  : scheme.primary,
+              barWidth: smooth ? 0 : 3,
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
-                show: true,
+                show: !smooth,
                 color: scheme.primary.withValues(alpha: 0.12),
               ),
             ),
+            if (smooth)
+              LineChartBarData(
+                spots: [
+                  for (var i = 0; i < points.length; i++)
+                    FlSpot(i.toDouble(), average[i]),
+                ],
+                isCurved: true,
+                preventCurveOverShooting: true,
+                color: scheme.primary,
+                barWidth: 3,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: scheme.primary.withValues(alpha: 0.12),
+                ),
+              ),
           ],
         ),
       ),

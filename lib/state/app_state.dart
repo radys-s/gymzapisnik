@@ -403,6 +403,18 @@ class AppState extends ChangeNotifier {
     return saveActive();
   }
 
+  /// Přesune cvik tažením z indexu [from] na výsledný index [to].
+  Future<void> reorderExercise(int from, int to) {
+    final list = active?.exercises;
+    if (list == null || from < 0 || from >= list.length) {
+      return Future.value();
+    }
+    final target = to.clamp(0, list.length - 1);
+    if (target == from) return Future.value();
+    list.insert(target, list.removeAt(from));
+    return saveActive();
+  }
+
   /// Hodnoty „minule" pro série cviku (stejný druh a pořadí v něm).
   List<SetEntry?> previousFor(WorkoutExercise entry) =>
       previousSets(entry.sets, lastSetsOf(entry.exerciseId));
@@ -1039,8 +1051,69 @@ class AppState extends ChangeNotifier {
     final seen = <String>{};
     return [
       for (final f in foods)
-        if (seen.add('${f.name.toLowerCase()}|${f.barcode ?? ''}')) f,
+        if (seen.add(foodKey(f))) f,
     ].take(8).toList();
+  }
+
+  /// Klíč jídla pro nedávná a oblíbená: název bez velikosti písmen + kód.
+  static String foodKey(FoodEntry f) =>
+      '${f.name.trim().toLowerCase()}|${f.barcode ?? ''}';
+
+  /// Připnutá jídla (šablony se stejným množstvím), nejnověji připnuté první.
+  List<FoodEntry> get favoriteFoods => [
+    if (profile.extra['favoriteFoods'] case final List list)
+      for (final f in list)
+        if (f is Map<String, dynamic>) ?_tryFood(f),
+  ];
+
+  static FoodEntry? _tryFood(Map<String, dynamic> json) {
+    try {
+      final f = FoodEntry.fromJson(json);
+      return f.name.trim().isEmpty ? null : f;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool isFavoriteFood(FoodEntry f) =>
+      favoriteFoods.any((x) => foodKey(x) == foodKey(f));
+
+  /// Připne nebo odepne jídlo; vrací `true`, když je teď oblíbené.
+  /// Nejvýš [maxFavoriteFoods], nejstarší připnuté vypadne.
+  Future<bool> toggleFavoriteFood(FoodEntry f) async {
+    late bool pinned;
+    await _updateProfile((p) {
+      final raw = p.extra['favoriteFoods'];
+      final current = [
+        if (raw is List)
+          for (final x in raw)
+            if (x is Map<String, dynamic>) ?_tryFood(x),
+      ];
+      final key = foodKey(f);
+      final rest = [
+        for (final x in current)
+          if (foodKey(x) != key) x,
+      ];
+      pinned = rest.length == current.length;
+      final next = pinned ? [f, ...rest].take(maxFavoriteFoods) : rest;
+      return p.withExtra({
+        'favoriteFoods': next.isEmpty
+            ? null
+            : [for (final x in next) x.toJson()],
+      });
+    });
+    return pinned;
+  }
+
+  /// Rychlé přidání: oblíbená první, pak nedávná bez opakování.
+  List<FoodEntry> get quickFoods {
+    final favorites = favoriteFoods;
+    final keys = {for (final f in favorites) foodKey(f)};
+    return [
+      ...favorites,
+      for (final f in recentFoods)
+        if (!keys.contains(foodKey(f))) f,
+    ];
   }
 
   /// Uloží nový záznam, nebo přepíše existující (stejné `id`).

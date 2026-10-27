@@ -31,6 +31,7 @@ const backupSettingsKeys = {
   'trainingDays',
   'plan',
   'coachChat',
+  'favoriteFoods',
 };
 
 class Backup {
@@ -165,6 +166,13 @@ Backup decodeBackup(String source) {
         throw const FormatException(
           'Záloha obsahuje neplatný chat s trenérem.',
         );
+      }
+      final favorites = rawSettings['favoriteFoods'];
+      if (favorites != null &&
+          (favorites is! List ||
+              favorites.length > maxFavoriteFoods ||
+              favorites.any((f) => !validFavoriteFood(f)))) {
+        throw const FormatException('Záloha obsahuje neplatná oblíbená jídla.');
       }
       final step = rawSettings['weightStep'];
       if (step != null && !weightSteps.contains(step)) {

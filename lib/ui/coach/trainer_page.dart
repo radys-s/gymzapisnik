@@ -32,6 +32,7 @@ class _TrainerPageState extends State<TrainerPage> {
   final input = TextEditingController();
   final scroll = ScrollController();
   bool waiting = false;
+  bool sending = false;
   String? error;
 
   /// Opakovat má smysl jen u výpadku, ne u limitu nebo vypnuté AI.
@@ -76,11 +77,22 @@ class _TrainerPageState extends State<TrainerPage> {
 
   Future<void> _send([String? text]) async {
     final question = (text ?? input.text).trim();
-    if (question.isEmpty || waiting) return;
+    if (question.isEmpty || waiting || sending) return;
+    // Hned, ještě před prvním čekáním: dvojí klepnutí (Enter + tlačítko)
+    // nesmí poslat otázku dvakrát a utratit dva dotazy z denního limitu.
+    sending = true;
+    try {
+      await _sendChecked(question, text);
+    } finally {
+      sending = false;
+    }
+  }
+
+  Future<void> _sendChecked(String question, String? text) async {
     if (!await confirmAiNotice(context, state) || !mounted) return;
     if (text == null) input.clear();
     setState(() {
-      messages = [
+      messages = _capped([
         ...messages,
         ChatMessage(
           ChatRole.user,
@@ -89,12 +101,18 @@ class _TrainerPageState extends State<TrainerPage> {
               : question,
           widget.now(),
         ),
-      ];
+      ]);
       error = null;
     });
     await _save();
     await _ask();
   }
+
+  /// V paměti stejně jako na disku jen posledních [maxCoachChat] zpráv.
+  static List<ChatMessage> _capped(List<ChatMessage> list) =>
+      list.length > maxCoachChat
+      ? list.sublist(list.length - maxCoachChat)
+      : list;
 
   /// Zeptá se na poslední zprávu uživatele (i po chybě znovu).
   Future<void> _ask() async {
@@ -115,10 +133,10 @@ class _TrainerPageState extends State<TrainerPage> {
       case AiOk(:final value):
         setState(() {
           waiting = false;
-          messages = [
+          messages = _capped([
             ...messages,
             ChatMessage(ChatRole.assistant, value, widget.now()),
-          ];
+          ]);
         });
         await _save();
       case AiError(:final message, :final kind):

@@ -30,6 +30,19 @@ void main() {
     expect(changeOver([w(0, 80), w(20, 79), w(35, 78), w(90, 70)]), 2.0);
   });
 
+  test('trailingAverage smooths over the last 7 days', () {
+    expect(trailingAverage([]), isEmpty);
+    final list = [w(20, 90), w(6, 80), w(3, 82), w(0, 84)];
+    final avg = trailingAverage(list);
+    // 20 dní zpět je samo; další okno už 90 nezahrnuje.
+    expect(avg[0], 90);
+    expect(avg[1], 80);
+    expect(avg[2], 81);
+    expect(avg[3], closeTo(82, 1e-9));
+    // Vážení přesně před 7 dny už do okna nepatří.
+    expect(trailingAverage([w(7, 100), w(0, 80)]), [100, 80]);
+  });
+
   test('validBodyWeight rejects typos', () {
     expect(validBodyWeight(77.5), isTrue);
     expect(validBodyWeight(7), isFalse);

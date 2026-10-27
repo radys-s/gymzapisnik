@@ -97,6 +97,10 @@ class ExerciseDetailPage extends StatelessWidget {
                 ],
               ),
             ),
+          if (records[RecordKind.bestE1rm] case final best?) ...[
+            const SectionHeader('Kalkulačka 1RM'),
+            _RepTable(best.value),
+          ],
           if (points.length >= 2) ...[
             SectionHeader(
               type == ExerciseType.weighted
@@ -231,6 +235,30 @@ class ExerciseDetailPage extends StatelessWidget {
 }
 
 /// Číslo kroku techniky v kroužku.
+/// Kolik naložit na 3–12 opakování podle nejlepšího odhadu 1RM.
+class _RepTable extends StatelessWidget {
+  final double oneRm;
+  const _RepTable(this.oneRm);
+
+  static const reps = [3, 5, 6, 8, 10, 12];
+
+  @override
+  Widget build(BuildContext context) => GroupedSection(
+    footer:
+        'Odhad z tvé nejlepší série: ${formatKg(oneRm.roundToDouble())} kg '
+        'na jedno opakování. Ber to jako orientaci, ne jako cíl na každý trénink.',
+    children: [
+      for (final r in reps)
+        if (weightForReps(oneRm, r) > 0)
+          GroupedRow(
+            title: '$r opakování',
+            value: '${formatKg(weightForReps(oneRm, r))} kg',
+            chevron: false,
+          ),
+    ],
+  );
+}
+
 class _StepNumber extends StatelessWidget {
   final int n;
   const _StepNumber(this.n);

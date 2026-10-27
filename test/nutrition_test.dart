@@ -542,6 +542,10 @@ void main() {
     expect(mealOf(DateTime(2026, 1, 1, 15)), 'Svačina');
     expect(mealOf(DateTime(2026, 1, 1, 17, 30)), 'Večeře');
     expect(mealOf(DateTime(2026, 1, 1, 23)), 'Večeře');
+    // Po půlnoci to není snídaně.
+    expect(mealOf(DateTime(2026, 1, 1, 1)), 'V noci');
+    expect(mealOf(DateTime(2026, 1, 1, 3, 59)), 'V noci');
+    expect(mealOf(DateTime(2026, 1, 1, 4)), 'Snídaně');
   });
 
   testWidgets('day groups by meal, rings for targets, quick add with undo', (

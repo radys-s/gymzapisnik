@@ -146,6 +146,24 @@ void main() {
     expect((await reload()).active!.exercises, isEmpty);
   });
 
+  test('dragging reorders exercises and survives reload', () async {
+    await state.startWorkout();
+    for (final id in ['bench_press', 'squat', 'leg_press']) {
+      await state.addExercise(id);
+    }
+    List<String> order(AppState s) => [
+      for (final e in s.active!.exercises) e.exerciseId,
+    ];
+    await state.reorderExercise(2, 0);
+    expect(order(state), ['leg_press', 'bench_press', 'squat']);
+    await state.reorderExercise(0, 2);
+    expect(order(state), ['bench_press', 'squat', 'leg_press']);
+    // Mimo rozsah nic nerozbije.
+    await state.reorderExercise(5, 0);
+    await state.reorderExercise(1, 9);
+    expect(order(await reload()), ['bench_press', 'leg_press', 'squat']);
+  });
+
   test('confirming a set starts rest that survives reload', () async {
     final now = DateTime(2026, 10, 5, 18);
     await state.startWorkout(now: now);

@@ -41,3 +41,21 @@ double? changeOver(List<BodyWeight> newestFirst, {int days = 30}) {
   if (base == null) return null;
   return double.parse((latest.kg - base.kg).toStringAsFixed(1));
 }
+
+/// Klouzavý průměr za [days] dní pro každý záznam (od nejstaršího): průměr
+/// všech vážení v okně (datum − [days], datum]. Vyhladí výkyvy z pití a jídla.
+List<double> trailingAverage(List<BodyWeight> oldestFirst, {int days = 7}) {
+  final out = <double>[];
+  var start = 0;
+  var sum = 0.0;
+  for (var i = 0; i < oldestFirst.length; i++) {
+    sum += oldestFirst[i].kg;
+    final from = oldestFirst[i].date.subtract(Duration(days: days));
+    while (!oldestFirst[start].date.isAfter(from)) {
+      sum -= oldestFirst[start].kg;
+      start++;
+    }
+    out.add(sum / (i - start + 1));
+  }
+  return out;
+}
