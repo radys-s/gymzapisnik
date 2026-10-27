@@ -157,6 +157,15 @@ void main() {
     await tester.tap(find.text('První krok'));
     await tester.pumpAndSettle();
     expect(find.text('Odemčeno 5. 10. 2026'), findsOneWidget);
+    // Odemčený odznak jde sdílet jako obrázek (náhled karty v listu).
+    await tester.tap(find.text('Sdílet odznak'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BadgeShareCard), findsOneWidget);
+    expect(find.text('ODZNAK ODEMČEN'), findsOneWidget);
+    expect(find.text('Sdílet odznak'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    Navigator.of(tester.element(find.byType(BadgeShareCard))).pop();
+    await tester.pumpAndSettle();
 
     await tester.pumpWidget(
       MaterialApp(

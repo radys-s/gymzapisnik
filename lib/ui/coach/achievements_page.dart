@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../summary/share_card.dart';
 
 /// Ikona podle toho, co odznak měří.
 IconData badgeIcon(BadgeMetric m) => switch (m) {
@@ -139,8 +140,8 @@ class BadgeTile extends StatelessWidget {
     );
   }
 
-  void _details(BuildContext context) => showModalBottomSheet<void>(
-    context: context,
+  void _details(BuildContext outer) => showModalBottomSheet<void>(
+    context: outer,
     showDragHandle: true,
     builder: (context) {
       final p = context.palette;
@@ -173,12 +174,136 @@ class BadgeTile extends StatelessWidget {
                     : badgeProgressLabel(state),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
+              if (state.unlocked) ...[
+                const SizedBox(height: Space.l),
+                PrimaryButton(
+                  'Sdílet odznak',
+                  icon: Icons.ios_share_rounded,
+                  onPressed: () {
+                    Navigator.pop(context);
+                    showShareImage(
+                      outer,
+                      fileName: 'odznak-${state.badge.id}.png',
+                      button: 'Sdílet odznak',
+                      child: BadgeShareCard(state),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),
       );
     },
   );
+}
+
+/// Odemčený odznak jako obrázek ke sdílení: vždy tmavý, pevná velikost.
+class BadgeShareCard extends StatelessWidget {
+  final BadgeState state;
+  const BadgeShareCard(this.state, {super.key});
+
+  static const _bg = Color(0xFF0C0C10);
+  static const _muted = Color(0xFFB4B4BC);
+  static const _gold = Color(0xFFFFD60A);
+
+  @override
+  Widget build(BuildContext context) {
+    final at = state.unlockedAt;
+    const white = TextStyle(color: Colors.white);
+    return SizedBox(
+      width: 360,
+      height: 450,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: _bg,
+          borderRadius: BorderRadius.circular(28),
+          gradient: RadialGradient(
+            center: const Alignment(0, -0.35),
+            radius: 0.9,
+            // Neprůhledné barvy, jinak PNG propustí pozadí (viz ShareCard).
+            colors: [Color.alphaBlend(_gold.withValues(alpha: 0.22), _bg), _bg],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const AppMark(size: 28),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Gym zápisník',
+                    style: white.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Container(
+                width: 132,
+                height: 132,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _gold,
+                      Color.lerp(_gold, Colors.deepOrange, 0.45)!,
+                    ],
+                  ),
+                ),
+                child: Icon(
+                  badgeIcon(state.badge.metric),
+                  size: 60,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'ODZNAK ODEMČEN',
+                style: white.copyWith(
+                  fontSize: 12,
+                  letterSpacing: 1.6,
+                  fontWeight: FontWeight.w700,
+                  color: _gold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                state.badge.title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: white.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.badge.detail,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: white.copyWith(fontSize: 15, color: _muted),
+              ),
+              const Spacer(),
+              if (at != null)
+                Text(
+                  formatDate(at),
+                  style: white.copyWith(fontSize: 13, color: _muted),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Kruhová medaile: zlatá, když je odznak odemčený.

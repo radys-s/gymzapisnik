@@ -6,6 +6,7 @@
 |---|---|---|
 | 2026-10-27 | bidnej / bidnej/black-october | Bezpečnostní update závislostí po „Black October“ |
 | 2026-10-27 | bidnej / bidnej/beta8 | Audit beta.7 + nápady 6, 9, 4, 15 (1RM, trend váhy, řazení cviků, oblíbená jídla) |
+| 2026-10-27 | bidnej / bidnej/beta8 | Nápady 13 a 10: sdílení odznaku, porovnání dvou tréninků |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -48,3 +49,20 @@ se zadává v listu s velkými čísly) — aktualizované, všechny tři E2E pr
 `GLOBAL_DAILY_CAP=100` při +2 za dotaz = asi 50 AI dotazů denně pro všechny testery dohromady.
 
 **Další krok:** nápady 13 (sdílení odznaku), 10 (porovnání dvou tréninků), 2 (drop set / do selhání).
+
+## 2026-10-27 — Sdílení odznaku a porovnání dvou tréninků (bidnej)
+
+**Co a proč:**
+- **Sdílení odznaku** (nápad 13): v detailu odemčeného odznaku tlačítko „Sdílet odznak“ → tmavá
+  karta 360×450 s medailí → PNG přes systémové sdílení (na webu stažení). Sdílecí list karty tréninku
+  jsem zobecnil na `ShareImageSheet`, takže obě karty jdou stejnou cestou (žádný duplikovaný kód).
+- **Porovnání dvou tréninků** (nápad 10): v historii menu tréninku → „Porovnat s jiným“ → výběr
+  (u každého počet společných cviků) → stránka Porovnání. Novější je vždy vlevo, ať se trénink
+  otevře odkudkoli. Cviky se párují podle cviku (stejný cvik dvakrát podle pořadí), cviky jen
+  z jednoho tréninku jsou na konci s popiskem „Jen <datum>“. Šipky trendu používají stejné
+  `compareExercise` jako souhrn po tréninku. Dva tréninky z jednoho dne rozliší čas.
+
+**Výsledky:** analyze čistý, 337 testů (nové: párování cviků, celý tok porovnání na 320 px,
+otevření karty odznaku). Vizuálně ověřeno ve web buildu na 320 px (tmavý vzhled).
+
+**Další krok:** nápad 2 — typ série drop set / do selhání.

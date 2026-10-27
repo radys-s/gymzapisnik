@@ -19,35 +19,50 @@ Future<void> showShareCard(
   Workout workout, {
   required int number,
   required int records,
+}) {
+  final d = workout.date.toLocal();
+  return showShareImage(
+    context,
+    fileName: 'trenink-${d.year}-${d.month}-${d.day}.png',
+    child: ShareCard(
+      state: state,
+      workout: workout,
+      number: number,
+      records: records,
+    ),
+  );
+}
+
+/// Náhled pevné karty a tlačítko, které ji sdílí jako PNG.
+Future<void> showShareImage(
+  BuildContext context, {
+  required String fileName,
+  required Widget child,
+  String button = 'Sdílet obrázek',
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
-  builder: (_) => _ShareSheet(
-    state: state,
-    workout: workout,
-    number: number,
-    records: records,
-  ),
+  builder: (_) =>
+      ShareImageSheet(fileName: fileName, button: button, child: child),
 );
 
-class _ShareSheet extends StatefulWidget {
-  final AppState state;
-  final Workout workout;
-  final int number;
-  final int records;
-  const _ShareSheet({
-    required this.state,
-    required this.workout,
-    required this.number,
-    required this.records,
+class ShareImageSheet extends StatefulWidget {
+  final String fileName;
+  final String button;
+  final Widget child;
+  const ShareImageSheet({
+    super.key,
+    required this.fileName,
+    required this.child,
+    this.button = 'Sdílet obrázek',
   });
 
   @override
-  State<_ShareSheet> createState() => _ShareSheetState();
+  State<ShareImageSheet> createState() => _ShareImageSheetState();
 }
 
-class _ShareSheetState extends State<_ShareSheet> {
+class _ShareImageSheetState extends State<ShareImageSheet> {
   final _key = GlobalKey();
   bool _busy = false;
 
@@ -62,8 +77,7 @@ class _ShareSheetState extends State<_ShareSheet> {
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
       if (data == null) throw StateError('png');
-      final d = widget.workout.date.toLocal();
-      final name = 'trenink-${d.year}-${d.month}-${d.day}.png';
+      final name = widget.fileName;
       await SharePlus.instance.share(
         ShareParams(
           files: [
@@ -97,21 +111,13 @@ class _ShareSheetState extends State<_ShareSheet> {
             child: FittedBox(
               // Obrázek má pevnou velikost, systémové zvětšení písma ho neořízne.
               child: MediaQuery.withNoTextScaling(
-                child: RepaintBoundary(
-                  key: _key,
-                  child: ShareCard(
-                    state: widget.state,
-                    workout: widget.workout,
-                    number: widget.number,
-                    records: widget.records,
-                  ),
-                ),
+                child: RepaintBoundary(key: _key, child: widget.child),
               ),
             ),
           ),
           const SizedBox(height: Space.l),
           PrimaryButton(
-            'Sdílet obrázek',
+            widget.button,
             icon: Icons.ios_share_rounded,
             busy: _busy,
             onPressed: _share,
