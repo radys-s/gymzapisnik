@@ -41,16 +41,31 @@
     (function () {
       function notice(text, buttonLabel, onClick) {
         var bar = document.createElement('div');
+        bar.setAttribute('role', 'status');
         bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;' +
-          'padding:12px 16px;background:#c6f36b;color:#0f1115;font:15px sans-serif;' +
+          'padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));' +
+          'background:#c6f36b;color:#0f1115;font:15px sans-serif;' +
           'display:flex;gap:12px;align-items:center;justify-content:space-between';
-        bar.textContent = text;
-        if (buttonLabel) {
+        var label = document.createElement('span');
+        label.textContent = text;
+        bar.appendChild(label);
+        function button(caption, handler) {
           var b = document.createElement('button');
-          b.textContent = buttonLabel;
+          b.textContent = caption;
           b.style.cssText = 'padding:8px 14px;border:0;border-radius:8px;font:inherit';
-          b.onclick = onClick;
-          bar.appendChild(b);
+          b.onclick = handler;
+          return b;
+        }
+        if (buttonLabel) {
+          // Lišta nesmí trvale zakrýt spodek aplikace (navigaci, list série).
+          var actions = document.createElement('span');
+          actions.style.cssText = 'display:flex;gap:8px;flex-shrink:0';
+          var later = button('Později', function () { bar.remove(); });
+          later.style.background = 'transparent';
+          later.style.color = 'inherit';
+          actions.appendChild(later);
+          actions.appendChild(button(buttonLabel, onClick));
+          bar.appendChild(actions);
         }
         document.body.appendChild(bar);
         return bar;

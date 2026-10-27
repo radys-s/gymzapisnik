@@ -8,6 +8,15 @@ double e1rm(double weight, int reps) {
   return weight * (1 + reps / 30);
 }
 
+/// Váha, se kterou by šlo udělat [reps] opakování při daném odhadu 1RM
+/// (Epley obráceně), zaokrouhlená dolů na [step] kg, ať jde naložit.
+double weightForReps(double oneRm, int reps, {double step = 2.5}) {
+  if (oneRm <= 0 || reps <= 0) return 0;
+  final raw = reps == 1 ? oneRm : oneRm / (1 + reps / 30);
+  // Malá tolerance: 100 / (1 + 6/30) × … nesmí kvůli plovoucí čárce spadnout o krok níž.
+  return (raw / step + 1e-9).floor() * step;
+}
+
 /// Porovná dvě série: kladné číslo = `a` je lepší.
 ///
 /// S váhou rozhoduje odhad 1RM, při shodě vyšší váha.

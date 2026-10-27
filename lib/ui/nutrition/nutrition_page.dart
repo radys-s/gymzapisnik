@@ -38,13 +38,15 @@ String _dayTitle(DateTime day, DateTime now) {
 /// Část dne podle času zápisu (pro skupiny v deníku).
 String mealOf(DateTime at) {
   final t = at.hour * 60 + at.minute;
+  // Jídlo po půlnoci patří k noci, ne k ranní snídani.
+  if (t < 4 * 60) return 'V noci';
   if (t < 10 * 60 + 30) return 'Snídaně';
   if (t < 14 * 60 + 30) return 'Oběd';
   if (t < 17 * 60 + 30) return 'Svačina';
   return 'Večeře';
 }
 
-const _meals = ['Snídaně', 'Oběd', 'Svačina', 'Večeře'];
+const _meals = ['Snídaně', 'Oběd', 'Svačina', 'Večeře', 'V noci'];
 
 /// Zvolí způsob přidání (čárový kód / ručně / nedávné) a otevře formulář.
 Future<void> addFoodFlow(
@@ -78,18 +80,26 @@ Future<void> addFoodFlow(
               ),
             ],
           ),
-          if (state.recentFoods.isNotEmpty)
-            GroupedSection(
-              header: 'Nedávná',
-              children: [
-                for (final f in state.recentFoods)
-                  GroupedRow(
-                    icon: Icons.history,
-                    title: f.name,
-                    subtitle: amountLabel(f),
-                    onTap: () => Navigator.pop(sheet, f),
-                  ),
-              ],
+          if (state.quickFoods.isNotEmpty)
+            ListenableBuilder(
+              listenable: state,
+              builder: (sheet, _) => GroupedSection(
+                header: 'Oblíbená a nedávná',
+                footer: 'Hvězdičkou jídlo připneš do Rychle přidat.',
+                children: [
+                  for (final f in state.quickFoods)
+                    GroupedRow(
+                      icon: state.isFavoriteFood(f)
+                          ? Icons.star_rounded
+                          : Icons.history,
+                      title: f.name,
+                      subtitle: amountLabel(f),
+                      onTap: () => Navigator.pop(sheet, f),
+                      chevron: false,
+                      trailing: _FavoriteButton(state, f),
+                    ),
+                ],
+              ),
             ),
         ],
       ),
@@ -171,6 +181,22 @@ class _NutritionPageState extends State<NutritionPage> {
           ),
         ),
       );
+  }
+
+  Future<void> _toggleFavorite(FoodEntry f) async {
+    final messenger = ScaffoldMessenger.of(context);
+    String message;
+    try {
+      final pinned = await state.toggleFavoriteFood(f);
+      message = pinned
+          ? 'Připnuto mezi oblíbená: ${f.name}'
+          : 'Odepnuto z oblíbených: ${f.name}';
+    } catch (_) {
+      message = 'Oblíbená se nepodařilo uložit. Zkus to znovu.';
+    }
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Stejné jídlo ve stejném množství jedním klepnutím, s možností vrátit.
@@ -279,20 +305,43 @@ class _NutritionPageState extends State<NutritionPage> {
                 style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ),
-          if (state.recentFoods.isNotEmpty) ...[
+          if (state.quickFoods.isNotEmpty) ...[
             const SectionHeader('Rychle přidat'),
             Wrap(
               spacing: Space.s,
               runSpacing: Space.s,
               children: [
-                for (final f in state.recentFoods.take(6))
-                  ActionChip(
-                    avatar: const Icon(Icons.add_rounded, size: 18),
-                    label: Text(f.name),
-                    tooltip: '${f.name}, ${amountLabel(f)}',
-                    onPressed: () => _quickAdd(f, key),
+                for (final f in state.quickFoods.take(8))
+                  GestureDetector(
+                    onLongPress: () => _toggleFavorite(f),
+                    child: ActionChip(
+                      avatar: Icon(
+                        state.isFavoriteFood(f)
+                            ? Icons.star_rounded
+                            : Icons.add_rounded,
+                        size: 18,
+                      ),
+                      label: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: Text(f.name, overflow: TextOverflow.ellipsis),
+                      ),
+                      tooltip: '${f.name}, ${amountLabel(f)}',
+                      onPressed: () => _quickAdd(f, key),
+                    ),
                   ),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.xs,
+                Space.s,
+                Space.xs,
+                0,
+              ),
+              child: Text(
+                'Podržením jídlo připneš mezi oblíbená (hvězdička).',
+                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+              ),
             ),
           ],
           const SizedBox(height: Space.xxl),
@@ -473,6 +522,39 @@ class _Summary extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Hvězdička: připne jídlo do Rychle přidat, nebo ho odepne.
+class _FavoriteButton extends StatelessWidget {
+  final AppState state;
+  final FoodEntry food;
+  const _FavoriteButton(this.state, this.food);
+
+  @override
+  Widget build(BuildContext context) {
+    final on = state.isFavoriteFood(food);
+    return IconButton(
+      tooltip: on ? 'Odepnout z oblíbených' : 'Připnout mezi oblíbená',
+      isSelected: on,
+      icon: Icon(
+        on ? Icons.star_rounded : Icons.star_outline_rounded,
+        color: on ? context.palette.accent : context.palette.secondaryLabel,
+      ),
+      onPressed: () async {
+        try {
+          await state.toggleFavoriteFood(food);
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Oblíbená se nepodařilo uložit. Zkus to znovu.'),
+              ),
+            );
+          }
+        }
+      },
     );
   }
 }

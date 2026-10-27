@@ -272,6 +272,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
         } catch (_) {
           _snack('Pořadí se nepodařilo uložit. Zkus to znovu.');
         }
+      case 'reorder':
+        await showReorderSheet(context, state);
       case 'remove':
         if (hasDone &&
             !await confirmAction(
@@ -747,6 +749,11 @@ class _ExerciseCard extends StatelessWidget {
                         value: 'down',
                         child: Text('Posunout níž'),
                       ),
+                    if (canMoveUp || canMoveDown)
+                      const PopupMenuItem(
+                        value: 'reorder',
+                        child: Text('Seřadit cviky'),
+                      ),
                     PopupMenuItem(
                       value: 'remove',
                       child: Text(
@@ -1190,4 +1197,108 @@ class _SetRowState extends State<_SetRow> {
       ),
     );
   }
+}
+
+/// List se seznamem cviků tréninku; pořadí se mění tažením za úchyt.
+Future<void> showReorderSheet(BuildContext context, AppState state) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _ReorderSheet(state),
+    );
+
+class _ReorderSheet extends StatelessWidget {
+  final AppState state;
+  const _ReorderSheet(this.state);
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: state,
+    builder: (context, _) {
+      final exercises = state.active?.exercises ?? const <WorkoutExercise>[];
+      final text = Theme.of(context).textTheme;
+      final p = context.palette;
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                0,
+                Space.page,
+                Space.xs,
+              ),
+              child: Text('Seřadit cviky', style: text.titleLarge),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                0,
+                Space.page,
+                Space.m,
+              ),
+              child: Text(
+                'Podrž úchyt vpravo a přetáhni cvik na nové místo.',
+                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+              ),
+            ),
+            Flexible(
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                buildDefaultDragHandles: false,
+                padding: const EdgeInsets.only(bottom: Space.xl),
+                itemCount: exercises.length,
+                onReorderItem: (from, to) async {
+                  try {
+                    await state.reorderExercise(from, to);
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Pořadí se nepodařilo uložit. Zkus to znovu.',
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+                itemBuilder: (context, i) {
+                  final entry = exercises[i];
+                  final exercise = state.exercise(entry.exerciseId);
+                  final done = entry.sets.where((s) => s.done && !s.warmup);
+                  return ListTile(
+                    key: ObjectKey(entry),
+                    leading: ExerciseThumb(exercise.id, size: 36),
+                    title: Text(exercise.name),
+                    subtitle: Text(
+                      done.isEmpty
+                          ? 'Zatím bez potvrzené série'
+                          : 'Hotovo ${done.length} z ${entry.sets.where((s) => !s.warmup).length}',
+                    ),
+                    trailing: ReorderableDragStartListener(
+                      index: i,
+                      child: Semantics(
+                        label: 'Přetáhnout ${exercise.name}',
+                        child: const Padding(
+                          padding: EdgeInsets.all(Space.s),
+                          child: Icon(Icons.drag_handle_rounded),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

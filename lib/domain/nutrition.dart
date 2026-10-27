@@ -268,3 +268,23 @@ bool validBarcode(String code) {
   }
   return (10 - sum % 10) % 10 == digits.last;
 }
+
+/// Nejvíc připnutých oblíbených jídel.
+const maxFavoriteFoods = 12;
+
+/// Oblíbené jídlo ze zálohy: čitelný záznam s názvem a platným množstvím.
+bool validFavoriteFood(Object? raw) {
+  if (raw is! Map<String, dynamic>) return false;
+  try {
+    final f = FoodEntry.fromJson(raw);
+    return validateFood(
+          name: f.name,
+          amount: f.amount,
+          basis: f.basis,
+          values: f.values,
+        ) ==
+        null;
+  } catch (_) {
+    return false;
+  }
+}

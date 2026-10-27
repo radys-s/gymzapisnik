@@ -19,19 +19,19 @@ L = několik updatů nebo server) a riziko.
    Dva cviky se střídají bez pauzy, časovač běží až po druhém. Šetří čas v posilovně a Hevy to umí.
    Riziko: složitější karta tréninku, musí zůstat čitelná na 320 px.
 
-2. **Drop set a série do selhání** · S · `Návrh`
+2. **Drop set a série do selhání** · S · `Schváleno` (beta.8)
    Další typ série vedle Pracovní a Rozcvička. Rekordy a objem by ho počítaly zvlášť.
 
 3. **Cviky na čas** · M · `Návrh`
    Plank, kardio a strečink v minutách místo kg × opakování. Potřebuje nový typ cviku a jiný řádek série.
 
-4. **Přesun cviku tažením** · S · `Návrh`
+4. **Přesun cviku tažením** · S · `Schváleno` (beta.8)
    Dnes se cvik posouvá přes menu. Tažení prstem je rychlejší.
 
-5. **Návody k cvikům** · M · `Návrh`
+5. **Návody k cvikům** · M · `Hotovo` (beta.7)
    Tři věty k technice a nejčastější chyby, vlastní text. Riziko: hodně psaní a kontrola správnosti.
 
-6. **Kalkulačka 1RM** · S · `Návrh`
+6. **Kalkulačka 1RM** · S · `Schváleno` (beta.8)
    Z libovolné série odhad maxima a tabulka vah pro 3–12 opakování. Data už aplikace počítá.
 
 ### Pokrok
@@ -39,13 +39,13 @@ L = několik updatů nebo server) a riziko.
 7. **Shrnutí roku** · M · `Návrh`
    Jedna sdílitelná karta: tréninky, tuny, rekordy, nejlepší měsíc. Dobré na konec prosince.
 
-8. **Mapa těla** · M · `Návrh`
+8. **Mapa těla** · M · `Hotovo` (beta.7)
    Postava, na které svítí unavené a odpočaté partie. Navazuje na regeneraci svalů.
 
-9. **Trend tělesné váhy** · S · `Návrh`
+9. **Trend tělesné váhy** · S · `Schváleno` (beta.8)
    Vyhlazená křivka (průměr za 7 dní) místo skákajících bodů.
 
-10. **Porovnání dvou tréninků** · S · `Návrh`
+10. **Porovnání dvou tréninků** · S · `Schváleno` (beta.8)
     Libovolné dva tréninky vedle sebe, série po sérii.
 
 ### Motivace
@@ -56,15 +56,15 @@ L = několik updatů nebo server) a riziko.
 12. **Plán na příští týden** · M · `Návrh`
     Na konci týdne návrh, co přidat podle partií s malým objemem.
 
-13. **Sdílení odznaku** · S · `Návrh`
+13. **Sdílení odznaku** · S · `Schváleno` (beta.8)
     Odznak jako obrázek, stejně jako karta tréninku.
 
 ### Strava
 
-14. **Nový vzhled Stravy** · M · `Návrh`
+14. **Nový vzhled Stravy** · M · `Hotovo` (beta.7)
     Stejně čistý jako Cvičení. Dnes je Strava vizuálně o krok pozadu.
 
-15. **Oblíbená jídla** · S · `Návrh`
+15. **Oblíbená jídla** · S · `Schváleno` (beta.8)
     Běžné jídlo zapsat jedním klepnutím.
 
 ### Telefon a zařízení
@@ -88,7 +88,7 @@ L = několik updatů nebo server) a riziko.
 
 ## Schváleno
 
-Zatím nic.
+Do beta.8 (2026-10-27, Tomáš: „většinu, co se hodí a dá se udělat“): 2, 4, 6, 9, 10, 13, 15.
 
 ## Zamítnuto
 
@@ -96,4 +96,4 @@ Zatím nic.
 
 ## Hotovo
 
-Zatím nic.
+- beta.7: 5 (návody ke cvikům na obrazovce cviku), 8 (mapa těla v regeneraci), 14 (nový vzhled Stravy).

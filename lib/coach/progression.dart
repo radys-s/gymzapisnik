@@ -130,7 +130,7 @@ Suggestion suggest(
         reps: plan.repMax,
         sets: plan.sets,
         reason:
-            'Dvakrát po sobě bez posunu → lehčí trénink: ${_kg(lighter)} kg '
+            'Dvakrát po sobě bez posunu, dej si lehčí trénink: ${_kg(lighter)} kg '
             '(−10 %). Příště se vrátíš na ${_kg(topWeight)} kg s čerstvou silou.',
       );
     }
@@ -146,9 +146,9 @@ Suggestion suggest(
       reps: target,
       sets: plan.sets,
       reason: minReps >= plan.repMax
-          ? 'Zvládáš ${plan.repMax}+ opakování → zkus přidat zátěž '
+          ? 'Zvládáš ${plan.repMax}+ opakování, zkus přidat zátěž '
                 'nebo těžší variantu.'
-          : 'Minule nejméně $minReps opakování → zkus $target v každé sérii.',
+          : 'Minule nejméně $minReps opakování, zkus $target v každé sérii.',
     );
   }
 
@@ -161,8 +161,8 @@ Suggestion suggest(
       reps: plan.repMin,
       sets: plan.sets,
       reason:
-          'Minule ${atTop.length}× ${plan.repMax}+ na ${_kg(topWeight)} kg '
-          '→ přidej ${_kg(increment)} kg a začni na ${plan.repMin} opakováních.',
+          'Minule ${atTop.length}× ${plan.repMax}+ na ${_kg(topWeight)} kg'
+          ', přidej ${_kg(increment)} kg a začni na ${plan.repMin} opakováních.',
     );
   }
   final target = (minReps + 1).clamp(plan.repMin, plan.repMax);

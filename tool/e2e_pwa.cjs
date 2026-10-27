@@ -29,12 +29,30 @@ async function see(page, pattern) {
     [...document.querySelectorAll('flt-semantics')].map(e => e.getAttribute('aria-label') || e.textContent).join(' | ')
   ), pattern.source, {timeout: 20000});
 }
-async function type(page, index, text) {
-  await page.getByRole('textbox').nth(index).click();
-  await page.waitForFunction(() => document.activeElement?.tagName === 'INPUT');
-  await page.keyboard.press('Control+A');
-  await page.keyboard.type(text);
+// Pole série otevře list s velkými čísly; jediná textová pole jsou v něm (kg, opakování).
+async function editSet(page, values, {viaScrim = false} = {}) {
+  // Popisek pole má zalomení řádku za čárkou.
+  await page.getByRole('button', {name: /Váha v kg,\s+Série 1\b/}).first().click();
+  await see(page, /Hotovo/);
+  for (const [index, text] of values) {
+    for (let a = 0; ; a++) {
+      await page.getByRole('textbox').nth(index).click();
+      await page.waitForFunction(() => document.activeElement?.tagName === 'INPUT');
+      await page.keyboard.press('Control+A');
+      await page.keyboard.type(text, {delay: 30});
+      if (await page.waitForFunction(v => document.activeElement?.value === v, text, {timeout: 2000})
+        .then(() => true, () => false)) break;
+      if (a === 4) throw new Error('typing into sheet field ' + index + ' failed');
+    }
+  }
+  // Lišta s novou verzí leží přes spodek listu; zavřít ho jde i tapnutím nad ním.
+  if (viaScrim) await page.mouse.click(200, 80);
+  else await page.getByRole('button', {name: 'Hotovo', exact: true}).click();
+  await page.waitForFunction(() => ![...document.querySelectorAll('flt-semantics')]
+    .some(e => (e.getAttribute('aria-label') || e.textContent) === 'Hotovo'));
 }
+const labels = page => page.evaluate(() => [...document.querySelectorAll('flt-semantics')]
+  .map(e => e.getAttribute('aria-label') || e.textContent).join(' | '));
 (async () => {
   let page = await launch();
   await page.goto('http://localhost:8099/');
@@ -56,8 +74,7 @@ async function type(page, index, text) {
     await page.getByRole('button', {name: 'Přidat cvik'}).last().click();
   }
   await see(page, /Potvrdit sérii/);
-  await type(page, 0, '82,5');
-  await type(page, 1, '7');
+  await editSet(page, [[0, '82,5'], [1, '7']]);
   await page.getByRole('button', {name: 'Potvrdit sérii'}).first().click();
   await see(page, /Zrušit potvrzení/);
 
@@ -67,7 +84,7 @@ async function type(page, index, text) {
   await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); await r.update(); });
   await page.getByRole('button', {name: 'Načíst', exact: true}).waitFor({timeout: 30000});
   // Correct a confirmed set just before accepting the update.
-  await type(page, 1, '6');
+  await editSet(page, [[1, '6']], {viaScrim: true});
   await Promise.all([
     page.waitForEvent('load'),
     page.getByRole('button', {name: 'Načíst', exact: true}).click(),
@@ -90,14 +107,9 @@ async function type(page, index, text) {
   await see(page, /Pokračovat v tréninku/);
   await page.getByRole('button', {name: /Pokračovat v tréninku/}).click();
   await see(page, /Zrušit potvrzení/);
-  const values = [];
-  for (const index of [0, 1]) {
-    await page.getByRole('textbox').nth(index).click();
-    await page.waitForFunction(() => document.activeElement?.tagName === 'INPUT');
-    values.push(await page.evaluate(() => document.activeElement.value));
-  }
-  assert.ok(values.some(v => /82[,.]5/.test(v)), JSON.stringify(values));
-  assert.ok(values.includes('6'), JSON.stringify(values));
+  const text = await labels(page);
+  assert.match(text, /Váha v kg,\s+Série 1\s+82[,.]5/, text.slice(0, 400));
+  assert.match(text, /Opakování,\s+Série 1\s+6\b/, text.slice(0, 400));
   console.log('ok: full browser restart offline preserves 82.5 kg x 6');
   await page.getByRole('button', {name: 'Dokončit', exact: true}).click();
   // Den programu má další nepotvrzené série, takže se dokončení musí potvrdit.
@@ -106,7 +118,14 @@ async function type(page, index, text) {
   await see(page, /Trénink hotový/);
   await see(page, /495/);
   await page.getByRole('button', {name: 'Hotovo', exact: true}).click();
-  await page.getByRole('button', {name: 'Vše', exact: true}).click();
+  // Historie je na delší domovské stránce níž; Flutter ji staví až při posunu.
+  const all = page.getByRole('button', {name: 'Vše', exact: true});
+  for (let i = 0; i < 15 && !(await all.count()); i++) {
+    await page.mouse.move(200, 400);
+    await page.mouse.wheel(0, 500);
+    await page.waitForTimeout(300);
+  }
+  await all.click();
   await see(page, /Hevy Push/);
   await see(page, /495/);
   console.log('ok: offline summary and history match saved volume 495 kg');

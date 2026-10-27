@@ -19,6 +19,18 @@ void main() {
     expect(e1rm(0, 10), 0);
   });
 
+  test('weightForReps inverts Epley and rounds down to a loadable plate', () {
+    expect(weightForReps(100, 1), 100);
+    // 100 / (1 + 10/30) = 75 → přesně, nesmí spadnout na 72,5.
+    expect(weightForReps(100, 10), 75);
+    // 100 / 1,2 = 83,33 → 82,5.
+    expect(weightForReps(100, 6), 82.5);
+    // Odhad z 80 × 8 vrátí na 8 opakování zase 80.
+    expect(weightForReps(e1rm(80, 8), 8), 80);
+    expect(weightForReps(0, 5), 0);
+    expect(weightForReps(100, 0), 0);
+  });
+
   test('warm-up and unfinished sets do not count', () {
     final sets = [s(40, 10, warmup: true), s(80, 8), s(85, 6, done: false)];
     expect(volume(w, sets), 640);
