@@ -135,6 +135,22 @@ ExerciseComparison compareExercise(
   );
 }
 
+/// Cviky dvou tréninků vedle sebe: stejný cvik spáruje podle pořadí výskytu.
+/// Pořadí drží první trénink, cviky jen z druhého jdou na konec.
+List<(WorkoutExercise?, WorkoutExercise?)> pairExercises(Workout a, Workout b) {
+  List<WorkoutExercise> counted(Workout w) => [
+    for (final e in w.exercises)
+      if (e.countedSets.isNotEmpty) e,
+  ];
+  final rest = counted(b);
+  final pairs = <(WorkoutExercise?, WorkoutExercise?)>[];
+  for (final e in counted(a)) {
+    final i = rest.indexWhere((o) => o.exerciseId == e.exerciseId);
+    pairs.add((e, i < 0 ? null : rest.removeAt(i)));
+  }
+  return [...pairs, for (final o in rest) (null, o)];
+}
+
 enum RecordKind {
   /// Nejvyšší váha (u vlastní váhy nejvyšší přidaná zátěž).
   maxWeight,

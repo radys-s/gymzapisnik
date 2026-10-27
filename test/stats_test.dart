@@ -70,6 +70,28 @@ void main() {
     expect(c.overall, Trend.better);
   });
 
+  test('pairExercises matches by exercise and keeps leftovers', () {
+    WorkoutExercise e(String id, {bool done = true}) => WorkoutExercise(
+      id: id,
+      exerciseId: id.split('#').first,
+      sets: [s(60, 8, done: done)],
+    );
+    Workout w(List<WorkoutExercise> list) => Workout(
+      id: 'w',
+      name: 'x',
+      startedAt: DateTime(2026, 10, 1),
+      exercises: list,
+    );
+    final a = w([e('bench'), e('squat'), e('bench#2'), e('row', done: false)]);
+    final b = w([e('squat'), e('bench'), e('curl')]);
+    final pairs = pairExercises(a, b);
+    String id(WorkoutExercise? x) => x?.id ?? '-';
+    expect(
+      [for (final (x, y) in pairs) '${id(x)}/${id(y)}'],
+      ['bench/bench', 'squat/squat', 'bench#2/-', '-/curl'],
+    );
+  });
+
   test('first performance is marked as added', () {
     final c = compareExercise(w, ex([s(80, 8)]), null);
     expect(c.overall, Trend.added);

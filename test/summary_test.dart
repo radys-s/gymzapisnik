@@ -126,4 +126,59 @@ void main() {
     expect(find.text('Otevřít'), findsOneWidget);
     expect(find.text('Trénink smazán.'), findsOneWidget);
   });
+
+  testWidgets('from history: compare two workouts set by set', (tester) async {
+    tester.view
+      ..physicalSize = const Size(320, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    final saved = <Workout>[];
+    await tester.runAsync(() async {
+      await state.load();
+      for (final (day, kg, extra) in [
+        (1, 60.0, 'squat'),
+        (8, 65.0, 'leg_press'),
+      ]) {
+        await state.startWorkout(now: DateTime(2026, 10, day, 17));
+        final e = await state.addExercise('bench_press');
+        e.sets = [
+          SetEntry(weight: kg, reps: 8, done: true),
+          SetEntry(weight: kg, reps: 6, done: true),
+        ];
+        final o = await state.addExercise(extra);
+        o.sets = [SetEntry(weight: 100, reps: 5, done: true)];
+        saved.add(
+          (await state.finishActive(now: DateTime(2026, 10, day, 18))).workout!,
+        );
+      }
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        // Otevřeno ze staršího: porovnání stejně dá novější vlevo.
+        home: SummaryPage(state, saved.first),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Možnosti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Porovnat s jiným'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1 společný cvik'), findsOneWidget);
+    await tester.tap(find.textContaining('8. 10. 2026'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Porovnání'), findsWidgets);
+    expect(find.text('Zlepšení proti 1. 10. 2026'), findsOneWidget);
+    expect(find.text('65×8'), findsOneWidget);
+    expect(find.text('60×8'), findsOneWidget);
+    expect(find.text('Jen 8. 10. 2026'), findsOneWidget);
+    expect(find.text('Jen 1. 10. 2026'), findsOneWidget);
+    // Bench: celkově i obě série nahoru (65 proti 60 kg).
+    expect(find.byIcon(Icons.arrow_upward_rounded), findsNWidgets(3));
+    expect(tester.takeException(), isNull);
+  });
 }

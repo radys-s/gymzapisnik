@@ -9,6 +9,7 @@ import '../../state/app_state.dart';
 import '../coach/achievements_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../history/compare_page.dart';
 import '../history/edit_workout_page.dart';
 import '../widgets/labels.dart';
 import '../workout/workout_page.dart';
@@ -156,10 +157,16 @@ class _SummaryPageState extends State<SummaryPage> {
             icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (a) => switch (a) {
               'edit' => _edit(workout),
+              'compare' => compareWithAnother(context, state, workout),
               _ => _delete(workout),
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'edit', child: Text('Upravit')),
+              if (state.workouts.any((w) => w.finished && w.id != workout.id))
+                const PopupMenuItem(
+                  value: 'compare',
+                  child: Text('Porovnat s jiným'),
+                ),
               PopupMenuItem(
                 value: 'delete',
                 child: Text('Smazat', style: TextStyle(color: p.negative)),
@@ -375,9 +382,9 @@ String trendLabel(Trend t) => switch (t) {
   Trend.missing => 'Bez pracovní série',
 };
 
-class _TrendIcon extends StatelessWidget {
+class TrendIcon extends StatelessWidget {
   final Trend trend;
-  const _TrendIcon(this.trend);
+  const TrendIcon(this.trend, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +454,7 @@ class _ComparisonPanel extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(exercise.name, style: text.titleMedium)),
-              _TrendIcon(c.overall),
+              TrendIcon(c.overall),
             ],
           ),
           Text(
@@ -471,7 +478,7 @@ class _ComparisonPanel extends StatelessWidget {
                       style: numbers,
                     ),
                   ),
-                  _TrendIcon(c.sets[i].trend),
+                  TrendIcon(c.sets[i].trend),
                   const SizedBox(width: Space.s),
                   Expanded(
                     child: Text(
