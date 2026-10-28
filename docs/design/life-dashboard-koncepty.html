@@ -6,7 +6,7 @@
 <title>Gym zápisník — koncepty brandu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@300;400;600;800&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;700;800&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&family=Archivo+Black&family=Sora:wght@300;400;600;800&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@300;400;600;800&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;700;800&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&family=Archivo+Black&family=Sora:wght@300;400;600;800&family=Manrope:wght@400;600;800&family=DM+Sans:wght@400;500;700;800&family=Unbounded:wght@400;600;800&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Syne:wght@500;700;800&family=VT323&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 /* ===== Motion tokeny: jeden zdroj pravdy pro celou stránku ===== */
 :root{
@@ -677,6 +677,299 @@ C.push({ name:'Hlasitě', insp:'Neo-brutalismus · streetwear', nav:'bottom', ta
    <div class="card tap" data-go="run" style="background:#0047ff;color:#fff"><span class="br-no" style="background:#fff;color:#0047ff">03</span><div class="k" style="margin-top:10px">${N(5.2,1)} km</div><div class="lbl" style="color:#fff">běh ráno</div>${Bar(52,'#ffe600')}</div></div>
   <div class="card tap" data-go="log"><div class="row"><span class="br-no">04</span><b>TÝDEN</b><span class="sp"></span><b>12 DNÍ V ŘADĚ</b></div>${Cols([70,4,90,55,100,30,80],{h:70,solid:true,c:'#111'})}<div class="row" style="justify-content:space-around;font-weight:700;font-size:12px;margin-top:6px"><span>PO</span><span>ÚT</span><span>ST</span><span>ČT</span><span>PÁ</span><span>SO</span><span>NE</span></div></div>`});
 
+/* ===== 08 · Trenér (konverzace) ===== */
+C.push({ name:'Trenér', insp:'Chat-first · AI kouč', nav:'fab', tabs:['home','gym','food','log'], labels:{home:'Trenér'}, tags:['tlačítko +','tmavý'],
+ why:'Úvodní obrazovka je rozhovor. Trenér shrne ráno, upozorní na chybějící bílkoviny a sám nabídne dnešní trénink, čísla jsou přímo v bublinách. Poslední zpráva se „dopíše“ až po animaci psaní. Nejvíc ukazuje, že aplikace je asistent, ne tabulka.',
+ t:{'--bg':'#100d0a','--sf':'#1d1915','--sf2':'#2c2621','--tx':'#f7f1e8','--mu':'#a69c90','--ac':'#ff7a3d','--ac2':'#7ee0a1','--ac3':'#ffd166','--on':'#1a0d05','--rd':'22px',"--ff":"Sora,Inter,sans-serif"},
+ layer:'<div class="tc-glow"></div>',
+ css:`& .tc-glow{position:absolute;left:-80px;right:-80px;top:-120px;height:380px;background:radial-gradient(closest-side,rgba(255,122,61,.28),transparent);animation:fade 1.6s ease both}
+ & .h1{font-weight:600;letter-spacing:-.03em}
+ & .tc-head{display:flex;align-items:center;gap:12px;padding:6px 0 4px}
+ & .tc-orb{width:46px;height:46px;border-radius:50%;background:conic-gradient(from 200deg,#ff7a3d,#ffd166,#ff4f8b,#ff7a3d);position:relative;flex:none;animation:tco 2.4s var(--ease) both}
+ & .tc-orb::after{content:"";position:absolute;inset:4px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe2c9,#ff7a3d 60%,#9e3b10)}
+ @keyframes tco{from{transform:rotate(-120deg) scale(.6);opacity:0}}
+ & .tc-on{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ac2)}
+ & .tc-on i{width:7px;height:7px;border-radius:50%;background:var(--ac2)}
+ & .tc-day{text-align:center;font-size:11.5px;color:var(--mu);margin:14px 0 2px;letter-spacing:.04em}
+ & .tc-msg{max-width:88%;background:var(--sf);border-radius:20px 20px 20px 6px;padding:12px 14px;margin-top:8px;font-size:14px;line-height:1.5;animation:rise var(--t-base) var(--ease) both;animation-delay:var(--d,0s)}
+ & .tc-msg b{color:var(--ac3)}
+ & .tc-me{margin-left:auto;background:var(--ac);color:var(--on);border-radius:20px 20px 6px 20px;font-weight:600}
+ & .tc-embed{background:var(--sf2);border-radius:16px;padding:12px;margin-top:10px;display:flex;align-items:center;gap:12px}
+ & .tc-slot{position:relative}
+ & .tc-typing{position:absolute;left:0;top:0;display:flex;gap:5px;padding:16px;background:var(--sf);border-radius:20px 20px 20px 6px;margin-top:8px;animation:tcgone .25s ease 3s both}
+ & .tc-typing i{width:7px;height:7px;border-radius:50%;background:var(--mu);animation:tcd .9s ease-in-out 3;animation-delay:calc(1.6s + var(--i)*.15s)}
+ @keyframes tcd{30%{transform:translateY(-5px);background:var(--tx)}}
+ @keyframes tcgone{to{opacity:0;transform:scale(.9)}}
+ & .tc-slot .tc-msg{--d:3.15s}
+ & .tc-plan{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:linear-gradient(135deg,#ff7a3d,#ff4f8b);color:#1a0d05;border-radius:16px;padding:12px 14px;margin-top:10px}
+ & .tc-plan b{color:#1a0d05;font-size:17px}
+ & .tc-plan span{font-size:12.5px;font-weight:600;opacity:.8}
+ & .tc-go{width:38px;height:38px;border-radius:50%;background:#1a0d05;color:#fff;display:grid;place-items:center}
+ & .tc-quick{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:14px -16px 0;padding:0 16px;animation:rise var(--t-base) var(--ease) 3.4s both}
+ & .tc-quick::-webkit-scrollbar{display:none}
+ & .tc-quick span{flex:none;border:1px solid var(--sf2);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:600}
+ & .nav-bottom{background:rgba(16,13,10,.86)}
+ & .nav-bottom .ind::after{background:var(--ac)}
+ & .btn{border-radius:16px}
+ & .sheet > div{background:#1d1915}`,
+ home:()=>`
+  <div class="tc-head"><div class="tc-orb" aria-hidden="true"></div><div><div class="h2">Trenér</div><span class="tc-on"><i></i>zná všech 41 tvých tréninků</span></div></div>
+  <div><div class="tc-day">DNES 17:02</div>
+   <div class="tc-msg" style="--d:.2s">Dobré odpoledne, Tomáši. Ráno jsi uběhl <b>5,2 km za 27:40</b>. Tempo 5:19 /km je tvoje nejrychlejší za poslední měsíc.</div>
+   <div class="tc-msg" style="--d:.8s">Jídlo: máš ${N(1640)} z 2 600 kcal, ale bílkoviny zaostávají.
+    <div class="tc-embed tap" data-go="food">${R(63,{s:52,w:6,label:'63%'})}${R(64,{s:52,w:6,c:'var(--ac2)',label:'96g',delay:250})}<div class="sub" style="color:var(--tx)">Chybí <b>54 g</b>. K večeři tvaroh nebo kuře.</div></div></div>
+   <div class="tc-msg tc-me" style="--d:1.3s">Jdu dneska do gymu?</div>
+   <div class="tc-slot"><div class="tc-typing" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i></div>
+    <div class="tc-msg">Jasně, záda jsou po pondělku odpočatá. V 17:00 máš <b>Pull</b>. Deadlift zkus <b>102,5 kg</b>, minule šlo 3×5 lehce.
+     <div class="tc-plan tap" data-go="gym"><div><b>Pull · 5 cviků</b><br><span>Deadlift · Lat pulldown · Row · +2</span></div><span class="tc-go">${ic('arrow',18)}</span></div></div></div></div>
+  <div class="tc-quick"><span>Co k večeři?</span><span>Jak spím?</span><span>Zapiš 300 ml vody</span><span>Plán na týden</span></div>`});
+
+/* ===== 09 · Oblouk dne (den jako slunce) ===== */
+C.push({ name:'Oblouk dne', insp:'Wellness · den jako cesta slunce', nav:'bottom', tabs:['home','gym','food','run','log'], tags:['dolní lišta','světlý'],
+ why:'Den je oblouk od probuzení po spánek. Tečka „teď“ po něm při otevření dojede na aktuální čas a na oblouku jsou zastávky dne: běh, oběd, trénink, večeře. Teplé barvy, měkké tvary a navigace s pilulkou jako v Material 3. Klidný, laskavý směr pro širší publikum.',
+ t:{'--bg':'#fbf4ea','--sf':'#ffffff','--sf2':'#f2e7d8','--tx':'#2b1d12','--mu':'#8a7562','--ac':'#ff8a3d','--ac2':'#2f9e78','--ac3':'#6b5bd6','--on':'#fff','--rd':'24px',"--ff":"Manrope,Inter,sans-serif"},
+ css:`& .h1{font-weight:800;letter-spacing:-.035em}
+ & .card{box-shadow:0 10px 30px -18px rgba(120,70,20,.35)}
+ & .dn-sky{margin:0 -16px;padding:6px 16px 0;background:linear-gradient(180deg,#ffe3c4 0%,#fbd9e4 55%,var(--bg) 100%)}
+ & .dn-arc{width:100%;height:auto;display:block;overflow:visible}
+ & .dn-arc .prog{stroke-dasharray:1;animation:draw 1.6s var(--ease) .2s both}
+ & .dn-sun{transform-box:view-box;transform-origin:150px 150px;animation:dnsun 1.6s var(--ease) .2s both}
+ @keyframes dnsun{from{transform:rotate(0deg)}}
+ & .dn-stop{transform-box:fill-box;transform-origin:center;animation:pop .4s var(--ease) both}
+ & .dn-now{display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:var(--mu);margin-top:-6px;padding:0 4px}
+ & .dn-big{text-align:center;margin-top:-86px;position:relative}
+ & .dn-big .k{font-size:44px}
+ & .dn-next{display:flex;align-items:center;gap:12px;background:var(--tx);color:#fff;border-radius:24px;padding:14px 14px 14px 18px;margin-top:18px}
+ & .dn-next .sub{color:#d9c9b8}
+ & .dn-next .go{width:44px;height:44px;border-radius:50%;background:var(--ac);display:grid;place-items:center;color:#fff;flex:none}
+ & .dn-tl{margin-top:14px}
+ & .dn-tl > div{display:grid;grid-template-columns:46px 18px 1fr;gap:8px;align-items:start;min-height:48px}
+ & .dn-tl time{font-size:12.5px;font-weight:700;color:var(--mu);padding-top:2px;font-variant-numeric:tabular-nums}
+ & .dn-tl .rail{position:relative;height:100%}
+ & .dn-tl .rail::before{content:"";position:absolute;left:8px;top:4px;bottom:-4px;width:2px;background:var(--sf2)}
+ & .dn-tl > div:last-child .rail::before{display:none}
+ & .dn-tl .rail::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--sf2);box-shadow:0 0 0 3px var(--bg)}
+ & .dn-tl .done .rail::after{background:var(--ac2)}
+ & .dn-tl .now .rail::after{background:var(--ac);box-shadow:0 0 0 3px var(--bg),0 0 0 7px rgba(255,138,61,.25)}
+ & .dn-tl b{display:block;font-size:14.5px}
+ & .dn-tl .sub{margin-bottom:10px}
+ & .nav-bottom{background:rgba(251,244,234,.9);border-top:0}
+ & .nav-bottom button[aria-current=true]{color:var(--tx)}
+ & .nav-bottom .ind{top:8px;height:32px}
+ & .nav-bottom .ind::after{width:56px;height:32px;border-radius:16px;background:#ffd9bd}
+ & .status{color:var(--tx)}`,
+ home:()=>{const f=h=>(h-6)/17,P=fr=>{const a=Math.PI*(1-fr);return [(150+130*Math.cos(a)).toFixed(1),(150-130*Math.sin(a)).toFixed(1)]};
+  const now=f(17.03),stops=[[7.08,'#2f9e78'],[12.5,'#2f9e78'],[19.5,'#d8c6b1'],[22.5,'#6b5bd6']];
+  return `
+  <div class="dn-sky"><div class="row"><div><div class="eyebrow" style="color:#a0602c">Středa 28. října</div><h1 class="h1">Odpoledne</h1></div><div class="sp"></div><span class="chip" style="background:#fff">${ic('sun',15)} 12 °C</span></div>
+   <svg class="dn-arc" viewBox="0 0 300 160" aria-hidden="true">
+    <path d="M20 150 A130 130 0 0 1 280 150" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".8"/>
+    <path class="prog" d="M20 150 A130 130 0 0 1 280 150" pathLength="1" fill="none" style="stroke:url(#dng);stroke-dashoffset:${(1-now).toFixed(3)}" stroke-width="10" stroke-linecap="round"/>
+    <defs><linearGradient id="dng" x1="0" x2="1"><stop offset="0" stop-color="#ffb36b"/><stop offset="1" stop-color="#ff5f6d"/></linearGradient></defs>
+    ${stops.map(([h,c],i)=>{const [x,y]=P(f(h));return `<circle class="dn-stop" cx="${x}" cy="${y}" r="5" fill="${c}" stroke="#fff" stroke-width="2" style="animation-delay:${.5+i*.15}s"/>`}).join('')}
+    <g class="dn-sun" style="transform:rotate(${(180*now).toFixed(1)}deg)"><circle cx="20" cy="150" r="16" fill="#ff8a3d" opacity=".25"/><circle cx="20" cy="150" r="10" fill="#ff8a3d" stroke="#fff" stroke-width="3"/></g>
+   </svg>
+   <div class="dn-big"><div class="lbl">Den máš za sebou z</div><div class="k">${N(65)} %</div></div>
+   <div class="dn-now"><span>6:00 vstávání</span><span>23:00 spánek</span></div></div>
+  <div class="dn-next tap" data-go="gym"><div class="sp"><div class="lbl" style="color:#ffb98a">Teď</div><div class="h2" style="font-size:19px">Pull · 5 cviků</div><div class="sub">Deadlift 102,5 kg · cca 55 min</div></div><span class="go">${ic('arrow',20)}</span></div>
+  <div class="dn-tl">
+   <div class="done tap" data-go="run"><time>7:05</time><div class="rail"></div><div><b>Běh 5,2 km</b><div class="sub">27:40 · 5:19 /km</div></div></div>
+   <div class="done tap" data-go="food"><time>12:30</time><div class="rail"></div><div><b>Oběd · 780 kcal</b><div class="sub">celkem ${N(1640)} z 2 600 kcal</div></div></div>
+   <div class="now tap" data-go="gym"><time>17:00</time><div class="rail"></div><div><b>Pull</b><div class="sub">právě začíná</div></div></div>
+   <div><time>19:30</time><div class="rail"></div><div><b>Večeře</b><div class="sub">doplnit 54 g bílkovin</div></div></div>
+   <div><time>22:30</time><div class="rail"></div><div><b>Spánek</b><div class="sub">cíl 7 h 30 min</div></div></div></div>`}});
+
+/* ===== 10 · Bento ===== */
+C.push({ name:'Bento', insp:'Bento grid · produktové stránky', nav:'pill', tabs:['home','gym','food','run','log'], tags:['plovoucí','tmavý'],
+ why:'Celý den na jedné obrazovce bez scrollování: dlaždice různých velikostí podle důležitosti, které při otevření postupně „naskočí“. Velká oranžová dlaždice je vždy další akce. Moderní, přehledné a skvěle se to fotí do App Store.',
+ t:{'--bg':'#0b0b0b','--sf':'#171717','--sf2':'#272727','--tx':'#fafafa','--mu':'#8f8f8f','--ac':'#ff5b1f','--ac2':'#34d399','--ac3':'#a78bfa','--on':'#fff','--rd':'26px',"--fh":"'Space Grotesk',Inter,sans-serif"},
+ css:`& .h1{font-family:var(--fh);font-weight:700;letter-spacing:-.04em}
+ & .bn{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:78px;gap:8px;margin-top:10px}
+ & .bn > div{background:var(--sf);border-radius:22px;padding:12px;position:relative;overflow:hidden;animation:bnin .6s var(--ease) both;animation-delay:calc(.1s + var(--i)*.06s)}
+ @keyframes bnin{from{opacity:0;transform:scale(.88) translateY(10px)}}
+ & .bn .w2{grid-column:span 2} & .bn .h2x{grid-row:span 2} & .bn .w4{grid-column:span 4}
+ & .bn .hero{background:linear-gradient(150deg,#ff7a3d,#ff3d1f 60%,#c21d00);color:#fff;display:flex;flex-direction:column}
+ & .bn .hero .big{font:700 34px/1 var(--fh);letter-spacing:-.03em;margin-top:auto}
+ & .bn .hero svg.bg{position:absolute;right:-18px;top:-10px;opacity:.22}
+ & .bn .lbl{font-size:10px}
+ & .bn .k{font-size:22px}
+ & .bn .ring{display:flex;align-items:center;gap:10px;height:100%}
+ & .bn .ic{color:var(--ac)}
+ & .bn .route{position:absolute;inset:0}
+ & .bn .route svg{width:100%;height:100%}
+ & .bn .route .draw{stroke-dasharray:1;animation:draw 1.8s var(--ease) .5s both}
+ & .bn .route .dot{transform-box:fill-box;transform-origin:center;animation:pop .4s var(--ease) 2.2s both}
+ & .bn .over{position:relative;z-index:1}
+ & .bn .ln{margin-top:4px}
+ & .bn .water{position:absolute;left:0;right:0;bottom:0;height:56%;background:linear-gradient(180deg,#60a5fa,#2563eb);transform-origin:bottom;animation:growY 1.3s var(--ease) .5s both;opacity:.85}
+ & .nav-pill{background:#1f1f1f;border:1px solid #2c2c2c}
+ & .nav-pill .ind{background:var(--ac)}
+ & .btn{border-radius:16px}`,
+ home:()=>`
+  <div class="row"><div><div class="eyebrow">Středa · 17:02</div><h1 class="h1">Tvůj den</h1></div><div class="sp"></div><span class="chip" style="color:var(--ac)">${ic('flame',15)} 12</span></div>
+  <div class="bn">
+   <div class="hero w2 h2x tap" data-go="gym" style="--i:0"><svg class="bg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" aria-hidden="true">${I.gym}</svg><div class="lbl" style="color:#ffe1d3">Teď · 17:00</div><div class="big">Pull</div><div style="font-size:12px;font-weight:600;margin-top:4px">DL 102,5 kg · 5 cviků</div></div>
+   <div class="w2 tap" data-go="food" style="--i:1"><div class="ring">${R(63,{s:54,w:7,label:'63%'})}<div><div class="k">${N(1640)}</div><div class="lbl">z 2 600 kcal</div></div></div></div>
+   <div style="--i:2"><div class="lbl">Kroky</div><div class="k" style="font-size:18px;margin-top:8px">${N(7.4,1)}k</div></div>
+   <div style="--i:3"><div class="water"></div><div class="over"><div class="lbl" style="color:#dbeafe">Voda</div><div class="k" style="font-size:18px;margin-top:8px">${N(1.4,1)} l</div></div></div>
+   <div class="w2 h2x tap" data-go="run" style="--i:4;padding:0"><div class="route">${Route('var(--ac2)')}</div><div class="over" style="padding:12px"><div class="lbl">Běh ráno</div><div class="k">${N(5.2,1)} km</div><div class="sub" style="font-size:11.5px">5:19 /km</div></div></div>
+   <div class="w2" style="--i:5"><div class="row"><div class="lbl">Váha</div><div class="sp"></div><b style="font-size:13px">${N(78.4,1)}</b></div>${Line([79.4,79.1,79.2,78.9,78.8,78.6,78.4],{h:30,c:'var(--ac3)'})}</div>
+   <div class="w2" style="--i:6"><div class="row"><div class="lbl">Spánek</div><div class="sp"></div><b style="font-size:13px">7:10</b></div>${Cols([60,72,55,80,66,90,74],{h:30,hi:6,c:'var(--ac3)'})}</div>
+   <div class="w4 tap" data-go="log" style="--i:7"><div class="row"><div class="lbl">14 dní</div><div class="sp"></div><span class="sub" style="font-size:11.5px">aktivní 9×</span></div>${Heat()}</div>
+  </div>`});
+
+/* ===== 11 · Regenerace (recovery skóre) ===== */
+C.push({ name:'Regenerace', insp:'Recovery wearables · skóre dne', nav:'bottom', tabs:['home','gym','run','log'], tags:['dolní lišta','tmavý'],
+ why:'Každé ráno jedno číslo: jak moc je tělo připravené. Tři velké číselníky (spánek, regenerace, zátěž), barva podle stavu a z toho doporučení, jak těžce dnes trénovat. Data z hodinek přes Health Connect / Apple Zdraví, výpočet lokálně.',
+ t:{'--bg':'#0a0e13','--sf':'#121922','--sf2':'#1e2833','--tx':'#fff','--mu':'#8494a6','--ac':'#16ec7f','--ac2':'#3fa9f5','--ac3':'#b17cff','--on':'#03140a','--rd':'18px',"--ff":"'DM Sans',Inter,sans-serif"},
+ css:`& .h1{font-weight:800;letter-spacing:-.03em}
+ & .rc-dials{display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:end;gap:6px;margin-top:14px;text-align:center}
+ & .rc-dials .rg > span b{display:block;font-size:22px;font-weight:800}
+ & .rc-dials .mid .rg > span b{font-size:34px}
+ & .rc-dials .rg{margin:0 auto}
+ & .rc-dials .lbl{margin-top:8px}
+ & .rc-state{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(22,236,127,.16),rgba(22,236,127,.03));border:1px solid rgba(22,236,127,.3)}
+ & .rc-state b{color:var(--ac)}
+ & .rc-gauge{width:100%;height:auto;display:block;overflow:visible}
+ & .rc-gauge .prog{stroke-dasharray:1;animation:draw 1.4s var(--ease) .3s both}
+ & .rc-needle{transform-box:view-box;transform-origin:110px 110px;animation:rcn 1.4s var(--ease) .3s both}
+ @keyframes rcn{from{transform:rotate(0deg)}}
+ & .rc-vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+ & .rc-vitals > div{background:var(--sf);border-radius:16px;padding:12px}
+ & .rc-vitals .k{font-size:20px}
+ & .rc-week{display:flex;gap:6px;align-items:flex-end;height:70px;margin-top:12px}
+ & .rc-week div{flex:1;text-align:center;font-size:10.5px;color:var(--mu);font-weight:700}
+ & .rc-week i{display:block;border-radius:6px;margin-bottom:5px;transform-origin:bottom;animation:growY .8s var(--ease) both}
+ & .nav-bottom{background:rgba(10,14,19,.9)}
+ & .btn{border-radius:12px}`,
+ home:()=>`
+  <div class="row"><div><div class="eyebrow">Středa · dnes ráno</div><h1 class="h1">Připravenost</h1></div><div class="sp"></div><span class="chip">${ic('heart',15)} hodinky</span></div>
+  <div class="rc-dials">
+   <div class="tap" data-go="log">${R(88,{s:86,w:7,c:'var(--ac3)',label:'<b>88</b>%'})}<div class="lbl">Spánek</div></div>
+   <div class="mid">${R(74,{s:118,w:10,c:'var(--ac)',label:'<b>74</b>%',delay:250})}<div class="lbl" style="color:var(--ac)">Regenerace</div></div>
+   <div class="tap" data-go="gym">${R(54,{s:86,w:7,c:'var(--ac2)',label:'<b>11,4</b>',delay:400})}<div class="lbl">Zátěž</div></div></div>
+  <div class="rc-state">${ic('bolt',22)}<div><b>Zelená. Tělo zvládne těžký den.</b><div class="sub" style="margin-top:3px">Deadlift klidně na 102,5 kg. Cílová zátěž dne 14–16, zatím máš 11,4 z ranního běhu.</div></div></div>
+  <div class="card"><div class="row"><div class="lbl">Zátěž dne</div><div class="sp"></div><span class="sub">cíl 14–16 z 21</span></div>
+   <svg class="rc-gauge" viewBox="0 0 220 124" aria-hidden="true"><path d="M20 110 A90 90 0 0 1 200 110" fill="none" style="stroke:var(--sf2)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M20 110 A90 90 0 0 1 200 110" pathLength="21" fill="none" stroke="rgba(63,169,245,.35)" stroke-width="14" stroke-dasharray="0 14 2 5"/>
+    <path class="prog" d="M20 110 A90 90 0 0 1 200 110" pathLength="1" fill="none" style="stroke:var(--ac2);stroke-dashoffset:${(1-11.4/21).toFixed(3)}" stroke-width="14" stroke-linecap="round"/>
+    <g class="rc-needle" style="transform:rotate(${(180*11.4/21).toFixed(1)}deg)"><line x1="110" y1="110" x2="34" y2="110" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="110" cy="110" r="7" fill="#fff"/></g>
+    <text x="110" y="92" text-anchor="middle" fill="#fff" style="font:800 26px 'DM Sans',sans-serif">11,4</text></svg>
+   <button class="btn wide" data-go="gym">Přidat Pull · odhad +4,5</button></div>
+  <div class="rc-vitals"><div><div class="lbl">HRV</div><div class="k">${N(62)}<small>ms</small></div></div><div><div class="lbl">Klid. tep</div><div class="k">${N(54)}</div></div><div><div class="lbl">Spánek</div><div class="k">7:10</div></div></div>
+  <div class="card"><div class="lbl">Regenerace · 7 dní</div><div class="rc-week">${[[62,'#ffd23f','Č'],[48,'#ffd23f','P'],[81,'#16ec7f','S'],[30,'#ff4d4d','N'],[70,'#16ec7f','P'],[58,'#ffd23f','Ú'],[74,'#16ec7f','S']].map(([v,c,d],i)=>`<div><i style="height:${v*.6}px;background:${c};animation-delay:${150+i*50}ms"></i>${d}</div>`).join('')}</div></div>`});
+
+/* ===== 12 · Příběhy (stories) ===== */
+const ST=[
+ {t:'Ranní běh',big:'5,2 km',sub:'27:40 · 5:19 /km · nejrychlejší za měsíc',bg:'linear-gradient(160deg,#ff3d7f,#7a5cff)',art:()=>`<div class="st-art">${Route('#fff')}</div>`},
+ {t:'Strava',big:'1 640 kcal',sub:'Bílkoviny 96 g. Do cíle chybí 54 g.',bg:'linear-gradient(160deg,#ffb340,#ff3d7f)',art:()=>`<div class="st-art" style="display:grid;place-items:center">${R(63,{s:150,w:16,c:'#fff',track:'rgba(255,255,255,.25)',label:'<b style="font-size:34px">63 %</b>'})}</div>`},
+ {t:'Dnes v 17:00',big:'Pull',sub:'Deadlift 102,5 kg · 5 cviků · cca 55 min',bg:'linear-gradient(160deg,#7a5cff,#00b2ff)',go:'gym',art:()=>`<div class="st-art" style="display:grid;place-items:center"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">${I.gym}</svg></div>`}];
+const stCard=i=>{const s=ST[i];return `<div class="st-bars" aria-hidden="true">${ST.map((_,j)=>`<i class="${j<i?'full':j===i?'run':''}"><b></b></i>`).join('')}</div>
+ <div class="st-top"><span class="st-av">T</span><b>${s.t}</b><span class="sub" style="color:rgba(255,255,255,.75)">· dnes</span></div>${s.art()}
+ <div class="st-txt"><div class="st-big">${s.big}</div><div>${s.sub}</div>${s.go?`<button class="btn" data-go="${s.go}" style="margin-top:12px;background:#fff;color:#111">Otevřít trénink ${ic('arrow',16)}</button>`:''}</div>
+ <div class="st-hint">Klepni pro další ›</div>`};
+C.push({ name:'Příběhy', insp:'Stories · sociální sítě', nav:'pill', tabs:['home','gym','food','log'], tags:['plovoucí','tmavý'],
+ why:'Den jako příběhy, které každý zná ze sociálních sítí: nahoře kroužky (Běh, Strava, Trénink, Týden), pod nimi velký příběh s pruhy průběhu. Klepnutím přepínáš. Hotový příběh jde rovnou sdílet, takže aplikace se šíří sama.',
+ t:{'--bg':'#000','--sf':'#151515','--sf2':'#262626','--tx':'#fff','--mu':'#a3a3a3','--ac':'#ff3d7f','--ac2':'#ffb340','--ac3':'#7a5cff','--on':'#fff','--rd':'20px',"--ff":"'Bricolage Grotesque',Inter,sans-serif"},
+ css:`& .h1{font-weight:800;letter-spacing:-.03em;font-size:28px}
+ & .st-rings{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:6px -16px 0;padding:4px 16px}
+ & .st-rings::-webkit-scrollbar{display:none}
+ & .st-rings > div{flex:none;text-align:center;font-size:11.5px;font-weight:600;width:64px;animation:pop .45s var(--ease) both;animation-delay:calc(var(--i)*70ms)}
+ & .st-rings .r{width:64px;height:64px;border-radius:50%;padding:3px;background:conic-gradient(#ffb340,#ff3d7f,#7a5cff,#ffb340);display:grid;place-items:center;margin-bottom:5px}
+ & .st-rings .seen .r{background:#3a3a3a}
+ & .st-rings .r span{width:100%;height:100%;border-radius:50%;background:var(--sf);border:3px solid #000;display:grid;place-items:center}
+ & .st-card{position:relative;height:430px;border-radius:26px;overflow:hidden;margin-top:12px;color:#fff;cursor:pointer;display:flex;flex-direction:column;padding:12px 14px 16px;transition:background var(--t-base) var(--ease)}
+ & .st-bars{display:flex;gap:4px}
+ & .st-bars i{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.35);overflow:hidden}
+ & .st-bars i b{display:block;height:100%;background:#fff;transform-origin:left;transform:scaleX(0)}
+ & .st-bars i.full b{transform:none}
+ & .st-bars i.run b{animation:stb 4s linear .3s both}
+ @keyframes stb{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+ & .st-top{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13.5px}
+ & .st-av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-weight:800;font-size:13px}
+ & .st-art{position:relative;flex:1;margin:8px -14px;animation:fade .6s ease both}
+ & .st-art svg{position:absolute;inset:0;width:100%;height:100%}
+ & .st-art .draw{stroke-dasharray:1;animation:draw 1.6s var(--ease) .2s both}
+ & .st-art .dot{transform-box:fill-box;transform-origin:center;animation:pop .4s var(--ease) 1.7s both}
+ & .st-art .rg{position:relative}
+ & .st-txt{animation:rise var(--t-base) var(--ease) .15s both}
+ & .st-big{font:800 52px/0.95 var(--ff);letter-spacing:-.04em}
+ & .st-hint{position:absolute;right:14px;top:22px;font-size:11.5px;font-weight:600;opacity:.7}
+ & .nav-pill{background:#1c1c1c}
+ & .nav-pill .ind{background:linear-gradient(90deg,#ff3d7f,#7a5cff)}`,
+ click:(t,ph)=>{const card=t.closest('.st-card');if(!card)return false;const i=(+card.dataset.i+1)%ST.length;card.dataset.i=i;card.style.background=ST[i].bg;card.innerHTML=stCard(i);return true},
+ home:()=>`
+  <div class="row"><h1 class="h1">Dnes</h1><div class="sp"></div><span class="chip">${ic('flame',15)} 12 dní</span></div>
+  <div class="st-rings">${[['run','Běh',0],['food','Strava',0],['gym','Pull',0],['log','Týden',1],['trophy','Rekordy',1]].map(([i,l,s],j)=>`<div class="${s?'seen':''}" style="--i:${j}"><div class="r"><span>${ic(i,24)}</span></div>${l}</div>`).join('')}</div>
+  <div class="st-card" data-i="0" role="button" aria-label="Příběh, klepni pro další" style="background:${ST[0].bg}">${stCard(0)}</div>
+  <div class="card row tap" data-go="food" style="gap:12px"><div class="ibox" style="background:linear-gradient(135deg,#ffb340,#ff3d7f)">${ic('food',20)}</div><div class="sp"><b>Zapsat večeři</b><div class="sub">zbývá ~960 kcal</div></div>${ic('chev',18)}</div>`});
+
+/* ===== 13 · Sever (2 záložky) ===== */
+C.push({ name:'Sever', insp:'Skandinávský minimalismus', nav:'top2', tabs:['gym','home'], labels:{gym:'Trénink',home:'Život'}, tags:['2 záložky','světlý'],
+ why:'Jen dvě záložky: Trénink a Život. Všechno ostatní je o úroveň níž. Hodně vzduchu, tenké linky, jedna lesní zelená a čísla, která se tiše dopočítají. Pro lidi, kterým jiné aplikace připadají moc hlučné. Nejjednodušší možná navigace.',
+ t:{'--bg':'#f5f4ef','--sf':'#ffffff','--sf2':'#e7e5dc','--tx':'#1d2822','--mu':'#78827c','--ac':'#2f5d4a','--ac2':'#4f8a69','--ac3':'#c58a4a','--on':'#fff','--rd':'14px',"--ff":"'Plus Jakarta Sans',Inter,sans-serif"},
+ css:`& .h1{font-weight:300;font-size:40px;letter-spacing:-.04em}
+ & .h1 b{font-weight:800}
+ & .card{box-shadow:none;border:1px solid var(--sf2)}
+ & .nav-top{background:transparent;border:1px solid var(--sf2);border-radius:999px}
+ & .nav-top .ind{border-radius:999px}
+ & .nav-top button{font-weight:600}
+ & .sv-row{display:grid;grid-template-columns:1fr auto;align-items:baseline;padding:18px 0 0;border-top:1px solid var(--sf2);margin-top:18px}
+ & .sv-row .k{font-weight:300;font-size:34px;letter-spacing:-.03em}
+ & .sv-row .k small{font-size:13px}
+ & .sv-row .lbl{letter-spacing:.12em}
+ & .sv-line{grid-column:1/-1;height:2px;background:var(--sf2);margin-top:12px;overflow:hidden}
+ & .sv-line i{display:block;height:100%;background:var(--ac);transform-origin:left;animation:grow 1.2s var(--ease) both}
+ & .sv-next{display:flex;align-items:center;gap:14px;margin-top:26px;padding:18px;border-radius:18px;background:var(--ac);color:#fff}
+ & .sv-next .sub{color:#cfe2d7}
+ & .sv-links{display:flex;gap:8px;margin-top:16px}
+ & .sv-links button{flex:1;border:1px solid var(--sf2);background:transparent;border-radius:14px;padding:12px 0;font:600 13px var(--ff);color:var(--tx);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+ & .btn{border-radius:12px}
+ & .chip{background:transparent;border:1px solid var(--sf2)}
+ & .status{color:var(--tx)}`,
+ home:()=>`
+  <div class="eyebrow" style="letter-spacing:.14em;margin-top:14px">Středa 28. 10.</div>
+  <h1 class="h1">Dnes se<br><b>daří.</b></h1>
+  <div class="sv-row"><div><div class="lbl">Jídlo</div><div class="k">${N(1640)}<small>/ 2 600 kcal</small></div></div><span class="sub">63 %</span><div class="sv-line"><i style="width:63%"></i></div></div>
+  <div class="sv-row"><div><div class="lbl">Pohyb</div><div class="k">${N(7420)}<small>kroků</small></div></div><span class="sub">+ běh 5,2 km</span><div class="sv-line"><i style="width:74%;animation-delay:.12s"></i></div></div>
+  <div class="sv-row"><div><div class="lbl">Spánek</div><div class="k">7:10<small>h</small></div></div><span class="sub">cíl 7:30</span><div class="sv-line"><i style="width:95%;animation-delay:.24s"></i></div></div>
+  <div class="sv-next tap" data-go="gym">${ic('gym',26,1.6)}<div class="sp"><b style="font-size:16px">Pull v 17:00</b><div class="sub">5 cviků · deadlift 102,5 kg</div></div>${ic('arrow',20,1.6)}</div>
+  <div class="sv-links"><button data-go="food">${ic('food',20,1.6)}Strava</button><button data-go="run">${ic('run',20,1.6)}Běh</button><button data-go="log">${ic('log',20,1.6)}Deník</button></div>`});
+
+/* ===== 14 · Trasa (běh, boční lišta) ===== */
+C.push({ name:'Trasa', insp:'Běžecké aplikace · mapa na prvním místě', nav:'rail', tabs:['home','run','gym','food','log'], tags:['menu','tmavý'],
+ why:'Pro ty, kdo hlavně běhají a gym je doplněk. Úvod otevře mapu, trasa se nakreslí, kilometry naskočí a statistiky leží na skle přes mapu. Boční lišta nechává mapě maximum místa a na velkém telefonu se ovládá palcem.',
+ t:{'--bg':'#06181a','--sf':'#0d2a2d','--sf2':'#173a3e','--tx':'#e9fbf9','--mu':'#8db7b3','--ac':'#2de2c8','--ac2':'#2de2c8','--ac3':'#ffb547','--on':'#032421','--rd':'18px',"--ff":"Manrope,Inter,sans-serif","--fh":"Unbounded,Manrope,sans-serif"},
+ css:`& .h1{font-family:var(--fh);font-weight:800;font-size:26px;letter-spacing:-.02em}
+ & .k{font-family:var(--fh);font-weight:600;font-size:22px}
+ & .nav-rail{background:#041214;border-right:1px solid #12302f}
+ & .nav-rail .ind{background:var(--ac)}
+ & .tr-map{position:relative;height:330px;border-radius:24px;overflow:hidden;margin-top:10px;background:
+  radial-gradient(circle at 70% 25%,rgba(45,226,200,.18),transparent 40%),
+  repeating-linear-gradient(28deg,transparent 0 26px,rgba(233,251,249,.05) 26px 27px),
+  repeating-linear-gradient(-62deg,transparent 0 34px,rgba(233,251,249,.04) 34px 35px),#0a2326}
+ & .tr-map svg{position:absolute;inset:0;width:100%;height:100%}
+ & .tr-map .river{fill:none;stroke:#0f3e47;stroke-width:22}
+ & .tr-map .draw{stroke-dasharray:1;animation:draw 2s var(--ease) .2s both;filter:drop-shadow(0 0 6px rgba(45,226,200,.7))}
+ & .tr-km{transform-box:fill-box;transform-origin:center;animation:pop .4s var(--ease) both}
+ & .tr-glass{position:absolute;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(3,1fr);padding:12px;border-radius:18px;background:rgba(6,24,26,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(233,251,249,.12)}
+ & .tr-glass .k{font-size:17px}
+ & .tr-badge{position:absolute;left:12px;top:12px;font:700 11px var(--ff);letter-spacing:.08em;background:var(--ac);color:var(--on);padding:5px 9px;border-radius:999px}
+ & .btn{border-radius:14px}
+ & .back{color:var(--ac)}`,
+ home:()=>`
+  <div class="eyebrow">Středa · dnes 7:05</div>
+  <h1 class="h1">Ranní okruh</h1>
+  <div class="tr-map tap" data-go="run"><svg viewBox="0 0 264 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path class="river" d="M-10 250 C60 230 90 290 160 260 S240 200 280 220"/>
+    <path class="draw" d="M40 280 C30 220 80 210 70 160 S40 80 100 60 S200 70 190 130 S130 170 160 220 S230 250 220 290" pathLength="1" fill="none" stroke="#2de2c8" stroke-width="5" stroke-linecap="round"/>
+    ${[[70,165,1],[100,60,2],[190,128,3],[160,220,4],[220,290,5]].map(([x,y,n],i)=>`<g class="tr-km" style="animation-delay:${.6+i*.3}s"><circle cx="${x}" cy="${y}" r="10" fill="#06181a" stroke="#2de2c8" stroke-width="2"/><text x="${x}" y="${y+4}" text-anchor="middle" fill="#e9fbf9" style="font:700 10px Manrope,sans-serif">${n}</text></g>`).join('')}
+    <circle cx="40" cy="280" r="7" fill="#ffb547"/></svg>
+   <span class="tr-badge">Rekord tempa</span>
+   <div class="tr-glass"><div><div class="lbl">Km</div><div class="k">${N(5.2,1)}</div></div><div><div class="lbl">Čas</div><div class="k">27:40</div></div><div><div class="lbl">Tempo</div><div class="k">5:19</div></div></div></div>
+  <div class="card row" style="gap:14px">${R(74,{s:62,w:7,label:'74%'})}<div><div class="h2">Týden ${N(14.8,1)} / 20 km</div><div class="sub">Ještě 5,2 km, třeba v sobotu.</div></div></div>
+  <div class="grid2"><div class="card tap" data-go="gym"><div class="lbl">Gym 17:00</div><div class="k">Pull</div></div><div class="card tap" data-go="food"><div class="lbl">Energie</div><div class="k">${N(1640)}</div></div></div>`});
+
 /* @@NEXT@@ */
 
 /* ===== Vykreslení a interakce ===== */
@@ -739,6 +1032,7 @@ C.forEach((c,i)=>{
   if(sh&&!open){ph.querySelector(`.sheet[data-for="${sh.dataset.sheet}"]`).classList.add('open');if(sh.classList.contains('fab'))sh.classList.add('open');return}
   if(open&&(sh||t===open||t.closest('[data-go]'))){open.classList.remove('open');ph.querySelector('.fab')?.classList.remove('open');if(sh)return}
   const tg=t.closest('[data-toggle]');if(tg){const on=tg.classList.toggle('on');tg.setAttribute('aria-pressed',on);return}
+  if(c.click&&!t.closest('[data-go]')&&c.click(t,ph))return;
   const g=t.closest('[data-go]');if(g)go(g.dataset.go)});
  el._ph=ph;
 });
