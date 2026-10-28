@@ -8,6 +8,7 @@
 | 2026-10-27 | bidnej / bidnej/beta8 | Audit beta.7 + nápady 6, 9, 4, 15 (1RM, trend váhy, řazení cviků, oblíbená jídla) |
 | 2026-10-27 | bidnej / bidnej/beta8 | Nápady 13 a 10: sdílení odznaku, porovnání dvou tréninků |
 | 2026-10-28 | bidnej / bidnej/beta8 | 18 konceptů úvodní obrazovky „životní dashboard“ (gym, strava, běh) |
+| 2026-10-28 | bidnej / bidnej/beta8 | Koncepty v2: 20 brandových směrů s animacemi |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -89,3 +90,54 @@ klik karta → Gym, + → nabídka, menu → šuplík.
 až nakonec (oprávnění, baterie, iOS sideload).
 
 **Další krok:** Tomáš vybere koncepty → navrhnout detailní Gym nebo Strava rozhraní ve vybraném stylu.
+
+## 2026-10-28 — Koncepty v2: 20 brandových směrů s animacemi (bidnej)
+
+**Co a proč:** první sada 18 konceptů byla funkční, ale vizuálně si byla podobná. Pro výběr brandu je potřeba, aby každý směr měl vlastní styl a vlastní pohyb. Soubor `docs/design/life-dashboard-koncepty.html` je přepsaný od nuly.
+
+**Engine (sdílený pro všechny koncepty):**
+- Motion tokeny v CSS: instant .12 s, quick .28 s, base .45 s, slow .7 s, cine 1.1 s, easing `cubic-bezier(.22,1,.36,1)`, stagger .07 s.
+- Animace se v telefonu spustí, až je telefon na obrazovce (IntersectionObserver, jednorázově).
+- Počítadla: animovaná hodnota je `aria-hidden`, skutečná zvlášť pro čtečku.
+- Kruhy a křivky se dokreslují (`pathLength`). Navigace má přejíždějící indikátor. Přechod obrazovek: stará odejde, pak přijde nová.
+- `prefers-reduced-motion` obsah ukáže hned.
+- CSS každého konceptu je scoped přes `.phone[data-c]`.
+- Hvězdičkou jdou označit favority (localStorage), dole je lišta ke zkopírování výběru.
+
+**20 směrů:**
+
+| # | Koncept | Styl | Navigace |
+|---|---|---|---|
+| 01 | Aktivita | Apple Fitness | lišta |
+| 02 | Tensor | NVIDIA | horní záložky |
+| 03 | Pit wall | F1, stránka jezdce | lišta |
+| 04 | Série | Hevy | lišta |
+| 05 | Sklo | glassmorphism | pilulka |
+| 06 | Deník těla | editorial | výsuvné menu |
+| 07 | Hlasitě | neo-brutalismus | lišta |
+| 08 | Trenér | chat | lišta + tlačítko + |
+| 09 | Oblouk dne | wellness, slunce | lišta |
+| 10 | Bento | bento grid | pilulka |
+| 11 | Regenerace | recovery skóre | lišta |
+| 12 | Příběhy | stories | pilulka |
+| 13 | Sever | skandinávský, 2 záložky | 2 záložky nahoře |
+| 14 | Trasa | mapa běhu | boční lišta |
+| 15 | Klid | pastel, nálada | lišta |
+| 16 | Terminál | CLI | horní záložky |
+| 17 | Návyky | checklist | lišta + tlačítko + |
+| 18 | Mapa těla | anatomie | lišta + tlačítko + |
+| 19 | Arkáda | synthwave, XP | lišta |
+| 20 | Atelier | luxus, zlato | 2 záložky nahoře |
+
+**Ověření (Playwright, Chrome):**
+- Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
+- Při 400 px je `scrollWidth` 400, tedy bez přetečení.
+- Všechna počítadla skončí na cílové hodnotě.
+- V režimu reduced-motion je vidět všech 20 konceptů.
+
+**Co nefungovalo:**
+- Pilulka v konceptu 05: scoped barva přebila aktivní stav a vznikla bílá ikona na bílé pilulce. Opraveno přes `:not([aria-current])`.
+- Text v příběhu se překrýval s nápovědou. Opraveno.
+
+**Další krok:** Tomáš vybere jeden směr, případně kombinaci (navigace z jednoho, barvy z druhého). Pak teprve přenesu vybraný styl do Flutteru jako tokeny a novou úvodní obrazovku.
+
