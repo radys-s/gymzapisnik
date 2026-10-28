@@ -970,6 +970,264 @@ C.push({ name:'Trasa', insp:'Běžecké aplikace · mapa na prvním místě', na
   <div class="card row" style="gap:14px">${R(74,{s:62,w:7,label:'74%'})}<div><div class="h2">Týden ${N(14.8,1)} / 20 km</div><div class="sub">Ještě 5,2 km, třeba v sobotu.</div></div></div>
   <div class="grid2"><div class="card tap" data-go="gym"><div class="lbl">Gym 17:00</div><div class="k">Pull</div></div><div class="card tap" data-go="food"><div class="lbl">Energie</div><div class="k">${N(1640)}</div></div></div>`});
 
+/* ===== 15 · Klid (wellness, nálada) ===== */
+const MOODS=[['😣','Vyčerpaný'],['😕','Unavený'],['😐','V pohodě'],['🙂','Dobře'],['😄','Skvěle']];
+C.push({ name:'Klid', insp:'Wellness · mindfulness aplikace', nav:'bottom', tabs:['home','food','run','log'], labels:{log:'Nálada'}, tags:['dolní lišta','světlý'],
+ why:'Pastelový, měkký a pomalý. Den začíná otázkou „jak se cítíš?“ a podle odpovědi se upraví doporučení. Dechový kruh pomalu dýchá, data jsou v pozadí. Trénink je jen jedna z věcí, které ti dnes udělají dobře. Pro ty, kdo chtějí zdraví bez „gym bro“ vibe.',
+ t:{'--bg':'#f6f1fb','--sf':'#ffffff','--sf2':'#ece4f6','--tx':'#2d2440','--mu':'#8a7fa0','--ac':'#9b7bf0','--ac2':'#5cc8a8','--ac3':'#f5a37a','--on':'#fff','--rd':'28px',"--ff":"'DM Sans',Inter,sans-serif","--fh":"'Instrument Serif',Georgia,serif"},
+ layer:'<div class="cm-bg"></div>',
+ css:`& .cm-bg{position:absolute;inset:0;background:radial-gradient(circle at 20% 0%,#ffe0d2,transparent 45%),radial-gradient(circle at 100% 30%,#d9ccff,transparent 50%),#f6f1fb}
+ & .h1{font-family:var(--fh);font-weight:400;font-size:40px;letter-spacing:-.01em;line-height:1}
+ & .h1 i{color:var(--ac)}
+ & .card{box-shadow:0 18px 40px -26px rgba(80,50,140,.4)}
+ & .cm-mood{display:flex;justify-content:space-between;margin-top:12px}
+ & .cm-mood button{width:52px;height:52px;border-radius:50%;border:0;background:var(--sf2);font-size:24px;cursor:pointer;transition:transform var(--t-quick) var(--ease),background var(--t-quick) var(--ease),box-shadow var(--t-quick) var(--ease);animation:pop .45s var(--ease) both;animation-delay:calc(.2s + var(--i)*60ms)}
+ & .cm-mood button[aria-pressed=true]{background:#fff;transform:scale(1.14);box-shadow:0 0 0 3px var(--ac),0 10px 20px -8px rgba(155,123,240,.6)}
+ & .cm-say{margin-top:12px;font-size:14px;transition:opacity var(--t-quick) var(--ease)}
+ & .cm-breath{position:relative;width:150px;height:150px;margin:6px auto 0;display:grid;place-items:center}
+ & .cm-breath i{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(155,123,240,.45),rgba(155,123,240,0) 70%);animation:cmb 8s ease-in-out 3}
+ & .cm-breath i:nth-child(2){inset:22px;background:radial-gradient(circle,rgba(92,200,168,.5),rgba(92,200,168,0) 70%);animation-delay:-4s}
+ @keyframes cmb{50%{transform:scale(1.18)}}
+ & .cm-breath b{position:relative;font:400 22px var(--fh)}
+ & .cm-chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+ & .cm-chips > div{border-radius:22px;padding:14px;color:#2d2440}
+ & .cm-chips .k{font-size:22px}
+ & .nav-bottom{background:rgba(255,255,255,.75);border-top:0}
+ & .nav-bottom .ind::after{width:6px;height:6px;border-radius:50%;margin-top:4px;background:var(--ac)}
+ & .nav-bottom button[aria-current=true]{color:var(--ac)}
+ & .btn{background:var(--tx);color:#fff}
+ & .status{color:var(--tx)}`,
+ click:(t,ph)=>{const b=t.closest('.cm-mood button');if(!b)return false;
+  ph.querySelectorAll('.cm-mood button').forEach(x=>x.setAttribute('aria-pressed',x===b));const i=+b.dataset.m;
+  ph.querySelector('.cm-say').innerHTML=i<2?'Dnes zvolni. Místo Pull dej <b>20 min chůze</b> a jdi spát do 22:30.':i<3?'Trénink ano, ale lehčeji: deadlift <b>97,5 kg</b>, o sérii méně.':'Super den na sílu. Deadlift <b>102,5 kg</b>, jak plánoval trenér.';return true},
+ home:()=>`
+  <div class="eyebrow" style="text-transform:none;letter-spacing:0;font-size:14px;margin-top:6px">Středa odpoledne</div>
+  <h1 class="h1">Jak se dnes<br><i>cítíš?</i></h1>
+  <div class="card"><div class="cm-mood" role="group" aria-label="Nálada">${MOODS.map(([e,l],i)=>`<button data-m="${i}" aria-pressed="${i===3}" aria-label="${l}" style="--i:${i}">${e}</button>`).join('')}</div>
+   <div class="cm-say">Super den na sílu. Deadlift <b>102,5 kg</b>, jak plánoval trenér.</div></div>
+  <div class="card" style="text-align:center"><div class="lbl">Minuta dechu před tréninkem</div><div class="cm-breath" aria-hidden="true"><i></i><i></i><b>nádech</b></div><button class="btn" data-go="gym" style="margin-top:6px">Pull v 17:00 ${ic('arrow',16)}</button></div>
+  <div class="cm-chips"><div class="tap" data-go="food" style="background:#ffe6da"><div class="lbl" style="color:#b0613a">Jídlo</div><div class="k">${N(1640)}</div><div class="sub" style="color:#8b5a43">z 2 600 kcal</div></div>
+   <div class="tap" data-go="run" style="background:#d6f3ea"><div class="lbl" style="color:#2f8c71">Pohyb</div><div class="k">${N(7420)}</div><div class="sub" style="color:#3c7d6a">kroků</div></div>
+   <div style="background:#e6ddff"><div class="lbl" style="color:#6c55c4">Spánek</div><div class="k">7:10</div><div class="sub" style="color:#6c5ba8">klidný</div></div>
+   <div style="background:#dff0ff"><div class="lbl" style="color:#3d7ab8">Voda</div><div class="k">${N(1.4,1)} l</div><div class="sub" style="color:#4a6f94">z 2,5 l</div></div></div>`});
+
+/* ===== 16 · Terminál ===== */
+C.push({ name:'Terminál', insp:'CLI · hacker / dev estetika', nav:'top-under', tabs:['home','gym','food','run','log'], labels:{home:'~/dnes',gym:'gym',food:'strava',run:'běh',log:'log'}, tags:['horní záložky','tmavý'],
+ why:'Celý den jako výstup z příkazové řádky: zelený fosfor, řádky naskakují po sobě, ukazatele z bloků a blikající kurzor. Pro programátory a nerdy je to láska na první pohled, pro ostatní nečitelné. Odvážná volba pro úzké, ale věrné publikum.',
+ t:{'--bg':'#050805','--sf':'#0b120b','--sf2':'#142014','--tx':'#b6ffb0','--mu':'#5f9a5a','--ac':'#39ff6a','--ac2':'#39ff6a','--ac3':'#ffcc33','--on':'#021a07','--rd':'4px',"--ff":"'JetBrains Mono',ui-monospace,monospace","--fh":"VT323,'JetBrains Mono',monospace"},
+ layer:'<div class="tm-scan"></div>',
+ css:`& .tm-scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.6));z-index:6}
+ & .screen{text-shadow:0 0 6px rgba(57,255,106,.45)}
+ & .h1{font-family:var(--fh);font-weight:400;font-size:44px;line-height:.9}
+ & .k{font-family:var(--fh);font-weight:400;font-size:32px}
+ & .card{border:1px dashed #2a4a2a;background:transparent}
+ & .btn{border-radius:0;background:var(--ac);color:var(--on);font-family:var(--ff);text-transform:lowercase}
+ & .btn.ghost{background:transparent;border:1px solid var(--ac);color:var(--ac)}
+ & .chip,& .set b,& .set em,& .set .n,& .ibox{border-radius:0}
+ & .set.on em{background:var(--ac);color:var(--on)}
+ & .nav-under{border-bottom:1px dashed #2a4a2a}
+ & .nav-under button{font:400 15px var(--ff);text-transform:lowercase}
+ & .nav-under button[aria-current=true]::before{content:"> "}
+ & .nav-under .ind{border-radius:0;box-shadow:0 0 10px var(--ac)}
+ & .tm{font-size:12.5px;line-height:1.65;margin-top:8px}
+ & .tm > div{white-space:pre-wrap;animation:tmline .01s steps(1) both;animation-delay:calc(.25s + var(--i)*.16s)}
+ @keyframes tmline{from{opacity:0}}
+ & .tm .p{color:var(--ac)}
+ & .tm .y{color:var(--ac3)}
+ & .tm .d{color:var(--mu)}
+ & .tm .cmd{display:inline-block;overflow:hidden;vertical-align:bottom;animation:tmtype 1s steps(22) .1s both}
+ @keyframes tmtype{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+ & .tm .cur{display:inline-block;width:8px;height:15px;background:var(--ac);vertical-align:-2px;animation:tmblink 1s steps(2) 8}
+ @keyframes tmblink{50%{opacity:0}}
+ & .tm .lnk{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+ & .status{color:var(--tx);font-family:var(--ff)}`,
+ home:()=>{const L=[
+  ['<span class="p">tomas@gym</span>:<span class="y">~</span>$ <span class="cmd">gz dnes --souhrn</span>'],
+  ['<span class="d">načteno 41 tréninků, 312 jídel, 58 běhů … ok</span>'],
+  [''],
+  ['<span class="y">DATUM</span>    st 28.10.2026 17:02'],
+  ['<span class="y">SÉRIE</span>    12 dní <span class="p">▲</span>'],
+  [''],
+  ['<span class="y">[GYM]</span>    pull · 17:00 · 5 cviků'],
+  ['         deadlift 100 → <span class="p">102,5 kg</span> (+2,5)'],
+  ['         <span class="lnk" data-go="gym">$ gz start pull</span>'],
+  [''],
+  ['<span class="y">[STRAVA]</span> ██████░░░░ 1 640/2 600 kcal'],
+  ['         protein ██████░░░░ 96/150 g'],
+  ['         <span class="lnk" data-go="food">$ gz jidlo --pridat</span>'],
+  [''],
+  ['<span class="y">[BĚH]</span>    5,2 km · 27:40 · 5:19/km <span class="p">PB*</span>'],
+  ['         týden ███████░░░ 14,8/20 km'],
+  [''],
+  ['<span class="y">[TĚLO]</span>   78,4 kg (−0,3) · spánek 7:10'],
+  [''],
+  ['<span class="p">tomas@gym</span>:<span class="y">~</span>$ <span class="cur"></span>']];
+  return `<div class="tm">${L.map(([h],i)=>`<div style="--i:${i}">${h||' '}</div>`).join('')}</div>`}});
+
+/* ===== 17 · Návyky (odškrtávání) ===== */
+const HB=[['gym','Trénink Pull','17:00',0],['run','Běh nebo 10 000 kroků','5,2 km ✓',1],['food','150 g bílkovin','96 g',0],['drop','2,5 l vody','1,4 l',0],['scale','Zvážit se','78,4 kg',1],['moon','Spát do 23:00','',0]];
+C.push({ name:'Návyky', insp:'Habit tracker · denní checklist', nav:'fab', tabs:['home','gym','food','log'], tags:['tlačítko +','světlý'],
+ why:'Den jako seznam návyků, které odškrtáváš. Každé klepnutí posune kruh a plamen série, takže se chce udržet řada. Dole je teplotní mapa posledních týdnů. Nejjednodušší pochopení na první pohled a silná motivace vracet se každý den.',
+ t:{'--bg':'#f7f7f2','--sf':'#ffffff','--sf2':'#ecece4','--tx':'#1b1c17','--mu':'#7b7d72','--ac':'#ff6b2c','--ac2':'#22b07d','--ac3':'#3b82f6','--on':'#fff','--rd':'20px',"--ff":"'Bricolage Grotesque',Inter,sans-serif"},
+ css:`& .h1{font-weight:800;letter-spacing:-.04em}
+ & .card{box-shadow:0 1px 0 rgba(0,0,0,.04),0 8px 24px -16px rgba(0,0,0,.2)}
+ & .hb-top{display:flex;align-items:center;gap:16px}
+ & .hb-flame{position:relative;width:70px;height:70px;display:grid;place-items:center;flex:none}
+ & .hb-flame svg{color:var(--ac);filter:drop-shadow(0 6px 10px rgba(255,107,44,.4));animation:hbf 1.6s ease-in-out 3;transform-origin:bottom}
+ @keyframes hbf{50%{transform:scale(1.08) rotate(-3deg)}}
+ & .hb-flame b{position:absolute;bottom:4px;font-size:17px;color:#fff;font-weight:800}
+ & .hb-list{margin-top:12px}
+ & .hb-item{display:flex;align-items:center;gap:12px;width:100%;border:0;background:var(--sf);border-radius:18px;padding:12px 14px;margin-top:8px;text-align:left;font:600 14.5px var(--ff);color:var(--tx);cursor:pointer;transition:transform var(--t-instant) var(--ease),background var(--t-quick) var(--ease);animation:rise var(--t-base) var(--ease) both;animation-delay:calc(.15s + var(--i)*60ms)}
+ & .hb-item:active{transform:scale(.98)}
+ & .hb-item .bx{width:28px;height:28px;border-radius:9px;border:2px solid var(--sf2);display:grid;place-items:center;color:transparent;flex:none;transition:background var(--t-quick) var(--ease),border-color var(--t-quick) var(--ease),color var(--t-quick) var(--ease)}
+ & .hb-item.on .bx{background:var(--ac2);border-color:var(--ac2);color:#fff;animation:pop .3s var(--ease)}
+ & .hb-item.on .nm{text-decoration:line-through;text-decoration-color:var(--mu);color:var(--mu)}
+ & .hb-item .sub{margin-left:auto}
+ & .hb-item .ibox{width:34px;height:34px;border-radius:11px}
+ & .nav-bottom{background:rgba(247,247,242,.92)}
+ & .nav-bottom button[aria-current=true]{color:var(--tx)}
+ & .heat i.l1{background:#ffd9c6} & .heat i.l2{background:#ffa47a} & .heat i.l3{background:var(--ac)}
+ & .status{color:var(--tx)}`,
+ click:(t,ph)=>{const b=t.closest('.hb-item');if(!b)return false;const on=b.classList.toggle('on');b.setAttribute('aria-pressed',on);
+  const n=ph.querySelectorAll('.hb-item.on').length,arc=ph.querySelector('.hb-ring .arc');ph.querySelector('.hb-n').textContent=n;
+  if(arc){arc.style.animation='none';arc.style.strokeDashoffset=100-Math.round(n/HB.length*100)}return true},
+ home:()=>`
+  <div class="hb-top"><div class="sp"><div class="eyebrow">Středa 28. 10.</div><h1 class="h1">Dnešní návyky</h1></div>
+   <div class="hb-ring">${R(33,{s:70,w:8,c:'var(--ac2)',label:'<b class="hb-n">2</b>/6'})}</div></div>
+  <div class="card row" style="gap:12px;background:linear-gradient(135deg,#fff3ea,#fff)"><div class="hb-flame" aria-hidden="true"><svg width="62" height="62" viewBox="0 0 24 24" fill="currentColor">${I.flame}</svg><b>12</b></div><div><div class="h2">12 dní v řadě</div><div class="sub">Splň aspoň 4 ze 6 a série poroste. Rekord je 19 dní.</div></div></div>
+  <div class="hb-list">${HB.map(([i,n,s,on],j)=>`<button class="hb-item${on?' on':''}" aria-pressed="${!!on}" style="--i:${j}"><span class="bx">${ic('check',16,3)}</span><span class="nm">${n}</span><span class="sub">${s}</span></button>`).join('')}</div>
+  <div class="card tap" data-go="log"><div class="row"><div class="lbl">6 týdnů</div><div class="sp"></div><span class="sub">splněno 71 %</span></div>${Heat()}</div>`});
+
+/* ===== 18 · Mapa těla ===== */
+const BODY=(p)=>`<svg class="bd-svg" viewBox="0 0 160 300" aria-hidden="true">
+ <circle cx="80" cy="26" r="15" class="b0"/>
+ <path d="M60 48 Q80 40 100 48 L106 62 L54 62 Z" class="${p.traps}"/>
+ <ellipse cx="47" cy="72" rx="13" ry="12" class="${p.delts}"/><ellipse cx="113" cy="72" rx="13" ry="12" class="${p.delts}"/>
+ <path d="M58 64 L102 64 L108 118 Q80 134 52 118 Z" class="${p.lats}"/>
+ <rect x="63" y="124" width="34" height="28" rx="9" class="${p.low}"/>
+ <rect x="31" y="84" width="15" height="44" rx="7.5" class="${p.arms}"/><rect x="114" y="84" width="15" height="44" rx="7.5" class="${p.arms}"/>
+ <rect x="27" y="132" width="13" height="42" rx="6.5" class="${p.fore}"/><rect x="120" y="132" width="13" height="42" rx="6.5" class="${p.fore}"/>
+ <path d="M56 156 L104 156 L106 186 Q80 196 54 186 Z" class="${p.glutes}"/>
+ <rect x="56" y="192" width="22" height="58" rx="10" class="${p.legs}"/><rect x="82" y="192" width="22" height="58" rx="10" class="${p.legs}"/>
+ <rect x="58" y="254" width="18" height="40" rx="9" class="${p.legs}"/><rect x="84" y="254" width="18" height="40" rx="9" class="${p.legs}"/></svg>`;
+C.push({ name:'Mapa těla', insp:'Anatomie · regenerace svalů', nav:'fab', tabs:['home','gym','run','log'], tags:['tlačítko +','tmavý'],
+ why:'Úvodem je tvoje tělo. Svaly, které dnes čekají na trénink, tepou oranžově, odpočaté jsou zelené a unavené červené. Přímo navazuje na mapu těla, která už v aplikaci je. Vizuálně nejsilnější „wow“ a hned je jasné, proč dnes Pull.',
+ t:{'--bg':'#0b0a1a','--sf':'#15142b','--sf2':'#24223f','--tx':'#f1f0ff','--mu':'#8f8cb5','--ac':'#ff8a3d','--ac2':'#33e1a0','--ac3':'#ff4d6d','--on':'#1c0d02','--rd':'20px',"--ff":"Sora,Inter,sans-serif"},
+ layer:'<div class="bd-glow"></div>',
+ css:`& .bd-glow{position:absolute;left:50%;top:120px;width:420px;height:420px;margin-left:-210px;background:radial-gradient(closest-side,rgba(110,90,255,.28),transparent);animation:fade 1.4s ease both}
+ & .h1{font-weight:600;letter-spacing:-.03em}
+ & .bd{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:6px;margin-top:4px}
+ & .bd-svg{width:150px;height:auto;display:block;overflow:visible}
+ & .bd-svg > *{stroke:var(--bg);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:pop .5s var(--ease) both}
+ & .bd-svg > *:nth-child(n+3){animation-delay:.1s} & .bd-svg > *:nth-child(n+6){animation-delay:.2s} & .bd-svg > *:nth-child(n+10){animation-delay:.3s}
+ & .b0{fill:#2b2950}
+ & .bf{fill:#1f8f69} & .bm{fill:#7a6b2f} & .bt{fill:#a8344a}
+ & .bx{fill:var(--ac);filter:drop-shadow(0 0 8px rgba(255,138,61,.9))}
+ & .bd-svg .bx{animation:pop .5s var(--ease) .3s both,bdp 1.4s ease-in-out 1s 4}
+ @keyframes bdp{50%{opacity:.55}}
+ & .bd-leg > div{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0}
+ & .bd-leg i{width:10px;height:10px;border-radius:3px}
+ & .bd-tg{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+ & .bd-tg span{background:rgba(255,138,61,.16);color:var(--ac);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+ & .nav-bottom{background:rgba(11,10,26,.86)}
+ & .btn{border-radius:14px}`,
+ home:()=>`
+  <div class="eyebrow">Středa · regenerace svalů</div>
+  <h1 class="h1">Dnes jsou na řadě záda</h1>
+  <div class="bd"><div class="bd-leg">
+    <div><i style="background:var(--ac)"></i><b>Dnes trénovat</b></div>
+    <div><i style="background:#1f8f69"></i>Odpočaté</div>
+    <div><i style="background:#7a6b2f"></i>Skoro hotové</div>
+    <div><i style="background:#a8344a"></i>Unavené</div>
+    <div class="bd-tg"><span>Široký sval</span><span>Trapéz</span><span>Biceps</span><span>Předloktí</span></div></div>
+   ${BODY({traps:'bx',delts:'bm',lats:'bx',low:'bm',arms:'bx',fore:'bx',glutes:'bf',legs:'bt'})}</div>
+  <div class="card tap" data-go="gym"><div class="row"><div><div class="h2">Pull · 17:00</div><div class="sub">Záda odpočatá 92 %, nohy po pátku ještě ne.</div></div><div class="sp"></div>${R(92,{s:54,w:6,label:'92%'})}</div><button class="btn wide">Začít Pull</button></div>
+  <div class="grid2"><div class="card tap" data-go="run"><div class="lbl">Běh</div><div class="k">${N(5.2,1)}<small>km</small></div><div class="sub">lýtka unavená</div></div><div class="card tap" data-go="food"><div class="lbl">Bílkoviny</div><div class="k">${N(96)}<small>/150 g</small></div><div class="sub">pro regeneraci</div></div></div>`});
+
+/* ===== 19 · Arkáda (gamifikace) ===== */
+C.push({ name:'Arkáda', insp:'Synthwave · gamifikace, XP a questy', nav:'bottom', tabs:['home','gym','food','log'], labels:{home:'Hra',log:'Síň slávy'}, tags:['dolní lišta','tmavý'],
+ why:'Život jako hra: level, XP, denní questy a „boss fight“ v podobě dnešního tréninku. Neonový synthwave, pixelové nadpisy a ubíhající mřížka v pozadí. Pro mladší publikum a ty, které klasické trackery nebaví. Odznaky, které už aplikace má, tu dostanou smysl.',
+ t:{'--bg':'#0d0221','--sf':'rgba(36,14,74,.82)','--sf2':'#3b1d6e','--tx':'#fdf4ff','--mu':'#b49dd8','--ac':'#ff2bd6','--ac2':'#22f3ff','--ac3':'#ffe14d','--on':'#14002a','--rd':'10px',"--ff":"Outfit,Inter,sans-serif","--fh":"'Press Start 2P',monospace"},
+ layer:'<div class="ar-sky"><div class="ar-sun"></div><div class="ar-floor"><i></i></div></div>',
+ css:`& .ar-sky{position:absolute;inset:0;background:linear-gradient(180deg,#0d0221 0%,#2a0845 55%,#5a0f5c 70%,#0d0221 70.2%)}
+ & .ar-sun{position:absolute;left:50%;top:330px;width:220px;height:220px;margin-left:-110px;border-radius:50%;background:linear-gradient(180deg,#ffe14d,#ff2bd6 75%);-webkit-mask:repeating-linear-gradient(180deg,#000 0 14px,transparent 14px 18px);mask:repeating-linear-gradient(180deg,#000 0 14px,transparent 14px 18px);opacity:.55}
+ & .ar-floor{position:absolute;left:-50%;right:-50%;top:518px;height:400px;perspective:240px;overflow:hidden}
+ & .ar-floor i{position:absolute;left:0;right:0;top:-40px;height:600px;background:linear-gradient(transparent 0 46px,#ff2bd6 46px 48px) 0 0/100% 48px,linear-gradient(90deg,transparent 0 46px,#22f3ff 46px 48px) 0 0/48px 100%;opacity:.5;transform:rotateX(62deg);transform-origin:top;animation:arg 2.4s linear infinite}
+ @keyframes arg{to{transform:rotateX(62deg) translateY(48px)}}
+ & .h1{font-family:var(--fh);font-size:20px;line-height:1.35;font-weight:400;color:var(--ac3);text-shadow:3px 3px 0 var(--ac)}
+ & .card{border:2px solid var(--ac);box-shadow:0 0 18px rgba(255,43,214,.35),inset 0 0 18px rgba(255,43,214,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+ & .lbl{font-family:var(--fh);font-size:8.5px;letter-spacing:.04em;color:var(--ac2)}
+ & .btn{font-family:var(--fh);font-size:11px;border-radius:6px;background:var(--ac3);color:var(--on);box-shadow:0 4px 0 #b38f00}
+ & .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b38f00}
+ & .ar-lv{display:flex;align-items:center;gap:12px}
+ & .ar-lv .badge{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--ac2),var(--ac));display:grid;place-items:center;font:400 16px var(--fh);color:#fff;text-shadow:2px 2px 0 #14002a;flex:none;animation:pop .5s var(--ease) .1s both}
+ & .ar-xp{height:14px;border-radius:4px;background:#1c0838;border:2px solid var(--ac2);overflow:hidden;margin-top:8px}
+ & .ar-xp i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--ac2) 0 8px,#7cf9ff 8px 10px);transform-origin:left;animation:grow 1.4s steps(18) .3s both}
+ & .ar-boss{background:linear-gradient(135deg,rgba(255,43,214,.3),rgba(36,14,74,.85))}
+ & .ar-hp{display:flex;gap:3px;margin-top:10px}
+ & .ar-hp i{flex:1;height:10px;background:var(--ac);box-shadow:0 0 6px var(--ac);animation:pop .3s steps(2) both;animation-delay:calc(.4s + var(--i)*50ms)}
+ & .ar-q > div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed rgba(180,157,216,.35);font-size:13.5px}
+ & .ar-q > div:first-of-type{border:0}
+ & .ar-q .xp{margin-left:auto;font:400 9px var(--fh);color:var(--ac3)}
+ & .ar-q .ok{color:var(--ac2)}
+ & .ar-q .ok span:not(.xp){text-decoration:line-through;opacity:.7}
+ & .nav-bottom{background:rgba(13,2,33,.88);border-top:2px solid var(--ac)}
+ & .nav-bottom button{font-family:var(--fh);font-size:7px}
+ & .nav-bottom button[aria-current=true]{color:var(--ac3)}
+ & .nav-bottom .ind::after{background:var(--ac3);box-shadow:0 0 10px var(--ac3)}`,
+ home:()=>`
+  <div class="ar-lv" style="margin-top:6px"><div class="badge">12</div><div class="sp"><div class="lbl">Level 12 · Tahač</div><div class="ar-xp"><i style="width:68%"></i></div><div class="sub" style="margin-top:5px">${N(1360)} / 2 000 XP do levelu 13</div></div></div>
+  <h1 class="h1" style="margin-top:16px">BOSS FIGHT<br>17:00</h1>
+  <div class="card ar-boss tap" data-go="gym"><div class="row"><div><div class="h2" style="font-size:20px">Pull</div><div class="sub">Deadlift 102,5 kg · 5 cviků</div></div><div class="sp"></div><span class="lbl" style="color:var(--ac3)">+250 XP</span></div>
+   <div class="ar-hp" aria-hidden="true">${Array.from({length:15},(_,i)=>`<i style="--i:${i}"></i>`).join('')}</div><button class="btn wide">▶ Start</button></div>
+  <div class="card ar-q"><div class="lbl" style="margin-bottom:6px">Denní questy · 2/4</div>
+   <div class="ok"><span>✔</span><span>Uběhni 5 km</span><span class="xp">+120</span></div>
+   <div class="ok"><span>✔</span><span>Zapiš snídani i oběd</span><span class="xp">+40</span></div>
+   <div class="tap" data-go="food"><span>○</span><span>Dej si 150 g bílkovin</span><span class="xp">+60</span></div>
+   <div><span>○</span><span>Poraz bosse Pull</span><span class="xp">+250</span></div></div>
+  <div class="card row tap" data-go="log"><span style="font-size:26px">🏆</span><div><b>Nový odznak blízko</b><div class="sub">Ještě 3 dny do „Železná vůle“ (15 dní v řadě)</div></div></div>`});
+
+/* ===== 20 · Atelier (luxus) ===== */
+C.push({ name:'Atelier', insp:'Luxusní značky · monochrom a zlato', nav:'top2', tabs:['home','log'], labels:{home:'Dnes',log:'Deník'}, tags:['2 záložky','tmavý'],
+ why:'Fitness jako luxusní služba: černá, slonovinová kost a zlaté vlasové linky, klasická patková typografie a monogram. Málo prvků, hodně prostoru, každé číslo jako na hodinkách za statisíce. Dvě záložky, Dnes a Deník, nic navíc. Prémiové předplatné by tu působilo samozřejmě.',
+ t:{'--bg':'#0c0b09','--sf':'#14130f','--sf2':'#26231c','--tx':'#efe7d6','--mu':'#948a76','--ac':'#c9a96e','--ac2':'#c9a96e','--ac3':'#e8d3a2','--on':'#0c0b09','--rd':'2px',"--ff":"Manrope,Inter,sans-serif","--fh":"'Cormorant Garamond',Georgia,serif"},
+ css:`& .h1{font-family:var(--fh);font-weight:400;font-size:46px;letter-spacing:-.01em}
+ & .h1 i{color:var(--ac)}
+ & .h2{font-family:var(--fh);font-weight:600;font-size:22px}
+ & .k{font-family:var(--fh);font-weight:400;font-size:36px}
+ & .eyebrow,& .lbl{letter-spacing:.24em;font-weight:600;font-size:10px;color:var(--ac)}
+ & .card{background:transparent;border:1px solid rgba(201,169,110,.35);border-radius:2px}
+ & .btn{border-radius:0;background:transparent;border:1px solid var(--ac);color:var(--ac);letter-spacing:.2em;text-transform:uppercase;font-size:11.5px}
+ & .btn:hover{background:var(--ac);color:var(--on)}
+ & .chip,& .set b,& .set em,& .set .n{border-radius:0}
+ & .set.on em{background:var(--ac);color:var(--on)}
+ & .nav-top{background:transparent;border-bottom:1px solid rgba(201,169,110,.35);border-radius:0;padding:0}
+ & .nav-top button{letter-spacing:.24em;text-transform:uppercase;font-size:11px;font-weight:600}
+ & .nav-top button[aria-current=true]{color:var(--ac)}
+ & .nav-top .ind{top:auto;bottom:-1px;height:1px;border-radius:0;background:var(--ac)}
+ & .at-mono{position:relative;width:96px;height:96px;margin:18px auto 6px;border:1px solid var(--ac);border-radius:50%;display:grid;place-items:center;overflow:hidden;animation:fade 1.2s ease both}
+ & .at-mono b{font:italic 400 52px/1 var(--fh);color:var(--ac3)}
+ & .at-mono::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,240,200,.55) 50%,transparent 60%);transform:translateX(-120%);animation:atsh 1.6s var(--ease) .6s both}
+ @keyframes atsh{to{transform:translateX(120%)}}
+ & .at-c{text-align:center}
+ & .at-rule{height:1px;background:linear-gradient(90deg,transparent,var(--ac),transparent);margin:18px 0;transform-origin:center;animation:grow 1.2s var(--ease) .3s both}
+ & .at-rows > div{display:flex;align-items:baseline;padding:13px 0;border-bottom:1px solid rgba(201,169,110,.18)}
+ & .at-rows .k{font-size:28px;margin-left:auto}
+ & .at-rows .k small{font-family:var(--ff);font-size:11px;color:var(--mu)}
+ & .rg .arc{stroke-linecap:butt}`,
+ home:()=>`
+  <div class="at-c"><div class="at-mono" aria-hidden="true"><b>T</b></div><div class="eyebrow">Středa · XXVIII · X</div>
+   <h1 class="h1">Dnešní <i>tah</i></h1><div class="sub">Pull v sedmnáct hodin. Deadlift sto dva a půl.</div></div>
+  <div class="at-rule"></div>
+  <div class="row" style="justify-content:center;gap:18px">${R(63,{s:92,w:2,c:'var(--ac)',track:'rgba(201,169,110,.18)',cap:'butt',label:'<span style="font:400 26px Cormorant Garamond,serif">63</span>'})}${R(64,{s:92,w:2,c:'var(--ac3)',track:'rgba(201,169,110,.18)',cap:'butt',delay:250,label:'<span style="font:400 26px Cormorant Garamond,serif">96</span>'})}${R(74,{s:92,w:2,c:'var(--ac)',track:'rgba(201,169,110,.18)',cap:'butt',delay:400,label:'<span style="font:400 26px Cormorant Garamond,serif">74</span>'})}</div>
+  <div class="row lbl" style="justify-content:center;gap:42px;margin-top:10px"><span>Energie</span><span>Protein</span><span>Pohyb</span></div>
+  <div class="at-rows" style="margin-top:14px">
+   <div class="tap" data-go="gym"><span class="lbl">Trénink</span><span class="k">17:00</span></div>
+   <div class="tap" data-go="run"><span class="lbl">Běh</span><span class="k">${N(5.2,1)}<small> km</small></span></div>
+   <div class="tap" data-go="food"><span class="lbl">Energie</span><span class="k">${N(1640)}<small> kcal</small></span></div>
+   <div><span class="lbl">Série</span><span class="k">${N(12)}<small> dní</small></span></div></div>
+  <button class="btn wide" data-go="gym">Zahájit trénink</button>`});
+
 /* @@NEXT@@ */
 
 /* ===== Vykreslení a interakce ===== */
