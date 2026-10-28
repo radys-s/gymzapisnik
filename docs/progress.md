@@ -7,6 +7,7 @@
 | 2026-10-27 | bidnej / bidnej/black-october | Bezpečnostní update závislostí po „Black October“ |
 | 2026-10-27 | bidnej / bidnej/beta8 | Audit beta.7 + nápady 6, 9, 4, 15 (1RM, trend váhy, řazení cviků, oblíbená jídla) |
 | 2026-10-27 | bidnej / bidnej/beta8 | Nápady 13 a 10: sdílení odznaku, porovnání dvou tréninků |
+| 2026-10-28 | bidnej / bidnej/beta8 | 18 konceptů úvodní obrazovky „životní dashboard“ (gym, strava, běh) |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -66,3 +67,25 @@ se zadává v listu s velkými čísly) — aktualizované, všechny tři E2E pr
 otevření karty odznaku). Vizuálně ověřeno ve web buildu na 320 px (tmavý vzhled).
 
 **Další krok:** nápad 2 — typ série drop set / do selhání.
+
+## 2026-10-28 — Koncepty: z gym zápisníku životní dashboard (bidnej)
+
+**Co a proč:** Tomáš chce, aby aplikace byla spíš life assistant: Gym je jedna záložka, Strava další,
+k tomu běh a celkový přehled dne. Než se začne cokoli předělávat v Flutteru, je potřeba vybrat
+navigaci a styl úvodní obrazovky — proto interaktivní koncepty v jednom HTML.
+
+**Výstup:** `docs/design/life-dashboard-koncepty.html` — 18 proklikatelných telefonů. Liší se:
+- **navigací:** spodní lišta 4–5 záložek, 2 záložky nahoře (Dnes/Deník, Gym/Strava), plovoucí pilulka,
+  podtržené horní záložky, boční lišta, středové tlačítko + s nabídkou zápisu, hamburger menu;
+- **úvodem:** kruhy dne, časová osa dne, bento, skóre dne, AI trenér jako první, týdenní pás,
+  „co teď“, swipe karty, mapa běhu, návyky s heatmapou, tělo s regenerací, terminál;
+- **paletou:** současná limetka na černé, modrá, růžová, oranžová, mátová, fialová, světlé papírové atd.
+
+Vnitřní obrazovky (Gym, Strava, Běh, Deník) jsou sdílené a přebírají barvy konceptu, ať jde porovnat
+hlavně vstup a navigaci. Ověřeno v Chrome přes Playwright: 0 chyb v konzoli, 400 px bez přetečení,
+klik karta → Gym, + → nabídka, menu → šuplík.
+
+**Rozbor běhu:** 1) ruční zápis hned, 2) import z Health Connect / Apple Zdraví, 3) vlastní GPS na pozadí
+až nakonec (oprávnění, baterie, iOS sideload).
+
+**Další krok:** Tomáš vybere koncepty → navrhnout detailní Gym nebo Strava rozhraní ve vybraném stylu.
