@@ -10,6 +10,7 @@
 | 2026-10-28 | bidnej / bidnej/beta8 | 18 konceptů úvodní obrazovky „životní dashboard“ (gym, strava, běh) |
 | 2026-10-28 | bidnej / bidnej/beta8 | Koncepty v2: 20 brandových směrů s animacemi |
 | 2026-10-28 | bidnej / bidnej/beta8 | Vzhled „Závod“ podle hlasování testerů (F1 + telemetrie), nový výchozí |
+| 2026-10-28 | bidnej / bidnej/beta8 | Finalisté 01–03: vlastní rozhraní pro priority, trénink, zápis série a stravu |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -162,3 +163,19 @@ dva staré testy upravené na nový výchozí vzhled. Kontrast hlídá `contrast
 (proto je teď skrytý) a „Studio“ se v úvodu posunulo pod obrazovku.
 
 **Další krok:** zpětná vazba testerů na telefonu, pak release beta.8.
+
+## 2026-10-28 — Finalisté 01–03 se vším rozhraním vedle sebe (bidnej)
+
+**Co a proč:** Tomáš chtěl finalisty (01 Aktivita, 02 Tensor, 03 Pit wall) porovnat celé,
+ne jen úvodní obrazovku. `docs/design/finaliste.html` ukazuje mřížku 3 koncepty × 4 obrazovky
+bez klikání: Priority, Trénink, V tréninku, Strava. Každý koncept řeší obrazovky jinou strukturou,
+ne jen barvou (Apple: jedna věc naráz a kruhy; Tensor: tabulky a telemetrie; F1: závodní metafory).
+
+**Rozhodnutí:** Běh vypadl z hlavních obrazovek. Nová obrazovka Priority (první spuštění, později
+Nastavení) určí pořadí Síla / Strava / Regenerace / Deník. Běh je volitelný modul, výchozí vypnutý.
+
+**Ověření:** prohlížeč 1280 px a 400 px, 0 chyb v konzoli, stránka bez vodorovného přetečení
+(řádky telefonů se na mobilu posouvají do strany). Opraveno: kruh ve Stravě 01 zajížděl pod lištu
+a slot BOX v 03 omylem dědil žlutou barvu pit stopu.
+
+**Další krok:** hlasování testerů po obrazovkách, pak Priority do aplikace (onboarding + Nastavení).
