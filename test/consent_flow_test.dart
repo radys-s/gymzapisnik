@@ -45,6 +45,8 @@ void main() {
     await tester.tap(find.text('Přeskočit'));
     await tester.pumpAndSettle();
     expect(find.text('Vyber si vzhled'), findsOneWidget);
+    await tester.ensureVisible(find.text('Studio'));
+    await tester.pumpAndSettle();
     await _tapAndSave(tester, find.text('Studio'));
     expect(state.profile.look, 'studio');
     await tester.ensureVisible(find.text('Západ'));

@@ -307,27 +307,30 @@ class SettingsPage extends StatelessWidget {
             header: 'Vzhled',
             dividerIndent: _indent,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(Space.m),
-                child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'system', label: Text('Systém')),
-                    ButtonSegment(value: 'light', label: Text('Světlý')),
-                    ButtonSegment(value: 'dark', label: Text('Tmavý')),
-                  ],
-                  selected: {profile.theme},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (s) =>
-                      state.setPreferences(theme: s.single),
+              // Závod je vždy tmavý, volba světla by nic nezměnila.
+              if (Look.parse(profile.look) != Look.pitwall)
+                Padding(
+                  padding: const EdgeInsets.all(Space.m),
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'system', label: Text('Systém')),
+                      ButtonSegment(value: 'light', label: Text('Světlý')),
+                      ButtonSegment(value: 'dark', label: Text('Tmavý')),
+                    ],
+                    selected: {profile.theme},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (s) =>
+                        state.setPreferences(theme: s.single),
+                  ),
                 ),
-              ),
               GroupedRow(
                 icon: Icons.palette_outlined,
                 iconColor: p.gradient.last,
                 title: 'Vzhled a barva',
-                subtitle:
-                    '${Look.parse(profile.look).label} · '
-                    '${Accent.parse(profile.accent).label}',
+                subtitle: Look.parse(profile.look) == Look.pitwall
+                    ? Look.pitwall.label
+                    : '${Look.parse(profile.look).label} · '
+                          '${Accent.parse(profile.accent).label}',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => AppearancePage(state)),

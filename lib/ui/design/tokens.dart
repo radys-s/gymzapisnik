@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// Vzhled aplikace. `auto` = ve světlém režimu Aurora, v tmavém Studio.
+/// `pitwall` (Závod) vybrali testeři: vždy tmavý, závodní červená.
 enum Look {
+  pitwall('Závod', 'Vždy tmavý: závodní červená, telemetrie, velká čísla'),
   auto('Automaticky', 'Ve dne Aurora, v noci Studio'),
   aurora('Aurora', 'Světlé plochy a barevná hlavní karta'),
   studio('Studio', 'Kontrastní černobílý, barva jen na akcích');
@@ -10,8 +12,10 @@ enum Look {
   final String description;
   const Look(this.label, this.description);
 
-  static Look parse(Object? value) =>
-      Look.values.firstWhere((l) => l.name == value, orElse: () => Look.auto);
+  static Look parse(Object? value) => Look.values.firstWhere(
+    (l) => l.name == value,
+    orElse: () => Look.pitwall,
+  );
 
   /// Konkrétní vzhled pro světlý nebo tmavý režim.
   Look resolve(Brightness b) => this == Look.auto
@@ -204,6 +208,35 @@ class AppPalette extends ThemeExtension<AppPalette> {
       );
     }
 
+    if (resolved == Look.pitwall) {
+      // Závod: noční boxová zeď. Plochy do modré, hlavní akce plná
+      // závodní červená s bílým textem, odkazy světlejší červenou.
+      return AppPalette(
+        background: const Color(0xFF15151E),
+        grouped: const Color(0xFF1F1F2B),
+        elevated: const Color(0xFF2A2A38),
+        separator: const Color(0xFF2E2E3D),
+        label: Colors.white,
+        secondaryLabel: const Color(0xFFA9A9BC),
+        tertiaryLabel: const Color(0xFF6E6E84),
+        fill: const Color(0xFF2A2A38),
+        accent: const Color(0xFFFF5545),
+        onAccent: Colors.black,
+        gradient: const [
+          Color(0xFFE10600),
+          Color(0xFFFF5A1F),
+          Color(0xFFFFB000),
+        ],
+        onGradient: Colors.black,
+        cta: raceRed,
+        onCta: Colors.white,
+        positive: const Color(0xFF00E676),
+        negative: const Color(0xFFFF6961),
+        preset: accent,
+        look: resolved,
+      );
+    }
+
     final positive = dark ? const Color(0xFF30D158) : const Color(0xFF248A3D);
     final negative = dark ? const Color(0xFFFF453A) : const Color(0xFFD70015);
 
@@ -261,6 +294,20 @@ class AppPalette extends ThemeExtension<AppPalette> {
   }
 
   bool get studio => look == Look.studio;
+
+  /// Závodní vzhled (F1 + telemetrie).
+  bool get pitwall => look == Look.pitwall;
+
+  /// Závodní červená: hlavní akce, pruhy karet a světla startu.
+  static const raceRed = Color(0xFFE10600);
+
+  /// Zaoblení karty; v Závodě ostrý levý okraj s pruhem a měkčí pravý.
+  BorderRadius cardRadius([double r = Radii.card]) => pitwall
+      ? const BorderRadius.horizontal(
+          left: Radius.circular(4),
+          right: Radius.circular(12),
+        )
+      : BorderRadius.circular(r);
 
   static Color _lift(Color c) {
     final h = HSLColor.fromColor(c);

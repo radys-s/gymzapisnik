@@ -133,11 +133,23 @@ class _LookSwatch extends StatelessWidget {
       );
     }
 
+    // Závod: tmavá tabule s červeným pruhem a světlem startu.
+    Widget pitwall() => Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF15151E),
+        border: Border(left: BorderSide(color: AppPalette.raceRed, width: 4)),
+      ),
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.fromLTRB(4, 7, 7, 7),
+      child: Container(height: 7, color: AppPalette.raceRed),
+    );
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(11),
       child: SizedBox.square(
         dimension: 40,
         child: switch (look) {
+          Look.pitwall => pitwall(),
           Look.aurora => aurora(),
           Look.studio => studio(),
           Look.auto => Row(
@@ -189,10 +201,12 @@ class AppearanceOptions extends StatelessWidget {
           selected: Look.parse(state.profile.look),
           onChanged: (l) => saveLook(context, state, l),
         ),
-        AccentPicker(
-          selected: Accent.parse(state.profile.accent),
-          onChanged: (a) => saveAccent(context, state, a),
-        ),
+        // Závod má pevnou závodní červenou, barva motivu by nic nezměnila.
+        if (Look.parse(state.profile.look) != Look.pitwall)
+          AccentPicker(
+            selected: Accent.parse(state.profile.accent),
+            onChanged: (a) => saveAccent(context, state, a),
+          ),
       ],
     ),
   );

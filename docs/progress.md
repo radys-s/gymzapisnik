@@ -9,6 +9,7 @@
 | 2026-10-27 | bidnej / bidnej/beta8 | Nápady 13 a 10: sdílení odznaku, porovnání dvou tréninků |
 | 2026-10-28 | bidnej / bidnej/beta8 | 18 konceptů úvodní obrazovky „životní dashboard“ (gym, strava, běh) |
 | 2026-10-28 | bidnej / bidnej/beta8 | Koncepty v2: 20 brandových směrů s animacemi |
+| 2026-10-28 | bidnej / bidnej/beta8 | Vzhled „Závod“ podle hlasování testerů (F1 + telemetrie), nový výchozí |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -141,3 +142,23 @@ až nakonec (oprávnění, baterie, iOS sideload).
 
 **Další krok:** Tomáš vybere jeden směr, případně kombinaci (navigace z jednoho, barvy z druhého). Pak teprve přenesu vybraný styl do Flutteru jako tokeny a novou úvodní obrazovku.
 
+## 2026-10-28 — Vzhled „Závod“ podle hlasování testerů (bidnej)
+
+**Co a proč:** Testeři vybrali z konceptů 03 Pit wall (F1, 2 hlasy + návrh) a 02 Tensor (1 hlas).
+Místo dalšího konceptu je výsledek rovnou v aplikaci jako nový vzhled **Závod**, který je výchozí.
+F1 dává základ (tmavá tabule, závodní červená, kurzíva, startovní světla, pořadí), Tensor telemetrii
+(číslo tréninku jako vodoznak, štítek ŽIVĚ, zelená pro rekordy). Spec: `docs/design/zavod-design.md`.
+
+**Změny:**
+- `Look.pitwall` v tokenech: vlastní tmavá paleta, asymetrické rohy 4/12, nadpisy kurzíva w900.
+- Vždy tmavý; v Nastavení se v Závodu skryje volba Světlý/Tmavý i výběr barvy (nic by nezměnily).
+- Dnes: hero karta s vodoznakem, světla před „Začít“, ŽIVĚ u běžícího tréninku, „Pořadí rekordů“ P1–P3.
+- Reduced motion: světla svítí hned, vodoznak a tečka stojí.
+
+**Ověření:** `flutter analyze` 0 problémů; nové testy (paleta Závodu, světla s/bez reduced motion);
+dva staré testy upravené na nový výchozí vzhled. Kontrast hlídá `contrast_test` (akcent 5,1 : 1, CTA 5 : 1).
+
+**Co nefungovalo:** První běh testů padl na dvou místech: přepínač Světlý v Závodu nic nedělal
+(proto je teď skrytý) a „Studio“ se v úvodu posunulo pod obrazovku.
+
+**Další krok:** zpětná vazba testerů na telefonu, pak release beta.8.

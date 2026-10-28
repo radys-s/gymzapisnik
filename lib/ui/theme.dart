@@ -69,12 +69,16 @@ ThemeData buildTheme(
         color: p.label,
         height: 1.25,
       );
+  // Závod: nadpisy a čísla tučná kurzíva jako na grafice závodů.
+  TextStyle race(TextStyle style) => p.pitwall
+      ? style.copyWith(fontStyle: FontStyle.italic, fontWeight: FontWeight.w900)
+      : style;
   final text = t.copyWith(
-    displaySmall: s(t.displaySmall, 40, FontWeight.w700, -0.8),
-    headlineLarge: s(t.headlineLarge, 34, FontWeight.w800, -1.0),
-    headlineMedium: s(t.headlineMedium, 28, FontWeight.w700, -0.4),
-    headlineSmall: s(t.headlineSmall, 24, FontWeight.w800, -0.6),
-    titleLarge: s(t.titleLarge, 20, FontWeight.w700, -0.4),
+    displaySmall: race(s(t.displaySmall, 40, FontWeight.w700, -0.8)),
+    headlineLarge: race(s(t.headlineLarge, 34, FontWeight.w800, -1.0)),
+    headlineMedium: race(s(t.headlineMedium, 28, FontWeight.w700, -0.4)),
+    headlineSmall: race(s(t.headlineSmall, 24, FontWeight.w800, -0.6)),
+    titleLarge: race(s(t.titleLarge, 20, FontWeight.w700, -0.4)),
     titleMedium: s(t.titleMedium, 17, FontWeight.w600, -0.2),
     titleSmall: s(t.titleSmall, 15, FontWeight.w600),
     bodyLarge: s(t.bodyLarge, 17, FontWeight.w400, -0.2),
@@ -101,7 +105,11 @@ ThemeData buildTheme(
     borderRadius: BorderRadius.circular(Radii.control),
   );
   // Studio má tlačítka jako tablety, Aurora zaoblené obdélníky.
-  final OutlinedBorder buttonShape = studio ? const StadiumBorder() : control;
+  final OutlinedBorder buttonShape = p.pitwall
+      ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))
+      : studio
+      ? const StadiumBorder()
+      : control;
   const buttonSize = Size(minTap, 52);
   final buttonText = text.labelLarge;
 
@@ -123,7 +131,11 @@ ThemeData buildTheme(
       actionsIconTheme: IconThemeData(color: p.accent),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: studio ? p.background : p.grouped,
+      backgroundColor: p.pitwall
+          ? const Color(0xFF0E0E15)
+          : studio
+          ? p.background
+          : p.grouped,
       surfaceTintColor: Colors.transparent,
       indicatorColor: Colors.transparent,
       elevation: 0,
@@ -153,9 +165,7 @@ ThemeData buildTheme(
       elevation: 0,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.card),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: p.cardRadius()),
     ),
     listTileTheme: ListTileThemeData(
       iconColor: p.secondaryLabel,
