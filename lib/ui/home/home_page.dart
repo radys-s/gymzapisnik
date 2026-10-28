@@ -17,6 +17,7 @@ import '../coach/growth_page.dart';
 import '../coach/trainer_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../exercises/exercise_detail_page.dart';
 import '../exercises/exercises_page.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
@@ -186,6 +187,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
+          if (context.palette.pitwall) _RecordsBoard(state),
           if (state.workouts.isNotEmpty && state.active == null) ...[
             const SectionHeader('Regenerace svalů'),
             RecoveryPanel(state: state, now: now, onBuild: _build),
@@ -296,8 +298,12 @@ class _TodayCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) =>
-      HeroCard(vivid: true, child: Builder(builder: _content));
+  Widget build(BuildContext context) => HeroCard(
+    vivid: true,
+    // Závod: číslo jezdce = pořadí dnešního tréninku.
+    watermark: '${state.workouts.where((w) => w.finished).length + 1}',
+    child: Builder(builder: _content),
+  );
 
   Widget _content(BuildContext context) {
     final p = context.palette;
@@ -312,6 +318,11 @@ class _TodayCard extends StatelessWidget {
         (n, e) => n + e.sets.where((s) => s.done).length,
       );
       children.addAll([
+        if (p.pitwall)
+          const Padding(
+            padding: EdgeInsets.only(bottom: Space.xs),
+            child: Align(alignment: Alignment.centerLeft, child: LiveTag()),
+          ),
         _Eyebrow('Rozepsaný trénink', color: p.accent),
         Text(active.name, style: text.headlineSmall),
         const SizedBox(height: 2),
@@ -339,7 +350,10 @@ class _TodayCard extends StatelessWidget {
                     'Dnes · ${split.name} · den '
                     '${dayIndex % split.days.length + 1}/${split.days.length}',
                   ),
-                  Text(day.name, style: text.headlineSmall),
+                  Text(
+                    day.name,
+                    style: p.pitwall ? text.headlineLarge : text.headlineSmall,
+                  ),
                 ],
               ),
             ),
@@ -385,6 +399,10 @@ class _TodayCard extends StatelessWidget {
         if (plan.length > 5)
           Text('a další ${plan.length - 5}', style: text.bodySmall),
         const SizedBox(height: Space.m),
+        if (p.pitwall) ...[
+          const StartLights(),
+          const SizedBox(height: Space.m),
+        ],
         PrimaryButton(
           'Začít ${day.name}',
           icon: Icons.play_arrow_rounded,
@@ -575,6 +593,96 @@ class _ElapsedState extends State<_Elapsed> {
       fontFeatures: tabular,
     ),
   );
+}
+
+/// Závod: nedávné rekordy jako pořadí jezdců (P1–P3) s barvou týmu.
+class _RecordsBoard extends StatelessWidget {
+  final AppState state;
+  const _RecordsBoard(this.state);
+
+  static const _teams = [
+    AppPalette.raceRed,
+    Color(0xFFFF8000),
+    Color(0xFF00D2BE),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final records = recentRecords(state.workouts, state.typeOf);
+    if (records.isEmpty) return const SizedBox.shrink();
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Pořadí rekordů'),
+        Panel(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.l,
+            vertical: Space.xs,
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < records.length; i++) ...[
+                if (i > 0) Divider(color: p.separator),
+                InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ExerciseDetailPage(state, records[i].exerciseId),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 34,
+                          child: Text('P${i + 1}', style: text.titleLarge),
+                        ),
+                        Container(
+                          width: 4,
+                          height: 26,
+                          color: _teams[i % _teams.length],
+                        ),
+                        const SizedBox(width: Space.m),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                state.exercise(records[i].exerciseId).name,
+                                style: text.titleSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${records[i].kind.label} · '
+                                '${formatDate(records[i].date)}',
+                                style: text.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          recordLabel(records[i].kind, records[i].value),
+                          style: text.titleSmall?.copyWith(
+                            color: p.positive,
+                            fontFeatures: tabular,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Týden: kruh tréninků vůči cíli, série, objem a streak.

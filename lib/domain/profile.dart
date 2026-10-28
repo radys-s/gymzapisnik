@@ -91,11 +91,13 @@ class Profile {
     _ => 'lime',
   };
 
-  /// Vzhled (`auto`, `aurora`, `studio`); neznámý = `auto`.
+  /// Vzhled (`pitwall`, `auto`, `aurora`, `studio`); nezvolený nebo
+  /// neznámý = `pitwall`, který vybrali testeři.
   String get look => switch (extra['look']) {
+    'auto' => 'auto',
     'aurora' => 'aurora',
     'studio' => 'studio',
-    _ => 'auto',
+    _ => 'pitwall',
   };
 
   /// Uživatel prošel úvodem (ukazuje se jen jednou).

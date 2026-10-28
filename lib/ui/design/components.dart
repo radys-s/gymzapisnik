@@ -194,7 +194,7 @@ class GroupedSection extends StatelessWidget {
             ),
           Material(
             color: p.grouped,
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: p.cardRadius(),
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -364,7 +364,13 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    final radius = BorderRadius.circular(p.studio ? 26 : Radii.control);
+    final radius = BorderRadius.circular(
+      p.pitwall
+          ? 4
+          : p.studio
+          ? 26
+          : Radii.control,
+    );
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -408,7 +414,15 @@ class PrimaryButton extends StatelessWidget {
                             label,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(color: fg),
+                                ?.copyWith(
+                                  color: fg,
+                                  fontStyle: p.pitwall
+                                      ? FontStyle.italic
+                                      : null,
+                                  fontWeight: p.pitwall
+                                      ? FontWeight.w900
+                                      : null,
+                                ),
                           ),
                         ),
                       ],
@@ -464,17 +478,24 @@ class HeroCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
   final bool vivid;
+
+  /// Velké obrysové číslo v pozadí (Závod: číslo jezdce), jen ozdoba.
+  final String? watermark;
   const HeroCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(Space.xl),
     this.vivid = false,
+    this.watermark,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final radius = BorderRadius.circular(Radii.hero);
+    if (vivid && p.pitwall) {
+      return _RaceHero(padding: padding, watermark: watermark, child: child);
+    }
     if (!vivid) {
       return Container(
         padding: padding,
@@ -560,6 +581,218 @@ class HeroCard extends StatelessWidget {
   }
 }
 
+/// Hlavní karta Závodu jako karta jezdce: tmavý přechod, červený pruh
+/// vlevo a obrysové číslo, které při zobrazení přijede zprava. Paleta
+/// zůstává stránková, je dost tmavá i pro text na kartě.
+class _RaceHero extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets padding;
+  final String? watermark;
+  const _RaceHero({required this.child, required this.padding, this.watermark});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final still = MediaQuery.disableAnimationsOf(context);
+    return ClipRRect(
+      borderRadius: p.cardRadius(16),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF262636), Color(0xFF1C1C27)],
+          ),
+          border: Border(left: BorderSide(color: AppPalette.raceRed, width: 4)),
+        ),
+        child: Stack(
+          children: [
+            if (watermark != null)
+              Positioned(
+                right: -6,
+                top: -14,
+                child: ExcludeSemantics(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: still ? 0 : 1, end: 0),
+                    duration: const Duration(milliseconds: 900),
+                    curve: const Cubic(0.22, 1, 0.36, 1),
+                    builder: (context, t, child) => Opacity(
+                      opacity: 1 - t,
+                      child: Transform.translate(
+                        offset: Offset(60 * t, 0),
+                        child: child,
+                      ),
+                    ),
+                    child: Text(
+                      watermark!,
+                      style: TextStyle(
+                        fontSize: 150,
+                        height: 1,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w900,
+                        foreground: Paint()
+                          ..style = PaintingStyle.stroke
+                          ..strokeWidth = 2
+                          ..color = Colors.white.withValues(alpha: 0.12),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(padding: padding, child: child),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Pět startovních světel: rozsvítí se jedno po druhém (jednou) a pak
+/// zůstanou svítit. Bez animací svítí rovnou.
+class StartLights extends StatefulWidget {
+  const StartLights({super.key});
+
+  @override
+  State<StartLights> createState() => _StartLightsState();
+}
+
+class _StartLightsState extends State<StartLights>
+    with SingleTickerProviderStateMixin {
+  static const _delay = 0.5;
+  static const _step = 0.38;
+  static const _total = _delay + 5 * _step;
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: Duration(milliseconds: (_total * 1000).round()),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _c.value = 1;
+    } else if (_c.isDismissed) {
+      _c.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C0C12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) {
+          final at = _c.value * _total;
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < 5; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _Light(on: at >= _delay + i * _step),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+class _Light extends StatelessWidget {
+  final bool on;
+  const _Light({required this.on});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 28,
+    height: 28,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: on ? const Color(0xFFFF1801) : const Color(0xFF2A2A36),
+      boxShadow: on
+          ? const [BoxShadow(color: Color(0xAAFF1801), blurRadius: 14)]
+          : null,
+    ),
+  );
+}
+
+/// Štítek „ŽIVĚ" s tečkou, která třikrát blikne a pak svítí.
+class LiveTag extends StatefulWidget {
+  final String label;
+  const LiveTag({super.key, this.label = 'ŽIVĚ'});
+
+  @override
+  State<LiveTag> createState() => _LiveTagState();
+}
+
+class _LiveTagState extends State<LiveTag> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+  late final Animation<double> _blink = TweenSequence([
+    TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.2), weight: 1),
+    TweenSequenceItem(tween: Tween(begin: 0.2, end: 1.0), weight: 1),
+  ]).animate(_c);
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started || MediaQuery.disableAnimationsOf(context)) return;
+    _started = true;
+    _c.repeat(count: 3);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette.positive;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FadeTransition(
+          opacity: _blink,
+          child: Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: c,
+              boxShadow: [BoxShadow(color: c, blurRadius: 8)],
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          widget.label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: c,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.6,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Sytý tmavý odstín barvy pro záři pod bílým textem.
 Color deepTone(Color c) {
   var h = HSLColor.fromColor(c);
@@ -587,15 +820,29 @@ class Panel extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: context.palette.grouped,
-    borderRadius: BorderRadius.circular(Radii.card),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final content = InkWell(
       onTap: onTap,
       child: Padding(padding: padding, child: child),
-    ),
-  );
+    );
+    return Material(
+      color: p.grouped,
+      borderRadius: p.cardRadius(),
+      clipBehavior: Clip.antiAlias,
+      // Závod: červený pruh vlevo jako na boxové tabuli.
+      child: p.pitwall
+          ? DecoratedBox(
+              decoration: const BoxDecoration(
+                border: Border(
+                  left: BorderSide(color: AppPalette.raceRed, width: 4),
+                ),
+              ),
+              child: content,
+            )
+          : content,
+    );
+  }
 }
 
 /// Kruh postupu s přechodem barev motivu.

@@ -44,12 +44,57 @@ void main() {
     expect(next.lastTab, 1);
     expect(next.welcomeSeen, isTrue);
     expect(p.withExtra({'accent': 'bogus'}).accent, 'lime');
-    expect(p.look, 'auto');
+    expect(p.look, 'pitwall');
+    expect(p.withExtra({'look': 'auto'}).look, 'auto');
     expect(p.withExtra({'look': 'studio'}).look, 'studio');
-    expect(p.withExtra({'look': 'bogus'}).look, 'auto');
+    expect(p.withExtra({'look': 'bogus'}).look, 'pitwall');
+    expect(Look.parse(null), Look.pitwall);
     expect(Accent.parse('lagoon'), Accent.lagoon);
     expect(Accent.parse(null), Accent.lime);
   });
+
+  test('race look is always dark with fixed race red', () {
+    for (final accent in Accent.values) {
+      for (final b in Brightness.values) {
+        final p = buildTheme(b, accent, Look.pitwall).extension<AppPalette>()!;
+        expect(p.pitwall, isTrue);
+        expect(p.background, const Color(0xFF15151E));
+        expect(p.cta, AppPalette.raceRed);
+      }
+    }
+    expect(Look.values.first, Look.pitwall);
+  });
+
+  testWidgets(
+    'start lights light up in sequence, at once with reduced motion',
+    (tester) async {
+      int lit() => tester
+          .widgetList<Container>(find.byType(Container))
+          .where(
+            (c) =>
+                c.decoration is BoxDecoration &&
+                (c.decoration! as BoxDecoration).color ==
+                    const Color(0xFFFF1801),
+          )
+          .length;
+      Widget app({required bool reduced}) => MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: reduced),
+          child: const Scaffold(body: Center(child: StartLights())),
+        ),
+      );
+      await tester.pumpWidget(app(reduced: false));
+      expect(lit(), 0);
+      await tester.pump(const Duration(milliseconds: 1000));
+      expect(lit(), inInclusiveRange(1, 4));
+      await tester.pumpAndSettle();
+      expect(lit(), 5);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(app(reduced: true));
+      expect(lit(), 5);
+    },
+  );
 
   testWidgets('grouped section, ring and buttons render in both themes', (
     tester,
