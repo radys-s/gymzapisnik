@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/finders.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
@@ -32,13 +33,13 @@ void main() {
     expect(find.widgetWithText(TextField, '77,5'), findsOneWidget);
 
     await tester.runAsync(() async {
-      await tester.tap(find.byTooltip('Potvrdit sérii'));
+      await tester.tap(byLabel('Potvrdit sérii'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
 
     final set = state.active!.exercises.single.sets.single;
     expect((set.weight, set.reps, set.done), (77.5, 8, true));
-    expect(find.byTooltip('Zrušit potvrzení'), findsOneWidget);
+    expect(byLabel('Zrušit potvrzení'), findsOneWidget);
   });
 }

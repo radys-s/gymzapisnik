@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/finders.dart';
 import 'package:gymzapisnik/coach/plates.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
@@ -128,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.emoji_events_rounded), findsNothing);
     await tester.runAsync(() async {
-      await tester.tap(find.byTooltip('Potvrdit sérii').first);
+      await tester.tap(byLabel('Potvrdit sérii').first);
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();

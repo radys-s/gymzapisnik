@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/finders.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
@@ -131,7 +132,7 @@ void main() {
     final state = await _state(tester);
     await _pump(tester, state);
 
-    await tester.tap(find.byTooltip('Vyměnit cvik').first);
+    await tester.tap(byLabel('Vyměnit cvik').first);
     await tester.pumpAndSettle();
     expect(find.text('Nahradit cvik?'), findsOneWidget);
     await tester.tap(find.text('Zrušit'));
@@ -202,7 +203,7 @@ void main() {
     await _pump(tester, state, scale: 1.5);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.byTooltip('Potvrdit sérii'), findsWidgets);
+    expect(byLabel('Potvrdit sérii'), findsWidgets);
 
     final semantics = tester.ensureSemantics();
     expect(

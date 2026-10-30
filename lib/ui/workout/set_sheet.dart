@@ -267,17 +267,21 @@ class _ValueState extends State<_Value> {
         Expanded(
           child: SizedBox(
             height: 48,
-            child: IconButton(
-              tooltip: tooltip,
-              onPressed: onTap,
-              style: IconButton.styleFrom(
-                backgroundColor: p.fill,
-                foregroundColor: p.label,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(Radii.control),
+            child: Semantics(
+              button: true,
+              label: tooltip,
+              excludeSemantics: true,
+              child: IconButton(
+                onPressed: onTap,
+                style: IconButton.styleFrom(
+                  backgroundColor: p.fill,
+                  foregroundColor: p.label,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Radii.control),
+                  ),
                 ),
+                icon: Icon(icon),
               ),
-              icon: Icon(icon),
             ),
           ),
         );
