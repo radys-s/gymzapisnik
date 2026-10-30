@@ -135,6 +135,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 2026-10-30 | tomas / tomas/app-vibe | P0: pohybové tokeny, haptika, bez lepivých tooltipů |
 | 2026-10-30 22:50 | tomas/app-vibe | P1: pravdivý a jednající trenér |
 | 2026-10-30 | tomas/app-vibe | P2: první trénink bez tření (startovní váhy, přenos sérií, dokončení) |
+| 2026-10-30 | tomas/app-vibe | P3: souhrn jako zážitek – verdikt kouče, cíle na příště, další trénink, animace |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -292,3 +293,25 @@ další fáze přidala vlastní čísla a appka by působila nesourodě.
 **Co nefungovalo:** walker klikal na „Potvrdit sérii“ do středu celého řádku (tím se našla chyba přístupnosti výše).
 
 **Další krok:** P3 — souhrn po tréninku jako zážitek (počítadla, verdikt kouče, náhled dalšího tréninku).
+
+## 2026-10-30 · tomas/app-vibe · P3: souhrn po tréninku jako zážitek
+
+**Co a proč:** souhrn byl tabulka čísel, nic neříkal a nic neslavil. Teď je to moment, kdy aplikace mluví jako trenér: verdikt, cíl na příště, další trénink. Je to místo s největším emočním dopadem, protože rozhoduje, jestli se člověk vrátí.
+
+- `lib/coach/summary_coach.dart` (nový, čistý Dart): `summaryVerdict` (první trénink / rekordy / lepší v X z Y cviků / stejně / slabší den / smíšeně) a `nextTargetLabel` („Barbell squat 25 kg × 6“).
+- `AppState.nextSuggestion`: návrh na příště podle plánu nebo výchozích 3× 8–12.
+- Souhrn: stats se načítají počítadlem, bloky jedou postupně (`Reveal` se staggerem), haptika `success`, nebo `record`, když padl rekord. Panel kouče, panel „Další trénink“ (den + první 3 cviky).
+- Odznaky: časové (Ranní ptáče, Noční směna) jsou menší pill „Bonus“, ne stejná oslava jako „První krok“.
+- `durationLabel` místo „0 min“ píše „< 1 min“.
+
+**Review (subagent) našel a opraveno:**
+- Verdikt se přepočítával při každém rebuildu → teď se počítá jednou ve State.
+- `Trend.added` se počítal jako „stejně jako minule“ → teď ho verdikt přeskočí.
+- Víc rekordů napříč cviky dávalo „Nové rekordy: 3.“ → teď „3 nové rekordy“ / „6 nových rekordů“.
+- Bloky bez klíčů → klíč podle typu bloku.
+- Prázdný den ukazoval „0 cviků · “ → teď jen název dne.
+- Opravený pending Timer v `Reveal` (zrušitelný `Timer`).
+
+**Výsledky:** 360 testů zelených, `dart analyze` čistý. Webový průchod: verdikt, „Příště: Barbell squat 25 kg × 6“, „Nový odznak: První krok“, Bonus „Noční směna“, „Další trénink Full body B · 5 cviků“, 0 chyb v konzoli.
+
+**Další krok:** P4, tedy tři taby Trénink · Pokrok · Strava, tab Pokrok z nepoužitých dashboard widgetů a pryč iOS seznam z domovské obrazovky.

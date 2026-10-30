@@ -24,6 +24,7 @@ void main() {
     expect(recordLabel(RecordKind.bestE1rm, 101.333), '101,3 kg');
     expect(recordLabel(RecordKind.maxReps, 15), '15 opak.');
     expect(durationLabel(const Duration(minutes: 52)), '52 min');
+    expect(durationLabel(const Duration(seconds: 30)), '< 1 min');
     expect(durationLabel(const Duration(minutes: 65)), '1 h 05 min');
   });
 
@@ -66,6 +67,17 @@ void main() {
     expect(find.textContaining('(+20 kg)'), findsOneWidget);
     expect(find.byType(BackButton), findsNothing);
     expect(find.text('Hotovo'), findsOneWidget);
+    // Kouč řekne verdikt a konkrétní cíl na příště.
+    expect(
+      find.text('Nové rekordy: Bench press. Takhle vypadá progres.'),
+      findsOneWidget,
+    );
+    expect(find.text('Příště'), findsOneWidget);
+    expect(
+      find.textContaining(RegExp(r'^Bench press [\d,]+ kg × \d+$')),
+      findsOneWidget,
+    );
+    await tester.pumpAndSettle();
   });
 
   testWidgets('from history: delete asks first and closes the page', (

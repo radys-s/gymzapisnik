@@ -21,6 +21,7 @@ String recordLabel(RecordKind kind, double value) => switch (kind) {
 /// Délka tréninku: „52 min" nebo „1 h 05 min".
 String durationLabel(Duration d) {
   final minutes = d.isNegative ? 0 : d.inMinutes;
+  if (minutes < 1) return '< 1 min';
   if (minutes < 60) return '$minutes min';
   return '${minutes ~/ 60} h ${(minutes % 60).toString().padLeft(2, '0')} min';
 }
@@ -52,6 +53,14 @@ String weeksLabel(int n) =>
         : (n >= 2 && n <= 4)
         ? 'týdny'
         : 'týdnů'}';
+
+/// „1 cvik", „3 cviky", „5 cviků".
+String exercisesLabel(int n) =>
+    '$n ${n == 1
+        ? 'cvik'
+        : (n >= 2 && n <= 4)
+        ? 'cviky'
+        : 'cviků'}';
 
 /// „1 den", „3 dny", „5 dní".
 String daysLabel(int n) =>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../coach/achievements.dart';
+import '../../coach/summary_coach.dart';
 import '../../core/format.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
@@ -8,6 +9,8 @@ import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../coach/achievements_page.dart';
 import '../design/components.dart';
+import '../design/haptics.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../history/compare_page.dart';
 import '../history/edit_workout_page.dart';
@@ -37,6 +40,17 @@ class SummaryPage extends StatefulWidget {
 class _SummaryPageState extends State<SummaryPage> {
   AppState get state => widget.state;
   bool _busy = false;
+  // Verdikt a cíle se počítají jednou; rebuildy (sync) je nepřepočítávají.
+  (String, List<String>)? _coach;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.justFinished) return;
+    // Rekord cítit jinak než běžné dokončení.
+    final records = newRecords(widget.workout, state.workouts, state.typeOf);
+    records.isEmpty ? Haptics.success() : Haptics.record();
+  }
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -193,68 +207,30 @@ class _SummaryPageState extends State<SummaryPage> {
         ),
       ),
       children: [
-        HeroCard(
-          vivid: true,
-          child: Builder(
-            builder: (context) {
-              final p = context.palette;
-              final text = Theme.of(context).textTheme;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (finished) ...[
-                    Text(workout.name, style: text.titleLarge),
-                    const SizedBox(height: 2),
-                  ],
-                  Text(
-                    formatDateTime(workout.date),
-                    style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
-                  ),
-                  const SizedBox(height: Space.s),
-                  Wrap(
-                    spacing: Space.s,
-                    runSpacing: Space.xs,
-                    children: [
-                      Pill('$number. trénink', icon: Icons.flag_rounded),
-                      Pill(
-                        'Týden ${week.workouts}/${state.weekGoal}',
-                        icon: week.workouts >= state.weekGoal
-                            ? Icons.check_circle_rounded
-                            : Icons.date_range_rounded,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Space.l),
-                  Row(
-                    children: [
-                      if (duration != null)
-                        Expanded(
-                          child: StatTile(durationLabel(duration), 'Délka'),
-                        ),
-                      Expanded(child: StatTile('$sets', 'Série')),
-                      Expanded(
-                        child: StatTile('${formatVolume(kg)} kg', 'Objem'),
-                      ),
-                    ],
-                  ),
-                  if (workout.note.isNotEmpty) ...[
-                    const SizedBox(height: Space.l),
-                    Text(workout.note, style: text.bodyMedium),
-                  ],
-                ],
-              );
+        for (final (i, block) in [
+          _hero(workout, finished, number, week, duration, sets, kg),
+          if (finished)
+            switch (_coach ??= (
+              _verdict(workout, number, records),
+              _targets(workout),
+            )) {
+              (final verdict, final targets) => _CoachPanel(
+                verdict: verdict,
+                targets: targets,
+              ),
             },
+          if (records.isNotEmpty) _RecordsPanel(state: state, records: records),
+          if (state.badgesFrom(workout.id) case final badges
+              when badges.isNotEmpty)
+            _BadgesPanel(state: state, badges: badges, fresh: finished),
+          if (finished && state.split != null) _NextPanel(state: state),
+        ].indexed)
+          Padding(
+            // Klíč podle typu bloku: pozdě přidaný blok nepřebere stav cizímu.
+            key: ValueKey(block.runtimeType),
+            padding: EdgeInsets.only(top: i == 0 ? 0 : Space.m),
+            child: Reveal(index: i, child: block),
           ),
-        ),
-        if (records.isNotEmpty) ...[
-          const SizedBox(height: Space.m),
-          _RecordsPanel(state: state, records: records),
-        ],
-        if (state.badgesFrom(workout.id) case final badges
-            when badges.isNotEmpty) ...[
-          const SizedBox(height: Space.m),
-          _BadgesPanel(state: state, badges: badges, fresh: finished),
-        ],
         const SizedBox(height: Space.xl),
         SectionHeader('Cviky (${workout.exercises.length})'),
         for (final entry in workout.exercises)
@@ -267,6 +243,222 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
           ),
       ],
+    );
+  }
+
+  String _verdict(Workout workout, int number, List<PersonalRecord> records) {
+    var compared = 0, better = 0, worse = 0;
+    for (final entry in workout.exercises) {
+      final last = lastPerformance(
+        state.workouts,
+        entry.exerciseId,
+        excludeWorkoutId: workout.id,
+        before: workout.date,
+      );
+      if (last == null) continue;
+      final trend = compareExercise(
+        state.typeOf(entry.exerciseId),
+        entry,
+        last.entry,
+      ).overall;
+      // Bez počítaných sérií minule není s čím srovnat.
+      if (trend == Trend.missing || trend == Trend.added) continue;
+      compared++;
+      if (trend == Trend.better) better++;
+      if (trend == Trend.worse) worse++;
+    }
+    final names = {for (final r in records) r.exerciseId};
+    return summaryVerdict(
+      number: number,
+      records: records.length,
+      recordExercise: names.length == 1
+          ? state.exercise(names.single).name
+          : null,
+      compared: compared,
+      better: better,
+      worse: worse,
+    );
+  }
+
+  /// Cíle na příště pro cviky z tohoto tréninku (nejvýš tři).
+  List<String> _targets(Workout workout) => [
+    for (final entry in workout.exercises)
+      if (entry.countedSets.isNotEmpty)
+        ?nextTargetLabel(
+          state.exercise(entry.exerciseId).name,
+          state.nextSuggestion(entry.exerciseId),
+          weighted: state.typeOf(entry.exerciseId) == ExerciseType.weighted,
+        ),
+  ].take(3).toList();
+
+  Widget _hero(
+    Workout workout,
+    bool finished,
+    int number,
+    WeekSummary week,
+    Duration? duration,
+    int sets,
+    double kg,
+  ) => HeroCard(
+    vivid: true,
+    child: Builder(
+      builder: (context) {
+        final p = context.palette;
+        final text = Theme.of(context).textTheme;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (finished) ...[
+              Text(workout.name, style: text.titleLarge),
+              const SizedBox(height: 2),
+            ],
+            Text(
+              formatDateTime(workout.date),
+              style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+            ),
+            const SizedBox(height: Space.s),
+            Wrap(
+              spacing: Space.s,
+              runSpacing: Space.xs,
+              children: [
+                Pill('$number. trénink', icon: Icons.flag_rounded),
+                Pill(
+                  'Týden ${week.workouts}/${state.weekGoal}',
+                  icon: week.workouts >= state.weekGoal
+                      ? Icons.check_circle_rounded
+                      : Icons.date_range_rounded,
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.l),
+            Row(
+              children: [
+                if (duration != null)
+                  Expanded(child: StatTile(durationLabel(duration), 'Délka')),
+                Expanded(
+                  child: StatTile(
+                    '$sets',
+                    'Série',
+                    countTo: sets.toDouble(),
+                    format: (v) => '${v.round()}',
+                  ),
+                ),
+                Expanded(
+                  child: StatTile(
+                    '${formatVolume(kg)} kg',
+                    'Objem',
+                    countTo: kg,
+                    format: (v) => '${formatVolume(v)} kg',
+                  ),
+                ),
+              ],
+            ),
+            if (workout.note.isNotEmpty) ...[
+              const SizedBox(height: Space.l),
+              Text(workout.note, style: text.bodyMedium),
+            ],
+          ],
+        );
+      },
+    ),
+  );
+}
+
+/// Verdikt kouče a konkrétní cíle na příště.
+class _CoachPanel extends StatelessWidget {
+  final String verdict;
+  final List<String> targets;
+  const _CoachPanel({required this.verdict, required this.targets});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconTile(Icons.sports_rounded, color: p.accent),
+              const SizedBox(width: Space.m),
+              Expanded(child: Text(verdict, style: text.bodyLarge)),
+            ],
+          ),
+          if (targets.isNotEmpty) ...[
+            const SizedBox(height: Space.m),
+            Text('Příště', style: text.labelMedium),
+            for (final t in targets)
+              Padding(
+                padding: const EdgeInsets.only(top: Space.xs),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: p.accent,
+                    ),
+                    const SizedBox(width: Space.s),
+                    Expanded(
+                      child: Text(
+                        t,
+                        style: text.bodyMedium?.copyWith(fontFeatures: tabular),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Náhled dalšího dne programu, ať je jasné, co přijde.
+class _NextPanel extends StatelessWidget {
+  final AppState state;
+  const _NextPanel({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final split = state.split!;
+    if (split.days.isEmpty) return const SizedBox.shrink();
+    final day = split.days[state.nextSplitDay % split.days.length];
+    final names = [
+      for (final e in day.exercises) state.exercise(e.exerciseId).name,
+    ];
+    final detail = names.isEmpty
+        ? null
+        : '${exercisesLabel(names.length)} · ${names.take(3).join(', ')}'
+              '${names.length > 3 ? '…' : ''}';
+    return Panel(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconTile(Icons.event_rounded, color: p.accent),
+          const SizedBox(width: Space.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Další trénink', style: text.labelMedium),
+                Text(day.name, style: text.titleMedium),
+                if (detail != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    detail,
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -329,26 +521,38 @@ class _BadgesPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    // Milníky velké, odznaky za čas začátku jen jako drobný bonus.
+    final main = [
+      for (final b in badges)
+        if (!b.badge.bonus) b,
+    ];
+    final bonus = [
+      for (final b in badges)
+        if (b.badge.bonus) b,
+    ];
+    void open() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AchievementsPage(state)),
+    );
     return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            !fresh
-                ? 'Odznaky z tohoto tréninku'
-                : badges.length == 1
-                ? 'Nový odznak'
-                : 'Nové odznaky (${badges.length})',
-            style: text.titleMedium,
-          ),
-          const SizedBox(height: Space.m),
-          for (final b in badges)
+          if (main.isNotEmpty) ...[
+            Text(
+              !fresh
+                  ? 'Odznaky z tohoto tréninku'
+                  : main.length == 1
+                  ? 'Nový odznak'
+                  : 'Nové odznaky (${main.length})',
+              style: text.titleMedium,
+            ),
+            const SizedBox(height: Space.m),
+          ],
+          for (final b in main)
             InkWell(
               borderRadius: BorderRadius.circular(Radii.control),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => AchievementsPage(state)),
-              ),
+              onTap: open,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: Space.xs),
                 child: Row(
@@ -364,6 +568,24 @@ class _BadgesPanel extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+          if (bonus.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: main.isEmpty ? 0 : Space.s),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(Radii.control),
+                onTap: open,
+                child: Wrap(
+                  spacing: Space.s,
+                  runSpacing: Space.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text('Bonus', style: text.labelMedium),
+                    for (final b in bonus)
+                      Pill(b.badge.title, icon: Icons.bolt_rounded),
                   ],
                 ),
               ),

@@ -174,7 +174,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Nové odznaky (2)'), findsOneWidget);
+    // Milník velký, odznak za čas začátku jen jako bonus.
+    expect(find.text('Nový odznak'), findsOneWidget);
+    expect(find.text('Bonus'), findsOneWidget);
     expect(find.text('Ranní ptáče'), findsOneWidget);
   });
 }
