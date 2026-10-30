@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/finders.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
@@ -54,16 +55,16 @@ void main() {
   ) async {
     await pump(tester);
     expect(tester.takeException(), isNull);
-    expect(find.byTooltip('Přidat 2,5 kg'), findsNothing);
+    expect(byLabel('Přidat 2,5 kg'), findsNothing);
 
     await tester.tap(field('Váha v kg, Série 2'));
     await tester.pumpAndSettle();
     expect(find.text('Bench press · Série 2'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('Přidat 2,5 kg'));
-    await tester.tap(find.byTooltip('Přidat 2,5 kg'));
-    await tester.tap(find.byTooltip('Ubrat opakování'));
+    await tester.tap(byLabel('Přidat 2,5 kg'));
+    await tester.tap(byLabel('Přidat 2,5 kg'));
+    await tester.tap(byLabel('Ubrat opakování'));
     await tester.pump();
     expect(bench.sets[1].weight, 65);
     expect(bench.sets[1].reps, 7);
@@ -71,18 +72,18 @@ void main() {
 
     // Pod nulu nejde.
     for (var i = 0; i < 30; i++) {
-      await tester.tap(find.byTooltip('Ubrat 2,5 kg'));
+      await tester.tap(byLabel('Ubrat 2,5 kg'));
     }
     await tester.pump();
     expect(bench.sets[1].weight, 0);
 
     // Ručně vyšší váha se tlačítkem nesrazí, nečitelný text se nepřepíše.
     await tester.enterText(sheetField(0), '1200');
-    await tester.tap(find.byTooltip('Přidat 2,5 kg'));
+    await tester.tap(byLabel('Přidat 2,5 kg'));
     await tester.pump();
     expect(bench.sets[1].weight, 1200);
     await tester.enterText(sheetField(0), '1,2,5');
-    await tester.tap(find.byTooltip('Přidat 2,5 kg'));
+    await tester.tap(byLabel('Přidat 2,5 kg'));
     await tester.pump();
     expect(tester.widget<TextField>(sheetField(0)).controller!.text, '1,2,5');
     expect(find.textContaining('Oprav váhu'), findsOneWidget);
@@ -115,8 +116,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(field('Opakování, Série 2'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Přidat 1,25 kg'), findsOneWidget);
-    await tester.tap(find.byTooltip('Přidat 1,25 kg'));
+    expect(byLabel('Přidat 1,25 kg'), findsOneWidget);
+    await tester.tap(byLabel('Přidat 1,25 kg'));
     await tester.pump();
     expect(bench.sets[1].weight, 61.25);
     await tester.runAsync(() async {
@@ -128,7 +129,7 @@ void main() {
     tester,
   ) async {
     await pump(tester);
-    expect(find.byTooltip('Vyměnit cvik'), findsOneWidget);
+    expect(byLabel('Vyměnit cvik'), findsOneWidget);
     await tester.tap(find.text('Bench press'));
     await tester.pumpAndSettle();
     expect(find.byType(ExerciseDetailPage), findsOneWidget);

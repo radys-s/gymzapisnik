@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/finders.dart';
 import 'package:gymzapisnik/coach/splits.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
@@ -97,7 +98,7 @@ void main() {
         home: WorkoutPage(state),
       ),
     );
-    await tester.tap(find.byTooltip('Vyměnit cvik').first);
+    await tester.tap(byLabel('Vyměnit cvik').first);
     await tester.pumpAndSettle();
     expect(find.text('Stejná hlava: Boční delt'), findsOneWidget);
     expect(find.text('Zadní delt'), findsWidgets);

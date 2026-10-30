@@ -132,6 +132,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 18 | Mapa těla | anatomie | lišta + tlačítko + |
 | 19 | Arkáda | synthwave, XP | lišta |
 | 20 | Atelier | luxus, zlato | 2 záložky nahoře |
+| 2026-10-30 | tomas / tomas/app-vibe | P0: pohybové tokeny, haptika, bez lepivých tooltipů |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -233,3 +234,22 @@ deploy už ne), Tomáš se znovu přihlásil přes `wrangler login`. Výpis KV j
 proto součty po odeslání nenaskočí hned; stránka to teď říká.
 
 **Další krok:** rozeslat odkaz, po hlasování vytáhnout součty a poznámky z KV.
+
+## 2026-10-30 · App vibe P0: pohybový systém a hmatová odezva (tomas/app-vibe)
+
+**Proč:** audit ukázal, že se v aplikaci skoro nic nehýbe a odezva na akce je rozházená
+(6 míst s různým `HapticFeedback`, doby animací natvrdo). Bez jednoho zdroje pravdy by každá
+další fáze přidala vlastní čísla a appka by působila nesourodě.
+
+**Co:**
+- `lib/ui/design/motion.dart`: doby 120/280/450/700 ms, křivka `Cubic(.22,1,.36,1)`, rozestup
+  70 ms, `Motion.on(context)` respektuje systémové „omezit animace“. Widgety `Reveal` (jednorázový
+  vjezd, obsah je ve stromu hned) a `CountUp` (čtečka dostane jen konečnou hodnotu).
+- `lib/ui/design/haptics.dart`: odezva podle významu (tick, tap, confirm, record, success, alert).
+  Potvrzená série je teď `confirm`, rekord `record`, konec pauzy `alert`.
+- Tlačítka potvrzení série, ± v listu série a výměny cviku nemají tooltip (na webu visel přes
+  další řádek), popisek pro čtečku je v `Semantics`. Testy hledají přes `test/support/finders.dart`.
+
+**Ověření:** `flutter analyze` čistý, `flutter test` 343/343 včetně nových testů pohybu.
+
+**Další krok:** P1, trenér, který mluví pravdu o dnešním plánu a umí jednat.

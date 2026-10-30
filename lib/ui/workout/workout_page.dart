@@ -11,6 +11,7 @@ import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
+import '../design/haptics.dart';
 import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
 import '../widgets/exercise_media.dart';
@@ -505,7 +506,7 @@ class _RestBarState extends State<_RestBar> {
     final end = widget.endsAt;
     if (!end.isAfter(now) && _alertedFor != end) {
       _alertedFor = end;
-      HapticFeedback.vibrate();
+      Haptics.alert();
       SystemSound.play(SystemSoundType.alert);
     }
     if (now.isAfter(end.add(_linger))) {
@@ -717,10 +718,14 @@ class _ExerciseCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Vyměnit cvik',
-                  onPressed: () => onMenu('replace'),
-                  icon: Icon(Icons.swap_horiz_rounded, color: p.accent),
+                Semantics(
+                  button: true,
+                  label: 'Vyměnit cvik',
+                  excludeSemantics: true,
+                  child: IconButton(
+                    onPressed: () => onMenu('replace'),
+                    icon: Icon(Icons.swap_horiz_rounded, color: p.accent),
+                  ),
                 ),
                 PopupMenuButton<String>(
                   tooltip: 'Možnosti cviku',
@@ -931,9 +936,9 @@ class _SetRowState extends State<_SetRow> {
       final records = widget.state.liveRecords(widget.set);
       if (error == null && widget.set.done && mounted) {
         if (records.isEmpty) {
-          HapticFeedback.selectionClick();
+          Haptics.confirm();
         } else {
-          HapticFeedback.heavyImpact();
+          Haptics.record();
           _celebrate(records);
         }
       }
@@ -1177,18 +1182,25 @@ class _SetRowState extends State<_SetRow> {
                   color: set.done ? null : p.fill,
                   borderRadius: BorderRadius.circular(Radii.control),
                 ),
-                child: IconButton(
-                  tooltip: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
-                  onPressed: _saving ? null : _toggleDone,
-                  padding: EdgeInsets.zero,
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: set.done ? p.onGradient : p.secondaryLabel,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(Radii.control),
+                // Bez tooltipu: na webu po potvrzení visel přes další řádek.
+                child: Semantics(
+                  button: true,
+                  label: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
+                  excludeSemantics: true,
+                  child: IconButton(
+                    onPressed: _saving ? null : _toggleDone,
+                    padding: EdgeInsets.zero,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: set.done
+                          ? p.onGradient
+                          : p.secondaryLabel,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(Radii.control),
+                      ),
                     ),
+                    icon: const Icon(Icons.check_rounded),
                   ),
-                  icon: const Icon(Icons.check_rounded),
                 ),
               ),
             ),

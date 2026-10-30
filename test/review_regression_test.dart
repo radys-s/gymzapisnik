@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/finders.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
@@ -175,9 +176,9 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: WorkoutPage(state)));
     await tester.runAsync(() async {
       store.gate = Completer<void>();
-      await tester.tap(find.byTooltip('Potvrdit sérii'));
+      await tester.tap(byLabel('Potvrdit sérii'));
       await tester.pump();
-      await tester.tap(find.byTooltip('Zrušit potvrzení'));
+      await tester.tap(byLabel('Zrušit potvrzení'));
       expect(set.done, isTrue);
       store.gate!.complete();
       await state.saveActive();
@@ -258,15 +259,15 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(MaterialApp(home: WorkoutPage(state)));
-    await tester.tap(find.byTooltip('Potvrdit sérii'));
+    await tester.tap(byLabel('Potvrdit sérii'));
     await tester.runAsync(
       () => Future.delayed(const Duration(milliseconds: 80)),
     );
     await tester.pump();
-    await tester.tap(find.byTooltip('Zrušit potvrzení'));
+    await tester.tap(byLabel('Zrušit potvrzení'));
     expect(set.done, isTrue);
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.byTooltip('Zrušit potvrzení'));
+    await tester.tap(byLabel('Zrušit potvrzení'));
     await tester.runAsync(
       () => Future.delayed(const Duration(milliseconds: 80)),
     );
