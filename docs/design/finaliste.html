@@ -667,7 +667,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 </div>
 <aside class="tally" id="tally" aria-live="polite">
 <h3>Průběžné výsledky</h3>
-<p id="t-empty">Výsledky vidí jen ti, kdo jsou přihlášení na claude.ai. Bez přihlášení pošli hlas jako text.</p>
+<p id="t-empty">Součty hlasů se tu ukážou po načtení. Když se nenačtou, pošli hlas jako text.</p>
 <div id="t-rows"></div>
 <ul class="notelist" id="t-notes" hidden></ul>
 </aside>
@@ -687,9 +687,12 @@ setTimeout(()=>phones.forEach(p=>p.classList.add('play')),2500);
 const ROWS=[["priority","1 · Priority"],["trenink","2 · Trénink"],["serie","3 · V tréninku"],["strava","4 · Strava"],["celkem","Celkově"]];
 const NAMES={"01":"Aktivita","02":"Tensor","03":"Pit wall"};
 const form=document.getElementById('vf'),st=document.getElementById('v-status');
-let db=null,uid=null,owner=false;
-const pick=k=>{const r=form.querySelector('input[name="'+k+'"]:checked');return r?r.value:""};
+let db=null,uid=null,owner=false,api=false;
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+function voterId(){let v=store.get("gz-voter");if(!v||!/^[a-z0-9]{16,40}$/.test(v)){v=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(36).padStart(2,"0")).join("").slice(0,24);store.set("gz-voter",v)}return v}
+function fillForm(v){ROWS.forEach(([k])=>{if(ok(v[k])){const r=document.getElementById("r-"+k+"-"+v[k]);if(r)r.checked=true}});if(typeof v.note==="string")document.getElementById("v-note").value=v.note.slice(0,600);if(typeof v.name==="string")document.getElementById("v-name").value=v.name.slice(0,40)}
 const ok=x=>x==="01"||x==="02"||x==="03";
+const pick=k=>{const r=form.querySelector('input[name="'+k+'"]:checked');return r?r.value:""};
 function say(t,cls){st.textContent=t;st.className=cls||""}
 function asText(v){
   const l=["Finále Gym zápisníku: můj hlas"];
@@ -719,29 +722,23 @@ form.addEventListener('submit',async e=>{
     try{await db.collection("votes").doc(uid).set(Object.assign({},v,{at:Date.now()}));say("Hlas je uložený. Díky! Když ho změníš, stačí odeslat znovu.","ok");document.getElementById('v-copy').hidden=true}
     catch(err){say("Hlas se nepodařilo uložit. Zkopíruj text níž a pošli ho Tomášovi.","err");showCopy(v)}
     finally{btn.disabled=false}
-  }else{say("Tady se hlas uložit nedá, protože nejsi přihlášený na claude.ai. Zkopíruj text a pošli ho Tomášovi.");showCopy(v)}
+  }else if(api){
+    const btn=document.getElementById('v-send');btn.disabled=true;
+    try{
+      const r=await fetch("/api/votes",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({id:voterId()},v))});
+      if(!r.ok)throw new Error(r.status);
+      store.set("gz-vote",JSON.stringify(v));
+      say("Hlas je uložený. Díky! Když ho změníš, stačí odeslat znovu.","ok");document.getElementById('v-copy').hidden=true;
+      loadApiTally();
+    }catch(err){say("Hlas se teď nepodařilo uložit. Zkopíruj text níž a pošli ho Tomášovi.","err");showCopy(v)}
+    finally{btn.disabled=false}
+  }else{say("Tady se hlas uložit nedá. Zkopíruj text a pošli ho Tomášovi.");showCopy(v)}
 });
 function renderTally(docs){
-  const box=document.getElementById('t-rows'),empty=document.getElementById('t-empty'),notes=document.getElementById('t-notes');
-  box.textContent="";notes.textContent="";
   const vs=docs.map(d=>d.data()||{});
-  empty.textContent=vs.length?("Hlasů zatím: "+vs.length+". Čísla se mění živě."):"Zatím nikdo nehlasoval. Tvůj hlas se tu ukáže hned po odeslání.";
-  if(!vs.length)return;
-  ROWS.forEach(([k,n])=>{
-    const c={"01":0,"02":0,"03":0};vs.forEach(v=>{if(ok(v[k]))c[v[k]]++});
-    const max=Math.max(c["01"],c["02"],c["03"]);
-    const r=document.createElement('div');r.className='trow';
-    const h=document.createElement('h4');h.textContent=n;r.appendChild(h);
-    ["01","02","03"].forEach(o=>{
-      const b=document.createElement('div');b.className='tbar'+(max&&c[o]===max?' lead':'');
-      const a=document.createElement('span');a.textContent=o+" "+NAMES[o];
-      const t=document.createElement('div');t.className='tr';
-      const i=document.createElement('i');i.style.width=(c[o]/vs.length*100)+'%';t.appendChild(i);
-      const m=document.createElement('span');m.className='n';m.textContent=c[o];
-      b.append(a,t,m);r.appendChild(b);
-    });
-    box.appendChild(r);
-  });
+  const tally={};ROWS.forEach(([k])=>{const c={"01":0,"02":0,"03":0};vs.forEach(v=>{if(ok(v[k]))c[v[k]]++});tally[k]=c});
+  drawTally(vs.length,tally);
+  const notes=document.getElementById('t-notes');notes.textContent="";
   if(owner){
     const ns=vs.filter(v=>typeof v.note==="string"&&v.note);
     notes.hidden=!ns.length;
@@ -750,8 +747,39 @@ function renderTally(docs){
       li.prepend(sp);notes.appendChild(li)});
   }
 }
+function drawTally(total,tally){
+  const box=document.getElementById('t-rows'),empty=document.getElementById('t-empty');
+  box.textContent="";
+  empty.textContent=total?("Hlasů zatím: "+total+"."):"Zatím nikdo nehlasoval. Tvůj hlas se tu ukáže hned po odeslání.";
+  if(!total)return;
+  ROWS.forEach(([k,n])=>{
+    const t=tally[k]||{};const c={"01":+t["01"]||0,"02":+t["02"]||0,"03":+t["03"]||0};
+    const max=Math.max(c["01"],c["02"],c["03"]);
+    const r=document.createElement('div');r.className='trow';
+    const h=document.createElement('h4');h.textContent=n;r.appendChild(h);
+    ["01","02","03"].forEach(o=>{
+      const b=document.createElement('div');b.className='tbar'+(max&&c[o]===max?' lead':'');
+      const a=document.createElement('span');a.textContent=o+" "+NAMES[o];
+      const t=document.createElement('div');t.className='tr';
+      const i=document.createElement('i');i.style.width=(c[o]/total*100)+'%';t.appendChild(i);
+      const m=document.createElement('span');m.className='n';m.textContent=c[o];
+      b.append(a,t,m);r.appendChild(b);
+    });
+    box.appendChild(r);
+  });
+}
+async function loadApiTally(){
+  try{const r=await fetch("/api/votes",{cache:"no-store"});if(!r.ok)throw 0;const d=await r.json();drawTally(+d.count||0,d.tally||{})}
+  catch(e){document.getElementById('t-empty').textContent="Výsledky teď nejdou načíst. Hlasovat můžeš dál."}
+}
 (async()=>{
-  if(!window.claude||!window.claude.use)return;
+  if(!window.claude||!window.claude.use){
+    if(!/^https?:$/.test(location.protocol))return;
+    try{const r=await fetch("/api/votes",{cache:"no-store"});if(!r.ok)return;api=true;const d=await r.json();drawTally(+d.count||0,d.tally||{})}catch(e){return}
+    try{const v=JSON.parse(store.get("gz-vote")||"null");if(v){fillForm(v);say("Načetl jsem tvůj předchozí hlas. Můžeš ho upravit.")}}catch(e){}
+    setInterval(()=>{if(!document.hidden)loadApiTally()},30000);
+    return;
+  }
   try{
     const [d,u]=await Promise.all([claude.use("db"),claude.use("user")]);
     if(!d)return;
@@ -760,12 +788,7 @@ function renderTally(docs){
     if(uid){
       try{
         const me=await db.collection("votes").doc(uid).get();const v=me.exists&&me.data();
-        if(v){
-          ROWS.forEach(([k])=>{if(ok(v[k])){const r=document.getElementById('r-'+k+'-'+v[k]);if(r)r.checked=true}});
-          if(typeof v.note==="string")document.getElementById('v-note').value=v.note.slice(0,600);
-          if(typeof v.name==="string")document.getElementById('v-name').value=v.name.slice(0,40);
-          say("Načetl jsem tvůj předchozí hlas. Můžeš ho upravit.");
-        }
+        if(v){fillForm(v);say("Načetl jsem tvůj předchozí hlas. Můžeš ho upravit.")}
       }catch(e){}
     }
     document.getElementById('t-empty').textContent="Načítám hlasy…";
