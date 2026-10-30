@@ -182,6 +182,7 @@ class _DayToggle extends StatelessWidget {
       button: true,
       toggled: selected,
       label: spoken,
+      onTap: onTap,
       excludeSemantics: true,
       child: InkResponse(
         onTap: onTap,

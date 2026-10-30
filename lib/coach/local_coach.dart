@@ -148,12 +148,12 @@ String _line(PlanLine l) {
       : '${l.repMin}–${l.repMax}';
   final s = l.suggestion;
   final String load;
-  if (s.weight > 0) {
+  if (l.start != null) {
+    load = 'začni na ${l.start}';
+  } else if (s.weight > 0) {
     load = '${_kg(s.weight)} kg × ${s.reps}';
   } else if (!l.weighted) {
     load = '$range opakování';
-  } else if (l.start != null) {
-    load = 'začni na ${l.start}';
   } else {
     load = 'váhu na $range opakování';
   }

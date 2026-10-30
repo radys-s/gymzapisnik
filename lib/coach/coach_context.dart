@@ -210,7 +210,10 @@ String _planned(
 ) {
   final base = '$name ${p.sets}×${p.repMin}–${p.repMax}';
   if (s == null) return base;
-  if (s.weight > 0) return '$base, návrh ${_num(s.weight)} kg × ${s.reps}';
+  if (s.weight > 0) {
+    final first = s.kind == SuggestionKind.start ? 'poprvé, start' : 'návrh';
+    return '$base, $first ${_num(s.weight)} kg × ${s.reps}';
+  }
   if (type == ExerciseType.weighted && s.kind == SuggestionKind.start) {
     return '$base, poprvé, váhu zvolí sám';
   }

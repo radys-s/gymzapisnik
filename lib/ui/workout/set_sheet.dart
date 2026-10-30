@@ -267,9 +267,12 @@ class _ValueState extends State<_Value> {
         Expanded(
           child: SizedBox(
             height: 48,
+            // Vlastní uzel s akcí: bez ní by čtečka tlačítko nezmáčkla.
             child: Semantics(
+              container: true,
               button: true,
               label: tooltip,
+              onTap: onTap,
               excludeSemantics: true,
               child: IconButton(
                 onPressed: onTap,

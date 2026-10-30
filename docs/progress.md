@@ -134,6 +134,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 20 | Atelier | luxus, zlato | 2 záložky nahoře |
 | 2026-10-30 | tomas / tomas/app-vibe | P0: pohybové tokeny, haptika, bez lepivých tooltipů |
 | 2026-10-30 22:50 | tomas/app-vibe | P1: pravdivý a jednající trenér |
+| 2026-10-30 | tomas/app-vibe | P2: první trénink bez tření (startovní váhy, přenos sérií, dokončení) |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -273,3 +274,21 @@ další fáze přidala vlastní čísla a appka by působila nesourodě.
 **Co nefunguje dobře:** bez historie a bez Pro je u každého cviku „váhu na 5–8 opakování“ — řeší P2 (startovní váhy).
 
 **Další krok:** P2 — první trénink bez tření.
+
+## 2026-10-30 — P2: první trénink bez tření (tomas/app-vibe)
+
+**Proč:** začátečník na prvním tréninku viděl 0 kg, nápovědu „8 opakování“ u předvyplněných 5, každou sérii musel přepisovat zvlášť a po „Dokončit“ s ničím potvrzeným dostal dialog a pak chybu. Přesně tady lidi z appek odcházejí.
+
+**Co se udělalo:**
+- `lib/coach/start_weight.dart`: startovní zátěž podle cviku (osa / jednoručky / stroj) a úrovně. Osa nikdy pod 20 kg (bicepsový zdvih a francouzský tlak taky na prázdné ose), jednoručky „na ruku“, pokročilý ×1,5.
+- `suggest()`: poprvé předvyplní startovní váhu a dolní hranici rozsahu; nápověda říká rozsah „5–8 opakování“, ne jen horní mez. Startovní váha je i bez Pro.
+- Přenos do dalších sérií: `followersOf` při otevření listu určí série se stejnými hodnotami, `carryForward` je při psaní mění. Mezistav („2“ při psaní 25) nechytí ručně zadanou sérii.
+- Dokončení: bez potvrzené série nabídne „Pokračovat / Zahodit trénink“; jinak „Hotovo 1 z 16 sérií“ (počítá jen pracovní série s opakováními); „Ukládám…“ až po rozhodnutí; dvojklik neotevře dva dialogy.
+- Potvrzení série: řádek a fajfka se plynule zbarví, ikona naskočí (motion tokeny).
+- Přístupnost: tlačítka bez tooltipu (P0) splývala s řádkem a čtečka je nemohla zmáčknout. Teď mají vlastní uzel s akcí (Potvrdit sérii, ±, Vyměnit cvik, den v editoru programu).
+
+**Výsledky:** 358 testů zelených, `dart analyze` čistý. Headless průchod v Chrome 390 px: nový uživatel → plán → Full body A předvyplněný 20 kg → změna na 25 kg se přenesla do sérií 2–4 → potvrzení → „Hotovo 1 z 16 sérií“, 0 chyb v konzoli.
+
+**Co nefungovalo:** walker klikal na „Potvrdit sérii“ do středu celého řádku (tím se našla chyba přístupnosti výše).
+
+**Další krok:** P3 — souhrn po tréninku jako zážitek (počítadla, verdikt kouče, náhled dalšího tréninku).
