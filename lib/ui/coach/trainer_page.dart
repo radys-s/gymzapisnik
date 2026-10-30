@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../ai/fridge_coach.dart';
 import '../../ai/trainer.dart';
+import '../../coach/local_coach.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
+import '../program/program_page.dart';
 import '../widgets/ai_photo.dart';
 
 /// Otázky do začátku. Jen o tréninku, nic o hubnutí.
@@ -21,7 +24,15 @@ const trainerSuggestions = [
 class TrainerPage extends StatefulWidget {
   final AppState state;
   final DateTime Function() now;
-  const TrainerPage(this.state, {super.key, this.now = DateTime.now});
+
+  /// Začne dnešní trénink (trenér se před tím zavře).
+  final VoidCallback? onStartToday;
+  const TrainerPage(
+    this.state, {
+    super.key,
+    this.now = DateTime.now,
+    this.onStartToday,
+  });
 
   @override
   State<TrainerPage> createState() => _TrainerPageState();
@@ -89,7 +100,12 @@ class _TrainerPageState extends State<TrainerPage> {
   }
 
   Future<void> _sendChecked(String question, String? text) async {
-    if (!await confirmAiNotice(context, state) || !mounted) return;
+    final intent = classifyQuestion(question);
+    // Na dnešní plán odpoví aplikace sama, hned a stejně jako hlavní karta.
+    final instant = intent == CoachIntent.today || !state.trainer.enabled;
+    if (!instant && (!await confirmAiNotice(context, state) || !mounted)) {
+      return;
+    }
     if (text == null) input.clear();
     setState(() {
       messages = _capped([
@@ -104,9 +120,27 @@ class _TrainerPageState extends State<TrainerPage> {
       ]);
       error = null;
     });
+    if (instant) {
+      _reply(
+        localAnswer(intent, state.coachFacts(widget.now())) ??
+            'Na tohle potřebuju AI, která teď v aplikaci není zapnutá. '
+                'Zkus jednu z otázek níž, na ty odpovím z tvých dat.',
+        local: true,
+      );
+      await _save();
+      _toEnd();
+      return;
+    }
     await _save();
     await _ask();
   }
+
+  void _reply(String text, {bool local = false}) => setState(() {
+    messages = _capped([
+      ...messages,
+      ChatMessage(ChatRole.assistant, text, widget.now(), local: local),
+    ]);
+  });
 
   /// V paměti stejně jako na disku jen posledních [maxCoachChat] zpráv.
   static List<ChatMessage> _capped(List<ChatMessage> list) =>
@@ -124,29 +158,66 @@ class _TrainerPageState extends State<TrainerPage> {
     });
     _toEnd();
     final result = await state.trainer.ask(
-      messages,
+      aiHistory(messages),
       state.trainerContext(widget.now()),
       adult: state.profile.adult,
     );
     if (!mounted || request != requestId) return;
     switch (result) {
       case AiOk(:final value):
-        setState(() {
-          waiting = false;
-          messages = _capped([
-            ...messages,
-            ChatMessage(ChatRole.assistant, value, widget.now()),
-          ]);
-        });
+        waiting = false;
+        _reply(tidyReply(value));
         await _save();
       case AiError(:final message, :final kind):
+        final question = messages.last.content;
+        final local = localAnswer(
+          classifyQuestion(question),
+          state.coachFacts(widget.now()),
+        );
         setState(() {
           waiting = false;
-          error = message;
-          retryable = kind != AiErrorKind.quota && kind != AiErrorKind.disabled;
+          error = local == null
+              ? message
+              : '$message Odpověď níž je jen z tvých dat.';
+          retryable =
+              local == null &&
+              kind != AiErrorKind.quota &&
+              kind != AiErrorKind.disabled;
         });
+        if (local != null) {
+          _reply(local, local: true);
+          await _save();
+        }
     }
     _toEnd();
+  }
+
+  ChatMessage _brief(CoachFacts f) =>
+      ChatMessage(ChatRole.assistant, briefing(f, widget.now()), widget.now());
+
+  List<_Action> _actionsFor(CoachIntent intent, CoachFacts f) {
+    final start = widget.onStartToday;
+    return [
+      if (intent == CoachIntent.today && start != null && f.canStart)
+        (
+          label: 'Začít ${f.day}',
+          icon: Icons.play_arrow_rounded,
+          onTap: () {
+            Navigator.of(context).pop();
+            start();
+          },
+        ),
+      if (intent == CoachIntent.today ||
+          intent == CoachIntent.week ||
+          intent == CoachIntent.stall)
+        (
+          label: 'Otevřít program',
+          icon: Icons.view_week_rounded,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => ProgramPage(state))),
+        ),
+    ];
   }
 
   Future<void> _clear() async {
@@ -173,6 +244,10 @@ class _TrainerPageState extends State<TrainerPage> {
     final text = Theme.of(context).textTheme;
     final enabled = state.trainer.enabled;
     final last = messages.lastOrNull;
+    // Fakta jen tam, kde se ukazují: úvodní přehled a akce pod odpovědí.
+    final facts = last == null || last.role == ChatRole.assistant
+        ? state.coachFacts(widget.now())
+        : null;
     // I bez chyby: otázka zůstala bez odpovědi (třeba po zavření aplikace).
     final canRetry =
         retryable && !waiting && last?.role == ChatRole.user && enabled;
@@ -203,37 +278,71 @@ class _TrainerPageState extends State<TrainerPage> {
                 if (!enabled)
                   Panel(
                     child: Text(
-                      'Trenér zatím není dostupný. V této verzi aplikace '
-                      'AI není zapnutá. Co dnes cvičit ukazuje hlavní karta '
-                      'v Cvičení.',
+                      'AI v této verzi není zapnutá. Na otázky níž odpovím '
+                      'z tvých tréninků, bez internetu.',
                       style: text.bodyMedium,
                     ),
                   ),
                 if (messages.isEmpty) ...[
-                  const SizedBox(height: Space.l),
-                  Text('Na co se chceš zeptat?', style: text.titleLarge),
-                  const SizedBox(height: Space.s),
-                  Text(
-                    'Trenér vidí tvůj program, poslední tréninky, rekordy '
-                    'a regeneraci. Neví tvoje jméno ani poznámky.',
-                    style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+                  Reveal(child: _Bubble(_brief(facts!))),
+                  Reveal(
+                    index: 1,
+                    child: _Actions(_actionsFor(CoachIntent.today, facts)),
                   ),
                   const SizedBox(height: Space.l),
-                  Wrap(
-                    spacing: Space.s,
-                    runSpacing: Space.s,
-                    children: [
-                      for (final q in trainerSuggestions)
-                        ActionChip(
-                          label: Text(q),
-                          onPressed: enabled && !waiting
-                              ? () => _send(q)
-                              : null,
-                        ),
-                    ],
+                  Reveal(
+                    index: 2,
+                    child: Text(
+                      'Trenér vidí tvůj program, poslední tréninky, rekordy '
+                      'a regeneraci. Neví tvoje jméno ani poznámky.',
+                      style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                    ),
+                  ),
+                  const SizedBox(height: Space.m),
+                  Reveal(
+                    index: 3,
+                    child: Wrap(
+                      spacing: Space.s,
+                      runSpacing: Space.s,
+                      children: [
+                        for (final q in trainerSuggestions)
+                          ActionChip(
+                            label: Text(q),
+                            onPressed: !waiting ? () => _send(q) : null,
+                          ),
+                      ],
+                    ),
                   ),
                 ],
-                for (final m in messages) _Bubble(m),
+                for (final (i, m) in messages.indexed) ...[
+                  _Bubble(m),
+                  if (m.role == ChatRole.assistant &&
+                      i > 0 &&
+                      i == messages.length - 1)
+                    _Actions(
+                      _actionsFor(
+                        classifyQuestion(messages[i - 1].content),
+                        facts!,
+                      ),
+                    ),
+                ],
+                // Další otázky, na které se ještě nezeptal.
+                if (last?.role == ChatRole.assistant && !waiting)
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.l),
+                    child: Wrap(
+                      spacing: Space.s,
+                      runSpacing: Space.s,
+                      children: [
+                        for (final q in trainerSuggestions)
+                          if (!messages.any((m) => m.content == q))
+                            ActionChip(
+                              label: Text(q),
+                              onPressed: () => _send(q),
+                            ),
+                      ],
+                    ),
+                  ),
                 if (waiting)
                   Semantics(liveRegion: true, child: const _Bubble(null)),
                 if (error != null || canRetry)
@@ -326,6 +435,40 @@ class _TrainerPageState extends State<TrainerPage> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Akce pod odpovědí trenéra.
+typedef _Action = ({String label, IconData icon, VoidCallback onTap});
+
+class _Actions extends StatelessWidget {
+  final List<_Action> actions;
+  const _Actions(this.actions);
+
+  @override
+  Widget build(BuildContext context) {
+    if (actions.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.s),
+      child: Wrap(
+        spacing: Space.s,
+        runSpacing: Space.s,
+        children: [
+          for (final (i, a) in actions.indexed)
+            i == 0
+                ? FilledButton.icon(
+                    onPressed: a.onTap,
+                    icon: Icon(a.icon),
+                    label: Text(a.label),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: a.onTap,
+                    icon: Icon(a.icon),
+                    label: Text(a.label),
+                  ),
         ],
       ),
     );

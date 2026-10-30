@@ -94,6 +94,10 @@ void main() {
   ) async {
     final state = await _fresh(tester);
     await tester.runAsync(() => state.finishWelcome(whatsNewRelease));
+    // Celý souhlas na jedné obrazovce (tlačítko je až pod textem o AI).
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(GymApp(state));
 
     // Uvítání už proběhlo: rovnou jen souhlas.

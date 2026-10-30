@@ -9,7 +9,9 @@ import 'dart:convert';
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/stats.dart';
+import 'missions.dart';
 import 'plan_quiz.dart';
+import 'progression.dart';
 import 'recovery.dart';
 import 'splits.dart';
 
@@ -40,7 +42,10 @@ Map<String, dynamic> coachContext({
   required bool adult,
   required int weekGoal,
   SplitTemplate? split,
-  int nextDay = 0,
+  int todayDay = 0,
+  List<Suggestion>? todaySuggestions,
+  Mission? mission,
+  List<int>? trainingDays,
   PlanAnswers? plan,
   double? bodyweightKg,
   Map<String, FocusRecovery> recovery = const {},
@@ -110,7 +115,25 @@ Map<String, dynamic> coachContext({
 
   final day = split == null || split.days.isEmpty
       ? null
-      : split.days[nextDay % split.days.length];
+      : split.days[todayDay % split.days.length];
+  // Vlastní program má názvy dnů od uživatele: posílá se jen pořadí.
+  String dayName(int i) => split!.custom ? 'den ${i + 1}' : split.days[i].name;
+  final todayPlan = <String, dynamic>{
+    if (mission != null) 'status': _status(mission.kind),
+    if (day != null) ...{
+      'day': dayName(todayDay % split!.days.length),
+      'dayNumber': '${todayDay % split.days.length + 1}/${split.days.length}',
+      'exercises': [
+        for (final (i, p) in day.exercises.indexed)
+          _planned(
+            name(p.exerciseId),
+            exercise(p.exerciseId).type,
+            p,
+            todaySuggestions?.elementAtOrNull(i),
+          ),
+      ],
+    },
+  };
   final out = <String, dynamic>{
     'today': _day(now),
     'adult': adult,
@@ -122,18 +145,21 @@ Map<String, dynamic> coachContext({
         'minutesPerWorkout': plan.minutes,
       },
     'weekGoal': weekGoal,
-    'thisWeek': {'workouts': week.workouts, 'sets': week.sets},
+    'thisWeek': {
+      'workouts': week.workouts,
+      'sets': week.sets,
+      if (mission != null) 'daysLeftInclToday': mission.daysLeft,
+    },
+    if (trainingDays != null && trainingDays.isNotEmpty)
+      'trainingDays': [for (final d in trainingDays) _weekdays[d - 1]],
     if (finished.isNotEmpty)
       'daysSinceLast': now.difference(finished.first.date).inDays.clamp(0, 999),
-    if (split != null) 'program': split.custom ? 'vlastní program' : split.name,
-    if (day != null)
-      'nextDay': {
-        if (!split!.custom) 'name': day.name,
-        'exercises': [
-          for (final p in day.exercises)
-            '${name(p.exerciseId)} ${p.sets}×${p.repMin}–${p.repMax}',
-        ],
+    if (split != null)
+      'program': {
+        'name': split.custom ? 'vlastní program' : split.name,
+        'days': [for (var i = 0; i < split.days.length; i++) dayName(i)],
       },
+    if (todayPlan.isNotEmpty) 'todayPlan': todayPlan,
     if (adult && bodyweightKg != null) 'bodyweightKg': _num(bodyweightKg),
     if (recovery.isNotEmpty)
       'recovery': {
@@ -153,11 +179,40 @@ Map<String, dynamic> coachContext({
       lifts.removeLast();
     } else if (recent.isNotEmpty) {
       recent.removeLast();
+    } else if (out.remove('recovery') != null) {
+      continue;
     } else {
-      out.remove('nextDay');
-      out.remove('recovery');
+      // Dnešní plán jde pryč až úplně nakonec.
+      out.remove('todayPlan');
       break;
     }
   }
   return out;
+}
+
+String _status(MissionKind kind) => switch (kind) {
+  MissionKind.weekDone =>
+    'týdenní cíl splněný; dnes volno nebo lehký trénink navíc',
+  MissionKind.doneToday => 'dnes už odcvičeno',
+  MissionKind.rest =>
+    'trénink byl včera, doporučený odpočinek; trénovat se ale dá',
+  MissionKind.plannedRest => 'dnes je podle zvolených dnů volno',
+  MissionKind.catchUp => 'dnes trénovat, jinak týdenní cíl nevyjde',
+  MissionKind.trainToday => 'dnes trénovat',
+};
+
+/// „Dřep 4×5–8, návrh 60 kg × 6“ nebo „…, váhu zvolí sám (poprvé)“.
+String _planned(
+  String name,
+  ExerciseType type,
+  PlannedExercise p,
+  Suggestion? s,
+) {
+  final base = '$name ${p.sets}×${p.repMin}–${p.repMax}';
+  if (s == null) return base;
+  if (s.weight > 0) return '$base, návrh ${_num(s.weight)} kg × ${s.reps}';
+  if (type == ExerciseType.weighted && s.kind == SuggestionKind.start) {
+    return '$base, poprvé, váhu zvolí sám';
+  }
+  return base;
 }

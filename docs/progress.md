@@ -133,6 +133,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 19 | Arkáda | synthwave, XP | lišta |
 | 20 | Atelier | luxus, zlato | 2 záložky nahoře |
 | 2026-10-30 | tomas / tomas/app-vibe | P0: pohybové tokeny, haptika, bez lepivých tooltipů |
+| 2026-10-30 22:50 | tomas/app-vibe | P1: pravdivý a jednající trenér |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -253,3 +254,22 @@ další fáze přidala vlastní čísla a appka by působila nesourodě.
 **Ověření:** `flutter analyze` čistý, `flutter test` 343/343 včetně nových testů pohybu.
 
 **Další krok:** P1, trenér, který mluví pravdu o dnešním plánu a umí jednat.
+
+## 2026-10-30 — P1: pravdivý trenér, který umí jednat (tomas/app-vibe)
+
+**Co a proč:** AI trenér tvrdil „dnes nic v plánu“, vymýšlel „Full body C“ a psal hvězdičky. Příčina: kontext posílal jen `nextDay` (model ho četl jako „někdy později“), nikdy seznam dnů programu, a prompt nevysvětloval klíče JSON. Hlavní karta a trenér navíc měly každý vlastní výpočet dne.
+
+- `AppState.todaySplitDay` / `pickSplitDay`: jeden zdroj dne pro hlavní kartu i trenéra.
+- `coach_context.dart`: `todayPlan` (stav dne, název, „i/n“, cviky s návrhem váhy), `program.days`, `trainingDays`, zbývající dny týdne.
+- `worker/src/prompts.ts`: slovník klíčů, zákaz markdownu, odrážky „• “. Worker nasazený.
+- `lib/coach/local_coach.dart`: místní odpovědi pro 5 čipů, ranní/večerní přehled, `tidyReply`, hledání stagnace.
+- Trenér: „Co mám dnes cvičit?“ odpoví hned bez sítě; při chybě AI místní odpověď; tlačítka „Začít {den}“ a „Otevřít program“; po odpovědi další nabízené otázky.
+- Souhlas v úvodu obsahuje AI odstavec, nový uživatel už nedostane druhé okno „Než použiješ AI“.
+
+**Review (subagent) našel a opraveno:** místní odpovědi s vlastními názvy cviků by šly v historii do AI (teď `ChatMessage.local` + `aiHistory`); klasifikátor bral každé „dnes“ jako dotaz na plán; `tidyReply` mazal „3. série“; volba dne se nemazala u jiných startů; dělení nulou u prázdného programu.
+
+**Ověření:** 354 testů zelených, analyze čisté, worker 37 testů. Headless Chrome 390 px: přehled „Dobrý večer. Dnes je na řadě Full body A, 5 cviků. Týden: 0 z 3.“, okamžitá odpověď s plánem, skutečná AI odpověď „Dnes máš na programu celkem 16 sérií“ (4+4+3+3+2 = 16), bez hvězdiček, 0 chyb v konzoli.
+
+**Co nefunguje dobře:** bez historie a bez Pro je u každého cviku „váhu na 5–8 opakování“ — řeší P2 (startovní váhy).
+
+**Další krok:** P2 — první trénink bez tření.

@@ -522,6 +522,15 @@ describe("coach", () => {
     ]);
   });
 
+  it("explains context keys and forbids markdown", async () => {
+    const { env, calls } = makeEnv([{ response: "Ok." }]);
+    await handle(post("/v1/coach", ask()), env, NOW);
+    const system = (calls[0].input.messages as any[])[0].content as string;
+    expect(system).toContain("todayPlan");
+    expect(system).toContain("program.days");
+    expect(system).toContain("bez markdownu");
+  });
+
   it("uses the minor-safe prompt unless adult is exactly true", async () => {
     const { env, calls } = makeEnv([{ response: "Ok." }]);
     await handle(post("/v1/coach", ask({ adult: "true" })), env, NOW);

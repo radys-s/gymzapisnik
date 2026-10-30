@@ -37,6 +37,7 @@ class _ConsentPageState extends State<ConsentPage> {
         adult: age == AgeChoice.adult,
         guardianConsent: guardianConsent,
         welcomeVersion: widget.welcomeVersion,
+        aiNotice: true,
       );
     } catch (error) {
       if (!mounted) return;
@@ -81,6 +82,12 @@ class _ConsentPageState extends State<ConsentPage> {
                     'Při bolesti nebo zdravotních potížích přestaň cvičit '
                     'a poraď se s lékařem.',
                     style: text.bodyLarge?.copyWith(color: p.secondaryLabel),
+                  ),
+                  const SizedBox(height: Space.s),
+                  Text(
+                    'Otázky trenérovi a fotky jdou do Cloudflare Workers AI '
+                    'bez jména a poznámek. AI se může splést.',
+                    style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
                   ),
                   Align(
                     alignment: Alignment.centerLeft,

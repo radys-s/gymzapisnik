@@ -44,12 +44,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  /// Ručně zvolený jiný den splitu (jinak den na řadě).
-  int? dayOverride;
-
-  /// Program, ke kterému ruční volba dne patří (po změně programu neplatí).
-  String? overrideSplit;
-
   /// Pojistka proti dvojímu klepnutí na start (dvě obrazovky tréninku).
   bool _starting = false;
 
@@ -87,7 +81,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     if (!mounted) return;
-    setState(() => dayOverride = null);
     final nav = Navigator.of(context, rootNavigator: true);
     final finished = nav.push<Workout>(
       MaterialPageRoute(
@@ -106,6 +99,12 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
+
+  TrainerPage _trainer() => TrainerPage(
+    state,
+    now: widget.now,
+    onStartToday: () => _run(() => state.startSplitDay(state.todaySplitDay)),
+  );
 
   /// Sestavení tréninku z partií; hotový den rovnou začne.
   bool _opening = false;
@@ -151,7 +150,7 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             tooltip: 'Trenér',
             icon: const Icon(Icons.forum_outlined),
-            onPressed: () => _push(TrainerPage(state, now: widget.now)),
+            onPressed: () => _push(_trainer()),
           ),
           SettingsButton(state),
         ],
@@ -160,14 +159,9 @@ class _HomePageState extends State<HomePage> {
             state: state,
             now: now,
             busy: _starting,
-            dayIndex: overrideSplit == state.split?.id
-                ? dayOverride ?? state.nextSplitDay
-                : state.nextSplitDay,
+            dayIndex: state.todaySplitDay,
             onStart: _run,
-            onPickDay: (i) => setState(() {
-              dayOverride = i;
-              overrideSplit = state.split?.id;
-            }),
+            onPickDay: state.pickSplitDay,
             onProgram: () => _push(ProgramPage(state)),
             onBuild: () => _build(),
             onQuiz: () => _push(PlanQuizPage(state)),
@@ -181,7 +175,7 @@ class _HomePageState extends State<HomePage> {
                 iconColor: context.palette.accent,
                 title: 'Zeptej se trenéra',
                 subtitle: 'Co dnes, proč stagnuju, čím nahradit cvik',
-                onTap: () => _push(TrainerPage(state, now: widget.now)),
+                onTap: () => _push(_trainer()),
               ),
             ],
           ),
