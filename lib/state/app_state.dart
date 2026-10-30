@@ -12,8 +12,10 @@ import '../coach/progression.dart';
 import '../coach/splits.dart';
 import '../coach/achievements.dart';
 import '../coach/coach_context.dart';
+import '../coach/local_coach.dart';
 import '../coach/recovery.dart';
 import '../coach/streak.dart';
+import '../coach/tips.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
@@ -142,15 +144,21 @@ class AppState extends ChangeNotifier {
     required bool adult,
     required bool guardianConsent,
     String? welcomeVersion,
+    bool aiNotice = false,
   }) => _updateProfile((current) {
     final next = current.acceptConsent(
       adult: adult,
       guardianConsent: guardianConsent,
       now: DateTime.now(),
     );
-    return welcomeVersion == null
-        ? next
-        : next.withExtra({'welcomeSeen': true, 'seenVersion': welcomeVersion});
+    return next.withExtra({
+      if (welcomeVersion != null) ...{
+        'welcomeSeen': true,
+        'seenVersion': welcomeVersion,
+      },
+      // Upozornění na AI bylo součástí souhlasu: trenér se už neptá znovu.
+      if (aiNotice) 'aiNotice': true,
+    });
   });
 
   /// Všechny cviky: vlastní + katalog.
@@ -235,6 +243,7 @@ class AppState extends ChangeNotifier {
     final existing = active;
     if (existing != null) return existing;
     final start = now ?? DateTime.now();
+    _dayPick = null;
     active = Workout(
       id: newId(),
       name: name ?? 'Trénink – ${_weekdays[start.weekday - 1]}',
@@ -883,6 +892,32 @@ class AppState extends ChangeNotifier {
     return s == null ? 0 : nextDayIndex(s, workouts);
   }
 
+  /// Ručně zvolený jiný den a program, ke kterému patří.
+  (String, int)? _dayPick;
+
+  /// Den, který je dnes na řadě: ručně zvolený na hlavní kartě, jinak
+  /// další v pořadí. Stejný den ukazuje hlavní karta i trenér.
+  int get todaySplitDay {
+    final s = split;
+    if (s == null || s.days.isEmpty) return 0;
+    if (_dayPick case (final id, final day) when id == s.id) {
+      return day % s.days.length;
+    }
+    return nextSplitDay;
+  }
+
+  SplitDay? get todayDay {
+    final s = split;
+    return s == null || s.days.isEmpty ? null : s.days[todaySplitDay];
+  }
+
+  /// Zvolí jiný den programu na dnešek (`null` = zpět na den na řadě).
+  void pickSplitDay(int? day) {
+    final s = split;
+    _dayPick = s == null || day == null ? null : (s.id, day);
+    notifyListeners();
+  }
+
   /// Návrh váhy a opakování pro každý cvik dne.
   ///
   /// Bez Pro dostane každý cvik jen rozsah z plánu, bez návrhu váhy.
@@ -1258,7 +1293,13 @@ class AppState extends ChangeNotifier {
       adult: profile.adult,
       weekGoal: weekGoal,
       split: split,
-      nextDay: nextSplitDay,
+      todayDay: todaySplitDay,
+      todaySuggestions: [
+        if (todayDay case final day?)
+          for (final (_, s) in plan(day)) s,
+      ],
+      mission: mission(at),
+      trainingDays: profile.trainingDays,
       plan: planAnswers,
       bodyweightKg: bodyweights.firstOrNull?.kg,
       recovery: recoveryByFocus(
@@ -1267,6 +1308,67 @@ class AppState extends ChangeNotifier {
         muscleOf: (id) => exercise(id).muscle,
       ),
       focusNames: {for (final f in dayFocuses) f.id: f.name},
+    );
+  }
+
+  /// Fakta pro místního trenéra: stejná čísla jako hlavní karta.
+  CoachFacts coachFacts([DateTime? now]) {
+    final at = now ?? DateTime.now();
+    final s = split;
+    final day = todayDay;
+    final names = {for (final f in dayFocuses) f.id: f.name};
+    final recovery = recoveryByFocus(
+      workouts,
+      at,
+      muscleOf: (id) => exercise(id).muscle,
+    );
+    String label(String id) => exercise(id).name;
+
+    final last = finishedNewestFirst(workouts).firstOrNull;
+    final days = profile.trainingDays;
+    const short = ['po', 'út', 'st', 'čt', 'pá', 'so', 'ne'];
+    return CoachFacts(
+      mission: mission(at),
+      program: s?.name,
+      day: day?.name,
+      dayNumber: todaySplitDay + 1,
+      dayCount: s?.days.length ?? 1,
+      plan: [
+        if (day != null)
+          for (final (pl, sug) in plan(day))
+            PlanLine(
+              name: label(pl.exerciseId),
+              sets: pl.sets,
+              repMin: pl.repMin,
+              repMax: pl.repMax,
+              suggestion: sug,
+              weighted: typeOf(pl.exerciseId) == ExerciseType.weighted,
+            ),
+      ],
+      hardSets: {
+        for (final e in weeklyHardSets(
+          workouts,
+          at,
+          (id) => exercise(id).muscle,
+        ).entries)
+          names[e.key] ?? e.key: e.value,
+      },
+      ready: [
+        for (final r in recovery.values)
+          if (r.isReady && r.focusId != 'core') names[r.focusId] ?? r.focusId,
+      ],
+      tired: [
+        for (final r in recovery.values)
+          if (!r.isReady) names[r.focusId] ?? r.focusId,
+      ],
+      stalls: findStalls(workouts, at, typeOf, label),
+      trainingDaysLeft: [
+        if (days != null)
+          for (final d in days)
+            if (d >= at.weekday) short[d - 1],
+      ],
+      daysSinceLast: last == null ? null : at.difference(last.date).inDays,
+      activeWorkout: active != null,
     );
   }
 

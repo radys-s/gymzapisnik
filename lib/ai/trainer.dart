@@ -70,12 +70,17 @@ class ChatMessage {
   final ChatRole role;
   final String content;
   final DateTime at;
-  const ChatMessage(this.role, this.content, this.at);
+
+  /// Odpověď z dat aplikace, ne od AI. Do AI se neposílá: může obsahovat
+  /// vlastní názvy cviků.
+  final bool local;
+  const ChatMessage(this.role, this.content, this.at, {this.local = false});
 
   Map<String, dynamic> toJson() => {
     'role': role.name,
     'content': content,
     'at': at.toUtc().toIso8601String(),
+    if (local) 'local': true,
   };
 
   /// Ze zálohy nebo profilu; neplatné vrací `null`.
@@ -91,8 +96,22 @@ class ChatMessage {
       role.first,
       content.length > 2000 ? content.substring(0, 2000) : content,
       (at ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true)).toLocal(),
+      local: json['local'] == true,
     );
   }
+}
+
+/// Historie pro AI bez místních odpovědí a otázek, na které odpověděly.
+List<ChatMessage> aiHistory(List<ChatMessage> messages) {
+  final out = <ChatMessage>[];
+  for (final m in messages) {
+    if (m.local) {
+      if (out.isNotEmpty && out.last.role == ChatRole.user) out.removeLast();
+      continue;
+    }
+    out.add(m);
+  }
+  return out;
 }
 
 /// Rozhraní AI trenéra (v testech jde nahradit falešným).

@@ -66,6 +66,17 @@ void main() {
     return state;
   }
 
+  Future<void> tapChip(WidgetTester tester, String q) async {
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text(q),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(q));
+  }
+
   Future<void> settle(WidgetTester tester) async {
     await tester.runAsync(
       () => Future.delayed(const Duration(milliseconds: 50)),
@@ -75,7 +86,7 @@ void main() {
 
   testWidgets('suggested question asks, answers and is saved', (tester) async {
     final state = await pump(tester, adult: false);
-    await tester.tap(find.text(trainerSuggestions.first));
+    await tapChip(tester, trainerSuggestions[3]);
     await tester.pumpAndSettle();
     expect(find.text('Než použiješ AI'), findsOneWidget);
     await tester.tap(find.text('Rozumím'));
@@ -84,7 +95,7 @@ void main() {
     expect(trainer.asked.single.$3, isFalse);
     expect(trainer.asked.single.$2['adult'], isFalse);
     expect(state.coachChat.map((m) => m.content), [
-      trainerSuggestions.first,
+      trainerSuggestions[3],
       'Dnes nohy.',
     ]);
     expect(tester.takeException(), isNull);
@@ -94,11 +105,11 @@ void main() {
     final state = await pump(tester);
     await tester.runAsync(state.acceptAiNotice);
     trainer.replies.add(const AiError(AiErrorKind.busy, 'AI je přetížená.'));
-    await tester.enterText(find.byType(TextField), '  Proč stagnuju?  ');
+    await tester.enterText(find.byType(TextField), '  Jak dýchat?  ');
     await tester.pump();
     await tester.tap(find.byTooltip('Odeslat'));
     await settle(tester);
-    expect(find.text('Proč stagnuju?'), findsOneWidget);
+    expect(find.text('Jak dýchat?'), findsOneWidget);
     expect(find.text('AI je přetížená.'), findsOneWidget);
     await tester.tap(find.text('Zkusit znovu'));
     await settle(tester);
@@ -115,7 +126,7 @@ void main() {
     trainer.replies.add(
       const AiError(AiErrorKind.quota, 'Dnešní limit AI je vyčerpaný.'),
     );
-    await tester.enterText(find.byType(TextField), 'Co dnes?');
+    await tester.enterText(find.byType(TextField), 'Jak dýchat?');
     await tester.pump();
     await tester.tap(find.byTooltip('Odeslat'));
     await settle(tester);
@@ -134,7 +145,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Co dnes?'), findsOneWidget);
+    expect(find.text('Jak dýchat?'), findsOneWidget);
     await tester.tap(find.text('Zkusit znovu'));
     await settle(tester);
     expect(find.text('Dnes nohy.'), findsOneWidget);
@@ -161,11 +172,48 @@ void main() {
     expect(find.text(trainerSuggestions.first), findsOneWidget);
   });
 
-  testWidgets('disabled trainer says so and blocks sending', (tester) async {
+  testWidgets('disabled trainer answers from local data', (tester) async {
     await pump(tester, enabled: false);
-    expect(find.textContaining('Trenér zatím není dostupný'), findsOneWidget);
-    await tester.tap(find.text(trainerSuggestions.first));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('AI v této verzi není zapnutá'), findsOneWidget);
+    await tapChip(tester, trainerSuggestions.first);
+    await settle(tester);
     expect(trainer.asked, isEmpty);
+    expect(find.textContaining('nemáš zvolený program'), findsWidgets);
+  });
+
+  testWidgets('today question is answered instantly without AI', (
+    tester,
+  ) async {
+    final state = await pump(tester);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Týden: 0 z'), findsOneWidget);
+    await tapChip(tester, trainerSuggestions.first);
+    await settle(tester);
+    expect(find.text('Než použiješ AI'), findsNothing);
+    expect(trainer.asked, isEmpty);
+    expect(state.coachChat, hasLength(2));
+  });
+
+  testWidgets('AI error falls back to a local answer', (tester) async {
+    final state = await pump(tester);
+    await tester.runAsync(state.acceptAiNotice);
+    trainer.replies.add(const AiError(AiErrorKind.busy, 'AI je přetížená.'));
+    await tapChip(tester, trainerSuggestions[3]);
+    await settle(tester);
+    expect(find.textContaining('jen z tvých dat'), findsOneWidget);
+    expect(find.text('Zkusit znovu'), findsNothing);
+    expect(state.coachChat.last.content, contains('Za posledních 7 dní'));
+  });
+
+  testWidgets('AI reply loses markdown', (tester) async {
+    final state = await pump(tester);
+    await tester.runAsync(state.acceptAiNotice);
+    trainer.replies.add(const AiOk('**Tip:**\n- spi 8 h'));
+    await tester.enterText(find.byType(TextField), 'Jak dýchat?');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Odeslat'));
+    await settle(tester);
+    expect(state.coachChat.last.content, 'Tip:\n• spi 8 h');
   });
 }
