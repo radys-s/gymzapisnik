@@ -41,7 +41,13 @@ void main() {
     await tester.pumpWidget(GymApp(state));
     await tester.pumpAndSettle();
 
-    // Podstránka v záložce Cvičení: zpět ji zavře, lišta zůstává.
+    // Podstránka v záložce Pokrok: zpět ji zavře, lišta zůstává.
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Pokrok'));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+    expect(state.profile.lastTab, 1);
     await tester.tap(find.text('Cviky a rekordy'));
     await tester.pumpAndSettle();
     expect(find.text('Cviky'), findsWidgets);
@@ -50,20 +56,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Cviky a rekordy'), findsOneWidget);
 
-    // Ze Stravy vede zpět na Cvičení a záložka se pamatuje.
+    // Ze Stravy vede zpět na Trénink a záložka se pamatuje.
     await tester.runAsync(() async {
       await tester.tap(find.text('Strava'));
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await tester.pumpAndSettle();
-    expect(state.profile.lastTab, 1);
+    expect(state.profile.lastTab, 2);
     // Návrat na první záložku ukládá profil, proto v reálném čase.
     await tester.runAsync(() async {
       await tester.binding.handlePopRoute();
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await tester.pumpAndSettle();
-    expect(find.text('Cviky a rekordy'), findsOneWidget);
+    expect(find.text('Vybrat podle sebe'), findsOneWidget);
     expect(exits, isEmpty);
 
     // Kořen první záložky: aplikace se zavře (žádná smyčka).

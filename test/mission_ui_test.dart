@@ -39,7 +39,7 @@ void main() {
     final state = await newState(tester);
     await show(tester, state);
     expect(state.weekGoal, 3);
-    expect(find.text('Dnes je dobrý den na trénink'), findsOneWidget);
+    expect(find.text('Tento týden 0 z 3'), findsOneWidget);
     expect(find.text('0/3'), findsOneWidget); // kruh týdne
   });
 

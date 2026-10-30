@@ -136,6 +136,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 2026-10-30 22:50 | tomas/app-vibe | P1: pravdivý a jednající trenér |
 | 2026-10-30 | tomas/app-vibe | P2: první trénink bez tření (startovní váhy, přenos sérií, dokončení) |
 | 2026-10-30 | tomas/app-vibe | P3: souhrn jako zážitek – verdikt kouče, cíle na příště, další trénink, animace |
+| 2026-10-30 | tomas/app-vibe | P4: tři taby Trénink·Pokrok·Strava, záložka Pokrok, domov jen o dnešku |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -315,3 +316,33 @@ další fáze přidala vlastní čísla a appka by působila nesourodě.
 **Výsledky:** 360 testů zelených, `dart analyze` čistý. Webový průchod: verdikt, „Příště: Barbell squat 25 kg × 6“, „Nový odznak: První krok“, Bonus „Noční směna“, „Další trénink Full body B · 5 cviků“, 0 chyb v konzoli.
 
 **Další krok:** P4, tedy tři taby Trénink · Pokrok · Strava, tab Pokrok z nepoužitých dashboard widgetů a pryč iOS seznam z domovské obrazovky.
+
+## 2026-10-30 · tomas/app-vibe · P4: tři taby, záložka Pokrok, domov jen o dnešku
+
+**Co a proč:** domov končil iOS seznamem nastavení s natvrdo danými barvami a pokrok byl dvě úrovně hluboko. Hotové widgety (křivka síly, rekordy, mise) ležely v kódu, ale nikde se nezobrazovaly. Teď má každá otázka svou záložku. Trénink odpovídá na „co dnes“, Pokrok na „jak se zlepšuju“ a Strava na jídlo.
+
+- `lib/app.dart`: taby Trénink · Pokrok · Strava. Každý má vlastní navigaci a tooltipy jsou vypnuté (na webu zůstávaly viset).
+- Záložka se ukládá do `extra['tab']` (0–2). Staré `lastTab = 1` (Strava) se převede na 2.
+- `lib/ui/progress/progress_page.dart` (nová):
+  - Souhrn s počítadly: tréninky, série a odznaky.
+  - Křivka síly nejčastějšího cviku a nedávné rekordy.
+  - Přehled: Statistiky, Cviky a rekordy, Historie, Odznaky, Váha, Program, Rady.
+  - Před prvním tréninkem místo nul nulový stav „Pokrok začne prvním tréninkem“.
+- `dashboard.dart`: mrtvé Material karty (`WeekCard`, `MissionCard`) jsou pryč. Křivka a rekordy jedou v paletě aplikace (`Panel`, akcent; graf se animuje podle `Motion` a respektuje omezení pohybu).
+- Domov:
+  - Pozdrav podle denní doby.
+  - Startovní světla mají význam: jedno světlo na cvik a popisek „5 cviků · ~45 min“. Ostatní vzhledy ukazují jen popisek.
+  - „Volný“ a „Sestavit“ jsou sloučené do jednoho tlačítka „Jiný trénink“ se sheetem. Bez plánu zůstává přímé „Volný trénink“.
+- Mise mluví z dat. Místo „Dnes je dobrý den na trénink“ ukazuje „Tento týden 1 z 3“ a „Minule před 3 dny, máš odpočinuto.“
+
+**Review (subagent) našel a opraveno:**
+- Bez plánu dávalo „Jiný trénink“ nesmysl a stálo klepnutí navíc. Vráceno přímé „Volný trénink“.
+- Pokrok počítal rekordy 3× a křivku 2× při každém rebuildu, i když byl skrytý v `IndexedStack`. Teď se počítá jednou a předává kartám.
+- `StartLights` nereagovala na změnu dne. Přidán `didUpdateWidget` a znovu se spustí start.
+- Popisek pod světly je zarovnaný na střed.
+- Pozdrav „Dobrou noc“ je loučení. V noci se teď zdraví „Dobrý večer“.
+- Mise s 0 dny: „Dnes už máš trénink za sebou.“
+
+**Výsledky:** 365 testů zelených, včetně nového `progress_page_test` (mise, pozdravy, nulový stav, křivka a rekordy, sheet „Jiný trénink“). `dart analyze` je čistý. Webový průchod: onboarding, domov se světly a „5 cviků · ~45 min“, Pokrok prázdný, trénink, souhrn, Pokrok s daty, 0 chyb v konzoli.
+
+**Další krok:** P5. Onboarding má mít jeden slide s hodnotou, kvíz, odhalení plánu, připomínku a souhlas, s uloženým krokem. K tomu odvozený cíl bílkovin.

@@ -1316,7 +1316,10 @@ class AppState extends ChangeNotifier {
   Future<void> setLastTab(int tab) async {
     try {
       await _updateProfile(
-        (p) => p.withExtra({'lastTab': tab == 1 ? 1 : null}),
+        (p) => p.withExtra({
+          'tab': tab == 1 || tab == 2 ? tab : null,
+          'lastTab': null,
+        }),
       );
     } catch (e) {
       debugPrint('Záložku se nepodařilo uložit: $e');

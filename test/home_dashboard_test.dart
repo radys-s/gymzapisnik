@@ -41,9 +41,9 @@ void main() {
     expect(find.text('0'), findsOneWidget); // série
     expect(find.text('Historie'), findsOneWidget);
     expect(find.text('Vše'), findsOneWidget);
-    expect(find.textContaining('Rekord: Bench press 82,5 kg'), findsOneWidget);
-    expect(find.text('Program'), findsOneWidget);
-    expect(find.text('Tělesná váha'), findsOneWidget);
+    // Statistiky a cviky patří do záložky Pokrok, ne na domov.
+    expect(find.text('Program'), findsNothing);
+    expect(find.text('Tělesná váha'), findsNothing);
 
     await tester.tap(find.text('Vše'));
     await tester.pumpAndSettle();
@@ -66,9 +66,9 @@ void main() {
     expect(find.text('Vyber si plán'), findsOneWidget);
     expect(find.text('Použít Full body 3×'), findsOneWidget);
     expect(find.text('Vybrat podle sebe'), findsOneWidget);
+    // Bez plánu není "jiný" trénink: volný jde jedním klepnutím.
     expect(find.text('Volný trénink'), findsOneWidget);
-    expect(find.text('Rady pro růst svalů'), findsOneWidget);
-    expect(find.text('Program'), findsOneWidget);
+    expect(find.text('Rady pro růst svalů'), findsNothing);
     expect(find.text('Historie'), findsNothing);
     expect(find.text('0/3'), findsOneWidget);
 

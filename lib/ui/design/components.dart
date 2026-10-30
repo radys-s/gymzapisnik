@@ -651,7 +651,13 @@ class _RaceHero extends StatelessWidget {
 /// Pět startovních světel: rozsvítí se jedno po druhém (jednou) a pak
 /// zůstanou svítit. Bez animací svítí rovnou.
 class StartLights extends StatefulWidget {
-  const StartLights({super.key});
+  /// Jedno světlo na cvik dnešního tréninku; víc než 8 se nevejde,
+  /// přesný počet říká [caption].
+  final int count;
+
+  /// Popisek pod světly, např. „5 cviků · ~55 min“.
+  final String? caption;
+  const StartLights({super.key, this.count = 5, this.caption});
 
   @override
   State<StartLights> createState() => _StartLightsState();
@@ -660,8 +666,9 @@ class StartLights extends StatefulWidget {
 class _StartLightsState extends State<StartLights>
     with SingleTickerProviderStateMixin {
   static const _delay = 0.5;
-  static const _step = 0.38;
-  static const _total = _delay + 5 * _step;
+  static const _step = 0.3;
+  int get _n => widget.count.clamp(1, 8);
+  double get _total => _delay + _n * _step;
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: (_total * 1000).round()),
@@ -678,37 +685,72 @@ class _StartLightsState extends State<StartLights>
   }
 
   @override
+  void didUpdateWidget(StartLights old) {
+    super.didUpdateWidget(old);
+    if (old.count == widget.count) return;
+    // Jiný den: nový počet světel a start znovu.
+    _c.duration = Duration(milliseconds: (_total * 1000).round());
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _c.value = 1;
+    } else {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
   void dispose() {
     _c.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0C0C12),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: AnimatedBuilder(
-        animation: _c,
-        builder: (context, _) {
-          final at = _c.value * _total;
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 0; i < 5; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _Light(on: at >= _delay + i * _step),
+  Widget build(BuildContext context) {
+    final caption = widget.caption;
+    return Semantics(
+      label: caption,
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C0C12),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          children: [
+            AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) {
+                final at = _c.value * _total;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < _n; i++)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: _Light(on: at >= _delay + i * _step),
+                      ),
+                  ],
+                );
+              },
+            ),
+            if (caption != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                caption,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFB8B8C8),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
                 ),
+              ),
             ],
-          );
-        },
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _Light extends StatelessWidget {
@@ -717,8 +759,8 @@ class _Light extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 28,
-    height: 28,
+    width: 24,
+    height: 24,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
       color: on ? const Color(0xFFFF1801) : const Color(0xFF2A2A36),

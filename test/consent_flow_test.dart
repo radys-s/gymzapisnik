@@ -82,7 +82,7 @@ void main() {
     await tester.pump();
     await _tapAndSave(tester, find.text('Pokračovat'));
 
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
     expect(state.profile.welcomeSeen, isTrue);
     // Nová instalace nemá dostat okno s novinkami hned po uvítání.
     expect(state.profile.seenVersion, whatsNewRelease);
@@ -116,7 +116,7 @@ void main() {
     expect(button().onPressed, isNotNull);
 
     await _tapAndSave(tester, find.text('Pokračovat'));
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
     expect(state.profile.adult, isFalse);
     expect(state.profile.restrictWeightLoss, isTrue);
 
@@ -193,7 +193,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
 
     // Pomalé načtení: značka hned, kolečko až po chvíli.
     await tester.pumpWidget(const SizedBox());
@@ -208,7 +208,7 @@ void main() {
     expect(tester.widget<AnimatedOpacity>(ring).opacity, 1);
     slow.complete(state);
     await tester.pumpAndSettle();
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
   });
 
   testWidgets('boot keeps a tip readable, a tap skips it', (tester) async {
@@ -227,11 +227,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('RADA'), findsOneWidget);
     expect(find.text(trainingTips.first), findsOneWidget);
-    expect(find.text('Cvičení'), findsNothing);
+    expect(find.text('Trénink'), findsNothing);
     // Po minimální době aplikace sama naběhne.
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(
@@ -245,7 +245,7 @@ void main() {
     expect(find.text('MOTIVACE'), findsOneWidget);
     await tester.tap(find.byType(BootScreen));
     await tester.pumpAndSettle();
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
   });
 
   testWidgets('startup error offers retry', (tester) async {
@@ -271,6 +271,6 @@ void main() {
     await tester.tap(find.text('Zkusit znovu'));
     await tester.pumpAndSettle();
     expect(attempts, 2);
-    expect(find.text('Cvičení'), findsWidgets);
+    expect(find.text('Trénink'), findsWidgets);
   });
 }

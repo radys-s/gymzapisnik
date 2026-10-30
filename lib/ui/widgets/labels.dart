@@ -73,3 +73,15 @@ String daysLabel(int n) =>
 /// „Zbývá 1 trénink", „Zbývají 3 tréninky", „Zbývá 5 tréninků".
 String remainingWorkoutsLabel(int n) =>
     '${n >= 2 && n <= 4 ? 'Zbývají' : 'Zbývá'} ${workoutsLabel(n)}';
+
+/// Odhad délky tréninku: rozcvička a ~2,5 min na sérii i s pauzou,
+/// zaokrouhleno na 5 min.
+int workoutMinutes(int sets) => ((5 + sets * 2.5) / 5).round() * 5;
+
+/// Pozdrav podle denní doby. V noci pořád večer: „dobrou noc“ je loučení.
+String greeting(DateTime now) => switch (now.hour) {
+  >= 5 && < 9 => 'Dobré ráno',
+  >= 9 && < 12 => 'Dobré dopoledne',
+  >= 12 && < 18 => 'Dobré odpoledne',
+  _ => 'Dobrý večer',
+};
