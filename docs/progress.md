@@ -12,6 +12,7 @@
 | 2026-10-28 | bidnej / bidnej/beta8 | Vzhled „Závod“ podle hlasování testerů (F1 + telemetrie), nový výchozí |
 | 2026-10-28 | bidnej / bidnej/beta8 | Finalisté 01–03: vlastní rozhraní pro priority, trénink, zápis série a stravu |
 | 2026-10-30 | tomas / tomas/finaliste | Finále pro testery: mobilní verze, vítěz, zpětný odkaz, hlasování, publikováno |
+| 2026-10-30 | tomas / tomas/finaliste | Finále veřejně bez přihlášení: Cloudflare Pages + hlasy v KV |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -209,3 +210,26 @@ koncepty https://claude.ai/code/artifact/507b7536-4470-4ca8-88ba-debc3dacd292
 (soukromé, Tomáš je musí sdílet přes Share).
 
 **Další krok:** sesbírat hlasy, podle nich složit obrazovky a udělat onboarding priorit v aplikaci.
+
+## 2026-10-30 · Finále veřejně bez přihlášení (tomas/finaliste)
+
+**Proč:** artefakt na claude.ai jde otevřít jen s přihlášením, testeři účet nemají.
+
+**Co:** stránky běží zdarma na Cloudflare Pages: https://gymzapisnik-finale.pages.dev/
+(koncepty na `/koncepty`). Zdroj je pořád `docs/design/`, `tool/finale-site/build.py` je zkopíruje
+do `public/` a odkazy na artefakty přepíše na relativní. Pages Function `functions/api/votes.js`:
+POST uloží hlas do KV `FINALE_VOTES` (klíč `v:<náhodné id prohlížeče>`, volby i v metadatech),
+GET vrací jen součty. Poznámky a jména ven nejdou, čtou se přes `wrangler kv key get`.
+Stránka mimo claude.ai pozná API a hlasuje přes něj, svůj hlas si pamatuje v localStorage.
+
+**Nasazení:** `python -X utf8 tool/finale-site/build.py` a pak ve `tool/finale-site`
+`../../worker/node_modules/.bin/wrangler pages deploy --branch main`.
+
+**Ověření:** veřejná URL 200, API vrací prázdné součty, špatné id odmítne (400). Skutečný hlas
+z prohlížeče na 390 px se uložil (status „Hlas je uložený“), testovací záznam jsem z KV smazal.
+
+**Co nefungovalo:** OAuth token wrangleru vypršel uprostřed (projekt a KV se stihly vytvořit,
+deploy už ne), Tomáš se znovu přihlásil přes `wrangler login`. Výpis KV je zpožděný až o minutu,
+proto součty po odeslání nenaskočí hned; stránka to teď říká.
+
+**Další krok:** rozeslat odkaz, po hlasování vytáhnout součty a poznámky z KV.
