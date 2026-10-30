@@ -41,7 +41,10 @@ void main() {
     });
     expect(next.accent, 'sunset');
     expect(next.theme, 'dark');
-    expect(next.lastTab, 1);
+    // Dvě záložky ze starší verze: 1 byla Strava, teď 2.
+    expect(next.lastTab, 2);
+    expect(p.withExtra({'tab': 1}).lastTab, 1);
+    expect(p.withExtra({'tab': 2, 'lastTab': 1}).lastTab, 2);
     expect(next.welcomeSeen, isTrue);
     expect(p.withExtra({'accent': 'bogus'}).accent, 'lime');
     expect(p.look, 'pitwall');

@@ -106,8 +106,14 @@ class Profile {
   /// Verze, jejíž novinky už uživatel viděl.
   String? get seenVersion => extra['seenVersion'] as String?;
 
-  /// Naposledy otevřená záložka (0 = Cvičení, 1 = Strava).
-  int get lastTab => extra['lastTab'] == 1 ? 1 : 0;
+  /// Naposledy otevřená záložka (0 = Trénink, 1 = Pokrok, 2 = Strava).
+  /// Starší verze měly jen dvě (`lastTab` 1 = Strava).
+  int get lastTab => switch (extra['tab']) {
+    1 => 1,
+    2 => 2,
+    _ when extra['tab'] == null && extra['lastTab'] == 1 => 2,
+    _ => 0,
+  };
 
   /// Výchozí pauza mezi sériemi v sekundách.
   int get restSeconds {

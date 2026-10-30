@@ -11,6 +11,7 @@ import 'ui/home/home_page.dart';
 import 'ui/nutrition/nutrition_page.dart';
 import 'ui/design/components.dart';
 import 'ui/onboarding/onboarding_page.dart';
+import 'ui/progress/progress_page.dart';
 import 'ui/theme.dart';
 import 'ui/welcome/whats_new.dart';
 
@@ -58,7 +59,7 @@ MaterialApp appFrame({
   home: home,
 );
 
-/// Hlavní navigace: Cvičení / Strava. Každá záložka má vlastní navigaci,
+/// Hlavní navigace: Trénink / Pokrok / Strava. Každá záložka má vlastní navigaci,
 /// takže přepnutí neztratí rozpracovanou stránku, hledání ani posun.
 class AppShell extends StatefulWidget {
   final AppState state;
@@ -81,7 +82,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   final _navigators = [
-    GlobalKey<NavigatorState>(debugLabel: 'Cvičení'),
+    GlobalKey<NavigatorState>(debugLabel: 'Trénink'),
+    GlobalKey<NavigatorState>(debugLabel: 'Pokrok'),
     GlobalKey<NavigatorState>(debugLabel: 'Strava'),
   ];
 
@@ -123,7 +125,8 @@ class _AppShellState extends State<AppShell> {
           index: tab,
           children: [
             _tab(0, HomePage(widget.state)),
-            _tab(1, NutritionPage(widget.state, root: true)),
+            _tab(1, ProgressPage(widget.state)),
+            _tab(2, NutritionPage(widget.state, root: true)),
           ],
         ),
         bottomNavigationBar: DecoratedBox(
@@ -137,12 +140,21 @@ class _AppShellState extends State<AppShell> {
               NavigationDestination(
                 icon: Icon(Icons.fitness_center_outlined),
                 selectedIcon: Icon(Icons.fitness_center),
-                label: 'Cvičení',
+                label: 'Trénink',
+                // Popisek je vidět pořád; tooltip na webu visel.
+                tooltip: '',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.show_chart_outlined),
+                selectedIcon: Icon(Icons.show_chart),
+                label: 'Pokrok',
+                tooltip: '',
               ),
               NavigationDestination(
                 icon: Icon(Icons.restaurant_outlined),
                 selectedIcon: Icon(Icons.restaurant),
                 label: 'Strava',
+                tooltip: '',
               ),
             ],
           ),

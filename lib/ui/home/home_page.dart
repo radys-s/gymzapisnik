@@ -11,20 +11,15 @@ import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
-import '../bodyweight/bodyweight_page.dart';
-import '../coach/achievements_page.dart';
-import '../coach/growth_page.dart';
 import '../coach/trainer_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
-import '../exercises/exercises_page.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
 import '../program/plan_quiz.dart';
 import '../program/program_page.dart';
 import '../settings/settings_button.dart';
-import '../stats/stats_page.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 import '../workout/builder_page.dart';
@@ -32,8 +27,8 @@ import '../workout/workout_page.dart';
 import 'dashboard.dart';
 import 'recovery_card.dart';
 
-/// Záložka Cvičení: jedna hlavní akce, týden, poslední tréninky
-/// a cesty k programu, cvikům a váze. Pevné složení, nic nepřibývá.
+/// Záložka Trénink: pozdrav, jedna hlavní akce, týden, regenerace
+/// a poslední tréninky. Statistiky, cviky a váha jsou v záložce Pokrok.
 class HomePage extends StatefulWidget {
   final AppState state;
   final DateTime Function() now;
@@ -135,6 +130,39 @@ class _HomePageState extends State<HomePage> {
     await _run(() => state.startPlanned(picked));
   }
 
+  /// Jiný trénink než dnešní den plánu: volný, nebo sestavený z partií.
+  Future<void> _other() async {
+    final pick = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: Space.l),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.bolt_rounded),
+                title: const Text('Volný trénink'),
+                subtitle: const Text('Cviky přidáváš průběžně'),
+                onTap: () => Navigator.pop(sheet, 0),
+              ),
+              ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: const Text('Sestavit podle partií'),
+                subtitle: const Text('Vybereš svaly, cviky navrhne aplikace'),
+                onTap: () => Navigator.pop(sheet, 1),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (pick == 0) await _run(state.startWorkout);
+    if (pick == 1) await _build();
+  }
+
   void _push(Widget page) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => page));
 
@@ -145,7 +173,7 @@ class _HomePageState extends State<HomePage> {
       final now = widget.now();
       final recent = state.workouts.take(3).toList();
       return LargeTitlePage(
-        title: 'Cvičení',
+        title: 'Trénink',
         actions: [
           IconButton(
             tooltip: 'Trenér',
@@ -155,6 +183,14 @@ class _HomePageState extends State<HomePage> {
           SettingsButton(state),
         ],
         children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: Space.s),
+            child: Text(
+              greeting(now),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: context.palette.secondaryLabel),
+            ),
+          ),
           _TodayCard(
             state: state,
             now: now,
@@ -163,7 +199,7 @@ class _HomePageState extends State<HomePage> {
             onStart: _run,
             onPickDay: state.pickSplitDay,
             onProgram: () => _push(ProgramPage(state)),
-            onBuild: () => _build(),
+            onOther: _other,
             onQuiz: () => _push(PlanQuizPage(state)),
             onUsePlan: _usePlan,
           ),
@@ -200,69 +236,10 @@ class _HomePageState extends State<HomePage> {
             ),
           ] else
             const SizedBox(height: Space.xxl),
-          GroupedSection(
-            dividerIndent: 58,
-            children: [
-              GroupedRow(
-                icon: Icons.calendar_view_week_rounded,
-                iconColor: const Color(0xFF5E5CE6),
-                title: 'Program',
-                value: state.split?.name ?? 'Volně',
-                onTap: () => _push(ProgramPage(state)),
-              ),
-              GroupedRow(
-                icon: Icons.fitness_center_rounded,
-                iconColor: const Color(0xFFFF9F0A),
-                title: 'Cviky a rekordy',
-                subtitle: _recordHint(),
-                onTap: () => _push(ExercisesPage(state)),
-              ),
-              GroupedRow(
-                icon: Icons.insights_rounded,
-                iconColor: const Color(0xFF30B0C7),
-                title: 'Statistiky',
-                subtitle: 'Kalendář, grafy, měsíc proti minulému',
-                onTap: () => _push(StatsPage(state, now: widget.now)),
-              ),
-              GroupedRow(
-                icon: Icons.military_tech_rounded,
-                iconColor: const Color(0xFFFFB300),
-                title: 'Odznaky',
-                value:
-                    '${state.badgeStates.where((b) => b.unlocked).length}'
-                    ' / ${state.badgeStates.length}',
-                onTap: () => _push(AchievementsPage(state)),
-              ),
-              GroupedRow(
-                icon: Icons.monitor_weight_outlined,
-                iconColor: const Color(0xFF32ADE6),
-                title: 'Tělesná váha',
-                value: state.bodyweights.isEmpty
-                    ? null
-                    : '${formatKg(state.bodyweights.first.kg)} kg',
-                onTap: () => _push(BodyweightPage(state)),
-              ),
-              GroupedRow(
-                icon: Icons.lightbulb_outline_rounded,
-                iconColor: const Color(0xFF34C759),
-                title: 'Rady pro růst svalů',
-                subtitle: 'Objem, technika, jídlo, spánek',
-                onTap: () => _push(GrowthPage(state, now: widget.now)),
-              ),
-            ],
-          ),
         ],
       );
     },
   );
-
-  String? _recordHint() {
-    final records = recentRecords(state.workouts, state.typeOf, limit: 1);
-    if (records.isEmpty) return null;
-    final r = records.first;
-    return 'Rekord: ${state.exercise(r.exerciseId).name} '
-        '${recordLabel(r.kind, r.value)}';
-  }
 }
 
 /// Hlavní karta: co dnes cvičit a jedno velké tlačítko.
@@ -274,7 +251,7 @@ class _TodayCard extends StatelessWidget {
   final Future<void> Function(Future<void> Function() start) onStart;
   final ValueChanged<int> onPickDay;
   final VoidCallback onProgram;
-  final VoidCallback onBuild;
+  final VoidCallback onOther;
   final VoidCallback onQuiz;
   final ValueChanged<PlanAnswers?> onUsePlan;
 
@@ -286,7 +263,7 @@ class _TodayCard extends StatelessWidget {
     required this.onStart,
     required this.onPickDay,
     required this.onProgram,
-    required this.onBuild,
+    required this.onOther,
     required this.onQuiz,
     required this.onUsePlan,
   });
@@ -332,6 +309,9 @@ class _TodayCard extends StatelessWidget {
     } else if (split != null) {
       final day = split.day(dayIndex);
       final plan = state.plan(day);
+      final scope =
+          '${exercisesLabel(plan.length)} · '
+          '~${workoutMinutes(plan.fold(0, (n, e) => n + e.$1.sets))} min';
       children.addAll([
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,10 +373,15 @@ class _TodayCard extends StatelessWidget {
         if (plan.length > 5)
           Text('a další ${plan.length - 5}', style: text.bodySmall),
         const SizedBox(height: Space.m),
-        if (p.pitwall) ...[
-          const StartLights(),
-          const SizedBox(height: Space.m),
-        ],
+        // Jedno světlo na cvik; rozsah tréninku ukáže každý vzhled.
+        if (p.pitwall)
+          StartLights(count: plan.length, caption: scope)
+        else
+          Text(
+            scope,
+            style: text.labelMedium?.copyWith(color: p.secondaryLabel),
+          ),
+        const SizedBox(height: Space.m),
         PrimaryButton(
           'Začít ${day.name}',
           icon: Icons.play_arrow_rounded,
@@ -404,18 +389,11 @@ class _TodayCard extends StatelessWidget {
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
         ),
         const SizedBox(height: Space.xs),
-        Wrap(
-          alignment: WrapAlignment.center,
-          children: [
-            TextButton(
-              onPressed: busy ? null : () => onStart(state.startWorkout),
-              child: const Text('Volný trénink'),
-            ),
-            TextButton(
-              onPressed: busy ? null : onBuild,
-              child: const Text('Sestavit trénink'),
-            ),
-          ],
+        Center(
+          child: TextButton(
+            onPressed: busy ? null : onOther,
+            child: const Text('Jiný trénink'),
+          ),
         ),
       ]);
     } else {
@@ -467,10 +445,21 @@ class _TodayCard extends StatelessWidget {
         ProGate(
           state,
           ProFeature.mission,
-          child: _MissionLine(state.mission(now)),
+          child: _MissionLine(
+            state.mission(now),
+            daysSince: _daysSince(state, now),
+          ),
         ),
       ],
     );
+  }
+
+  static int? _daysSince(AppState state, DateTime now) {
+    final last = state.workouts.where((w) => w.finished).firstOrNull;
+    if (last == null) return null;
+    final day = DateTime(now.year, now.month, now.day);
+    final then = DateTime(last.date.year, last.date.month, last.date.day);
+    return day.difference(then).inDays;
   }
 
   static String _target(ExerciseType type, PlannedExercise p, Suggestion s) {
@@ -507,7 +496,8 @@ class _Eyebrow extends StatelessWidget {
 /// Dnešní mise jako jeden řádek pod hlavní akcí.
 class _MissionLine extends StatelessWidget {
   final Mission mission;
-  const _MissionLine(this.mission);
+  final int? daysSince;
+  const _MissionLine(this.mission, {this.daysSince});
 
   @override
   Widget build(BuildContext context) {
@@ -526,7 +516,7 @@ class _MissionLine extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              MissionCard.icon(mission.kind),
+              MissionCopy.icon(mission.kind),
               size: 20,
               // Na světlé barevné kartě by oranžová splynula.
               color: urgent && p.surface != HeroSurface.bright
@@ -538,8 +528,11 @@ class _MissionLine extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(MissionCard.title(mission), style: text.titleSmall),
-                  Text(MissionCard.subtitle(mission), style: text.bodySmall),
+                  Text(MissionCopy.title(mission), style: text.titleSmall),
+                  Text(
+                    MissionCopy.subtitle(mission, daysSince: daysSince),
+                    style: text.bodySmall,
+                  ),
                 ],
               ),
             ),
