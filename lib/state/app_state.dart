@@ -10,6 +10,7 @@ import '../coach/plan_quiz.dart';
 import '../coach/plates.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
+import '../coach/start_weight.dart';
 import '../coach/achievements.dart';
 import '../coach/coach_context.dart';
 import '../coach/local_coach.dart';
@@ -465,8 +466,50 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  /// Další nepotvrzené pracovní série téhož cviku, které mají stejné
+  /// hodnoty jako [set]. Volá se při otevření úprav, než se cokoli změní.
+  List<SetEntry> followersOf(SetEntry set) {
+    if (set.warmup) return const [];
+    final entry = active?.exercises
+        .where((e) => e.sets.any((s) => identical(s, set)))
+        .firstOrNull;
+    if (entry == null) return const [];
+    final start = entry.sets.indexWhere((s) => identical(s, set));
+    return [
+      for (final s in entry.sets.skip(start + 1))
+        if (!s.done &&
+            !s.warmup &&
+            s.weight == set.weight &&
+            s.reps == set.reps)
+          s,
+    ];
+  }
+
+  /// Přenese váhu a opakování z [set] na [followers] (z [followersOf]
+  /// při otevření úprav). Mezitím potvrzené nebo smazané série vynechá.
+  /// Vrací počet změněných sérií; uložení je na volajícím.
+  int carryForward(SetEntry set, List<SetEntry> followers) {
+    final sets = active?.exercises
+        .where((e) => e.sets.any((s) => identical(s, set)))
+        .firstOrNull
+        ?.sets;
+    if (sets == null) return 0;
+    var changed = 0;
+    for (final s in followers) {
+      if (s.done || s.warmup || !sets.any((x) => identical(x, s))) continue;
+      if (s.weight == set.weight && s.reps == set.reps) continue;
+      s
+        ..weight = set.weight
+        ..reps = set.reps;
+      changed++;
+    }
+    if (changed > 0) notifyListeners();
+    return changed;
+  }
+
   /// Označí sérii jako hotovou (nebo zpět). Vrací chybovou hlášku,
   /// když se série nedá potvrdit. Potvrzení spustí pauzu.
+
   Future<String?> toggleDone(SetEntry set, {DateTime? now}) async {
     if (!set.done) {
       if (set.reps <= 0) return 'Zadej počet opakování.';
@@ -920,26 +963,32 @@ class AppState extends ChangeNotifier {
 
   /// Návrh váhy a opakování pro každý cvik dne.
   ///
-  /// Bez Pro dostane každý cvik jen rozsah z plánu, bez návrhu váhy.
+  /// Cvik dělaný poprvé dostane startovní váhu vždy; další návrhy váhy
+  /// jsou v Pro, bez něj zůstane jen rozsah z plánu.
   List<(PlannedExercise, Suggestion)> plan(SplitDay day) => [
     for (final p in day.exercises)
-      (
-        p,
-        has(ProFeature.coach)
-            ? suggest(
-                p,
-                typeOf(p.exerciseId),
-                exerciseHistory(workouts, p.exerciseId),
-              )
-            : Suggestion(
-                kind: SuggestionKind.start,
-                weight: 0,
-                reps: p.repMin,
-                sets: p.sets,
-                reason: 'Návrh váhy od kouče je součástí Pro.',
-              ),
-      ),
+      (p, _suggestFor(p, exerciseHistory(workouts, p.exerciseId))),
   ];
+
+  /// Startovní váha poprvé (i bez Pro), potom návrh kouče.
+  Suggestion _suggestFor(PlannedExercise p, List<ExerciseSession> history) =>
+      has(ProFeature.coach) || history.isEmpty
+      ? suggest(
+          p,
+          typeOf(p.exerciseId),
+          history,
+          start: startLoad(
+            p.exerciseId,
+            planAnswers?.level ?? PlanLevel.beginner,
+          ),
+        )
+      : Suggestion(
+          kind: SuggestionKind.start,
+          weight: 0,
+          reps: p.repMin,
+          sets: p.sets,
+          reason: 'Návrh váhy od kouče je součástí Pro.',
+        );
 
   /// Začne trénink podle dne splitu s předvyplněnými návrhy.
   Future<Workout> startSplitDay(int dayIndex, {DateTime? now}) async {
@@ -1343,6 +1392,12 @@ class AppState extends ChangeNotifier {
               repMax: pl.repMax,
               suggestion: sug,
               weighted: typeOf(pl.exerciseId) == ExerciseType.weighted,
+              start: sug.kind == SuggestionKind.start && sug.weight > 0
+                  ? startLoad(
+                      pl.exerciseId,
+                      planAnswers?.level ?? PlanLevel.beginner,
+                    )?.label
+                  : null,
             ),
       ],
       hardSets: {

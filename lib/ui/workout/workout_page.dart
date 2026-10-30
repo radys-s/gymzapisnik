@@ -12,6 +12,7 @@ import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/haptics.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
 import '../widgets/exercise_media.dart';
@@ -142,23 +143,58 @@ class _WorkoutPageState extends State<WorkoutPage> {
   }
 
   Future<void> _finish(Workout workout) async {
-    if (_busy) return;
+    if (_busy || _confirming) return;
+    _confirming = true;
+    try {
+      await _finishFlow(workout);
+    } finally {
+      _confirming = false;
+    }
+  }
+
+  /// Otevřený dialog dokončení: druhé klepnutí neotevře další.
+  bool _confirming = false;
+
+  Future<void> _finishFlow(Workout workout) async {
+    FocusScope.of(context).unfocus();
+    final working = workout.exercises
+        .expand((e) => e.sets)
+        .where((s) => !s.warmup && (s.done || s.reps > 0))
+        .toList();
+    final confirmed = working.where((s) => s.counts).length;
+    // Bez potvrzené série není co uložit: nabídni pokračovat nebo zahodit,
+    // ne dialog „Dokončit“ a po něm chybu.
+    if (confirmed == 0) {
+      if (mounted &&
+          await confirmAction(
+            context,
+            title: 'Zatím žádná potvrzená série',
+            message: 'Sérii potvrdíš zaškrtnutím vpravo. Trénink bez série se neuloží.',
+            confirm: 'Zahodit trénink',
+            cancel: 'Pokračovat',
+            destructive: true,
+          )) {
+        await _discardNow();
+      }
+      return;
+    }
+    final pending = working.length - confirmed;
+    if (pending > 0 &&
+        (!await confirmAction(
+              context,
+              title: 'Dokončit trénink?',
+              message:
+                  'Hotovo $confirmed z ${working.length} sérií. '
+                  'Nepotvrzené se neuloží.',
+              confirm: 'Dokončit',
+              cancel: 'Pokračovat',
+            ) ||
+            !mounted)) {
+      return;
+    }
+    // „Ukládám…“ až po rozhodnutí, ne za otevřeným dialogem.
     setState(() => _busy = true);
     try {
-      FocusScope.of(context).unfocus();
-      final pending = workout.exercises
-          .expand((e) => e.sets)
-          .where((s) => !s.done && s.reps > 0)
-          .length;
-      if (pending > 0 &&
-          !await confirmAction(
-            context,
-            title: 'Dokončit trénink?',
-            message: 'Nepotvrzené série ($pending) se neuloží.',
-            confirm: 'Dokončit',
-          )) {
-        return;
-      }
       final result = await state.finishActive();
       if (!mounted) return;
       if (result.error != null) return _snack(result.error!);
@@ -182,6 +218,10 @@ class _WorkoutPageState extends State<WorkoutPage> {
     )) {
       return;
     }
+    await _discardNow();
+  }
+
+  Future<void> _discardNow() async {
     try {
       await state.discardActive();
       if (mounted) Navigator.pop(context);
@@ -719,8 +759,10 @@ class _ExerciseCard extends StatelessWidget {
                   ),
                 ),
                 Semantics(
+                  container: true,
                   button: true,
                   label: 'Vyměnit cvik',
+                  onTap: () => onMenu('replace'),
                   excludeSemantics: true,
                   child: IconButton(
                     onPressed: () => onMenu('replace'),
@@ -904,6 +946,16 @@ class _SetRowState extends State<_SetRow> {
   /// Název série pro čtečku obrazovky.
   String get _name => widget.set.warmup ? 'Rozcvička' : 'Série ${widget.label}';
 
+  /// Hodnoty se mohou změnit zvenku (přenos z předchozí série).
+  @override
+  void didUpdateWidget(_SetRow old) {
+    super.didUpdateWidget(old);
+    final w = _kgText(widget.set.weight);
+    final r = _repsText(widget.set.reps);
+    if (parseNum(weight.text) != parseNum(w)) weight.text = w;
+    if (reps.text != r) reps.text = r;
+  }
+
   @override
   void dispose() {
     _toggleCooldown?.cancel();
@@ -977,34 +1029,42 @@ class _SetRowState extends State<_SetRow> {
   }
 
   /// List s velkými čísly a − / +. Změny se ukládají hned jako psaní.
-  Future<void> _openSheet({bool focusReps = false}) => showSetSheet(
-    context,
-    title: widget.exercise.isEmpty ? _name : '${widget.exercise} · $_name',
-    weight: weight.text,
-    reps: reps.text,
-    step: widget.state.profile.weightStep,
-    bodyweight: widget.bodyweight,
-    focusReps: focusReps,
-    // Zapisuje rovnou do série, i kdyby se řádek mezitím přestavěl.
-    // List čísla ověří předem; chybu uložení ukáže sám.
-    onChanged: (w, r) async {
-      final set = widget.set;
-      final state = widget.state;
-      set
-        ..weight = parseNum(w) ?? 0
-        ..reps = int.tryParse(r.trim()) ?? 0;
-      if (mounted) {
-        weight.text = w;
-        reps.text = r;
-      }
-      try {
-        await state.saveActive();
-        return true;
-      } catch (_) {
-        return false;
-      }
-    },
-  );
+  Future<void> _openSheet({bool focusReps = false}) {
+    // Které série jdou s touto: určí se jednou při otevření, ne po každém
+    // napsaném znaku (jinak by mezistav „2“ chytil ručně zadanou dvojku).
+    final followers = widget.state.followersOf(widget.set);
+    return showSetSheet(
+      context,
+      title: widget.exercise.isEmpty ? _name : '${widget.exercise} · $_name',
+      weight: weight.text,
+      reps: reps.text,
+      step: widget.state.profile.weightStep,
+      bodyweight: widget.bodyweight,
+      focusReps: focusReps,
+      // Zapisuje rovnou do série, i kdyby se řádek mezitím přestavěl.
+      // List čísla ověří předem; chybu uložení ukáže sám.
+      onChanged: (w, r) async {
+        final set = widget.set;
+        final state = widget.state;
+        set
+          ..weight = parseNum(w) ?? 0
+          ..reps = int.tryParse(r.trim()) ?? 0;
+        // Další série téhož cviku dostanou stejné hodnoty (když je nikdo
+        // ručně nezměnil): začátečník nemusí přepisovat každou zvlášť.
+        state.carryForward(set, followers);
+        if (mounted) {
+          weight.text = w;
+          reps.text = r;
+        }
+        try {
+          await state.saveActive();
+          return true;
+        } catch (_) {
+          return false;
+        }
+      },
+    );
+  }
 
   void _typeMenu(String action) => switch (action) {
     'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
@@ -1071,7 +1131,10 @@ class _SetRowState extends State<_SetRow> {
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       onDismissed: (_) => widget.onRemove(),
-      child: Container(
+      // Potvrzení: řádek se plynule podbarví, fajfka naskočí.
+      child: AnimatedContainer(
+        duration: Motion.of(context, Motion.quick),
+        curve: Motion.curve,
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.only(right: _edgeInset),
         decoration: BoxDecoration(
@@ -1176,16 +1239,22 @@ class _SetRowState extends State<_SetRow> {
               height: 48,
               padding: const EdgeInsets.only(left: Space.xs),
               // Potvrzená série svítí přechodem motivu.
-              child: DecoratedBox(
+              child: AnimatedContainer(
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
                 decoration: BoxDecoration(
                   gradient: set.done ? p.linear : null,
                   color: set.done ? null : p.fill,
                   borderRadius: BorderRadius.circular(Radii.control),
                 ),
                 // Bez tooltipu: na webu po potvrzení visel přes další řádek.
+                // Vlastní uzel s akcí, jinak splyne s řádkem a čtečka
+                // sérii nepotvrdí.
                 child: Semantics(
+                  container: true,
                   button: true,
                   label: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
+                  onTap: _saving ? null : _toggleDone,
                   excludeSemantics: true,
                   child: IconButton(
                     onPressed: _saving ? null : _toggleDone,
@@ -1199,7 +1268,12 @@ class _SetRowState extends State<_SetRow> {
                         borderRadius: BorderRadius.circular(Radii.control),
                       ),
                     ),
-                    icon: const Icon(Icons.check_rounded),
+                    icon: AnimatedScale(
+                      scale: set.done ? 1 : 0.8,
+                      duration: Motion.of(context, Motion.base),
+                      curve: Curves.elasticOut,
+                      child: const Icon(Icons.check_rounded),
+                    ),
                   ),
                 ),
               ),
