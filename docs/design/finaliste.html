@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gym zápisník — finalisté</title>
+<title>Finále Gym zápisníku</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700;1,900&family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
@@ -16,7 +17,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;padding:0 16px 80px;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;padding-block:0 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto}
 .hero{padding:56px 0 18px}
 .kick{font:600 12px "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
@@ -59,7 +60,7 @@ h1.title{font:800 clamp(34px,6vw,72px)/.95 Outfit,Inter,sans-serif;letter-spacin
 @keyframes draw{from{stroke-dashoffset:1}}
 @keyframes pop{from{opacity:0;transform:scale(.3)}}
 /* Animace běží, až je telefon vidět (jednou) */
-.phone:not(.play) *,.phone:not(.play) *::before,.phone:not(.play) *::after{animation-play-state:paused!important}
+.phone:not(.play) *,.phone:not(.play) *::before,.phone:not(.play) *::after{animation:none!important}
 .row{display:flex;align-items:center;gap:10px}
 .sp{flex:1}
 .num{font-variant-numeric:tabular-nums}
@@ -240,17 +241,102 @@ svg.ln .draw{stroke-dasharray:1;animation:draw 1.3s var(--ease) .15s both}
   *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
   .tz .scan{display:none}
 }
+
+/* ===== Horní lišta, vítěz ===== */
+:root{--red:#e10600;--red-hi:#ff5545;--gold:#ffd400;--green:#00e676}
+.top{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding-top:18px}
+.top a{color:var(--ink);text-decoration:none;font:600 13px Inter,sans-serif;border:1px solid var(--line);border-radius:99px;padding:9px 14px;background:var(--card)}
+.top a:hover{border-color:#4a4a52}
+.top a.cta{background:var(--red);border-color:var(--red);color:#fff}
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hero{padding-top:34px}
+.winner{display:flex;gap:14px;align-items:center;margin-top:22px;padding:14px 16px;border-radius:4px 16px 16px 4px;background:linear-gradient(90deg,rgba(225,6,0,.22),rgba(225,6,0,.04) 70%);border-left:4px solid var(--red)}
+.winner .pos{font:900 italic 34px/1 "Titillium Web",sans-serif;color:var(--gold);flex:none}
+.winner b{display:block;font:800 16px/1.25 Outfit,sans-serif}
+.winner span{display:block;color:var(--mute);font-size:13.5px}
+.win{display:inline-block;margin-top:5px;font:700 10.5px "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#000;background:var(--gold);border-radius:3px;padding:2px 6px;font-style:normal}
+.notes a{color:var(--red-hi)}
+
+/* ===== Hlasování ===== */
+.vote{margin-top:64px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start;scroll-margin-top:16px}
+.vote h2{font:800 clamp(28px,5vw,44px)/1 Outfit,sans-serif;letter-spacing:-.03em;margin:0 0 8px;text-wrap:balance}
+.vote > div > p{color:var(--mute);margin:0 0 18px;max-width:60ch}
+.vote fieldset{border:0;margin:0 0 14px;padding:0;min-width:0}
+.vote legend{font:700 12px "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:7px;padding:0}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;min-height:48px;justify-content:center}
+.seg label b{font:800 15px Outfit,sans-serif}
+.seg label small{color:var(--mute);font-size:12px}
+.seg input:checked + label{border-color:var(--red-hi);background:rgba(225,6,0,.16)}
+.seg input:focus-visible + label{outline:2px solid var(--gold);outline-offset:2px}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fld label{font:600 13px Inter,sans-serif}
+.fld textarea,.fld input{font:16px/1.45 Inter,sans-serif;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;resize:vertical}
+.send{font:700 16px Inter,sans-serif;color:#fff;background:var(--red);border:0;border-radius:4px 12px 12px 4px;padding:14px 22px;cursor:pointer;min-height:48px}
+.send:hover{background:#ff1f12}
+.send:disabled{opacity:.6}
+#v-status{min-height:1.5em;margin:12px 0 0;font-size:14px}
+#v-status.ok{color:var(--green)}
+#v-status.err{color:var(--red-hi)}
+#v-copy{margin-top:12px;padding:14px;border:1px dashed #3a3a42;border-radius:12px}
+#v-copy p{margin:8px 0 0;color:var(--mute);font-size:13px}
+#v-text{width:100%;min-height:150px;font:13px/1.5 "JetBrains Mono",monospace;color:var(--ink);background:#0b0b0d;border:1px solid var(--line);border-radius:8px;padding:10px}
+.ghost{margin-top:8px;font:600 14px Inter,sans-serif;color:var(--ink);background:transparent;border:1px solid #4a4a52;border-radius:10px;padding:10px 16px;cursor:pointer;min-height:44px}
+.tally{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.tally h3{margin:0 0 4px;font:800 18px Outfit,sans-serif}
+.tally > p{margin:0;color:var(--mute);font-size:13.5px}
+.trow{margin-top:14px}
+.trow h4{margin:0 0 6px;font:700 11.5px "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.tbar{display:grid;grid-template-columns:96px 1fr 26px;gap:8px;align-items:center;font-size:13px;margin-top:4px}
+.tbar .tr{height:8px;background:#1d1d22;border-radius:9px;overflow:hidden}
+.tbar .tr i{display:block;height:100%;background:var(--mute);border-radius:9px}
+.tbar.lead .tr i{background:var(--red-hi)}
+.tbar .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.notelist{margin:16px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.notelist li{font-size:13.5px;border-top:1px solid var(--line);padding-top:8px}
+.notelist li span{color:var(--mute);font-size:12px;display:block}
+
+/* ===== Široká obrazovka: sloupce vedle sebe, hlavička lepí ===== */
+@media (min-width:1180px){.scroller{overflow:visible}}
+/* ===== Užší obrazovka: každý řádek je karusel, telefon se zmenší ===== */
+.swipe{display:none}
+@media (max-width:1179px){
+  .scroller{overflow:visible;padding:0}
+  .scroller > div{min-width:0!important}
+  .cols-head{display:none}
+  .swipe{display:inline;font:600 11px "JetBrains Mono",monospace;color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+  .screens{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;
+    margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+    padding:0 max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));scroll-padding-left:max(16px,env(safe-area-inset-left,0px))}
+  .screens::-webkit-scrollbar{display:none}
+  .screens > div{flex:0 0 auto;scroll-snap-align:start}
+  .screens > div::before{display:inline-block;margin-top:16px;font:700 12px "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);padding:4px 8px;border:1px solid var(--line);border-radius:4px}
+  .screens > div:nth-child(1)::before{content:"01 · Aktivita"}
+  .screens > div:nth-child(2)::before{content:"02 · Tensor"}
+  .screens > div:nth-child(3)::before{content:"03 · Pit wall · vítěz 1. kola";color:#000;background:var(--gold);border-color:var(--gold)}
+  .rowlabel{margin-top:38px}
+  .vote{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .phone{zoom:.8;margin-top:12px}
+  .cap{max-width:288px;font-size:12.5px}
+  .rowlabel h3{font-size:22px}
+  .hero{padding-top:24px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
+<nav class="top" aria-label="Odkazy"><a href="https://claude.ai/code/artifact/507b7536-4470-4ca8-88ba-debc3dacd292" target="_blank" rel="noopener">← Všech 20 konceptů z 1. kola</a><a class="cta" href="#hlasovani">Hlasovat ↓</a></nav>
 <header class="hero">
   <div class="kick">Gym zápisník · finále · 28. 10. 2026</div>
   <h1 class="title">Tři finalisté, čtyři obrazovky</h1>
-  <p>Každý koncept má vlastní rozhraní, ne jen jiné barvy: jinak řeší priority, trénink, zápis série i stravu. Vše je vidět najednou, nic se nemusí rozklikávat. Na telefonu posuň řádek do strany.</p>
+  <p>Každý koncept má vlastní rozhraní, ne jen jiné barvy: jinak řeší priority, trénink, zápis série i stravu. Vše je vidět najednou, nic se nemusí rozklikávat. Na telefonu posuň každý řádek prstem do strany.</p>
+  <div class="winner"><div class="pos">P1</div><div><b>Vítěz 1. kola: 03 Pit wall</b><span>Nejvíc hlasů a návrh navíc. Vzhled už je v aplikaci jako „Závod“. Teď vybíráme, jak mají vypadat jednotlivé obrazovky.</span></div></div>
   <div class="notes">
     <div><h3>Bez běhu</h3><p>Běh není hlavní funkce. Při prvním spuštění (a později v Nastavení) si každý seřadí priority a vybere, co chce sledovat. Běh je jen volitelný modul, ve výchozím stavu vypnutý.</p></div>
-    <div><h3>Jak hlasovat</h3><p>Napiš číslo konceptu, nebo kombinaci po řádcích, třeba „trénink z 03, v tréninku z 02, strava z 01“.</p></div>
+    <div><h3>Jak hlasovat</h3><p>Dole na stránce je <a href="#hlasovani">formulář</a>. U každé obrazovky vyber koncept, klidně z každého řádku jiný.</p></div>
   </div>
 </header>
 
@@ -259,11 +345,11 @@ svg.ln .draw{stroke-dasharray:1;animation:draw 1.3s var(--ease) .15s both}
 <div class="cols-head">
   <div><b>01</b><div><h2>Aktivita</h2><span>Apple · klid a kruhy</span></div></div>
   <div><b>02</b><div><h2>Tensor</h2><span>NVIDIA · data a telemetrie</span></div></div>
-  <div><b>03</b><div><h2>Pit wall</h2><span>F1 · závodní víkend</span></div></div>
+  <div><b>03</b><div><h2>Pit wall</h2><span>F1 · závodní víkend</span><em class="win">Vítěz 1. kola</em></div></div>
 </div>
 
 <!-- ================= 1. PRIORITY ================= -->
-<div class="rowlabel"><h3>1 · Priority</h3><p>první spuštění, později v Nastavení</p></div>
+<div class="rowlabel"><h3>1 · Priority</h3><p>první spuštění, později v Nastavení</p><span class="swipe">posuň →</span></div>
 <div class="screens">
 
 <div>
@@ -330,7 +416,7 @@ svg.ln .draw{stroke-dasharray:1;animation:draw 1.3s var(--ease) .15s both}
 </div>
 
 <!-- ================= 2. TRÉNINK (úvod) ================= -->
-<div class="rowlabel"><h3>2 · Trénink</h3><p>úvodní obrazovka a co dnes</p></div>
+<div class="rowlabel"><h3>2 · Trénink</h3><p>úvodní obrazovka a co dnes</p><span class="swipe">posuň →</span></div>
 <div class="screens">
 
 <div>
@@ -411,7 +497,7 @@ svg.ln .draw{stroke-dasharray:1;animation:draw 1.3s var(--ease) .15s both}
 </div>
 
 <!-- ================= 3. V TRÉNINKU ================= -->
-<div class="rowlabel"><h3>3 · V tréninku</h3><p>zápis série během cvičení</p></div>
+<div class="rowlabel"><h3>3 · V tréninku</h3><p>zápis série během cvičení</p><span class="swipe">posuň →</span></div>
 <div class="screens">
 
 <div>
@@ -474,7 +560,7 @@ svg.ln .draw{stroke-dasharray:1;animation:draw 1.3s var(--ease) .15s both}
 </div>
 
 <!-- ================= 4. STRAVA ================= -->
-<div class="rowlabel"><h3>4 · Strava</h3><p>dnešní jídlo a cíle</p></div>
+<div class="rowlabel"><h3>4 · Strava</h3><p>dnešní jídlo a cíle</p><span class="swipe">posuň →</span></div>
 <div class="screens">
 
 <div>
@@ -561,6 +647,31 @@ svg.ln .draw{stroke-dasharray:1;animation:draw 1.3s var(--ease) .15s both}
 </div>
 </div>
 </div></div>
+
+<section class="vote" id="hlasovani" aria-labelledby="v-h">
+<div>
+<h2 id="v-h">Co je nejlepší?</h2>
+<p>U každé obrazovky vyber koncept, který by sis nechal. Nemusíš vyplnit všechno. Hlas můžeš později změnit.</p>
+<form id="vf" novalidate>
+<fieldset><legend>1 · Priority</legend><div class="seg"><input type="radio" name="priority" id="r-priority-01" value="01"><label for="r-priority-01"><b>01</b><small>Aktivita</small></label><input type="radio" name="priority" id="r-priority-02" value="02"><label for="r-priority-02"><b>02</b><small>Tensor</small></label><input type="radio" name="priority" id="r-priority-03" value="03"><label for="r-priority-03"><b>03</b><small>Pit wall</small></label></div></fieldset>
+<fieldset><legend>2 · Trénink</legend><div class="seg"><input type="radio" name="trenink" id="r-trenink-01" value="01"><label for="r-trenink-01"><b>01</b><small>Aktivita</small></label><input type="radio" name="trenink" id="r-trenink-02" value="02"><label for="r-trenink-02"><b>02</b><small>Tensor</small></label><input type="radio" name="trenink" id="r-trenink-03" value="03"><label for="r-trenink-03"><b>03</b><small>Pit wall</small></label></div></fieldset>
+<fieldset><legend>3 · V tréninku</legend><div class="seg"><input type="radio" name="serie" id="r-serie-01" value="01"><label for="r-serie-01"><b>01</b><small>Aktivita</small></label><input type="radio" name="serie" id="r-serie-02" value="02"><label for="r-serie-02"><b>02</b><small>Tensor</small></label><input type="radio" name="serie" id="r-serie-03" value="03"><label for="r-serie-03"><b>03</b><small>Pit wall</small></label></div></fieldset>
+<fieldset><legend>4 · Strava</legend><div class="seg"><input type="radio" name="strava" id="r-strava-01" value="01"><label for="r-strava-01"><b>01</b><small>Aktivita</small></label><input type="radio" name="strava" id="r-strava-02" value="02"><label for="r-strava-02"><b>02</b><small>Tensor</small></label><input type="radio" name="strava" id="r-strava-03" value="03"><label for="r-strava-03"><b>03</b><small>Pit wall</small></label></div></fieldset>
+<fieldset><legend>Celkově nejlepší</legend><div class="seg"><input type="radio" name="celkem" id="r-celkem-01" value="01"><label for="r-celkem-01"><b>01</b><small>Aktivita</small></label><input type="radio" name="celkem" id="r-celkem-02" value="02"><label for="r-celkem-02"><b>02</b><small>Tensor</small></label><input type="radio" name="celkem" id="r-celkem-03" value="03"><label for="r-celkem-03"><b>03</b><small>Pit wall</small></label></div></fieldset>
+<div class="fld"><label for="v-note">Co by sis změnil nebo zkombinoval?</label><textarea id="v-note" rows="3" maxlength="600" placeholder="Třeba: kruhy z 01, ale tabulku sérií z 02"></textarea></div>
+<div class="fld"><label for="v-name">Jméno nebo přezdívka (nepovinné)</label><input id="v-name" maxlength="40" autocomplete="nickname"></div>
+<button class="send" type="submit" id="v-send">Odeslat hlas</button>
+<p id="v-status" role="status"></p>
+<div id="v-copy" hidden><textarea id="v-text" readonly aria-label="Text hlasu"></textarea><button class="ghost" type="button" id="v-copybtn">Zkopírovat text</button><p>Pošli ho Tomášovi zprávou (WhatsApp, Messenger, SMS).</p></div>
+</form>
+</div>
+<aside class="tally" id="tally" aria-live="polite">
+<h3>Průběžné výsledky</h3>
+<p id="t-empty">Výsledky vidí jen ti, kdo jsou přihlášení na claude.ai. Bez přihlášení pošli hlas jako text.</p>
+<div id="t-rows"></div>
+<ul class="notelist" id="t-notes" hidden></ul>
+</aside>
+</section>
 </div>
 <script>
 // Animace v telefonu se spustí, až je telefon na obrazovce (jednorázově).
@@ -569,6 +680,98 @@ if('IntersectionObserver' in window){
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('play');io.unobserve(e.target)}}),{threshold:.25});
   phones.forEach(p=>io.observe(p));
 }else phones.forEach(p=>p.classList.add('play'));
+
+setTimeout(()=>phones.forEach(p=>p.classList.add('play')),2500);
+
+// ===== Hlasování =====
+const ROWS=[["priority","1 · Priority"],["trenink","2 · Trénink"],["serie","3 · V tréninku"],["strava","4 · Strava"],["celkem","Celkově"]];
+const NAMES={"01":"Aktivita","02":"Tensor","03":"Pit wall"};
+const form=document.getElementById('vf'),st=document.getElementById('v-status');
+let db=null,uid=null,owner=false;
+const pick=k=>{const r=form.querySelector('input[name="'+k+'"]:checked');return r?r.value:""};
+const ok=x=>x==="01"||x==="02"||x==="03";
+function say(t,cls){st.textContent=t;st.className=cls||""}
+function asText(v){
+  const l=["Finále Gym zápisníku: můj hlas"];
+  ROWS.forEach(([k,n])=>{if(v[k])l.push(n+": "+v[k]+" "+NAMES[v[k]])});
+  if(v.note)l.push("Poznámka: "+v.note);
+  if(v.name)l.push("Od: "+v.name);
+  return l.join("\n");
+}
+function showCopy(v){
+  document.getElementById('v-text').value=asText(v);
+  document.getElementById('v-copy').hidden=false;
+}
+document.getElementById('v-copybtn').addEventListener('click',()=>{
+  const ta=document.getElementById('v-text');
+  const manual=()=>{ta.focus();ta.select();say("Text je označený, zkopíruj ho ručně.")};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(ta.value).then(()=>say("Zkopírováno. Teď ho pošli Tomášovi.","ok"),manual)}
+  else manual();
+});
+form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const v={};ROWS.forEach(([k])=>v[k]=pick(k));
+  v.note=document.getElementById('v-note').value.trim().slice(0,600);
+  v.name=document.getElementById('v-name').value.trim().slice(0,40);
+  if(!ROWS.some(([k])=>v[k])&&!v.note){say("Vyber aspoň u jedné obrazovky koncept, nebo napiš poznámku.","err");return}
+  if(db&&uid){
+    const btn=document.getElementById('v-send');btn.disabled=true;
+    try{await db.collection("votes").doc(uid).set(Object.assign({},v,{at:Date.now()}));say("Hlas je uložený. Díky! Když ho změníš, stačí odeslat znovu.","ok");document.getElementById('v-copy').hidden=true}
+    catch(err){say("Hlas se nepodařilo uložit. Zkopíruj text níž a pošli ho Tomášovi.","err");showCopy(v)}
+    finally{btn.disabled=false}
+  }else{say("Tady se hlas uložit nedá, protože nejsi přihlášený na claude.ai. Zkopíruj text a pošli ho Tomášovi.");showCopy(v)}
+});
+function renderTally(docs){
+  const box=document.getElementById('t-rows'),empty=document.getElementById('t-empty'),notes=document.getElementById('t-notes');
+  box.textContent="";notes.textContent="";
+  const vs=docs.map(d=>d.data()||{});
+  empty.textContent=vs.length?("Hlasů zatím: "+vs.length+". Čísla se mění živě."):"Zatím nikdo nehlasoval. Tvůj hlas se tu ukáže hned po odeslání.";
+  if(!vs.length)return;
+  ROWS.forEach(([k,n])=>{
+    const c={"01":0,"02":0,"03":0};vs.forEach(v=>{if(ok(v[k]))c[v[k]]++});
+    const max=Math.max(c["01"],c["02"],c["03"]);
+    const r=document.createElement('div');r.className='trow';
+    const h=document.createElement('h4');h.textContent=n;r.appendChild(h);
+    ["01","02","03"].forEach(o=>{
+      const b=document.createElement('div');b.className='tbar'+(max&&c[o]===max?' lead':'');
+      const a=document.createElement('span');a.textContent=o+" "+NAMES[o];
+      const t=document.createElement('div');t.className='tr';
+      const i=document.createElement('i');i.style.width=(c[o]/vs.length*100)+'%';t.appendChild(i);
+      const m=document.createElement('span');m.className='n';m.textContent=c[o];
+      b.append(a,t,m);r.appendChild(b);
+    });
+    box.appendChild(r);
+  });
+  if(owner){
+    const ns=vs.filter(v=>typeof v.note==="string"&&v.note);
+    notes.hidden=!ns.length;
+    ns.forEach(v=>{const li=document.createElement('li');li.textContent=v.note.slice(0,600);
+      const sp=document.createElement('span');sp.textContent=(typeof v.name==="string"&&v.name)?v.name.slice(0,40):"bez jména";
+      li.prepend(sp);notes.appendChild(li)});
+  }
+}
+(async()=>{
+  if(!window.claude||!window.claude.use)return;
+  try{
+    const [d,u]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!d)return;
+    db=d;
+    if(u){uid=await u.id();owner=await u.isOwner()}
+    if(uid){
+      try{
+        const me=await db.collection("votes").doc(uid).get();const v=me.exists&&me.data();
+        if(v){
+          ROWS.forEach(([k])=>{if(ok(v[k])){const r=document.getElementById('r-'+k+'-'+v[k]);if(r)r.checked=true}});
+          if(typeof v.note==="string")document.getElementById('v-note').value=v.note.slice(0,600);
+          if(typeof v.name==="string")document.getElementById('v-name').value=v.name.slice(0,40);
+          say("Načetl jsem tvůj předchozí hlas. Můžeš ho upravit.");
+        }
+      }catch(e){}
+    }
+    document.getElementById('t-empty').textContent="Načítám hlasy…";
+    db.collection("votes").onSnapshot(q=>renderTally(q.docs),()=>{document.getElementById('t-empty').textContent="Výsledky teď nejdou načíst. Hlasovat můžeš dál."});
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
