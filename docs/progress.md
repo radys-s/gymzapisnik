@@ -11,6 +11,7 @@
 | 2026-10-28 | bidnej / bidnej/beta8 | Koncepty v2: 20 brandových směrů s animacemi |
 | 2026-10-28 | bidnej / bidnej/beta8 | Vzhled „Závod“ podle hlasování testerů (F1 + telemetrie), nový výchozí |
 | 2026-10-28 | bidnej / bidnej/beta8 | Finalisté 01–03: vlastní rozhraní pro priority, trénink, zápis série a stravu |
+| 2026-10-30 | tomas / tomas/finaliste | Finále pro testery: mobilní verze, vítěz, zpětný odkaz, hlasování, publikováno |
 
 ## 2026-10-27 — Bezpečnostní update závislostí (Black October)
 
@@ -179,3 +180,32 @@ Nastavení) určí pořadí Síla / Strava / Regenerace / Deník. Běh je volite
 a slot BOX v 03 omylem dědil žlutou barvu pit stopu.
 
 **Další krok:** hlasování testerů po obrazovkách, pak Priority do aplikace (onboarding + Nastavení).
+
+## 2026-10-30 · Finále pro testery na mobilu + hlasování (tomas/finaliste)
+
+**Co a proč:** testeři otevírají odkaz na telefonu, ale stránka finalistů měla tři telefony vedle sebe
+(1136 px na řádek). Na úzké obrazovce je teď každý řádek karusel na swipe se zarážkou (scroll-snap)
+a telefony jsou zmenšené na 80 % (`zoom:.8`, 288 px). Nad každým telefonem je štítek konceptu, protože
+lepicí hlavička sloupců na mobilu nedává smysl. Na široké obrazovce zůstává mřížka a hlavička
+konečně lepí (dřív ji rozbíjel `overflow-x` na obalu).
+
+**Přidáno:**
+- Horní lišta: odkaz zpět na 20 konceptů z 1. kola a tlačítko „Hlasovat“.
+- Pruh „P1 · Vítěz 1. kola: 03 Pit wall“ a žlutý štítek vítěze u sloupce i u telefonů.
+- Formulář: u každé z 4 obrazovek a „celkově“ volba 01/02/03, poznámka, přezdívka.
+  Hlas se ukládá do databáze artefaktu (`votes/<id>`, každý přepisuje jen svůj, čtou všichni),
+  průběžné výsledky se kreslí živě, poznámky vidí jen Tomáš.
+- Kdo není přihlášený na claude.ai, dostane hotový text hlasu a tlačítko „Zkopírovat“, ať ho pošle zprávou.
+- Animace telefonů: místo pozastavení (prvky visely na průhlednosti 0) se před zobrazením nespouští
+  vůbec, takže stránka je kompletní i bez scrollování.
+- Stránka konceptů má nahoře odkaz na finále a Pit wall štítek „vítěz 1. kola“.
+
+**Ověření:** 390 px: tělo stránky bez přetečení, řádky 956/390 px scrollují samy, telefon 288 px,
+0 chyb v konzoli; odeslání bez přihlášení ukáže text k zkopírování. Databáze hlasů po publikaci
+odpovídá (prázdná kolekce `votes`).
+
+**Odkazy:** finále https://claude.ai/code/artifact/8b5559c5-c88d-424d-9f8e-b5b305effb40 ·
+koncepty https://claude.ai/code/artifact/507b7536-4470-4ca8-88ba-debc3dacd292
+(soukromé, Tomáš je musí sdílet přes Share).
+
+**Další krok:** sesbírat hlasy, podle nich složit obrazovky a udělat onboarding priorit v aplikaci.
