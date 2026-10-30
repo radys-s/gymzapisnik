@@ -970,6 +970,18 @@ class AppState extends ChangeNotifier {
       (p, _suggestFor(p, exerciseHistory(workouts, p.exerciseId))),
   ];
 
+  /// Návrh na příští provedení cviku: rozsah z programu, když ho program
+  /// má, jinak 3 × 8–12.
+  Suggestion nextSuggestion(String exerciseId) {
+    final planned =
+        split?.days
+            .expand((d) => d.exercises)
+            .where((p) => p.exerciseId == exerciseId)
+            .firstOrNull ??
+        PlannedExercise(exerciseId, sets: 3, repMin: 8, repMax: 12);
+    return _suggestFor(planned, exerciseHistory(workouts, exerciseId));
+  }
+
   /// Startovní váha poprvé (i bez Pro), potom návrh kouče.
   Suggestion _suggestFor(PlannedExercise p, List<ExerciseSession> history) =>
       has(ProFeature.coach) || history.isEmpty

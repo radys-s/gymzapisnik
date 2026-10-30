@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
+import 'motion.dart';
 
 /// Stránka s velkým nadpisem (iOS): nadpis 34 pt v obsahu, po posunu
 /// se objeví malý nadpis v liště a pod ní tenká linka.
@@ -968,11 +969,18 @@ class StatTile extends StatelessWidget {
   final String value;
   final String label;
   final CrossAxisAlignment align;
+
+  /// Když je zadané, hodnota při prvním zobrazení napočítá k [countTo]
+  /// a vypíše se přes [format] (jinak se ukáže [value]).
+  final double? countTo;
+  final String Function(double v)? format;
   const StatTile(
     this.value,
     this.label, {
     super.key,
     this.align = CrossAxisAlignment.start,
+    this.countTo,
+    this.format,
   });
 
   @override
@@ -988,11 +996,17 @@ class StatTile extends StatelessWidget {
           alignment: align == CrossAxisAlignment.end
               ? Alignment.centerRight
               : Alignment.centerLeft,
-          child: Text(
-            value,
-            style: text.titleLarge?.copyWith(fontFeatures: tabular),
-            maxLines: 1,
-          ),
+          child: countTo != null && format != null
+              ? CountUp(
+                  value: countTo!,
+                  format: format!,
+                  style: text.titleLarge?.copyWith(fontFeatures: tabular),
+                )
+              : Text(
+                  value,
+                  style: text.titleLarge?.copyWith(fontFeatures: tabular),
+                  maxLines: 1,
+                ),
         ),
         FittedBox(
           fit: BoxFit.scaleDown,

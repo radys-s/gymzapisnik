@@ -48,6 +48,11 @@ class Achievement {
     this.metric,
     this.target,
   );
+
+  /// Drobnost podle času začátku: po tréninku se ukáže menší než
+  /// skutečné milníky.
+  bool get bonus =>
+      metric == BadgeMetric.earlyStarts || metric == BadgeMetric.lateStarts;
 }
 
 const achievements = <Achievement>[

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 /// Jeden zdroj pravdy pro pohyb: doby, křivka a rozestupy.
@@ -64,6 +66,7 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
     curve: Motion.curve,
   );
   bool _started = false;
+  Timer? _delay;
 
   @override
   void didChangeDependencies() {
@@ -74,13 +77,12 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
       _c.value = 1;
       return;
     }
-    Future.delayed(Motion.stagger * widget.index, () {
-      if (mounted) _c.forward();
-    });
+    _delay = Timer(Motion.stagger * widget.index, _c.forward);
   }
 
   @override
   void dispose() {
+    _delay?.cancel();
     _c.dispose();
     super.dispose();
   }
