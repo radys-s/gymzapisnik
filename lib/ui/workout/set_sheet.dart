@@ -280,7 +280,9 @@ class _ValueState extends State<_Value> {
                   backgroundColor: p.fill,
                   foregroundColor: p.label,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Radii.control),
+                    borderRadius: BorderRadius.circular(
+                      context.palette.controlRadius,
+                    ),
                   ),
                 ),
                 icon: Icon(icon),

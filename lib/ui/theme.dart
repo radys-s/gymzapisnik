@@ -70,8 +70,16 @@ ThemeData buildTheme(
         height: 1.25,
       );
   // Závod: nadpisy a čísla tučná kurzíva jako na grafice závodů.
+  // Tensor: úzké tučné písmo jako na datové tabuli, těsné řádky.
   TextStyle race(TextStyle style) => p.pitwall
       ? style.copyWith(fontStyle: FontStyle.italic, fontWeight: FontWeight.w900)
+      : p.tensor
+      ? style.copyWith(
+          fontFamily: condensedFont,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.2,
+          height: 1.05,
+        )
       : style;
   final text = t.copyWith(
     displaySmall: race(s(t.displaySmall, 40, FontWeight.w700, -0.8)),
@@ -102,11 +110,13 @@ ThemeData buildTheme(
   );
 
   final control = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(Radii.control),
+    borderRadius: BorderRadius.circular(p.controlRadius),
   );
   // Studio má tlačítka jako tablety, Aurora zaoblené obdélníky.
-  final OutlinedBorder buttonShape = p.pitwall
-      ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))
+  final OutlinedBorder buttonShape = p.telemetry
+      ? RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(p.controlRadius),
+        )
       : studio
       ? const StadiumBorder()
       : control;
@@ -131,7 +141,9 @@ ThemeData buildTheme(
       actionsIconTheme: IconThemeData(color: p.accent),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: p.pitwall
+      backgroundColor: p.tensor
+          ? Colors.black
+          : p.pitwall
           ? const Color(0xFF0E0E15)
           : studio
           ? p.background
@@ -165,7 +177,7 @@ ThemeData buildTheme(
       elevation: 0,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: p.cardRadius()),
+      shape: p.cardShape(),
     ),
     listTileTheme: ListTileThemeData(
       iconColor: p.secondaryLabel,
@@ -192,23 +204,23 @@ ThemeData buildTheme(
       prefixIconColor: p.secondaryLabel,
       suffixIconColor: p.secondaryLabel,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
         borderSide: BorderSide(color: p.accent, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
         borderSide: BorderSide(color: p.negative),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
         borderSide: BorderSide(color: p.negative, width: 1.5),
       ),
     ),
@@ -268,7 +280,11 @@ ThemeData buildTheme(
       backgroundColor: p.accent,
       foregroundColor: scheme.onPrimary,
       elevation: 0,
-      shape: const StadiumBorder(),
+      shape: p.tensor
+          ? const BeveledRectangleBorder(
+              borderRadius: BorderRadius.only(topRight: Radius.circular(10)),
+            )
+          : const StadiumBorder(),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
@@ -345,9 +361,11 @@ ThemeData buildTheme(
       elevation: 0,
       titleTextStyle: text.titleMedium,
       contentTextStyle: text.bodyMedium,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.sheet),
-      ),
+      shape: p.tensor
+          ? p.cardShape()
+          : RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(Radii.sheet),
+            ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: p.grouped,
@@ -358,8 +376,10 @@ ThemeData buildTheme(
       showDragHandle: true,
       dragHandleColor: p.tertiaryLabel,
       dragHandleSize: const Size(36, 5),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(p.tensor ? 2 : Radii.sheet),
+        ),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -373,7 +393,7 @@ ThemeData buildTheme(
       elevation: 0,
       insetPadding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.m),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
@@ -382,7 +402,7 @@ ThemeData buildTheme(
       elevation: 8,
       textStyle: text.bodyLarge,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(p.controlRadius),
       ),
     ),
     tooltipTheme: TooltipThemeData(

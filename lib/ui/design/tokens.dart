@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 /// Vzhled aplikace. `auto` = ve světlém režimu Aurora, v tmavém Studio.
-/// `pitwall` (Závod) vybrali testeři: vždy tmavý, závodní červená.
+/// `tensor` vyhrál finále testerů (3 ze 4 hlasů) a je výchozí: vždy
+/// tmavý, NVIDIA zelená, data a telemetrie. `pitwall` (Závod) zůstává.
 enum Look {
+  tensor('Tensor', 'Vždy tmavý: data a telemetrie, zelená na černé'),
   pitwall('Závod', 'Vždy tmavý: závodní červená, telemetrie, velká čísla'),
   auto('Automaticky', 'Ve dne Aurora, v noci Studio'),
   aurora('Aurora', 'Světlé plochy a barevná hlavní karta'),
@@ -12,10 +14,12 @@ enum Look {
   final String description;
   const Look(this.label, this.description);
 
-  static Look parse(Object? value) => Look.values.firstWhere(
-    (l) => l.name == value,
-    orElse: () => Look.pitwall,
-  );
+  static Look parse(Object? value) =>
+      Look.values.firstWhere((l) => l.name == value, orElse: () => Look.tensor);
+
+  /// Vlastní pevná paleta a jen tmavý režim: barva motivu ani volba
+  /// světlý / tmavý na něj nepůsobí.
+  bool get fixed => this == Look.tensor || this == Look.pitwall;
 
   /// Konkrétní vzhled pro světlý nebo tmavý režim.
   Look resolve(Brightness b) => this == Look.auto
@@ -208,6 +212,31 @@ class AppPalette extends ThemeExtension<AppPalette> {
       );
     }
 
+    if (resolved == Look.tensor) {
+      // Tensor: černá jako displej, karty o stupeň světlejší s linkou,
+      // zelená jen tam, kde se rozhoduje (akce, rekordy, postup).
+      return AppPalette(
+        background: Colors.black,
+        grouped: const Color(0xFF0B0B0B),
+        elevated: const Color(0xFF161616),
+        separator: const Color(0xFF242424),
+        label: Colors.white,
+        secondaryLabel: const Color(0xFF8E8E8E),
+        tertiaryLabel: const Color(0xFF5C5C5C),
+        fill: const Color(0xFF1A1A1A),
+        accent: tensorGreen,
+        onAccent: Colors.black,
+        gradient: const [tensorGreen, Color(0xFF9AD61C), Color(0xFFB6F23A)],
+        onGradient: Colors.black,
+        cta: tensorGreen,
+        onCta: Colors.black,
+        positive: tensorGreen,
+        negative: const Color(0xFFFF5C5C),
+        preset: accent,
+        look: resolved,
+      );
+    }
+
     if (resolved == Look.pitwall) {
       // Závod: noční boxová zeď. Plochy do modré, hlavní akce plná
       // závodní červená s bílým textem, odkazy světlejší červenou.
@@ -298,16 +327,40 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Závodní vzhled (F1 + telemetrie).
   bool get pitwall => look == Look.pitwall;
 
+  /// Datový vzhled (Tensor).
+  bool get tensor => look == Look.tensor;
+
+  /// Telemetrie: Tensor i Závod (tabule rekordů, velké nadpisy, ŽIVĚ).
+  bool get telemetry => pitwall || tensor;
+
   /// Závodní červená: hlavní akce, pruhy karet a světla startu.
   static const raceRed = Color(0xFFE10600);
 
-  /// Zaoblení karty; v Závodě ostrý levý okraj s pruhem a měkčí pravý.
+  /// Zelená Tensoru a druhá datová barva (sacharidy, únava).
+  static const tensorGreen = Color(0xFF76B900);
+  static const tensorCyan = Color(0xFF2AD1FF);
+
+  /// Zaoblení karty; v Závodě ostrý levý okraj s pruhem a měkčí pravý,
+  /// v Tensoru skoro ostré rohy.
   BorderRadius cardRadius([double r = Radii.card]) => pitwall
       ? const BorderRadius.horizontal(
           left: Radius.circular(4),
           right: Radius.circular(12),
         )
+      : tensor
+      ? BorderRadius.circular(2)
       : BorderRadius.circular(r);
+
+  /// Tvar karty. Tensor: zkosený pravý horní roh a tenká linka.
+  ShapeBorder cardShape([double r = Radii.card]) => tensor
+      ? BeveledRectangleBorder(
+          borderRadius: const BorderRadius.only(topRight: Radius.circular(12)),
+          side: BorderSide(color: separator),
+        )
+      : RoundedRectangleBorder(borderRadius: cardRadius(r));
+
+  /// Zaoblení tlačítek a polí.
+  double get controlRadius => telemetry ? (tensor ? 2 : 4) : Radii.control;
 
   static Color _lift(Color c) {
     final h = HSLColor.fromColor(c);
@@ -378,6 +431,9 @@ abstract final class Radii {
 
 /// Nejmenší dotyková plocha (Apple HIG).
 const minTap = 44.0;
+
+/// Úzké tučné písmo Tensoru pro nadpisy, štítky a čísla.
+const condensedFont = 'Barlow Condensed';
 
 /// Čísla se stejnou šířkou číslic, aby hodnoty neposkakovaly.
 const tabular = [FontFeature.tabularFigures()];

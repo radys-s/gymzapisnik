@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/app.dart';
 import 'package:gymzapisnik/domain/profile.dart';
 import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
@@ -47,11 +48,12 @@ void main() {
     expect(p.withExtra({'tab': 2, 'lastTab': 1}).lastTab, 2);
     expect(next.welcomeSeen, isTrue);
     expect(p.withExtra({'accent': 'bogus'}).accent, 'lime');
-    expect(p.look, 'pitwall');
+    expect(p.look, 'tensor');
+    expect(p.withExtra({'look': 'pitwall'}).look, 'pitwall');
     expect(p.withExtra({'look': 'auto'}).look, 'auto');
     expect(p.withExtra({'look': 'studio'}).look, 'studio');
-    expect(p.withExtra({'look': 'bogus'}).look, 'pitwall');
-    expect(Look.parse(null), Look.pitwall);
+    expect(p.withExtra({'look': 'bogus'}).look, 'tensor');
+    expect(Look.parse(null), Look.tensor);
     expect(Accent.parse('lagoon'), Accent.lagoon);
     expect(Accent.parse(null), Accent.lime);
   });
@@ -65,7 +67,53 @@ void main() {
         expect(p.cta, AppPalette.raceRed);
       }
     }
-    expect(Look.values.first, Look.pitwall);
+  });
+
+  test('tensor is the default: always dark, fixed green, beveled cards', () {
+    expect(Look.values.first, Look.tensor);
+    expect(Look.tensor.fixed, isTrue);
+    expect(Look.aurora.fixed, isFalse);
+    for (final accent in Accent.values) {
+      for (final b in Brightness.values) {
+        final p = buildTheme(b, accent, Look.tensor).extension<AppPalette>()!;
+        expect(p.tensor && p.telemetry, isTrue);
+        expect(p.background, Colors.black);
+        expect(p.cta, AppPalette.tensorGreen);
+        expect(p.cardShape(), isA<BeveledRectangleBorder>());
+      }
+    }
+    expect(
+      appFrame(
+        home: const SizedBox(),
+        look: Look.tensor,
+        theme: 'light',
+      ).themeMode,
+      ThemeMode.dark,
+    );
+  });
+
+  testWidgets('tensor shows one green segment per exercise, lit at once '
+      'with reduced motion', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark, Accent.lime, Look.tensor),
+        home: const MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: StartLights(count: 4, caption: '4 cviky · ~40 min'),
+          ),
+        ),
+      ),
+    );
+    final lit = tester
+        .widgetList<Container>(find.byType(Container))
+        .where(
+          (c) =>
+              c.decoration is BoxDecoration &&
+              (c.decoration! as BoxDecoration).color == AppPalette.tensorGreen,
+        );
+    expect(lit.length, 4);
+    expect(find.text('4 cviky · ~40 min'), findsOneWidget);
   });
 
   testWidgets(

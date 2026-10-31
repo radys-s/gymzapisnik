@@ -79,6 +79,18 @@ flutter:
   # Fotky cviků z free-exercise-db (public domain, viz assets/exercises/LICENSE).
   assets:
     - assets/exercises/
+    - assets/fonts/OFL-BarlowCondensed.txt
+
+  # Tensor: úzké tučné písmo pro nadpisy a čísla (SIL OFL 1.1).
+  fonts:
+    - family: Barlow Condensed
+      fonts:
+        - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BarlowCondensed-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

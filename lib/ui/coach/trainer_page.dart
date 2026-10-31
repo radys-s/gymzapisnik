@@ -494,7 +494,7 @@ class _Bubble extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: mine ? p.accent : p.elevated,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: context.palette.cardRadius(),
       ),
       child: m == null
           ? Text(

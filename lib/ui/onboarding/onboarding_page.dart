@@ -697,7 +697,7 @@ class _WeekDay extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: on ? p.linear : null,
         color: on ? null : p.fill,
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(context.palette.controlRadius),
       ),
       child: Text(
         label,

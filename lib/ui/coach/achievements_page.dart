@@ -104,7 +104,7 @@ class BadgeTile extends StatelessWidget {
       label:
           '${b.title}, ${state.unlocked ? 'odemčeno' : badgeProgressLabel(state)}',
       child: InkWell(
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(context.palette.controlRadius),
         onTap: () => _details(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: Space.xs),

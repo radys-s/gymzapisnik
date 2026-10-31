@@ -202,7 +202,7 @@ class SettingsPage extends StatelessWidget {
                   value: restOptions.contains(rest) ? rest : null,
                   hint: Text(restLabel(rest)),
                   underline: const SizedBox.shrink(),
-                  borderRadius: BorderRadius.circular(Radii.card),
+                  borderRadius: context.palette.cardRadius(),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: p.secondaryLabel,
                     fontFeatures: tabular,
@@ -222,7 +222,7 @@ class SettingsPage extends StatelessWidget {
                 trailing: DropdownButton<double>(
                   value: profile.weightStep,
                   underline: const SizedBox.shrink(),
-                  borderRadius: BorderRadius.circular(Radii.card),
+                  borderRadius: context.palette.cardRadius(),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: p.secondaryLabel,
                     fontFeatures: tabular,
@@ -307,8 +307,8 @@ class SettingsPage extends StatelessWidget {
             header: 'Vzhled',
             dividerIndent: _indent,
             children: [
-              // Závod je vždy tmavý, volba světla by nic nezměnila.
-              if (Look.parse(profile.look) != Look.pitwall)
+              // Tensor a Závod jsou vždy tmavé, volba světla by nic nezměnila.
+              if (!Look.parse(profile.look).fixed)
                 Padding(
                   padding: const EdgeInsets.all(Space.m),
                   child: SegmentedButton<String>(
@@ -327,8 +327,8 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.palette_outlined,
                 iconColor: p.gradient.last,
                 title: 'Vzhled a barva',
-                subtitle: Look.parse(profile.look) == Look.pitwall
-                    ? Look.pitwall.label
+                subtitle: Look.parse(profile.look).fixed
+                    ? Look.parse(profile.look).label
                     : '${Look.parse(profile.look).label} · '
                           '${Accent.parse(profile.accent).label}',
                 onTap: () => Navigator.push(

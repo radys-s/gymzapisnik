@@ -136,7 +136,19 @@ class SectionHeader extends StatelessWidget {
           child: Semantics(
             container: true,
             header: true,
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+            child: context.palette.tensor
+                // Tensor: štítek datové tabule, ne velký nadpis.
+                ? Text(
+                    title,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontFamily: condensedFont,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      letterSpacing: 0.8,
+                      color: context.palette.secondaryLabel,
+                    ),
+                  )
+                : Text(title, style: Theme.of(context).textTheme.titleLarge),
           ),
         ),
         if (action != null)
@@ -195,7 +207,7 @@ class GroupedSection extends StatelessWidget {
             ),
           Material(
             color: p.grouped,
-            borderRadius: p.cardRadius(),
+            shape: p.cardShape(),
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -365,13 +377,7 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    final radius = BorderRadius.circular(
-      p.pitwall
-          ? 4
-          : p.studio
-          ? 26
-          : Radii.control,
-    );
+    final radius = BorderRadius.circular(p.studio ? 26 : p.controlRadius);
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -401,6 +407,33 @@ class PrimaryButton extends StatelessWidget {
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
                         color: p.secondaryLabel,
+                      ),
+                    )
+                  : p.tensor
+                  // Tensor: popisek vlevo úzkým písmem, šipka vpravo.
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              label,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: fg,
+                                fontFamily: condensedFont,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 17,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            icon ?? Icons.arrow_forward,
+                            color: fg,
+                            size: 20,
+                          ),
+                        ],
                       ),
                     )
                   : Row(
@@ -497,6 +530,9 @@ class HeroCard extends StatelessWidget {
     if (vivid && p.pitwall) {
       return _RaceHero(padding: padding, watermark: watermark, child: child);
     }
+    if (vivid && p.tensor) {
+      return _TensorHero(padding: padding, watermark: watermark, child: child);
+    }
     if (!vivid) {
       return Container(
         padding: padding,
@@ -580,6 +616,99 @@ class HeroCard extends StatelessWidget {
     }
     return ClipRRect(borderRadius: radius, child: content);
   }
+}
+
+/// Hlavní karta Tensoru jako datový displej: černá s jemnou mřížkou,
+/// tenká linka, zkosený roh a zelená značka vlevo nahoře. Velké číslo
+/// v pozadí je plné a skoro splývá s podkladem.
+class _TensorHero extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets padding;
+  final String? watermark;
+  const _TensorHero({
+    required this.child,
+    required this.padding,
+    this.watermark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final still = MediaQuery.disableAnimationsOf(context);
+    return Material(
+      color: p.grouped,
+      shape: p.cardShape(),
+      clipBehavior: Clip.antiAlias,
+      child: CustomPaint(
+        painter: const _GridPainter(Color(0xFF141414)),
+        child: Stack(
+          children: [
+            // Zelená rohová značka: tady se rozhoduje.
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(width: 28, height: 3, color: p.accent),
+            ),
+            if (watermark != null)
+              Positioned(
+                right: 44,
+                top: 0,
+                child: ExcludeSemantics(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: still ? 0 : 1, end: 0),
+                    duration: Motion.slow,
+                    curve: Motion.curve,
+                    builder: (context, t, child) => Opacity(
+                      opacity: 1 - t,
+                      child: Transform.translate(
+                        offset: Offset(0, 24 * t),
+                        child: child,
+                      ),
+                    ),
+                    child: Text(
+                      watermark!,
+                      textScaler: TextScaler.noScaling,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: const TextStyle(
+                        fontFamily: condensedFont,
+                        fontSize: 132,
+                        height: 1,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF181818),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(padding: padding, child: child),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Jemná mřížka 22 px jako na měřicím displeji.
+class _GridPainter extends CustomPainter {
+  final Color color;
+  const _GridPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    for (var x = 22.0; x < size.width; x += 22) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 22.0; y < size.height; y += 22) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPainter old) => old.color != color;
 }
 
 /// Hlavní karta Závodu jako karta jezdce: tmavý přechod, červený pruh
@@ -711,6 +840,7 @@ class _StartLightsState extends State<StartLights>
   @override
   Widget build(BuildContext context) {
     final caption = widget.caption;
+    if (context.palette.tensor) return _segments(context, caption);
     return Semantics(
       label: caption,
       excludeSemantics: true,
@@ -753,6 +883,75 @@ class _StartLightsState extends State<StartLights>
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+extension on _StartLightsState {
+  /// Tensor: jeden dílek na cvik, dílky se postupně rozsvítí zeleně.
+  Widget _segments(BuildContext context, String? caption) {
+    final p = context.palette;
+    return Semantics(
+      label: caption,
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final at = _c.value * _total;
+              return Row(
+                children: [
+                  for (var i = 0; i < _n; i++) ...[
+                    if (i > 0) const SizedBox(width: 3),
+                    Expanded(
+                      child: _Segment(
+                        on:
+                            at >=
+                            _StartLightsState._delay +
+                                i * _StartLightsState._step,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+          if (caption != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              caption,
+              style: TextStyle(
+                fontFamily: condensedFont,
+                color: p.secondaryLabel,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Segment extends StatelessWidget {
+  final bool on;
+  const _Segment({required this.on});
+
+  @override
+  Widget build(BuildContext context) {
+    final a = context.palette.accent;
+    return Container(
+      height: 10,
+      decoration: BoxDecoration(
+        color: on ? a : const Color(0xFF1A1A1A),
+        boxShadow: on
+            ? [BoxShadow(color: a.withValues(alpha: 0.5), blurRadius: 8)]
+            : null,
       ),
     );
   }
@@ -876,7 +1075,7 @@ class Panel extends StatelessWidget {
     );
     return Material(
       color: p.grouped,
-      borderRadius: p.cardRadius(),
+      shape: p.cardShape(),
       clipBehavior: Clip.antiAlias,
       // Závod: červený pruh vlevo jako na boxové tabuli.
       child: p.pitwall

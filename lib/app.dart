@@ -47,9 +47,9 @@ MaterialApp appFrame({
   debugShowCheckedModeBanner: false,
   theme: buildTheme(Brightness.light, accent, look),
   darkTheme: buildTheme(Brightness.dark, accent, look),
-  // Závod je jen tmavý, volba světlý / tmavý na něj nepůsobí.
+  // Tensor a Závod jsou jen tmavé, volba světlý / tmavý na ně nepůsobí.
   themeMode: switch (theme) {
-    _ when look == Look.pitwall => ThemeMode.dark,
+    _ when look.fixed => ThemeMode.dark,
     'light' => ThemeMode.light,
     'dark' => ThemeMode.dark,
     _ => ThemeMode.system,

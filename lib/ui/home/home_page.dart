@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
-          if (context.palette.pitwall) _RecordsBoard(state),
+          if (context.palette.telemetry) _RecordsBoard(state),
           if (state.workouts.isNotEmpty && state.active == null) ...[
             const SectionHeader('Regenerace svalů'),
             RecoveryPanel(state: state, now: now, onBuild: _build),
@@ -290,7 +290,7 @@ class _TodayCard extends StatelessWidget {
         (n, e) => n + e.sets.where((s) => s.done).length,
       );
       children.addAll([
-        if (p.pitwall)
+        if (p.telemetry)
           const Padding(
             padding: EdgeInsets.only(bottom: Space.xs),
             child: Align(alignment: Alignment.centerLeft, child: LiveTag()),
@@ -332,7 +332,7 @@ class _TodayCard extends StatelessWidget {
                   ),
                   Text(
                     day.name,
-                    style: p.pitwall ? text.headlineLarge : text.headlineSmall,
+                    style: p.telemetry ? text.displaySmall : text.headlineSmall,
                   ),
                 ],
               ),
@@ -380,7 +380,7 @@ class _TodayCard extends StatelessWidget {
           Text('a další ${plan.length - 5}', style: text.bodySmall),
         const SizedBox(height: Space.m),
         // Jedno světlo na cvik; rozsah tréninku ukáže každý vzhled.
-        if (p.pitwall)
+        if (p.telemetry)
           StartLights(count: plan.length, caption: scope)
         else
           Text(
@@ -491,11 +491,22 @@ class _Eyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 2),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.labelMedium
-          ?.copyWith(color: color, fontWeight: FontWeight.w600),
-    ),
+    child: context.palette.tensor
+        ? Text(
+            text,
+            style: TextStyle(
+              fontFamily: condensedFont,
+              color: color ?? context.palette.secondaryLabel,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
+          )
+        : Text(
+            text,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: color, fontWeight: FontWeight.w600),
+          ),
   );
 }
 
@@ -516,7 +527,7 @@ class _MissionLine extends StatelessWidget {
         padding: const EdgeInsets.all(Space.m),
         decoration: BoxDecoration(
           color: p.fill,
-          borderRadius: BorderRadius.circular(Radii.control),
+          borderRadius: BorderRadius.circular(context.palette.controlRadius),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

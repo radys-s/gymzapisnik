@@ -144,11 +144,36 @@ class _LookSwatch extends StatelessWidget {
       child: Container(height: 7, color: AppPalette.raceRed),
     );
 
+    // Tensor: černý displej s mřížkou a zeleným datovým pruhem.
+    Widget tensor() => Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border.all(color: const Color(0xFF242424)),
+      ),
+      alignment: Alignment.bottomLeft,
+      padding: const EdgeInsets.all(7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final h in const [8.0, 13.0, 18.0])
+            Padding(
+              padding: const EdgeInsets.only(right: 3),
+              child: Container(
+                width: 5,
+                height: h,
+                color: AppPalette.tensorGreen,
+              ),
+            ),
+        ],
+      ),
+    );
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(11),
       child: SizedBox.square(
         dimension: 40,
         child: switch (look) {
+          Look.tensor => tensor(),
           Look.pitwall => pitwall(),
           Look.aurora => aurora(),
           Look.studio => studio(),
@@ -201,8 +226,8 @@ class AppearanceOptions extends StatelessWidget {
           selected: Look.parse(state.profile.look),
           onChanged: (l) => saveLook(context, state, l),
         ),
-        // Závod má pevnou závodní červenou, barva motivu by nic nezměnila.
-        if (Look.parse(state.profile.look) != Look.pitwall)
+        // Tensor a Závod mají pevnou paletu, barva motivu by nic nezměnila.
+        if (!Look.parse(state.profile.look).fixed)
           AccentPicker(
             selected: Accent.parse(state.profile.accent),
             onChanged: (a) => saveAccent(context, state, a),

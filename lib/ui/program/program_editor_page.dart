@@ -534,7 +534,7 @@ class _ExerciseRow extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.control),
+        borderRadius: BorderRadius.circular(context.palette.controlRadius),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: minTap),
           child: Padding(

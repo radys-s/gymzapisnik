@@ -358,7 +358,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 button: true,
                 hint: 'Přejmenovat trénink',
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(Radii.control),
+                  borderRadius: BorderRadius.circular(
+                    context.palette.controlRadius,
+                  ),
                   onTap: () => _rename(workout),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,7 +729,9 @@ class _ExerciseCard extends StatelessWidget {
                 Expanded(
                   // Fotka a název otevřou kartu cviku: technika, svaly.
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(Radii.control),
+                    borderRadius: BorderRadius.circular(
+                      context.palette.controlRadius,
+                    ),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => ExerciseDetailPage(state, exercise.id),
@@ -1126,7 +1130,7 @@ class _SetRowState extends State<_SetRow> {
         padding: const EdgeInsets.only(right: Space.xl),
         decoration: BoxDecoration(
           color: p.negative,
-          borderRadius: BorderRadius.circular(Radii.control),
+          borderRadius: BorderRadius.circular(context.palette.controlRadius),
         ),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
@@ -1139,7 +1143,7 @@ class _SetRowState extends State<_SetRow> {
         padding: const EdgeInsets.only(right: _edgeInset),
         decoration: BoxDecoration(
           color: set.done ? p.accent.withValues(alpha: 0.12) : null,
-          borderRadius: BorderRadius.circular(Radii.control),
+          borderRadius: BorderRadius.circular(context.palette.controlRadius),
         ),
         child: Row(
           children: [
@@ -1187,7 +1191,9 @@ class _SetRowState extends State<_SetRow> {
                             : set.warmup
                             ? p.accent.withValues(alpha: 0.16)
                             : p.fill,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(
+                          context.palette.tensor ? 2 : 8,
+                        ),
                       ),
                       // Rekordní série má místo čísla pohár.
                       child: record
@@ -1245,7 +1251,9 @@ class _SetRowState extends State<_SetRow> {
                 decoration: BoxDecoration(
                   gradient: set.done ? p.linear : null,
                   color: set.done ? null : p.fill,
-                  borderRadius: BorderRadius.circular(Radii.control),
+                  borderRadius: BorderRadius.circular(
+                    context.palette.controlRadius,
+                  ),
                 ),
                 // Bez tooltipu: na webu po potvrzení visel přes další řádek.
                 // Vlastní uzel s akcí, jinak splyne s řádkem a čtečka
@@ -1265,7 +1273,9 @@ class _SetRowState extends State<_SetRow> {
                           ? p.onGradient
                           : p.secondaryLabel,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(Radii.control),
+                        borderRadius: BorderRadius.circular(
+                          context.palette.controlRadius,
+                        ),
                       ),
                     ),
                     icon: AnimatedScale(

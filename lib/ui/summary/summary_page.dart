@@ -551,7 +551,9 @@ class _BadgesPanel extends StatelessWidget {
           ],
           for (final b in main)
             InkWell(
-              borderRadius: BorderRadius.circular(Radii.control),
+              borderRadius: BorderRadius.circular(
+                context.palette.controlRadius,
+              ),
               onTap: open,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: Space.xs),
@@ -576,7 +578,9 @@ class _BadgesPanel extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(top: main.isEmpty ? 0 : Space.s),
               child: InkWell(
-                borderRadius: BorderRadius.circular(Radii.control),
+                borderRadius: BorderRadius.circular(
+                  context.palette.controlRadius,
+                ),
                 onTap: open,
                 child: Wrap(
                   spacing: Space.s,
