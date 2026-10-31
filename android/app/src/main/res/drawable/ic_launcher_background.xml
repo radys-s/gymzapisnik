@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pozadí adaptivní ikony: limetkový gradient. -->
+<!-- Pozadí adaptivní ikony: černá jako ikona Tensor, zespodu jemná zelená záře. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient
-        android:angle="315"
+        android:centerX="0.5"
+        android:centerY="0.45"
         android:endColor="@color/icon_gradient_end"
+        android:gradientRadius="60%p"
         android:startColor="@color/icon_gradient_start"
-        android:type="linear" />
+        android:type="radial" />
 </shape>

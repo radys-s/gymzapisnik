@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bloom" cx="50%" cy="50%" r="55%">
+      <stop offset="0" stop-color="#76b900" stop-opacity=".42"/>
+      <stop offset=".45" stop-color="#3d6a00" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="45%" r="75%">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".85"/>
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#1d2a10" stroke-width="3"/>
+    </pattern>
+    <radialGradient id="gridfade" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <mask id="gm"><rect width="1024" height="1024" fill="url(#gridfade)"/></mask>
+    <!-- kotouče: světlo shora, tmavší spodek, svítící hrana -->
+    <linearGradient id="hot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d8ff7a"/>
+      <stop offset=".18" stop-color="#9be21c"/>
+      <stop offset=".7" stop-color="#76b900"/>
+      <stop offset="1" stop-color="#3f6600"/>
+    </linearGradient>
+    <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fb81f"/>
+      <stop offset=".5" stop-color="#4c7d08"/>
+      <stop offset="1" stop-color="#253f02"/>
+    </linearGradient>
+    <linearGradient id="low" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f6e1e"/>
+      <stop offset="1" stop-color="#16240a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".45" stop-color="#cfd3d6"/>
+      <stop offset=".55" stop-color="#7d8287"/>
+      <stop offset="1" stop-color="#3a3d40"/>
+    </linearGradient>
+    <linearGradient id="refl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".5"/>
+      <stop offset=".6" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="rm"><rect x="0" y="790" width="1024" height="234" fill="url(#refl)"/></mask>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="26" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+    <g id="bar">
+      <!-- osa s objímkami -->
+      <rect x="64" y="484" width="896" height="56" fill="url(#steel)"/>
+      <rect x="146" y="466" width="30" height="92" fill="url(#steel)"/>
+      <rect x="848" y="466" width="30" height="92" fill="url(#steel)"/>
+      <!-- vnější, střední, vnitřní kotouč; vnitřní nejvyšší a svítí -->
+      <path d="M190 400H222L232 410V624H190Z" fill="url(#low)"/>
+      <path d="M802 400H834V624H792V410Z" fill="url(#low)" transform="translate(0 0)"/>
+      <path d="M244 318H292L306 332V706H244Z" fill="url(#mid)"/>
+      <path d="M718 318H766L780 332V706H718Z" fill="url(#mid)"/>
+      <g filter="url(#glow)">
+        <path d="M322 196H384L408 220V828H322Z" fill="url(#hot)"/>
+        <path d="M616 196H678L702 220V828H616Z" fill="url(#hot)"/>
+      </g>
+      <!-- odlesk na hraně -->
+      <rect x="326" y="226" width="6" height="590" fill="#efffc4" opacity=".7"/>
+      <rect x="620" y="226" width="6" height="590" fill="#efffc4" opacity=".7"/>
+      <!-- grip uprostřed -->
+      <g stroke="#2c2f31" stroke-width="3">
+        <path d="M440 490V534M458 490V534M476 490V534M548 490V534M566 490V534M584 490V534"/>
+      </g>
+    </g>
+  </defs>
+  <rect id="bg" width="1024" height="1024" fill="#000"/>
+  <rect id="bg-grid" width="1024" height="1024" fill="url(#grid)" mask="url(#gm)"/>
+  <rect id="bg-bloom" width="1024" height="1024" fill="url(#bloom)"/>
+  <!-- odraz na lesklé podlaze -->
+  <g mask="url(#rm)" opacity=".9"><use href="#bar" transform="translate(0 1658) scale(1 -1)" filter="url(#soft)"/></g>
+  <rect id="bg-floor" x="0" y="828" width="1024" height="3" fill="#76b900" opacity=".5"/>
+  <use href="#bar"/>
+  <rect id="bg-vig" width="1024" height="1024" fill="url(#vig)"/>
+</svg>
