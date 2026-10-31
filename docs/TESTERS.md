@@ -51,7 +51,7 @@ Při spuštění uvidíš krátkou radu nebo motivační větu; klepnutím ji p�
 
 ## Android (APK)
 
-1. Stáhni soubor `gymzapisnik.apk`, který ti poslal Tomáš.
+1. Stáhni soubor `gymzapisnik.apk`, který ti poslal autor aplikace.
 2. Otevři ho. Telefon se zeptá, jestli povolit instalaci z tohoto zdroje: povol.
 3. Nainstaluj a otevři. Při zapnutí připomínek (Nastavení → Připomínky) povol oznámení.
 
@@ -72,7 +72,7 @@ podepsaná zdarma po 7 dnech přestane běžet a s ní i oznámení; obnov ji v 
 
 ## iPhone (webová aplikace)
 
-1. V **Safari** otevři adresu aplikace, kterou ti poslal Tomáš.
+1. V **Safari** otevři adresu aplikace, kterou ti poslal autor aplikace.
 2. Klepni na tlačítko Sdílet (čtvereček se šipkou) → **Přidat na plochu** → Přidat.
 3. Spouštěj ji z ikony na ploše. První spuštění potřebuje internet a dokončené
    stažení offline cache. Pak ověř spuštění v režimu letadlo podle scénáře níže.

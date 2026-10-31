@@ -135,13 +135,13 @@ class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _feedback(BuildContext context) async {
-    await Clipboard.setData(const ClipboardData(text: feedbackContact));
+    await Clipboard.setData(ClipboardData(text: feedbackContact));
     if (!context.mounted) return;
     await showAdaptiveDialog<void>(
       context: context,
       builder: (dialog) => AlertDialog.adaptive(
         title: const Text('Zpětná vazba'),
-        content: const Text(
+        content: Text(
           'Napiš na $feedbackContact (adresa je zkopírovaná). Připiš verzi '
           '$appVersion a co jsi dělal.',
         ),
@@ -487,14 +487,15 @@ class SettingsPage extends StatelessWidget {
                 'trenéra ani lékaře.',
             dividerIndent: _indent,
             children: [
-              GroupedRow(
-                icon: Icons.mail_outline_rounded,
-                iconColor: _blue,
-                title: 'Napsat zpětnou vazbu',
-                subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
-                chevron: false,
-                onTap: () => _feedback(context),
-              ),
+              if (feedbackContact.isNotEmpty)
+                GroupedRow(
+                  icon: Icons.mail_outline_rounded,
+                  iconColor: _blue,
+                  title: 'Napsat zpětnou vazbu',
+                  subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
+                  chevron: false,
+                  onTap: () => _feedback(context),
+                ),
               GroupedRow(
                 icon: Icons.auto_awesome_outlined,
                 iconColor: _purple,

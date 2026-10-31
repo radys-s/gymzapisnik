@@ -43,6 +43,8 @@ export interface Env {
   AI: AiBinding;
   QUOTA: QuotaStore;
   MODEL?: string;
+  /** Textový model jen pro trenéra (bez obrázků); jinak MODEL. */
+  COACH_MODEL?: string;
   ALLOWED_ORIGINS?: string;
   FRIDGE_PER_INSTALL?: string;
   MEALS_PER_INSTALL?: string;
@@ -201,8 +203,9 @@ async function runValidated<T>(
   input: Record<string, unknown>,
   validate: (raw: unknown) => T | null,
   now: Date,
+  modelOverride?: string,
 ): Promise<T | null | "exhausted"> {
-  const model = env.MODEL || DEFAULT_MODEL;
+  const model = modelOverride || env.MODEL || DEFAULT_MODEL;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const out = (await env.AI.run(model, input)) as { response?: unknown };
@@ -348,11 +351,14 @@ async function handle(
           },
           ...parsed.messages,
         ],
-        max_tokens: 600,
-        temperature: 0.4,
+        max_tokens: 450,
+        temperature: 0.3,
+        // Méně opakování stejných vět v jedné odpovědi.
+        frequency_penalty: 0.4,
       },
       validateCoach,
       now,
+      env.COACH_MODEL,
     );
     if (reply === "exhausted") return exhausted(origin);
     if (reply === null) {
