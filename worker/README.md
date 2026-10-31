@@ -67,7 +67,7 @@ plan) are optional environment variables. Build the app with
 ## Deployed
 
 `https://gymzapisnik-ai.gymzapisnik-ai.workers.dev` (Workers Free plan, KV
-namespace `QUOTA` id in `wrangler.toml`). First live check 2026-10-08: fridge
+namespace `QUOTA` id in the local, git-ignored `wrangler.toml`). First live check 2026-10-08: fridge
 photo ~4 s, meal ideas ~13 s, `guided_json` with nullable types accepted.
 Redeploy after changes, from `worker/`: `npx wrangler deploy` (wrangler is a local dev dependency, not global). Routes `/v1/machine` and `/v1/coach` deployed 2026-10-22, coach answered live in Czech.
 
@@ -78,7 +78,8 @@ npx wrangler login
 npx wrangler kv namespace create QUOTA
 ```
 
-Paste the returned `id` into `wrangler.toml` (`[[kv_namespaces]]`), add the
+Copy `wrangler.example.toml` to `wrangler.toml` (the real file is git-ignored, it holds
+account-specific ids), paste the returned `id` into it (`[[kv_namespaces]]`), add the
 PWA origin to `ALLOWED_ORIGINS`, then:
 
 ```bash

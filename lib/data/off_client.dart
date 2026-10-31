@@ -67,7 +67,9 @@ abstract interface class ProductLookup {
   Future<LookupResult> byBarcode(String barcode);
 }
 
-const offUserAgent = 'GymZapisnik/$appVersion ($feedbackContact)';
+final offUserAgent =
+    'GymZapisnik/$appVersion '
+    '(${feedbackContact.isEmpty ? projectUrl : feedbackContact})';
 
 class OffClient implements ProductLookup {
   OffClient({

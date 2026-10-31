@@ -148,7 +148,14 @@ Map<String, dynamic> coachContext({
     'thisWeek': {
       'workouts': week.workouts,
       'sets': week.sets,
-      if (mission != null) 'daysLeftInclToday': mission.daysLeft,
+      if (mission != null) ...{
+        'daysLeftInclToday': mission.daysLeft,
+        'remaining': mission.remaining,
+      },
+      // Zbylé dny týdne jménem, ať model neplánuje do příštího týdne.
+      'restOfWeek': [
+        for (var d = now.toLocal().weekday; d <= 7; d++) _weekdays[d - 1],
+      ],
     },
     if (trainingDays != null && trainingDays.isNotEmpty)
       'trainingDays': [for (final d in trainingDays) _weekdays[d - 1]],

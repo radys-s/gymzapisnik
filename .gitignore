@@ -54,3 +54,16 @@ prof*/
 
 # lokální výstupy balení
 dist/
+
+# Soukromé a interní: zůstávají jen lokálně (2026-10-31)
+/docs/progress.md
+/docs/REVIEW.md
+/docs/D1_REVIEW.md
+/docs/napady/
+/docs/design/
+/docs/private/
+/tool/finale-site/
+# Konfigurace nasazení s ID účtu; vzor je worker/wrangler.example.toml
+/worker/wrangler.toml
+# Lokální build hodnoty (--dart-define-from-file)
+/config/*.local.json
