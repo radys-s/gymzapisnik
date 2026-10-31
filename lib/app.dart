@@ -11,6 +11,7 @@ import 'ui/home/home_page.dart';
 import 'ui/nutrition/nutrition_page.dart';
 import 'ui/design/components.dart';
 import 'ui/onboarding/onboarding_page.dart';
+import 'ui/design/motion.dart';
 import 'ui/progress/progress_page.dart';
 import 'ui/theme.dart';
 import 'ui/welcome/whats_new.dart';
@@ -336,7 +337,7 @@ class _BootScreenState extends State<BootScreen> {
                 alignment: const Alignment(0, 0.3),
                 child: AnimatedOpacity(
                   opacity: slow ? 1 : 0,
-                  duration: const Duration(milliseconds: 250),
+                  duration: Motion.of(context, Motion.quick),
                   child: Semantics(
                     container: true,
                     label: 'Načítám',

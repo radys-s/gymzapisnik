@@ -19,7 +19,7 @@ id = "4b5ad09973964d7eb0fb617d0a1e7c02"
 MODEL = "@cf/mistralai/mistral-small-3.1-24b-instruct"
 # Comma-separated browser origins allowed to call the API (PWA hosting).
 # Native apps send no Origin header and are always allowed.
-ALLOWED_ORIGINS = "http://localhost:8080,http://127.0.0.1:8080,http://localhost:8099,http://127.0.0.1:8099"
+ALLOWED_ORIGINS = "https://gymzapisnik-app.gymzapisnik-ai.workers.dev,http://localhost:8080,http://127.0.0.1:8080,http://localhost:8099,http://127.0.0.1:8099"
 FRIDGE_PER_INSTALL = "8"
 MEALS_PER_INSTALL = "20"
 MACHINE_PER_INSTALL = "10"

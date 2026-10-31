@@ -306,9 +306,9 @@ class _TrainerPageState extends State<TrainerPage> {
                       runSpacing: Space.s,
                       children: [
                         for (final q in trainerSuggestions)
-                          ActionChip(
-                            label: Text(q),
-                            onPressed: !waiting ? () => _send(q) : null,
+                          _QuestionChip(
+                            q,
+                            onTap: !waiting ? () => _send(q) : null,
                           ),
                       ],
                     ),
@@ -336,10 +336,7 @@ class _TrainerPageState extends State<TrainerPage> {
                       children: [
                         for (final q in trainerSuggestions)
                           if (!messages.any((m) => m.content == q))
-                            ActionChip(
-                              label: Text(q),
-                              onPressed: () => _send(q),
-                            ),
+                            _QuestionChip(q, onTap: () => _send(q)),
                       ],
                     ),
                   ),
@@ -519,4 +516,22 @@ class _Bubble extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Navržená otázka. Čtečka ji ohlásí jako tlačítko (čip by na webu
+/// hlásila jako zaškrtávací políčko).
+class _QuestionChip extends StatelessWidget {
+  final String question;
+  final VoidCallback? onTap;
+  const _QuestionChip(this.question, {this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    enabled: onTap != null,
+    label: question,
+    onTap: onTap,
+    excludeSemantics: true,
+    child: ActionChip(label: Text(question), onPressed: onTap),
+  );
 }
