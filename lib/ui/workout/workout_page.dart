@@ -9,6 +9,7 @@ import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/last_delta.dart';
 import '../../domain/models.dart';
+import '../../domain/set_match.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -710,7 +711,9 @@ class _ExerciseCard extends StatelessWidget {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final exercise = state.exercise(entry.exerciseId);
-    final previous = state.previousFor(entry);
+    // Minulé série se hledají v celé historii: jednou na kartu.
+    final last = state.lastSetsOf(entry.exerciseId);
+    final previous = previousSets(entry.sets, last);
     final bodyweight = exercise.type == ExerciseType.bodyweight;
     var workingIndex = 0;
     return Padding(
@@ -849,8 +852,7 @@ class _ExerciseCard extends StatelessWidget {
                 child: Text(entry.note, style: text.bodySmall),
               ),
             if (!bodyweight)
-              if (compareToLast(entry.sets, state.lastSetsOf(entry.exerciseId))
-                  case final d?)
+              if (compareToLast(entry.sets, last) case final d?)
                 _LastDeltaRow(d),
             ExcludeSemantics(
               child: Padding(
@@ -1425,7 +1427,10 @@ class _LastDeltaRow extends StatelessWidget {
       final diff = now.weight - last.weight;
       final repsDiff = now.reps - last.reps;
       final up = diff > 0 || (diff == 0 && repsDiff > 0);
-      final down = diff < 0 || (diff == 0 && repsDiff < 0);
+      // Pokles hlásí až po tolika sériích jako minule: lehčí první
+      // série na začátku tréninku není zhoršení.
+      final down =
+          (diff < 0 || (diff == 0 && repsDiff < 0)) && d.nowSets >= d.lastSets;
       final change = diff != 0
           ? '${diff > 0 ? '+' : '−'}${formatKg(diff.abs())} kg'
           : repsDiff != 0
@@ -1436,13 +1441,16 @@ class _LastDeltaRow extends StatelessWidget {
           : down
           ? p.secondaryLabel
           : null;
+      final sign = up
+          ? '▲ $change'
+          : down
+          ? '▼ $change'
+          : change == 'stejně'
+          ? '= stejně'
+          : 'zatím $change';
       headline =
-          '${up
-              ? '▲'
-              : down
-              ? '▼'
-              : '='} $change proti minule '
-          '($lastLabel) · objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}';
+          '$sign proti minule ($lastLabel) · '
+          'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}';
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(Space.xs, 0, Space.s, Space.s),

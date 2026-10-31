@@ -6,6 +6,8 @@ typedef LastDelta = ({
   double lastVolume,
   SetEntry? nowTop,
   double nowVolume,
+  int lastSets,
+  int nowSets,
 });
 
 /// Nejtěžší série (při shodě víc opakování); jen započítané série.
@@ -33,5 +35,7 @@ LastDelta? compareToLast(List<SetEntry> now, List<SetEntry> last) {
     lastVolume: volumeOf(last),
     nowTop: topSet(now),
     nowVolume: volumeOf(now),
+    lastSets: last.where((s) => s.counts).length,
+    nowSets: now.where((s) => s.counts).length,
   );
 }

@@ -28,4 +28,10 @@ void main() {
     expect(d.nowTop, isNull);
     expect(d.nowVolume, 0);
   });
+
+  test('počítá započítané série dnes a minule', () {
+    final d = compareToLast([s(50, 5)], [s(60, 5), s(60, 5)])!;
+    expect(d.nowSets, 1);
+    expect(d.lastSets, 2);
+  });
 }
