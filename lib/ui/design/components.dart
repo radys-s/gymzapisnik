@@ -1099,12 +1099,16 @@ class ProgressRing extends StatelessWidget {
   final double stroke;
   final Widget? child;
 
+  /// Barvy oblouku; bez nich přechod z palety.
+  final List<Color>? colors;
+
   const ProgressRing({
     super.key,
     required this.value,
     this.size = 72,
     this.stroke = 8,
     this.child,
+    this.colors,
   });
 
   @override
@@ -1119,7 +1123,7 @@ class ProgressRing extends StatelessWidget {
             : const Duration(milliseconds: 600),
         curve: Curves.easeOutCubic,
         builder: (context, v, _) => CustomPaint(
-          painter: _RingPainter(v, stroke, p.fill, p.gradient),
+          painter: _RingPainter(v, stroke, p.fill, colors ?? p.gradient),
           child: Center(child: child),
         ),
       ),
@@ -1220,6 +1224,9 @@ class StatTile extends StatelessWidget {
   /// a vypíše se přes [format] (jinak se ukáže [value]).
   final double? countTo;
   final String Function(double v)? format;
+
+  /// Velké číslo jako na výsledkové tabuli (souhrn v telemetrických vzhledech).
+  final bool big;
   const StatTile(
     this.value,
     this.label, {
@@ -1227,11 +1234,15 @@ class StatTile extends StatelessWidget {
     this.align = CrossAxisAlignment.start,
     this.countTo,
     this.format,
+    this.big = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final valueStyle = (big ? text.headlineMedium : text.titleLarge)?.copyWith(
+      fontFeatures: tabular,
+    );
     return Column(
       crossAxisAlignment: align,
       mainAxisSize: MainAxisSize.min,
@@ -1243,16 +1254,8 @@ class StatTile extends StatelessWidget {
               ? Alignment.centerRight
               : Alignment.centerLeft,
           child: countTo != null && format != null
-              ? CountUp(
-                  value: countTo!,
-                  format: format!,
-                  style: text.titleLarge?.copyWith(fontFeatures: tabular),
-                )
-              : Text(
-                  value,
-                  style: text.titleLarge?.copyWith(fontFeatures: tabular),
-                  maxLines: 1,
-                ),
+              ? CountUp(value: countTo!, format: format!, style: valueStyle)
+              : Text(value, style: valueStyle, maxLines: 1),
         ),
         FittedBox(
           fit: BoxFit.scaleDown,

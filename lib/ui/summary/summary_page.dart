@@ -301,6 +301,7 @@ class _SummaryPageState extends State<SummaryPage> {
     double kg,
   ) => HeroCard(
     vivid: true,
+    watermark: '$number',
     child: Builder(
       builder: (context) {
         final p = context.palette;
@@ -332,15 +333,23 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
             const SizedBox(height: Space.l),
             Row(
+              spacing: Space.s,
               children: [
                 if (duration != null)
-                  Expanded(child: StatTile(durationLabel(duration), 'Délka')),
+                  Expanded(
+                    child: StatTile(
+                      durationLabel(duration),
+                      'Délka',
+                      big: p.telemetry,
+                    ),
+                  ),
                 Expanded(
                   child: StatTile(
                     '$sets',
                     'Série',
                     countTo: sets.toDouble(),
                     format: (v) => '${v.round()}',
+                    big: p.telemetry,
                   ),
                 ),
                 Expanded(
@@ -349,6 +358,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     'Objem',
                     countTo: kg,
                     format: (v) => '${formatVolume(v)} kg',
+                    big: p.telemetry,
                   ),
                 ),
               ],

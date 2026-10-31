@@ -7,6 +7,7 @@ import '../../coach/plates.dart';
 import '../../coach/progression.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
+import '../../domain/last_delta.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
@@ -847,6 +848,10 @@ class _ExerciseCard extends StatelessWidget {
                 ),
                 child: Text(entry.note, style: text.bodySmall),
               ),
+            if (!bodyweight)
+              if (compareToLast(entry.sets, state.lastSetsOf(entry.exerciseId))
+                  case final d?)
+                _LastDeltaRow(d),
             ExcludeSemantics(
               child: Padding(
                 padding: const EdgeInsets.only(right: _edgeInset),
@@ -1397,4 +1402,60 @@ class _ReorderSheet extends StatelessWidget {
       );
     },
   );
+}
+
+/// Řádek „proti minule“: nejtěžší série a objem dnes vs. minulý trénink
+/// tohoto cviku. Šipka ukáže, jestli se dnes jde nahoru.
+class _LastDeltaRow extends StatelessWidget {
+  final LastDelta d;
+  const _LastDeltaRow(this.d);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final last = d.lastTop;
+    final now = d.nowTop;
+    final lastLabel = '${formatKg(last.weight)}×${last.reps}';
+    final String headline;
+    Color? tone;
+    if (now == null) {
+      headline = 'Minule nejvíc $lastLabel · objem ${_kg(d.lastVolume)}';
+    } else {
+      final diff = now.weight - last.weight;
+      final repsDiff = now.reps - last.reps;
+      final up = diff > 0 || (diff == 0 && repsDiff > 0);
+      final down = diff < 0 || (diff == 0 && repsDiff < 0);
+      final change = diff != 0
+          ? '${diff > 0 ? '+' : '−'}${formatKg(diff.abs())} kg'
+          : repsDiff != 0
+          ? '${repsDiff > 0 ? '+' : '−'}${repsDiff.abs()} opak.'
+          : 'stejně';
+      tone = up
+          ? p.positive
+          : down
+          ? p.secondaryLabel
+          : null;
+      headline =
+          '${up
+              ? '▲'
+              : down
+              ? '▼'
+              : '='} $change proti minule '
+          '($lastLabel) · objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}';
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.xs, 0, Space.s, Space.s),
+      child: Text(
+        headline,
+        style: text.bodySmall?.copyWith(
+          color: tone ?? p.secondaryLabel,
+          fontFeatures: tabular,
+          fontWeight: tone == null ? null : FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  static String _kg(double v) => '${formatKg(v)} kg';
 }

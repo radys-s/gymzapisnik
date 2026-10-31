@@ -500,7 +500,15 @@ class _Summary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (rings.isNotEmpty) ...[
+          if (rings.isNotEmpty && p.tensor) ...[
+            _RingStack(
+              kcal: kcalTarget == null ? null : (totals.kcal, kcalTarget),
+              protein: proteinTarget == null
+                  ? null
+                  : (totals.protein, proteinTarget),
+            ),
+            const SizedBox(height: Space.l),
+          ] else if (rings.isNotEmpty) ...[
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: rings),
             const SizedBox(height: Space.l),
           ],
@@ -558,6 +566,148 @@ class _Summary extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Tensor: soustředné kruhy jako u hodinek, energie venku, bílkoviny
+/// uvnitř. Vedle legenda s čísly, ať je vidět, kolik zbývá.
+class _RingStack extends StatelessWidget {
+  final (double, double)? kcal;
+  final (double, double)? protein;
+  const _RingStack({this.kcal, this.protein});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final rows = [
+      if (kcal case (final v, final t)) ('Energie', v, t, 'kcal', p.gradient),
+      if (protein case (final v, final t))
+        (
+          'Bílkoviny',
+          v,
+          t,
+          'g',
+          const [AppPalette.tensorCyan, Color(0xFF7BE4FF)],
+        ),
+    ];
+    const outer = 132.0, stroke = 14.0;
+    return Row(
+      children: [
+        SizedBox.square(
+          dimension: outer,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              for (var i = 0; i < rows.length; i++)
+                ProgressRing(
+                  value: rows[i].$2 / rows[i].$3,
+                  size: outer - i * (stroke + 6) * 2,
+                  stroke: stroke,
+                  colors: rows[i].$5,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: Space.l),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (label, v, t, unit, colors) in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: _RingLegend(
+                    label: label,
+                    value: v,
+                    target: t,
+                    unit: unit,
+                    color: colors.first,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RingLegend extends StatelessWidget {
+  final String label;
+  final double value;
+  final double target;
+  final String unit;
+  final Color color;
+  const _RingLegend({
+    required this.label,
+    required this.value,
+    required this.target,
+    required this.unit,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final left = target - value;
+    return Semantics(
+      label:
+          '$label ${_n(value)} z ${_n(target)} $unit'
+          '${left > 0 ? ', zbývá ${_n(left)}' : ', cíl splněn'}',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(width: 10, height: 10, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: condensedFont,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  letterSpacing: 0.6,
+                  color: p.secondaryLabel,
+                ),
+              ),
+            ],
+          ),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: _n(value),
+                  style: TextStyle(
+                    fontFamily: condensedFont,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    color: p.label,
+                    fontFeatures: tabular,
+                  ),
+                ),
+                TextSpan(
+                  text: ' / ${_n(target)} $unit',
+                  style: TextStyle(
+                    fontFamily: condensedFont,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: p.tertiaryLabel,
+                    fontFeatures: tabular,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            left > 0 ? 'zbývá ${_n(left)} $unit' : 'cíl splněn',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: left > 0 ? p.secondaryLabel : p.positive),
+          ),
         ],
       ),
     );
