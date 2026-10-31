@@ -609,14 +609,15 @@ class _RaceHero extends StatelessWidget {
         child: Stack(
           children: [
             if (watermark != null)
+              // Celé číslo uvnitř karty, vlevo od menu (dřív se ořezávalo).
               Positioned(
-                right: -6,
-                top: -14,
+                right: 48,
+                top: 6,
                 child: ExcludeSemantics(
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: still ? 0 : 1, end: 0),
-                    duration: const Duration(milliseconds: 900),
-                    curve: const Cubic(0.22, 1, 0.36, 1),
+                    duration: Motion.slow,
+                    curve: Motion.curve,
                     builder: (context, t, child) => Opacity(
                       opacity: 1 - t,
                       child: Transform.translate(
@@ -626,8 +627,12 @@ class _RaceHero extends StatelessWidget {
                     ),
                     child: Text(
                       watermark!,
+                      // Dekorace: neroste s velikostí písma, jinak se ořízne.
+                      textScaler: TextScaler.noScaling,
+                      maxLines: 1,
+                      softWrap: false,
                       style: TextStyle(
-                        fontSize: 150,
+                        fontSize: 128,
                         height: 1,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w900,

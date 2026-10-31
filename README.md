@@ -61,6 +61,11 @@ AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-a
 Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
 `ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
 
+Hostovaná webová verze (statické assety jako Cloudflare Worker, AI z webu funguje):
+https://gymzapisnik-app.gymzapisnik-ai.workers.dev. Nasazení po `flutter build web --release --dart-define=AI_URL=…`:
+`npx --prefix worker wrangler deploy --name gymzapisnik-app --assets build/web --compatibility-date 2026-10-01`
+(spustit z prázdné složky, ať wrangler nepřebere `worker/wrangler.toml`).
+
 V5 (větev `cviceni`, verze 1.0.0-beta.7+16, čeká na test od Tomáše před merge do main): onboarding
 krok „Tvůj plán“ s doporučeným programem a počtem cviků (`lib/coach/plan_quiz.dart`), obrazovka cviku
 s obrázky z free-exercise-db (Unlicense), zadání váhy a opakování přes spodní panel, fotka stroje
@@ -108,7 +113,7 @@ výběr g/ml/ks. Makra z tabulky i kusové hmotnosti jsou orientační, ne ově�
 databáze konkrétních výrobků. Návrh vždy zkontroluj před zápisem.
 
 Nezávislé review bety, důkazy testů a hranice ověření: [docs/REVIEW.md](docs/REVIEW.md).
-Zbývá fyzické Android/iPhone ověření, schválené hostování PWA na HTTPS, rozeslání
+Zbývá fyzické Android/iPhone ověření, rozeslání
 APK testerům a sběr zpětné vazby. Název a kontaktní e-mail jsou zachované;
 jejich potvrzení a záloha podpisového klíče jsou před distribucí na Tomášovi.
 
@@ -133,7 +138,7 @@ python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
 
 E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka
 s krátkou cestou, např. `C:/Temp/gz1`; dlouhá cesta na Windows rozbije Cache Storage a service worker):
-`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` (uvítání, souhlas,
+`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs` (uvítání, souhlas,
 offline reload), `node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, souhrn, opakování
 série jedním klepnutím, historie, detail cviku, program, Nastavení, záloha, obnova, import z Hevy) a po něm
 `node tool/e2e_pwa.cjs <stejná složka>` (aktualizace service workeru, offline restart prohlížeče).

@@ -138,6 +138,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 2026-10-30 | tomas/app-vibe | P3: souhrn jako zážitek – verdikt kouče, cíle na příště, další trénink, animace |
 | 2026-10-30 | tomas/app-vibe | P4: tři taby Trénink·Pokrok·Strava, záložka Pokrok, domov jen o dnešku |
 | 2026-10-31 | tomas/app-vibe | P5: onboarding s kvízem, odhalením plánu a připomínkou, doporučený cíl bílkovin |
+| 2026-10-31 | tomas/app-vibe | P6: web hostovaný na Cloudflare, AI z webu, polish a E2E pro nový úvod |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -382,3 +383,30 @@ další fáze přidala vlastní čísla a appka by působila nesourodě.
 - Webový průchod s čistým profilem: hodnota → kvíz (Po/St/Pá, 80 kg) → „Plán je hotový“ → souhlas → domov → Strava „Bílkoviny 0 z 160 g, Energie 0 z 2900 kcal, Doporučeno z tvé váhy 80 kg“ → nastavení cíle. Konzole bez chyb.
 
 **Další krok:** P6. AI na hostovaném webu (Cloudflare Pages a ALLOWED_ORIGINS), E2E skripty pro nový úvod a drobný polish.
+
+## 2026-10-31 · tomas/app-vibe · P6: web hostovaný na Cloudflare, AI z webu, polish a E2E pro nový úvod
+
+**Co a proč:** AI trenér na webu nefungoval, protože proxy povolovala jen localhost a hostovaná PWA neexistovala. Teď má aplikace veřejnou HTTPS adresu, ze které AI odpovídá. K tomu drobnosti z auditu a E2E skripty pro nový onboarding a tři taby.
+
+- Hosting: https://gymzapisnik-app.gymzapisnik-ai.workers.dev.
+  - Je to statický `build/web` nasazený jako Cloudflare Worker s assety.
+  - `pages project create` dnes zakládá Worker a `pages deploy` padal na `worker/wrangler.toml`, proto Worker s `--assets` z prázdné složky.
+- `worker/wrangler.toml`: `ALLOWED_ORIGINS` obsahuje hostovaný původ. Proxy je nasazená a preflight z hostingu vrací 204 se správnou hlavičkou.
+- Ověřeno živě: otázka trenérovi z hostovaného webu dostala odpověď prostým textem s akcí „Otevřít program“.
+- Polish:
+  - Chipy otázek u trenéra se čtečce obrazovky ohlašují jako tlačítko (`_QuestionChip`).
+  - Vybraný segment v kvízu má akcentový rámeček a podbarvení, ne jen tučné písmo.
+  - Vodoznak na hlavní kartě se už neořízne.
+  - Načítací přechod respektuje omezení pohybu.
+- E2E: `e2e_consent`, `e2e_workout` a `review_mobile` jdou přes „Sestavit můj plán“ a taby Trénink · Pokrok · Strava.
+- Past: headless Chrome 156 v persistentním profilu service worker vůbec nezaregistruje, ani u minimální stránky. `navigator.serviceWorker.ready` pak visí a renderer po ~76 s spadne.
+  - `e2e_consent` proto běží v dočasném kontextu a na SW čeká nejvýš 20 s s čitelnou chybou.
+  - Argument se složkou profilu už nepotřebuje.
+
+**Výsledky:** 372 testů zelených, `dart analyze` čistý. E2E consent (včetně offline reloadu), workout i review_mobile prošly s 0 chybami stránky. Hostovaná verze je nasazená z aktuálního buildu.
+
+**Další krok:** test na fyzickém Androidu a iPhonu (PWA z hostované adresy) a zpětná vazba od testerů. Kvalita AI odpovědí: model se občas opakuje, to je na úpravu promptu.
+
+**Review (subagent) našel a opraveno:**
+- Vodoznak rostl se systémovou velikostí písma a při 200 % se ořízl. Teď `TextScaler.noScaling` a jeden řádek.
+- Regex v E2E `Začít ` chytal i „Začít trénink“ v jiných listech. Teď `Začít (?!trénink)`.

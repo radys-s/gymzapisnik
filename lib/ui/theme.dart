@@ -273,10 +273,19 @@ ThemeData buildTheme(
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
         minimumSize: const WidgetStatePropertyAll(Size(minTap, 40)),
-        side: WidgetStatePropertyAll(BorderSide(color: p.fill, width: 2)),
+        // Vybraný segment musí být poznat i bez tučného písma: výplň
+        // a obrys v barvě akcentu.
+        side: WidgetStateProperty.resolveWith(
+          (st) => BorderSide(
+            color: st.contains(WidgetState.selected) && !studio
+                ? p.accent
+                : p.fill,
+            width: 2,
+          ),
+        ),
         backgroundColor: WidgetStateProperty.resolveWith(
           (st) => st.contains(WidgetState.selected)
-              ? (studio ? p.accent : p.elevated)
+              ? (studio ? p.accent : p.accent.withValues(alpha: 0.22))
               : p.fill,
         ),
         foregroundColor: WidgetStateProperty.resolveWith(

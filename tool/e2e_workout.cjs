@@ -59,10 +59,10 @@ let page, context;
   throw new Error(msg);
  };
 
- // První spuštění: uvítání (4 obrazovky, barva) a souhlas.
+ // První spuštění: uvítání, dotazník (přeskočit) a souhlas.
  const onboard=async()=>{
   await see(has(/Gym zápisník/),'welcome');
-  for(let i=0;i<4;i++){ await tap('button','Pokračovat'); await p.waitForTimeout(400); }
+  await tap('button','Sestavit můj plán');
   // Dotazník „Tvůj plán“ jde přeskočit.
   await see(has(/Tvůj plán/),'plan step');
   await tapUntil('button','Přeskočit',has(/Než začneš/),'consent');
@@ -74,7 +74,7 @@ let page, context;
  await onboard();
 
  // první trénink
- await tap('button',/Začít trénink|Volný trénink/);
+ await tap('button',/^(Začít (?!trénink)|Volný trénink)/);
  await tap('button',/Přidat cvik/);
  await see(has(/Přidat cviky/),'picker open');
  await p.getByRole('textbox').last().click();
@@ -120,7 +120,7 @@ let page, context;
 
  // druhý trénink: předvyplněno, 1 klepnutí
  await p.reload(); await sem();
- await tap('button',/Začít trénink|Volný trénink/);
+ await tap('button',/^(Začít (?!trénink)|Volný trénink)/);
  await tap('button',/Přidat cvik/);
  await see(has(/Nedávné/),'recent exercises first');
  await pick(/^Bench press/);
@@ -130,8 +130,8 @@ let page, context;
  await see(has(/Stejně jako minule/),'second summary compares with first');
  await tap('button','Hotovo');
  await see(has(/Tento týden 2 z/),'week on home');
- // tělesná váha z řádku na domovské stránce
- // Domovská stránka je dlouhá a řádky se staví až při posunu.
+ // Pokrok: váha, historie a cviky mají vlastní záložku.
+ await tap('tab',/Pokrok/);
  await scrollTo(/Tělesná váha/);
  await tap('button',/Tělesná váha/);
  await tap('button',/Zapsat váhu/);
@@ -140,8 +140,8 @@ let page, context;
  await tap('button','Uložit');
  await see(has(/80,5 kg/),'bodyweight saved');
  await p.goBack();
- await see(has(/Cviky a rekordy/),'back home');
- await tap('button',/^Vše/);
+ await see(has(/Cviky a rekordy/),'back in progress');
+ await tap('button',/^Historie/);
  await see(has(/(Leden|Únor|Březen|Duben|Květen|Červen|Červenec|Srpen|Září|Říjen|Listopad|Prosinec) \d{4}/),'history grouped by month');
  await p.goBack();
  await tap('button',/Cviky a rekordy/);
@@ -159,6 +159,7 @@ let page, context;
  await tap('button','Používat tento program');
  await see(has(/Tento program používáš/),'program active');
  await p.goBack(); await p.goBack();
+ await tap('tab',/Trénink/);
  // Domov si pamatuje posun: zpátky nahoru k hlavní kartě.
  for(let i=0;i<6;i++){ await p.mouse.move(200,400); await p.mouse.wheel(0,-1500); await p.waitForTimeout(200); }
  await see(has(/Začít Push/),'today card for program');
@@ -204,8 +205,8 @@ let page, context;
   await p.waitForTimeout(500);
  }
  await p.goBack().catch(()=>{});
- await p.mouse.wheel(0,1500);
- await tap('button',/^Vše/);
+ await tap('tab',/Pokrok/);
+ await tap('button',/^Historie/);
  await see(t=>(t.match(/Bench press/g)||[]).length>=2,'history restored');
  await see(has(/Hevy Push/),'hevy workout in history');
  console.log('errors',errs);
