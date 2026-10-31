@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../coach/nutrition_target.dart';
 import '../../core/format.dart';
 import '../../core/ids.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
+import '../bodyweight/bodyweight_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../settings/settings_button.dart';
@@ -290,12 +292,7 @@ class _NutritionPageState extends State<NutritionPage> {
             ),
           ),
           const SizedBox(height: Space.m),
-          _Summary(
-            totals: totals,
-            empty: entries.isEmpty,
-            proteinTarget: state.profile.proteinTarget,
-            kcalTarget: state.profile.kcalTarget,
-          ),
+          _Summary(state, totals: totals, empty: entries.isEmpty),
           if (anyMissing)
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 0),
@@ -409,23 +406,34 @@ class _NutritionPageState extends State<NutritionPage> {
   }
 }
 
-/// Souhrn dne: kruhy k vlastním cílům (jsou-li), pod nimi makra.
+/// Souhrn dne: kruhy k cílům, pod nimi makra. Bez vlastního cíle kruhy
+/// ukazují doporučení z tělesné váhy, které jde jedním klepnutím přijmout.
 class _Summary extends StatelessWidget {
+  final AppState state;
   final DayTotals totals;
   final bool empty;
-  final double? proteinTarget;
-  final double? kcalTarget;
-  const _Summary({
-    required this.totals,
-    required this.empty,
-    required this.proteinTarget,
-    required this.kcalTarget,
-  });
+  const _Summary(this.state, {required this.totals, required this.empty});
+
+  Future<void> _useSuggested(BuildContext context, SuggestedTargets s) async {
+    try {
+      await state.setNutritionTargets(protein: s.protein, kcal: s.kcal);
+    } catch (_) {
+      if (context.mounted) {
+        showToast(context, 'Cíl se nepodařilo uložit. Zkus to znovu.');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final p = context.palette;
+    final own = state.profile;
+    final suggested = own.proteinTarget == null && own.kcalTarget == null
+        ? state.suggestedTargets
+        : null;
+    final proteinTarget = own.proteinTarget ?? suggested?.protein;
+    final kcalTarget = own.kcalTarget ?? suggested?.kcal;
     String lower(bool missing) => missing && !empty ? '≥ ' : '';
     Widget ring(String label, double value, double target, String unit) {
       final left = target - value;
@@ -513,17 +521,70 @@ class _Summary extends StatelessWidget {
                 Expanded(child: StatTile(value, label)),
             ],
           ),
-          if (rings.isEmpty) ...[
+          if (suggested != null) ...[
             const SizedBox(height: Space.s),
-            Text(
-              'Cíl bílkovin si můžeš nastavit v Nastavení.',
-              style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+            _NoteWithAction(
+              children: [
+                Flexible(
+                  child: Text(
+                    'Doporučeno z tvé váhy '
+                    '${formatKg(state.bodyweights.first.kg)} kg.',
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _useSuggested(context, suggested),
+                  child: const Text('Nastavit jako cíl'),
+                ),
+              ],
+            ),
+          ] else if (rings.isEmpty) ...[
+            const SizedBox(height: Space.s),
+            _NoteWithAction(
+              children: [
+                Flexible(
+                  child: Text(
+                    'Zapiš tělesnou váhu a doporučím ti cíl bílkovin.',
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => BodyweightPage(state)),
+                  ),
+                  child: const Text('Zapsat váhu'),
+                ),
+              ],
             ),
           ],
         ],
       ),
     );
   }
+}
+
+/// Poznámka s tlačítkem vedle; při velkém písmu tlačítko spadne pod text.
+class _NoteWithAction extends StatelessWidget {
+  final List<Widget> children;
+  const _NoteWithAction({required this.children});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      final scale = MediaQuery.textScalerOf(context).scale(1);
+      if (scale <= 1.3 && c.maxWidth >= 320) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: children,
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [for (final w in children) w is Flexible ? w.child : w],
+      );
+    },
+  );
 }
 
 /// Hvězdička: připne jídlo do Rychle přidat, nebo ho odepne.

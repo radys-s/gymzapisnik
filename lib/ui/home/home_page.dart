@@ -19,6 +19,7 @@ import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
 import '../program/plan_quiz.dart';
 import '../program/program_page.dart';
+import '../program/program_widgets.dart';
 import '../settings/settings_button.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
@@ -309,6 +310,10 @@ class _TodayCard extends StatelessWidget {
     } else if (split != null) {
       final day = split.day(dayIndex);
       final plan = state.plan(day);
+      // Volno podle plánu: karta ukazuje příští tréninkový den, ne „dnes“.
+      final next = state.mission(now).kind == MissionKind.plannedRest
+          ? _nextTrainingDay(state.profile.trainingDays, now)
+          : null;
       final scope =
           '${exercisesLabel(plan.length)} · '
           '~${workoutMinutes(plan.fold(0, (n, e) => n + e.$1.sets))} min';
@@ -321,7 +326,8 @@ class _TodayCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Eyebrow(
-                    'Dnes · ${split.name} · den '
+                    '${next == null ? 'Dnes' : 'Příště · ${weekdayLong[next - 1]}'}'
+                    ' · ${split.name} · den '
                     '${dayIndex % split.days.length + 1}/${split.days.length}',
                   ),
                   Text(
@@ -383,7 +389,7 @@ class _TodayCard extends StatelessWidget {
           ),
         const SizedBox(height: Space.m),
         PrimaryButton(
-          'Začít ${day.name}',
+          next == null ? 'Začít ${day.name}' : 'Začít i dnes',
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
@@ -746,4 +752,14 @@ class _WeekPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Nejbližší tréninkový den po dnešku (1 = pondělí); `null` bez dnů.
+int? _nextTrainingDay(List<int>? days, DateTime now) {
+  if (days == null || days.isEmpty) return null;
+  for (var i = 1; i <= 7; i++) {
+    final d = (now.weekday - 1 + i) % 7 + 1;
+    if (days.contains(d)) return d;
+  }
+  return null;
 }

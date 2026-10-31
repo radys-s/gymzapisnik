@@ -80,7 +80,7 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pumpAndSettle();
     // Po smazání začíná aplikace znovu uvítáním.
-    expect(find.text('Přeskočit'), findsOneWidget);
+    expect(find.text('Sestavit můj plán'), findsOneWidget);
     expect(state.profile.hasValidConsent, isFalse);
   });
 }

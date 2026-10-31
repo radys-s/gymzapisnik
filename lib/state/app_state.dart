@@ -31,6 +31,7 @@ import '../domain/nutrition.dart';
 import '../domain/profile.dart';
 import '../domain/set_match.dart';
 import '../domain/stats.dart';
+import '../coach/nutrition_target.dart';
 import '../coach/reminders.dart';
 import '../notify/notifier.dart';
 import '../premium/entitlements.dart';
@@ -156,6 +157,7 @@ class AppState extends ChangeNotifier {
       if (welcomeVersion != null) ...{
         'welcomeSeen': true,
         'seenVersion': welcomeVersion,
+        'onboardingStep': null,
       },
       // Upozornění na AI bylo součástí souhlasu: trenér se už neptá znovu.
       if (aiNotice) 'aiNotice': true,
@@ -1444,6 +1446,27 @@ class AppState extends ChangeNotifier {
 
   Future<void> acceptAiNotice() =>
       _updateProfile((p) => p.withExtra({'aiNotice': true}));
+
+  /// Krok úvodu, na kterém uživatel skončil (aplikace se mohla zavřít).
+  int get onboardingStep {
+    final v = profile.extra['onboardingStep'];
+    return v is num && v.isFinite ? v.toInt().clamp(0, 9) : 0;
+  }
+
+  Future<void> setOnboardingStep(int step) =>
+      _updateProfile((p) => p.withExtra({'onboardingStep': step}));
+
+  /// Doporučený cíl z poslední tělesné váhy a cíle z dotazníku;
+  /// `null` bez zapsané váhy.
+  SuggestedTargets? get suggestedTargets {
+    final kg = bodyweights.firstOrNull?.kg;
+    if (kg == null) return null;
+    return suggestTargets(
+      kg: kg,
+      goal: (planAnswers ?? const PlanAnswers()).goal,
+      adult: !profile.restrictWeightLoss,
+    );
+  }
 
   /// Nastaví cíle (`null` = bez cíle). Kalorický cíl jen pro dospělé.
   Future<void> setNutritionTargets({double? protein, double? kcal}) =>

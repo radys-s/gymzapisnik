@@ -4,12 +4,14 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymzapisnik/app.dart';
+import 'package:gymzapisnik/coach/plan_quiz.dart';
 import 'package:gymzapisnik/coach/tips.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/profile.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/design/components.dart';
+import 'package:gymzapisnik/ui/program/program_widgets.dart';
 import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 
 Future<AppState> _fresh(WidgetTester tester) async {
@@ -27,66 +29,119 @@ Future<void> _tapAndSave(WidgetTester tester, Finder finder) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
   });
   await tester.pumpAndSettle();
+  // Animace spuštěná v reálné zóně dokončí až její mikroúloha.
+  await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+  await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('welcome, accent and consent run once on first launch', (
+  testWidgets('welcome, quiz, plan reveal and consent run once', (
     tester,
   ) async {
     final state = await _fresh(tester);
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(GymApp(state));
+    await tester.pumpAndSettle();
 
+    // Jeden slide s hodnotou, žádné brožurkové stránky ani výběr barvy.
     expect(find.text('Gym zápisník'), findsOneWidget);
-    await tester.tap(find.text('Pokračovat'));
-    await tester.pumpAndSettle();
-    expect(find.text('Trénink i jídlo na jednom místě'), findsOneWidget);
+    expect(find.text('Každý den víš, co cvičit'), findsOneWidget);
+    await _tapAndSave(tester, find.text('Sestavit můj plán'));
+    expect(find.text('Vyber si vzhled'), findsNothing);
 
-    // Přeskočit vede na výběr barvy, ne rovnou na souhlas.
-    await tester.tap(find.text('Přeskočit'));
-    await tester.pumpAndSettle();
-    expect(find.text('Vyber si vzhled'), findsOneWidget);
-    await tester.ensureVisible(find.text('Studio'));
-    await tester.pumpAndSettle();
-    await _tapAndSave(tester, find.text('Studio'));
-    expect(state.profile.look, 'studio');
-    await tester.ensureVisible(find.text('Západ'));
-    await tester.pumpAndSettle();
-    await _tapAndSave(tester, find.text('Západ'));
-    expect(state.profile.accent, 'sunset');
-
-    await tester.tap(find.text('Pokračovat'));
-    await tester.pumpAndSettle();
-    // Dotazník doporučí program podle počtu dnů a zkušenosti.
+    // Dotazník: 4 dny vybrané v týdnu, váha a doporučení podle nich.
     expect(find.text('Tvůj plán'), findsOneWidget);
-    await tester.tap(find.text('4×'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Upper / Lower'),
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    expect(find.text('Upper / Lower'), findsOneWidget);
-    await _tapAndSave(tester, find.text('Použít plán'));
-    // Přechod na souhlas začne až po uložení plánu.
+    for (final d in ['Po', 'Út', 'Čt', 'Pá']) {
+      await tester.ensureVisible(find.widgetWithText(DayToggle, d));
+      await tester.tap(find.widgetWithText(DayToggle, d));
+      await tester.pump();
+    }
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), '80');
+    await _tapAndSave(tester, find.text('Ukázat plán'));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 200)),
     );
     await tester.pumpAndSettle();
     expect(state.profile.splitId, 'upper_lower');
     expect(state.profile.weekGoal, 4);
+    expect(state.profile.trainingDays, [1, 2, 4, 5]);
     expect(state.planAnswers?.days, 4);
+    expect(state.bodyweights.first.kg, 80);
 
+    // Odhalení plánu ukazuje uložený program a první trénink.
+    expect(find.text('Plán je hotový'), findsOneWidget);
+    expect(find.text('Upper / Lower'), findsOneWidget);
+    expect(find.textContaining('První trénink · '), findsOneWidget);
+    await _tapAndSave(tester, find.text('Pokračovat'));
+
+    // Na webu/testu (bez oznámení) krok připomínky odpadá.
     expect(find.text('Než začneš'), findsOneWidget);
     await tester.tap(find.text('Souhlasím s podmínkami používání'));
     await tester.tap(find.text('Je mi 18 let nebo víc'));
     await tester.pump();
     await _tapAndSave(tester, find.text('Pokračovat'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.text('Trénink'), findsWidgets);
     expect(state.profile.welcomeSeen, isTrue);
+    expect(state.onboardingStep, 0);
     // Nová instalace nemá dostat okno s novinkami hned po uvítání.
     expect(state.profile.seenVersion, whatsNewRelease);
     expect(find.text('Co je nového'), findsNothing);
+  });
+
+  testWidgets('onboarding resumes on the saved step with saved answers', (
+    tester,
+  ) async {
+    final state = await _fresh(tester);
+    await tester.runAsync(() async {
+      await state.applyPlan(
+        const PlanAnswers(days: 5, level: PlanLevel.advanced),
+      );
+      await state.setOnboardingStep(1);
+    });
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(GymApp(state));
+    await tester.pumpAndSettle();
+    // Rovnou dotazník, s dřívějšími odpověďmi místo výchozích.
+    expect(find.text('Tvůj plán'), findsOneWidget);
+    final days = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>).first,
+    );
+    expect(days.selected, {5});
+    // Zpět na úvod jde šipkou.
+    await _tapAndSave(tester, find.byIcon(Icons.arrow_back_rounded));
+    expect(find.text('Sestavit můj plán'), findsOneWidget);
+    expect(state.onboardingStep, 0);
+  });
+
+  testWidgets('days removed in the quiz do not stay saved', (tester) async {
+    final state = await _fresh(tester);
+    await tester.runAsync(() async {
+      await state.applyPlan(const PlanAnswers(days: 3));
+      await state.setFrequency(days: [1, 3, 5]);
+      await state.setOnboardingStep(1);
+    });
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(GymApp(state));
+    await tester.pumpAndSettle();
+    for (final d in ['Po', 'St', 'Pá']) {
+      await tester.tap(find.widgetWithText(DayToggle, d));
+      await tester.pump();
+    }
+    await _tapAndSave(tester, find.text('Ukázat plán'));
+    expect(state.profile.trainingDays, isNull);
+    expect(find.text('Plán je hotový'), findsOneWidget);
   });
 
   testWidgets('minor needs guardian consent before entering the app', (
