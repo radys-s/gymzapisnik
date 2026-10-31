@@ -270,3 +270,145 @@ export const mealsSchema = {
   },
   required: ["meals"],
 };
+
+// ---- machine photo -> catalog exercises ----
+
+export interface CatalogEntry {
+  id: string;
+  name: string;
+}
+
+export interface MachineRequest {
+  image: string;
+  exercises: CatalogEntry[];
+}
+
+export interface MachineMatch {
+  id: string;
+  confidence: number;
+}
+
+export interface MachineResult {
+  machine: string | null;
+  matches: MachineMatch[];
+}
+
+export const MAX_CATALOG = 150;
+export const MAX_MATCHES = 3;
+const ID_RE = /^[a-z0-9_-]{1,48}$/;
+
+export function parseMachineRequest(body: unknown): MachineRequest | string {
+  const photo = parseFridgeRequest(body);
+  if (typeof photo === "string") return photo;
+  const list = isObj(body) && Array.isArray(body.exercises) ? body.exercises : [];
+  const seen = new Set<string>();
+  const exercises: CatalogEntry[] = [];
+  for (const v of list.slice(0, MAX_CATALOG)) {
+    if (!isObj(v) || typeof v.id !== "string" || !ID_RE.test(v.id)) continue;
+    const name = cleanText(v.name, MAX_NAME);
+    if (name === null || seen.has(v.id)) continue;
+    seen.add(v.id);
+    exercises.push({ id: v.id, name });
+  }
+  if (exercises.length === 0) return "Chybí seznam cviků.";
+  return { image: photo.image, exercises };
+}
+
+/** Keeps only ids the app sent, best first, at most [MAX_MATCHES]. */
+export function validateMachine(
+  raw: unknown,
+  known: ReadonlySet<string>,
+): MachineResult | null {
+  const json = extractJson(raw);
+  if (!isObj(json) || !Array.isArray(json.matches)) return null;
+  const seen = new Set<string>();
+  const matches: MachineMatch[] = [];
+  for (const v of json.matches) {
+    if (!isObj(v) || typeof v.id !== "string") continue;
+    const id = v.id.trim();
+    if (!known.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    matches.push({ id, confidence: num(v.confidence, 0, 1) ?? 0.5 });
+  }
+  matches.sort((a, b) => b.confidence - a.confidence);
+  return {
+    machine: cleanText(json.machine, 80),
+    matches: matches.slice(0, MAX_MATCHES),
+  };
+}
+
+export const machineSchema = {
+  type: "object",
+  properties: {
+    machine: { type: ["string", "null"] },
+    matches: {
+      type: "array",
+      maxItems: MAX_MATCHES,
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+        },
+        required: ["id", "confidence"],
+      },
+    },
+  },
+  required: ["machine", "matches"],
+};
+
+// ---- trainer chat ----
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface CoachRequest {
+  messages: ChatMessage[];
+  context: string;
+  adult: boolean;
+}
+
+export const MAX_CHAT = 12;
+export const MAX_MESSAGE = 1_000;
+export const MAX_CONTEXT = 6_000;
+export const MAX_REPLY = 1_500;
+
+/** Like [cleanText] but keeps line breaks (chat answers have lists). */
+export function cleanMultiline(v: unknown, max: number): string | null {
+  if (typeof v !== "string") return null;
+  const s = v
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (s.length === 0) return null;
+  return s.length > max ? s.slice(0, max).trim() : s;
+}
+
+export function parseCoachRequest(body: unknown): CoachRequest | string {
+  if (!isObj(body) || !Array.isArray(body.messages)) {
+    return "Chybí zpráva.";
+  }
+  const messages: ChatMessage[] = [];
+  for (const v of body.messages.slice(-MAX_CHAT)) {
+    if (!isObj(v) || (v.role !== "user" && v.role !== "assistant")) continue;
+    const content = cleanMultiline(v.content, MAX_MESSAGE);
+    if (content !== null) messages.push({ role: v.role, content });
+  }
+  if (messages.length === 0 || messages[messages.length - 1].role !== "user") {
+    return "Chybí otázka.";
+  }
+  // The context is app data; it travels as JSON text, never as instructions.
+  const context = isObj(body.context) ? JSON.stringify(body.context) : "{}";
+  if (context.length > MAX_CONTEXT) return "Souhrn tréninků je moc dlouhý.";
+  return { messages, context, adult: body.adult === true };
+}
+
+export function validateCoach(raw: unknown): string | null {
+  // Some models wrap plain text in an object; accept {reply: "..."} too.
+  const text = isObj(raw) && typeof raw.reply === "string" ? raw.reply : raw;
+  return cleanMultiline(text, MAX_REPLY);
+}

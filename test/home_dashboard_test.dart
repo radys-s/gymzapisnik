@@ -9,7 +9,7 @@ import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  testWidgets('home shows week, recent records and quick progress', (
+  testWidgets('home shows week ring, recent history and the records row', (
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
@@ -26,7 +26,7 @@ void main() {
         await state.finishActive(now: at.add(const Duration(hours: 1)));
       }
     });
-    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    await tester.binding.setSurfaceSize(const Size(400, 2000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
@@ -39,21 +39,49 @@ void main() {
     expect(find.text('Tento týden'), findsOneWidget);
     expect(find.text('0/3'), findsOneWidget); // tréninky vůči cíli
     expect(find.text('0'), findsOneWidget); // série
-    expect(find.text('Poslední trénink'), findsOneWidget);
-    expect(find.text('Nedávné rekordy'), findsOneWidget);
-    expect(find.textContaining('Max váha 82,5 kg'), findsOneWidget);
-    expect(find.text('Progres: Bench press'), findsOneWidget);
-    expect(find.text('odhad 1RM +9,5 kg za 3 tréninky'), findsOneWidget);
+    expect(find.text('Historie'), findsOneWidget);
+    expect(find.text('Vše'), findsOneWidget);
+    // Statistiky a cviky patří do záložky Pokrok, ne na domov.
+    expect(find.text('Program'), findsNothing);
+    expect(find.text('Tělesná váha'), findsNothing);
+
+    await tester.tap(find.text('Vše'));
+    await tester.pumpAndSettle();
+    expect(find.text('Historie'), findsWidgets);
+    expect(find.text('Rekord'), findsNWidgets(2)); // první trénink není rekord
   });
 
-  testWidgets('empty home has no dashboard cards', (tester) async {
+  testWidgets('empty home: recommends a program first, no history section', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(390, 1400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final state = AppState(LocalStore(db));
     await tester.runAsync(state.load);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: HomePage(state))));
-    expect(find.text('Začít trénink'), findsOneWidget);
-    expect(find.text('Tento týden'), findsNothing);
-    expect(find.text('Nedávné rekordy'), findsNothing);
+    expect(find.text('Vyber si plán'), findsOneWidget);
+    expect(find.text('Použít Full body 3×'), findsOneWidget);
+    expect(find.text('Vybrat podle sebe'), findsOneWidget);
+    // Bez plánu není "jiný" trénink: volný jde jedním klepnutím.
+    expect(find.text('Volný trénink'), findsOneWidget);
+    expect(find.text('Rady pro růst svalů'), findsNothing);
+    expect(find.text('Historie'), findsNothing);
+    expect(find.text('0/3'), findsOneWidget);
+
+    // Jedno klepnutí nastaví doporučený program.
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Použít Full body 3×'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(state.split?.id, 'full_body_3');
+    // Bez dotazníku se výchozí odpovědi neuloží jako by je vyplnil.
+    expect(state.planAnswers, isNull);
+    expect(find.text('Vybrat podle sebe'), findsNothing);
+    expect(find.textContaining('Začít '), findsOneWidget);
   });
 }

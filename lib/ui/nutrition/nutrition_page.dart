@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../coach/nutrition_target.dart';
 import '../../core/format.dart';
+import '../../core/ids.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
+import '../bodyweight/bodyweight_page.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
+import '../settings/settings_button.dart';
 import 'barcode_dialog.dart';
 import 'food_form.dart';
 import 'fridge_page.dart';
@@ -16,64 +22,33 @@ String _g(double? v) => v == null ? '–' : '${_n(v)} g';
 String amountLabel(FoodEntry e) {
   final a = formatKg(e.amount);
   if (e.basis == FoodBasis.perServing) {
-    return e.amount == 1 ? '1 porce' : '$a porcí';
+    // 1 porce, 2–4 porce, 5 porcí; desetinné množství je „porce" (2,5 porce).
+    final whole = e.amount == e.amount.roundToDouble();
+    final n = e.amount.round();
+    return !whole || (n >= 1 && n <= 4) ? '$a porce' : '$a porcí';
   }
   return '$a ${e.unit == FoodUnit.ml ? 'ml' : 'g'}';
 }
 
 String _dayTitle(DateTime day, DateTime now) {
-  final diff = DateTime(
-    now.year,
-    now.month,
-    now.day,
-  ).difference(DateTime(day.year, day.month, day.day)).inDays;
+  final diff = calendarDaysBetween(day, now);
   if (diff == 0) return 'Dnes';
   if (diff == 1) return 'Včera';
   return formatDate(day);
 }
 
-/// Karta na úvodní obrazovce: dnešní energie, otevře deník.
-class NutritionCard extends StatelessWidget {
-  final AppState state;
-  const NutritionCard(this.state, {super.key});
-
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
-    builder: (context, _) {
-      final scheme = Theme.of(context).colorScheme;
-      final today = state.foodsOn(dayKey(DateTime.now()));
-      final totals = totalsOf(today);
-      return Card(
-        child: ListTile(
-          leading: const Icon(Icons.restaurant_outlined),
-          title: Text(
-            today.isEmpty
-                ? 'Výživa'
-                : '${totals.kcalMissing ? '≥ ' : ''}${_n(totals.kcal)} kcal dnes',
-          ),
-          subtitle: Text(
-            today.isEmpty
-                ? 'Zapiš si jídlo ručně nebo podle čárového kódu'
-                : 'B ${_n(totals.protein)} g · S ${_n(totals.carbs)} g · '
-                      'T ${_n(totals.fat)} g',
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-          trailing: IconButton(
-            tooltip: 'Přidat jídlo',
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () =>
-                addFoodFlow(context, state, dayKey(DateTime.now())),
-          ),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => NutritionPage(state)),
-          ),
-        ),
-      );
-    },
-  );
+/// Část dne podle času zápisu (pro skupiny v deníku).
+String mealOf(DateTime at) {
+  final t = at.hour * 60 + at.minute;
+  // Jídlo po půlnoci patří k noci, ne k ranní snídani.
+  if (t < 4 * 60) return 'V noci';
+  if (t < 10 * 60 + 30) return 'Snídaně';
+  if (t < 14 * 60 + 30) return 'Oběd';
+  if (t < 17 * 60 + 30) return 'Svačina';
+  return 'Večeře';
 }
+
+const _meals = ['Snídaně', 'Oběd', 'Svačina', 'Večeře', 'V noci'];
 
 /// Zvolí způsob přidání (čárový kód / ručně / nedávné) a otevře formulář.
 Future<void> addFoodFlow(
@@ -83,36 +58,51 @@ Future<void> addFoodFlow(
 ) async {
   final choice = await showModalBottomSheet<Object>(
     context: context,
+    // Nad spodní lištou, ne uvnitř záložky (jinak by zůstal viset po přepnutí).
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
     builder: (sheet) => SafeArea(
       child: ListView(
         shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.l),
         children: [
-          ListTile(
-            leading: const Icon(Icons.qr_code_2),
-            title: const Text('Najít podle čárového kódu'),
-            subtitle: const Text('Open Food Facts, vyžaduje internet'),
-            onTap: () => Navigator.pop(sheet, 'barcode'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_outlined),
-            title: const Text('Zadat ručně'),
-            onTap: () => Navigator.pop(sheet, 'manual'),
-          ),
-          if (state.recentFoods.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text('Nedávná'),
-            ),
-            for (final f in state.recentFoods)
-              ListTile(
-                leading: const Icon(Icons.history),
-                title: Text(f.name),
-                subtitle: Text(amountLabel(f)),
-                onTap: () => Navigator.pop(sheet, f),
+          GroupedSection(
+            children: [
+              GroupedRow(
+                icon: Icons.qr_code_2,
+                title: 'Najít podle čárového kódu',
+                subtitle: 'Open Food Facts, vyžaduje internet',
+                onTap: () => Navigator.pop(sheet, 'barcode'),
               ),
-          ],
+              GroupedRow(
+                icon: Icons.edit_outlined,
+                title: 'Zadat ručně',
+                onTap: () => Navigator.pop(sheet, 'manual'),
+              ),
+            ],
+          ),
+          if (state.quickFoods.isNotEmpty)
+            ListenableBuilder(
+              listenable: state,
+              builder: (sheet, _) => GroupedSection(
+                header: 'Oblíbená a nedávná',
+                footer: 'Hvězdičkou jídlo připneš do Rychle přidat.',
+                children: [
+                  for (final f in state.quickFoods)
+                    GroupedRow(
+                      icon: state.isFavoriteFood(f)
+                          ? Icons.star_rounded
+                          : Icons.history,
+                      title: f.name,
+                      subtitle: amountLabel(f),
+                      onTap: () => Navigator.pop(sheet, f),
+                      chevron: false,
+                      trailing: _FavoriteButton(state, f),
+                    ),
+                ],
+              ),
+            ),
         ],
       ),
     ),
@@ -141,7 +131,15 @@ class NutritionPage extends StatefulWidget {
 
   /// Počáteční den (v testech); jinak dnes.
   final DateTime? initialDay;
-  const NutritionPage(this.state, {super.key, this.initialDay});
+
+  /// Kořen záložky Strava (nadpis a nastavení), jinak vnořená stránka.
+  final bool root;
+  const NutritionPage(
+    this.state, {
+    super.key,
+    this.initialDay,
+    this.root = false,
+  });
 
   @override
   State<NutritionPage> createState() => _NutritionPageState();
@@ -187,6 +185,55 @@ class _NutritionPageState extends State<NutritionPage> {
       );
   }
 
+  Future<void> _toggleFavorite(FoodEntry f) async {
+    final messenger = ScaffoldMessenger.of(context);
+    String message;
+    try {
+      final pinned = await state.toggleFavoriteFood(f);
+      message = pinned
+          ? 'Připnuto mezi oblíbená: ${f.name}'
+          : 'Odepnuto z oblíbených: ${f.name}';
+    } catch (_) {
+      message = 'Oblíbená se nepodařilo uložit. Zkus to znovu.';
+    }
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Stejné jídlo ve stejném množství jedním klepnutím, s možností vrátit.
+  Future<void> _quickAdd(FoodEntry f, String key) async {
+    final messenger = ScaffoldMessenger.of(context);
+    // Jiný den: stejná část dne jako původní jídlo.
+    final at = loggedAtFor(key, DateTime.now(), timeOf: f.loggedAt.toLocal());
+    final entry = FoodEntry(
+      id: newId(),
+      day: key,
+      loggedAt: at,
+      name: f.name,
+      brand: f.brand,
+      barcode: f.barcode,
+      basis: f.basis,
+      unit: f.unit,
+      amount: f.amount,
+      values: f.values,
+    );
+    final error = await state.saveFood(entry);
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(error ?? 'Přidáno: ${f.name}, ${amountLabel(f)}'),
+          action: error != null
+              ? null
+              : SnackBarAction(
+                  label: 'Vrátit',
+                  onPressed: () => state.removeFood(entry.id),
+                ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
@@ -194,8 +241,13 @@ class _NutritionPageState extends State<NutritionPage> {
       final key = dayKey(day);
       final entries = state.foodsOn(key);
       final totals = totalsOf(entries);
-      final scheme = Theme.of(context).colorScheme;
+      final p = context.palette;
       final text = Theme.of(context).textTheme;
+      // Skupiny podle části dne, v každé od nejstaršího.
+      final byMeal = <String, List<FoodEntry>>{};
+      for (final e in entries.reversed) {
+        (byMeal[mealOf(e.loggedAt.toLocal())] ??= []).add(e);
+      }
       final anyMissing =
           entries.isNotEmpty &&
           (totals.kcalMissing ||
@@ -203,17 +255,19 @@ class _NutritionPageState extends State<NutritionPage> {
               totals.carbsMissing ||
               totals.fatMissing);
       String lower(bool missing) => missing && entries.isNotEmpty ? '≥ ' : '';
-      return Scaffold(
-        appBar: AppBar(title: const Text('Výživa')),
+      return LargeTitlePage(
+        title: widget.root ? 'Strava' : 'Výživa',
+        actions: [if (widget.root) SettingsButton(state)],
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => addFoodFlow(context, state, key),
           icon: const Icon(Icons.add),
           label: const Text('Přidat jídlo'),
         ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-          children: [
-            Row(
+        padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
+        children: [
+          Panel(
+            padding: const EdgeInsets.all(Space.xs),
+            child: Row(
               children: [
                 IconButton(
                   tooltip: 'Předchozí den',
@@ -236,92 +290,110 @@ class _NutritionPageState extends State<NutritionPage> {
                 ),
               ],
             ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${lower(totals.kcalMissing)}${_n(totals.kcal)} kcal',
-                      style: text.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Bílkoviny ${lower(totals.proteinMissing)}'
-                      '${_g(totals.protein)} · '
-                      'Sacharidy ${lower(totals.carbsMissing)}'
-                      '${_g(totals.carbs)} · '
-                      'Tuky ${lower(totals.fatMissing)}${_g(totals.fat)}',
-                    ),
-                    if (state.profile.proteinTarget != null)
-                      _Progress(
-                        label: 'Bílkoviny',
-                        value: totals.protein,
-                        target: state.profile.proteinTarget!,
-                        unit: 'g',
-                      ),
-                    if (state.profile.kcalTarget != null)
-                      _Progress(
-                        label: 'Energie',
-                        value: totals.kcal,
-                        target: state.profile.kcalTarget!,
-                        unit: 'kcal',
-                      ),
-                    if (anyMissing)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '≥ = u některého jídla hodnota chybí, skutečný '
-                          'součet může být vyšší.',
-                          style: text.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+          ),
+          const SizedBox(height: Space.m),
+          _Summary(state, totals: totals, empty: entries.isEmpty),
+          if (anyMissing)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 0),
+              child: Text(
+                '≥ = u některého jídla hodnota chybí, skutečný '
+                'součet může být vyšší.',
+                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.kitchen_outlined),
-                title: const Text('Co mám v ledničce'),
-                subtitle: const Text(
-                  'Vyfoť ledničku a nech si navrhnout jídlo',
-                ),
-                trailing: const Icon(Icons.chevron_right),
+          if (state.quickFoods.isNotEmpty) ...[
+            const SectionHeader('Rychle přidat'),
+            Wrap(
+              spacing: Space.s,
+              runSpacing: Space.s,
+              children: [
+                for (final f in state.quickFoods.take(8))
+                  GestureDetector(
+                    onLongPress: () => _toggleFavorite(f),
+                    child: ActionChip(
+                      avatar: Icon(
+                        state.isFavoriteFood(f)
+                            ? Icons.star_rounded
+                            : Icons.add_rounded,
+                        size: 18,
+                      ),
+                      label: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: Text(f.name, overflow: TextOverflow.ellipsis),
+                      ),
+                      tooltip: '${f.name}, ${amountLabel(f)}',
+                      onPressed: () => _quickAdd(f, key),
+                    ),
+                  ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.xs,
+                Space.s,
+                Space.xs,
+                0,
+              ),
+              child: Text(
+                'Podržením jídlo připneš mezi oblíbená (hvězdička).',
+                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+              ),
+            ),
+          ],
+          const SizedBox(height: Space.xxl),
+          GroupedSection(
+            children: [
+              GroupedRow(
+                icon: Icons.kitchen_outlined,
+                title: 'Co mám v ledničce',
+                subtitle: 'Vyfoť ledničku a nech si navrhnout jídlo',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => FridgePage(state)),
                 ),
               ),
-            ),
-            if (entries.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: Text('Tento den nic nezapsáno.')),
-              ),
-            for (final e in entries)
-              ListTile(
-                title: Text(e.name),
-                subtitle: Text(_subtitle(e)),
-                onTap: () => openFoodForm(context, state, day: key, entry: e),
-                trailing: IconButton(
-                  tooltip: 'Smazat záznam',
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _delete(e),
+            ],
+          ),
+          if (entries.isEmpty)
+            const EmptyState(
+              icon: Icons.restaurant_outlined,
+              title: 'Tento den nic nezapsáno.',
+              message: 'Jídlo přidáš tlačítkem dole nebo čárovým kódem.',
+            )
+          else
+            for (final meal in _meals)
+              if (byMeal[meal] case final list?)
+                GroupedSection(
+                  header:
+                      '$meal · ${lower(totalsOf(list).kcalMissing)}'
+                      '${_n(totalsOf(list).kcal)} kcal',
+                  children: [
+                    for (final e in list)
+                      GroupedRow(
+                        title: e.name,
+                        subtitle: _subtitle(e),
+                        onTap: () =>
+                            openFoodForm(context, state, day: key, entry: e),
+                        chevron: false,
+                        trailing: IconButton(
+                          tooltip: 'Smazat záznam',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _delete(e),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-            const SizedBox(height: 16),
-            Text(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Space.l),
+            child: Text(
               'Orientační hodnoty, žádné zdravotní doporučení. Údaje z '
               'čárových kódů pocházejí z databáze Open Food Facts (ODbL) '
               'a mohou být nepřesné.',
-              style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: text.bodySmall?.copyWith(color: p.secondaryLabel),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     },
   );
@@ -334,29 +406,216 @@ class _NutritionPageState extends State<NutritionPage> {
   }
 }
 
-/// Postup k vlastnímu cíli (bez hodnocení, jen číslo a pruh).
-class _Progress extends StatelessWidget {
-  final String label;
-  final double value;
-  final double target;
-  final String unit;
-  const _Progress({
-    required this.label,
-    required this.value,
-    required this.target,
-    required this.unit,
-  });
+/// Souhrn dne: kruhy k cílům, pod nimi makra. Bez vlastního cíle kruhy
+/// ukazují doporučení z tělesné váhy, které jde jedním klepnutím přijmout.
+class _Summary extends StatelessWidget {
+  final AppState state;
+  final DayTotals totals;
+  final bool empty;
+  const _Summary(this.state, {required this.totals, required this.empty});
+
+  Future<void> _useSuggested(BuildContext context, SuggestedTargets s) async {
+    try {
+      await state.setNutritionTargets(protein: s.protein, kcal: s.kcal);
+    } catch (_) {
+      if (context.mounted) {
+        showToast(context, 'Cíl se nepodařilo uložit. Zkus to znovu.');
+      }
+    }
+  }
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$label ${_n(value)} / ${_n(target)} $unit'),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(value: (value / target).clamp(0, 1)),
-      ],
-    ),
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final p = context.palette;
+    final own = state.profile;
+    final suggested = own.proteinTarget == null && own.kcalTarget == null
+        ? state.suggestedTargets
+        : null;
+    final proteinTarget = own.proteinTarget ?? suggested?.protein;
+    final kcalTarget = own.kcalTarget ?? suggested?.kcal;
+    String lower(bool missing) => missing && !empty ? '≥ ' : '';
+    Widget ring(String label, double value, double target, String unit) {
+      final left = target - value;
+      return Expanded(
+        child: Semantics(
+          label:
+              '$label ${_n(value)} z ${_n(target)} $unit'
+              '${left > 0 ? ', zbývá ${_n(left)}' : ', cíl splněn'}',
+          child: ExcludeSemantics(
+            child: Column(
+              children: [
+                ProgressRing(
+                  value: value / target,
+                  size: 104,
+                  stroke: 10,
+                  child: Padding(
+                    padding: const EdgeInsets.all(Space.m),
+                    child: FittedBox(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _n(value),
+                            style: text.titleLarge?.copyWith(
+                              fontFeatures: tabular,
+                            ),
+                          ),
+                          Text(
+                            'z ${_n(target)} $unit',
+                            style: text.labelSmall?.copyWith(
+                              color: p.secondaryLabel,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: Space.s),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(label, style: text.labelLarge, maxLines: 1),
+                ),
+                Text(
+                  left > 0 ? 'zbývá ${_n(left)} $unit' : 'cíl splněn',
+                  textAlign: TextAlign.center,
+                  style: text.bodySmall?.copyWith(
+                    color: left > 0 ? p.secondaryLabel : p.positive,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final rings = [
+      if (proteinTarget case final t?)
+        ring('Bílkoviny', totals.protein, t, 'g'),
+      if (kcalTarget case final t?) ring('Energie', totals.kcal, t, 'kcal'),
+    ];
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (rings.isNotEmpty) ...[
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: rings),
+            const SizedBox(height: Space.l),
+          ],
+          Row(
+            children: [
+              for (final (value, label) in [
+                ('${lower(totals.kcalMissing)}${_n(totals.kcal)}', 'kcal'),
+                (
+                  '${lower(totals.proteinMissing)}${_g(totals.protein)}',
+                  'bílkoviny',
+                ),
+                (
+                  '${lower(totals.carbsMissing)}${_g(totals.carbs)}',
+                  'sacharidy',
+                ),
+                ('${lower(totals.fatMissing)}${_g(totals.fat)}', 'tuky'),
+              ])
+                Expanded(child: StatTile(value, label)),
+            ],
+          ),
+          if (suggested != null) ...[
+            const SizedBox(height: Space.s),
+            _NoteWithAction(
+              children: [
+                Flexible(
+                  child: Text(
+                    'Doporučeno z tvé váhy '
+                    '${formatKg(state.bodyweights.first.kg)} kg.',
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _useSuggested(context, suggested),
+                  child: const Text('Nastavit jako cíl'),
+                ),
+              ],
+            ),
+          ] else if (rings.isEmpty) ...[
+            const SizedBox(height: Space.s),
+            _NoteWithAction(
+              children: [
+                Flexible(
+                  child: Text(
+                    'Zapiš tělesnou váhu a doporučím ti cíl bílkovin.',
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => BodyweightPage(state)),
+                  ),
+                  child: const Text('Zapsat váhu'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Poznámka s tlačítkem vedle; při velkém písmu tlačítko spadne pod text.
+class _NoteWithAction extends StatelessWidget {
+  final List<Widget> children;
+  const _NoteWithAction({required this.children});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      final scale = MediaQuery.textScalerOf(context).scale(1);
+      if (scale <= 1.3 && c.maxWidth >= 320) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: children,
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [for (final w in children) w is Flexible ? w.child : w],
+      );
+    },
   );
+}
+
+/// Hvězdička: připne jídlo do Rychle přidat, nebo ho odepne.
+class _FavoriteButton extends StatelessWidget {
+  final AppState state;
+  final FoodEntry food;
+  const _FavoriteButton(this.state, this.food);
+
+  @override
+  Widget build(BuildContext context) {
+    final on = state.isFavoriteFood(food);
+    return IconButton(
+      tooltip: on ? 'Odepnout z oblíbených' : 'Připnout mezi oblíbená',
+      isSelected: on,
+      icon: Icon(
+        on ? Icons.star_rounded : Icons.star_outline_rounded,
+        color: on ? context.palette.accent : context.palette.secondaryLabel,
+      ),
+      onPressed: () async {
+        try {
+          await state.toggleFavoriteFood(food);
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Oblíbená se nepodařilo uložit. Zkus to znovu.'),
+              ),
+            );
+          }
+        }
+      },
+    );
+  }
 }

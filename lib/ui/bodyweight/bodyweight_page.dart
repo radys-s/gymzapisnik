@@ -5,6 +5,9 @@ import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/bodyweight.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
+import '../widgets/chart_axis.dart';
 
 /// Dialog „Zapsat váhu". Vrací `true`, když se váha uložila.
 Future<bool> addBodyweightDialog(BuildContext context, AppState state) async {
@@ -30,6 +33,7 @@ class _WeightDialogState extends State<_WeightDialog> {
         : formatKg(widget.state.bodyweights.first.kg),
   );
   String? error;
+  bool busy = false;
 
   @override
   void dispose() {
@@ -38,12 +42,20 @@ class _WeightDialogState extends State<_WeightDialog> {
   }
 
   Future<void> _save() async {
+    if (busy) return;
     final kg = parseNum(controller.text);
-    if (kg == null || !await widget.state.addBodyweight(kg)) {
-      if (mounted) setState(() => error = 'Zadej váhu mezi 20 a 400 kg.');
-      return;
+    setState(() => busy = true);
+    try {
+      if (kg == null || !await widget.state.addBodyweight(kg)) {
+        if (mounted) setState(() => error = 'Zadej váhu mezi 20 a 400 kg.');
+        return;
+      }
+      if (mounted) popOnce(context, true);
+    } catch (_) {
+      if (mounted) setState(() => error = 'Váhu se nepodařilo uložit.');
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
-    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -60,7 +72,7 @@ class _WeightDialogState extends State<_WeightDialog> {
         onPressed: () => Navigator.pop(context, false),
         child: const Text('Zrušit'),
       ),
-      FilledButton(onPressed: _save, child: const Text('Uložit')),
+      FilledButton(onPressed: busy ? null : _save, child: const Text('Uložit')),
     ],
   );
 }
@@ -120,37 +132,67 @@ class BodyweightPage extends StatelessWidget {
     listenable: state,
     builder: (context, _) {
       final list = state.bodyweights;
-      return Scaffold(
-        appBar: AppBar(title: const Text('Tělesná váha')),
+      return LargeTitlePage(
+        title: 'Tělesná váha',
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => addBodyweightDialog(context, state),
           icon: const Icon(Icons.add),
           label: const Text('Zapsat váhu'),
         ),
-        body: list.isEmpty
-            ? const Center(child: Text('Zatím žádná váha.'))
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                children: [
-                  if (list.length >= 2) ...[
+        padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
+        children: [
+          if (list.isEmpty)
+            const EmptyState(
+              icon: Icons.monitor_weight_outlined,
+              title: 'Zatím žádná váha',
+              message: 'Zapiš si váhu a uvidíš, jak se mění.',
+            )
+          else ...[
+            if (list.length >= 2)
+              Panel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (list.length >= 3) ...[
+                      Text(
+                        'Průměr za 7 dní: ${formatKg(double.parse(trailingAverage(list.reversed.toList()).last.toStringAsFixed(1)))} kg',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        'Čára je průměr, tečky jednotlivá vážení. '
+                        'Váha během dne kolísá, průměr ukáže skutečný směr.',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: context.palette.secondaryLabel),
+                      ),
+                      const SizedBox(height: Space.l),
+                    ],
                     SizedBox(
                       height: 200,
                       child: _Chart(list.reversed.toList()),
                     ),
-                    const SizedBox(height: 8),
                   ],
-                  for (final b in list)
-                    ListTile(
-                      title: Text('${formatKg(b.kg)} kg'),
-                      subtitle: Text(formatDate(b.date)),
-                      trailing: IconButton(
-                        tooltip: 'Smazat záznam',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => state.removeBodyweight(b.id),
-                      ),
-                    ),
-                ],
+                ),
               ),
+            if (list.length >= 2) const SizedBox(height: Space.xxl),
+            GroupedSection(
+              header: 'Záznamy',
+              children: [
+                for (final b in list)
+                  GroupedRow(
+                    title: '${formatKg(b.kg)} kg',
+                    subtitle: formatDate(b.date),
+                    chevron: false,
+                    trailing: IconButton(
+                      tooltip: 'Smazat záznam',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => state.removeBodyweight(b.id),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
       );
     },
   );
@@ -164,10 +206,13 @@ class _Chart extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final values = [for (final p in points) p.kg];
+    final smooth = points.length >= 3;
+    final average = trailingAverage(points);
     final minY = values.reduce((a, b) => a < b ? a : b);
     final maxY = values.reduce((a, b) => a > b ? a : b);
     final pad = ((maxY - minY) * 0.2).clamp(1.0, 10.0);
     return Semantics(
+      container: true,
       label:
           'Graf váhy, ${points.length} záznamů, od ${formatKg(points.first.kg)} '
           'do ${formatKg(points.last.kg)} kg',
@@ -187,17 +232,14 @@ class _Chart extends StatelessWidget {
                 reservedSize: 24,
                 getTitlesWidget: (value, meta) {
                   final i = value.round();
-                  if (i != value || i < 0 || i >= points.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final step = (points.length / 4).ceil();
-                  if (i != points.length - 1 && i % step != 0) {
+                  if (i != value || !showDateLabel(i, points.length)) {
                     return const SizedBox.shrink();
                   }
                   final d = points[i].date.toLocal();
-                  return Text(
+                  return axisLabel(
+                    meta,
                     '${d.day}. ${d.month}.',
-                    style: const TextStyle(fontSize: 11),
+                    const TextStyle(fontSize: 11),
                   );
                 },
               ),
@@ -206,27 +248,48 @@ class _Chart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (value, meta) => Text(
+                getTitlesWidget: (value, meta) => valueAxisLabel(
+                  value,
+                  meta,
                   formatKg(value.roundToDouble()),
-                  style: const TextStyle(fontSize: 11),
+                  const TextStyle(fontSize: 11),
                 ),
               ),
             ),
           ),
           lineBarsData: [
+            // Jednotlivá vážení jen jako tečky; u dvou záznamů ještě bez průměru.
             LineChartBarData(
               spots: [
                 for (var i = 0; i < points.length; i++)
                   FlSpot(i.toDouble(), points[i].kg),
               ],
-              color: scheme.primary,
-              barWidth: 3,
+              color: smooth
+                  ? scheme.primary.withValues(alpha: 0.45)
+                  : scheme.primary,
+              barWidth: smooth ? 0 : 3,
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
-                show: true,
+                show: !smooth,
                 color: scheme.primary.withValues(alpha: 0.12),
               ),
             ),
+            if (smooth)
+              LineChartBarData(
+                spots: [
+                  for (var i = 0; i < points.length; i++)
+                    FlSpot(i.toDouble(), average[i]),
+                ],
+                isCurved: true,
+                preventCurveOverShooting: true,
+                color: scheme.primary,
+                barWidth: 3,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: scheme.primary.withValues(alpha: 0.12),
+                ),
+              ),
           ],
         ),
       ),

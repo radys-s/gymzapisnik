@@ -11,6 +11,7 @@ import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/nutrition.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/nutrition/nutrition_page.dart';
+import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -385,12 +386,21 @@ void main() {
       await tester.tap(find.text('Uložit'));
       await settle(tester);
 
-      expect(find.text('Ovesná kaše'), findsOneWidget);
-      expect(find.text('300 kcal', findRichText: true), findsWidgets);
+      expect(find.widgetWithText(GroupedRow, 'Ovesná kaše'), findsOneWidget);
+      expect(find.textContaining(' · 300 kcal'), findsWidgets);
       // chybějící sacharidy a tuky: součet je jen dolní odhad
       expect(find.textContaining('Sacharidy ≥ –'), findsNothing);
       expect(find.textContaining('≥ 300 kcal'), findsNothing);
-      expect(find.textContaining('Sacharidy ≥ 0 g'), findsOneWidget);
+      expect(find.text('≥ 0 g'), findsNWidgets(2));
+      expect(
+        find.textContaining('Oběd ·').evaluate().length +
+            find.textContaining('Snídaně ·').evaluate().length +
+            find.textContaining('Svačina ·').evaluate().length +
+            find.textContaining('Večeře ·').evaluate().length +
+            // Po půlnoci jde jídlo do „V noci“.
+            find.textContaining('V noci ·').evaluate().length,
+        1,
+      );
       expect(state.foods, hasLength(1));
 
       await tester.tap(find.byTooltip('Smazat záznam'));
@@ -501,8 +511,8 @@ void main() {
         () => state.saveFood(food('p', day: '2026-10-03', name: 'Rýže')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Rýže'), findsOneWidget);
-      await tester.tap(find.text('Rýže'));
+      expect(find.widgetWithText(GroupedRow, 'Rýže'), findsOneWidget);
+      await tester.tap(find.widgetWithText(GroupedRow, 'Rýže'));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.widgetWithText(TextField, 'Množství (g)'),
@@ -515,5 +525,79 @@ void main() {
       expect(state.foods.single.amount, 250);
       expect(state.foods.single.day, '2026-10-03');
     });
+  });
+
+  test('logged time keeps the chosen day', () {
+    final now = DateTime(2026, 10, 7, 21, 15);
+    expect(loggedAtFor('2026-10-07', now), now);
+    expect(loggedAtFor('2026-10-05', now), DateTime(2026, 10, 5, 21, 15));
+    expect(
+      loggedAtFor('2026-10-05', now, timeOf: DateTime(2026, 9, 1, 8)),
+      DateTime(2026, 10, 5, 8),
+    );
+  });
+
+  test('meal slot by time of day', () {
+    expect(mealOf(DateTime(2026, 1, 1, 7)), 'Snídaně');
+    expect(mealOf(DateTime(2026, 1, 1, 10, 29)), 'Snídaně');
+    expect(mealOf(DateTime(2026, 1, 1, 10, 30)), 'Oběd');
+    expect(mealOf(DateTime(2026, 1, 1, 15)), 'Svačina');
+    expect(mealOf(DateTime(2026, 1, 1, 17, 30)), 'Večeře');
+    expect(mealOf(DateTime(2026, 1, 1, 23)), 'Večeře');
+    // Po půlnoci to není snídaně.
+    expect(mealOf(DateTime(2026, 1, 1, 1)), 'V noci');
+    expect(mealOf(DateTime(2026, 1, 1, 3, 59)), 'V noci');
+    expect(mealOf(DateTime(2026, 1, 1, 4)), 'Snídaně');
+  });
+
+  testWidgets('day groups by meal, rings for targets, quick add with undo', (
+    tester,
+  ) async {
+    final state = newState();
+    await tester.runAsync(() async {
+      await state.load();
+      await state.setNutritionTargets(protein: 100);
+      await state.saveFood(food('a', day: '2026-10-05', name: 'Rýže'));
+    });
+    tester.view.physicalSize = const Size(320, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 1600),
+            textScaler: TextScaler.linear(1.5),
+          ),
+          child: NutritionPage(state, initialDay: DateTime(2026, 10, 5)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Oběd · 300 kcal'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('^Bílkoviny 15 z 100 g')),
+      findsOneWidget,
+    );
+    expect(find.text('Rychle přidat'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ActionChip, 'Rýže'));
+    await tester.runAsync(
+      () => Future.delayed(const Duration(milliseconds: 300)),
+    );
+    await tester.pumpAndSettle();
+    expect(state.foodsOn('2026-10-05'), hasLength(2));
+    // Minulý den: stejný den a stejná část dne jako původní jídlo.
+    final added = state.foodsOn('2026-10-05').firstWhere((f) => f.id != 'a');
+    expect(dayKey(added.loggedAt), '2026-10-05');
+    expect(mealOf(added.loggedAt), 'Oběd');
+    expect(find.textContaining('Přidáno: Rýže'), findsOneWidget);
+    await tester.tap(find.text('Vrátit'));
+    await tester.runAsync(
+      () => Future.delayed(const Duration(milliseconds: 300)),
+    );
+    await tester.pumpAndSettle();
+    expect(state.foodsOn('2026-10-05'), hasLength(1));
+    expect(tester.takeException(), isNull);
   });
 }

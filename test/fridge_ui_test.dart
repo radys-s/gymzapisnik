@@ -24,6 +24,7 @@ class FakeCoach implements FridgeCoach {
   bool enabled = true;
   AiResult<List<PantryItem>> scan = const AiOk([]);
   AiResult<List<MealIdea>> meals = const AiOk([]);
+  Completer<AiResult<List<MealIdea>>>? pendingMeals;
   final scans = <Uint8List>[];
   final mealRequests = <(List<PantryItem>, MealContext)>[];
 
@@ -39,7 +40,7 @@ class FakeCoach implements FridgeCoach {
     MealContext context,
   ) async {
     mealRequests.add((items, context));
-    return meals;
+    return pendingMeals == null ? meals : await pendingMeals!.future;
   }
 }
 
@@ -115,9 +116,10 @@ void main() {
     'unknown unit is visible and editing requires an explicit choice',
     (tester) async {
       final state = await pump(tester);
-      await tester.runAsync(
-        () => state.savePantry(const [PantryItem('chléb', amount: 200)]),
-      );
+      await tester.runAsync(() async {
+        await state.savePantry(const [PantryItem('chléb', amount: 200)]);
+        await state.savePantrySelection({pantryKey('chléb')}, 20);
+      });
       await tester.pumpWidget(
         MaterialApp(
           theme: buildTheme(Brightness.dark),
@@ -126,7 +128,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('200 (jednotka neznámá)'), findsOneWidget);
-      await tester.tap(find.byTooltip('Upravit chléb'));
+      await tester.tap(find.byTooltip('Možnosti: chléb'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upravit množství'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Uložit'));
       await tester.pump();
@@ -136,6 +140,8 @@ void main() {
       await settle(tester);
       expect(state.pantry.single.unit, 'g');
       expect(find.text('200 g'), findsOneWidget);
+      // Změna množství nevrátí vyřazenou potravinu do výběru.
+      expect(state.pantryExcluded, {pantryKey('chléb')});
     },
   );
 
@@ -153,7 +159,9 @@ void main() {
     expect(img.decodeJpg(coach.scans.single)!.width, 16);
     expect(find.text('Vejce'), findsOneWidget);
     expect(find.text('6 ks'), findsOneWidget);
-    expect(find.text('Přidáno 2. Zkontroluj seznam.'), findsOneWidget);
+    expect(state.pantry, isEmpty);
+    await tester.tap(find.text('Potvrdit seznam'));
+    await settle(tester);
     expect(state.pantry.map((i) => i.name), ['Vejce', 'Tvaroh']);
     expect(state.profile.aiNoticeAccepted, isTrue);
 
@@ -161,7 +169,8 @@ void main() {
     await tester.tap(find.text('Z galerie'));
     await settle(tester);
     expect(find.text('Než použiješ AI'), findsNothing);
-    expect(find.text('Nic nového, všechno už v seznamu je.'), findsOneWidget);
+    await tester.tap(find.text('Potvrdit seznam'));
+    await settle(tester);
     expect(state.pantry, hasLength(2));
   });
 
@@ -174,12 +183,46 @@ void main() {
     expect(coach.scans, isEmpty);
   });
 
+  testWidgets(
+    'cancelled meal request cannot reopen ideas or persist a late response',
+    (tester) async {
+      final state = await pump(tester);
+      await tester.runAsync(() async {
+        await state.acceptAiNotice();
+        await state.savePantry(const [PantryItem('tvaroh')]);
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.dark),
+          home: FridgePage(state, key: UniqueKey()),
+        ),
+      );
+      coach.pendingMeals = Completer();
+      await tester.tap(find.text('Navrhni jídlo'));
+      await tester.pump();
+      await tester.runAsync(
+        () => Future.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Zrušit čekání'));
+      await tester.pumpAndSettle();
+      coach.pendingMeals!.complete(const AiOk([idea]));
+      await settle(tester);
+      expect(state.savedMealIdeas, isEmpty);
+      expect(find.text('Návrhy jídel'), findsNothing);
+      expect(find.text('Co mám v ledničce'), findsOneWidget);
+    },
+  );
+
   testWidgets('empty photo and quota error are explained', (tester) async {
     await pump(tester);
     await tester.tap(find.text('Vyfotit'));
     await tester.pumpAndSettle();
     await acceptNotice(tester);
-    expect(find.text('Na fotce AI žádné jídlo nenašla.'), findsOneWidget);
+    expect(
+      find.textContaining('Na fotce AI žádné jídlo nenašla.'),
+      findsOneWidget,
+    );
 
     coach.scan = const AiError(
       AiErrorKind.quota,
@@ -231,7 +274,9 @@ void main() {
     expect(state.pantry.map((i) => i.name), contains('Kečup'));
 
     await tester.tap(find.widgetWithText(CheckboxListTile, 'Kečup'));
+    await settle(tester);
     await tester.tap(find.text('10 min'));
+    await settle(tester);
     coach.meals = const AiOk([idea]);
     await tester.tap(find.text('Navrhni jídlo'));
     await tester.pumpAndSettle();

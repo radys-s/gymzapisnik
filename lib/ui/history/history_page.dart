@@ -5,6 +5,8 @@ import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
+import '../design/components.dart';
+import '../design/tokens.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 
@@ -37,45 +39,48 @@ class HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
     builder: (context, _) {
-      final text = Theme.of(context).textTheme;
-      final children = <Widget>[
-        Text('Historie', style: text.headlineMedium),
-        const SizedBox(height: 8),
-      ];
-      if (state.workouts.isEmpty) {
-        children.add(
-          const Padding(
-            padding: EdgeInsets.only(top: 16),
-            child: Text('Zatím žádný dokončený trénink.'),
-          ),
-        );
-      }
-      String? month;
+      final groups = <String, List<Workout>>{};
       for (final w in state.workouts) {
-        final m = monthLabel(w.date);
-        if (m != month) {
-          month = m;
-          children.add(
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
-              child: Text(m, style: text.titleSmall),
-            ),
-          );
-        }
-        children.add(_WorkoutTile(state: state, workout: w));
+        groups.putIfAbsent(monthLabel(w.date), () => []).add(w);
       }
-      return ListView(padding: const EdgeInsets.all(16), children: children);
+      return LargeTitlePage(
+        title: 'Historie',
+        children: [
+          if (state.workouts.isEmpty)
+            const EmptyState(
+              icon: Icons.history,
+              title: 'Zatím žádný trénink',
+              message: 'Dokončené tréninky se tu objeví po měsících.',
+            ),
+          for (final MapEntry(key: month, value: list) in groups.entries)
+            GroupedSection(
+              header: month,
+              children: [
+                for (final w in list) WorkoutRow(state: state, workout: w),
+              ],
+            ),
+        ],
+      );
     },
   );
 }
 
-class _WorkoutTile extends StatelessWidget {
+/// Řádek tréninku: název, kdy, série a objem, štítek rekordu.
+class WorkoutRow extends StatelessWidget {
   final AppState state;
   final Workout workout;
-  const _WorkoutTile({required this.state, required this.workout});
+  final DateTime Function() now;
+  const WorkoutRow({
+    super.key,
+    required this.state,
+    required this.workout,
+    this.now = DateTime.now,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
     var sets = 0;
     var kg = 0.0;
     for (final e in workout.exercises) {
@@ -94,23 +99,59 @@ class _WorkoutTile extends StatelessWidget {
         .map((e) => state.exercise(e.exerciseId).name)
         .toSet()
         .join(', ');
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(workout.name),
-        subtitle: Text(
-          '${formatDate(workout.date)} · ${setsLabel(sets)}'
-          '${kg > 0 ? ' · ${formatKg(kg.roundToDouble())} kg' : ''}\n$names',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        isThreeLine: true,
-        trailing: prs > 0
-            ? Chip(label: Text('$prs PR'), visualDensity: VisualDensity.compact)
-            : null,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => SummaryPage(state, workout)),
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SummaryPage(state, workout)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Space.l, Space.m, Space.s, Space.m),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          workout.name,
+                          style: text.titleMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (prs > 0) ...[
+                        const SizedBox(width: Space.s),
+                        Pill(
+                          prs == 1
+                              ? 'Rekord'
+                              : prs <= 4
+                              ? '$prs rekordy'
+                              : '$prs rekordů',
+                          icon: Icons.emoji_events,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${relativeDay(workout.date, now())} · ${setsLabel(sets)}'
+                    '${kg > 0 ? ' · ${formatVolume(kg)} kg' : ''}',
+                    style: text.bodySmall?.copyWith(fontFeatures: tabular),
+                  ),
+                  Text(
+                    names,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 22, color: p.tertiaryLabel),
+          ],
         ),
       ),
     );

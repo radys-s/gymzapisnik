@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import '../ai/trainer.dart';
+import '../coach/plan_quiz.dart';
+import '../coach/splits.dart';
 import '../domain/bodyweight.dart';
 import '../domain/models.dart';
 import '../domain/nutrition.dart';
@@ -15,12 +18,20 @@ const backupVersion = 1;
 /// Klíče profilu, které jsou nastavením a patří do zálohy.
 const backupSettingsKeys = {
   'restSeconds',
+  'weightStep',
   'split',
   'theme',
+  'accent',
+  'look',
   'weekGoal',
   'proteinTarget',
   'kcalTarget',
   'pantry',
+  'programs',
+  'trainingDays',
+  'plan',
+  'coachChat',
+  'favoriteFoods',
 };
 
 class Backup {
@@ -119,16 +130,53 @@ Backup decodeBackup(String source) {
       throw const FormatException('Záloha obsahuje neplatné nastavení.');
     }
     if (rawSettings is Map) {
-      for (final key in ['split', 'theme']) {
+      for (final key in ['split', 'theme', 'accent', 'look']) {
         if (rawSettings[key] != null && rawSettings[key] is! String) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
       }
-      for (final key in ['restSeconds', 'weekGoal']) {
+      final programs = rawSettings['programs'];
+      if (programs != null &&
+          (programs is! List ||
+              programs.length > maxCustomPrograms ||
+              programs.any((p) => SplitTemplate.tryCustom(p) == null) ||
+              {for (final p in programs) (p as Map)['id']}.length !=
+                  programs.length)) {
+        throw const FormatException('Záloha obsahuje neplatný program.');
+      }
+      final days = rawSettings['trainingDays'];
+      if (days != null &&
+          (days is! List ||
+              days.any((d) => d is! num || d < 1 || d > 7 || d != d.toInt()))) {
+        throw const FormatException('Záloha obsahuje neplatné dny tréninku.');
+      }
+      for (final key in ['restSeconds', 'weekGoal', 'weightStep']) {
         final value = rawSettings[key];
         if (value != null && (value is! num || !value.isFinite)) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
+      }
+      final plan = rawSettings['plan'];
+      if (plan != null && PlanAnswers.tryParse(plan) == null) {
+        throw const FormatException('Záloha obsahuje neplatný plán.');
+      }
+      final chat = rawSettings['coachChat'];
+      if (chat != null &&
+          (chat is! List || chat.any((m) => ChatMessage.tryParse(m) == null))) {
+        throw const FormatException(
+          'Záloha obsahuje neplatný chat s trenérem.',
+        );
+      }
+      final favorites = rawSettings['favoriteFoods'];
+      if (favorites != null &&
+          (favorites is! List ||
+              favorites.length > maxFavoriteFoods ||
+              favorites.any((f) => !validFavoriteFood(f)))) {
+        throw const FormatException('Záloha obsahuje neplatná oblíbená jídla.');
+      }
+      final step = rawSettings['weightStep'];
+      if (step != null && !weightSteps.contains(step)) {
+        throw const FormatException('Záloha obsahuje neplatný krok váhy.');
       }
     }
     final ids = <String>{};

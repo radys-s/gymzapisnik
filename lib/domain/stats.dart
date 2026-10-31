@@ -8,6 +8,15 @@ double e1rm(double weight, int reps) {
   return weight * (1 + reps / 30);
 }
 
+/// Váha, se kterou by šlo udělat [reps] opakování při daném odhadu 1RM
+/// (Epley obráceně), zaokrouhlená dolů na [step] kg, ať jde naložit.
+double weightForReps(double oneRm, int reps, {double step = 2.5}) {
+  if (oneRm <= 0 || reps <= 0) return 0;
+  final raw = reps == 1 ? oneRm : oneRm / (1 + reps / 30);
+  // Malá tolerance: 100 / (1 + 6/30) × … nesmí kvůli plovoucí čárce spadnout o krok níž.
+  return (raw / step + 1e-9).floor() * step;
+}
+
 /// Porovná dvě série: kladné číslo = `a` je lepší.
 ///
 /// S váhou rozhoduje odhad 1RM, při shodě vyšší váha.
@@ -124,6 +133,22 @@ ExerciseComparison compareExercise(
     volumeLast: volumeLast,
     overall: overall,
   );
+}
+
+/// Cviky dvou tréninků vedle sebe: stejný cvik spáruje podle pořadí výskytu.
+/// Pořadí drží první trénink, cviky jen z druhého jdou na konec.
+List<(WorkoutExercise?, WorkoutExercise?)> pairExercises(Workout a, Workout b) {
+  List<WorkoutExercise> counted(Workout w) => [
+    for (final e in w.exercises)
+      if (e.countedSets.isNotEmpty) e,
+  ];
+  final rest = counted(b);
+  final pairs = <(WorkoutExercise?, WorkoutExercise?)>[];
+  for (final e in counted(a)) {
+    final i = rest.indexWhere((o) => o.exerciseId == e.exerciseId);
+    pairs.add((e, i < 0 ? null : rest.removeAt(i)));
+  }
+  return [...pairs, for (final o in rest) (null, o)];
 }
 
 enum RecordKind {

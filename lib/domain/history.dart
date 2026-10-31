@@ -120,6 +120,36 @@ List<PersonalRecord> newRecords(
   return result;
 }
 
+/// Rekordy, které série v rozběhnutém tréninku právě drží proti historii
+/// [before]. Při shodě v tréninku patří rekord první takové sérii; když
+/// ji později překoná jiná série, rekord se přesune na ni.
+///
+/// Bez historie cviku rekord nevzniká (stejně jako u [newRecords]).
+List<RecordKind> liveRecordKinds({
+  required SetEntry set,
+  required List<SetEntry> sessionSets,
+  required Map<RecordKind, PersonalRecord> before,
+  required ExerciseType type,
+}) {
+  if (!set.counts || before.isEmpty) return const [];
+  final result = <RecordKind>[];
+  for (final kind in recordKinds(type)) {
+    final value = recordValue(kind, set);
+    if (value <= 0 || value <= (before[kind]?.value ?? 0)) continue;
+    SetEntry? leader;
+    var best = 0.0;
+    for (final s in sessionSets.where((s) => s.counts)) {
+      final v = recordValue(kind, s);
+      if (leader == null || v > best) {
+        leader = s;
+        best = v;
+      }
+    }
+    if (identical(leader, set)) result.add(kind);
+  }
+  return result;
+}
+
 class WeekSummary {
   final int workouts;
   final int sets;

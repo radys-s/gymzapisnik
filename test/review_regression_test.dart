@@ -4,11 +4,15 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/finders.dart';
+
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/workout/workout_page.dart';
+import 'package:gymzapisnik/ui/workout/set_sheet.dart';
 
 import 'hevy_import_test.dart' show sample;
 
@@ -174,9 +178,9 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: WorkoutPage(state)));
     await tester.runAsync(() async {
       store.gate = Completer<void>();
-      await tester.tap(find.byTooltip('Potvrdit sérii'));
+      await tester.tap(byLabel('Potvrdit sérii'));
       await tester.pump();
-      await tester.tap(find.byTooltip('Zrušit potvrzení'));
+      await tester.tap(byLabel('Zrušit potvrzení'));
       expect(set.done, isTrue);
       store.gate!.complete();
       await state.saveActive();
@@ -229,9 +233,19 @@ void main() {
     (tester) async {
       await tester.runAsync(() => state.toggleDone(set));
       await tester.pumpWidget(MaterialApp(home: WorkoutPage(state)));
+      // Pole v sérii jen otevře list; čísla se píšou v něm.
+      await tester.tap(find.byType(TextField).first);
+      await tester.pumpAndSettle();
+      final sheet = find.byType(SetSheet);
       await tester.runAsync(() async {
-        await tester.enterText(find.byType(TextField).first, '82,5');
-        await tester.enterText(find.byType(TextField).last, '7');
+        await tester.enterText(
+          find.descendant(of: sheet, matching: find.byType(TextField)).first,
+          '82,5',
+        );
+        await tester.enterText(
+          find.descendant(of: sheet, matching: find.byType(TextField)).last,
+          '7',
+        );
         final result = await state.finishActive();
         final again = AppState(store);
         await again.load();
@@ -247,14 +261,18 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(MaterialApp(home: WorkoutPage(state)));
-    await tester.tap(find.byTooltip('Potvrdit sérii'));
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 80)));
+    await tester.tap(byLabel('Potvrdit sérii'));
+    await tester.runAsync(
+      () => Future.delayed(const Duration(milliseconds: 80)),
+    );
     await tester.pump();
-    await tester.tap(find.byTooltip('Zrušit potvrzení'));
+    await tester.tap(byLabel('Zrušit potvrzení'));
     expect(set.done, isTrue);
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.byTooltip('Zrušit potvrzení'));
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 80)));
+    await tester.tap(byLabel('Zrušit potvrzení'));
+    await tester.runAsync(
+      () => Future.delayed(const Duration(milliseconds: 80)),
+    );
     await tester.pump();
     expect(set.done, isFalse); // pozdější úmyslná oprava zůstává možná
     await tester.pumpWidget(const SizedBox());

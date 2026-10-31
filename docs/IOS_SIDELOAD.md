@@ -1,60 +1,76 @@
-# iPhone beta.3 přes iLoader
+# iPhone: IPA k sideloadu
 
-Cílem je release IPA pro fyzický iPhone, podepsaná až místně v iLoaderu.
-Sestavení potřebuje macOS/Xcode; Windows ani iLoader aplikaci nezkompilují.
-Do GitHubu se neposílá Apple účet, certifikát ani provisioning profile.
+Na iPhonu běží Gym zápisník jako nativní aplikace bez App Storu. GitHub Actions na macOS
+sestaví **nepodepsanou** IPA. Podepíše se až u tebe na počítači tvým Apple ID. Do GitHubu
+se neposílá žádný Apple účet, certifikát ani provisioning profile.
 
-## Stav 2026-10-10
+## 1. Sestavení
 
-Znovu prošlo 184 Flutter testů, 28 testů proxy, TypeScript a Flutter analýza.
-Statický test reprodukoval chybějící kamerové a galerijní oprávnění; Info.plist
-je opravený. Šest Python testů včetně release gates prošlo. GitHub workflow
-rozpoznal jako aktivní (ID 380589872).
+Workflow **iPhone beta for local sideloading** (`.github/workflows/ios-sideload.yml`) se
+spouští ručně: Actions → workflow → Run workflow. Z příkazové řádky:
 
-Tomáš schválil výhradně použití bez placeného čerpání. Před spuštěním byl
-v přihlášeném GitHub účtu radys-s ověřen rozpočet pro produkt Actions:
-0 USD, Stop usage Yes. Nastavení se neměnilo. Časový limit není cenový limit;
-před dalším během ověř stejnou blokaci placené spotřeby.
+```bash
+gh workflow run ios-sideload.yml --ref main
+```
 
-[Běh 38061742003](https://github.com/radys-s/gymzapisnik/actions/runs/38061742003)
-úspěšně dokončil Xcode 16.4 device release, 184 Flutter testů, šest Python
-testů, analýzu i balení. Zdroj: 61c26fc4a5dbfac097dfd3393419718aa48f460c.
-Stažená IPA prošla kontrolou ZIP integrity, identity, platformy iPhoneOS,
-ARM64 aplikace a frameworků, oprávnění, zdrojového commitu a SHA256.
+Workflow udělá tohle:
 
-Soubor: `dist/ios/gymzapisnik-1.0.0-beta.3-unsigned.ipa` (9 372 407 bajtů).
-SHA256: `1bd3524a981c0b6ab7d5e4f0dfa3810505f484dfaddbbbd4c9f7aab3baaf078e`.
-Metadata a kontrolní součet jsou vedle IPA. Soubor je nepodepsaný a potřebuje
-místní podpis v iLoaderu. Instalace, spuštění, kamera a úložiště na fyzickém
-iPhonu zatím nejsou ověřené. Tato beta má smysl pro nový test; nejde o
-potvrzení připravenosti pro veřejnou distribuci.
+1. Nainstaluje Flutter 3.47.2 a zamčené závislosti.
+2. Pustí Python testy, `flutter analyze` a `flutter test`.
+3. Zkompiluje release pro fyzický iPhone (arm64) s AI proxy (`AI_URL`).
+4. Zkontroluje bundle: identitu `cz.radys.gymzapisnik`, verzi, platformu iPhoneOS, arm64
+   binárky a texty oprávnění pro kameru a fotky.
+5. Zabalí `gymzapisnik-<verze>-unsigned.ipa`, `SHA256.txt`, `ios-build.json` a
+   `SOURCE_COMMIT.txt`.
 
-Workflow `iPhone beta for local sideloading` se spouští pouze ručně. Používá
-standardní macOS 15 runner, Flutter 3.47.2, zamčené závislosti, testy a analýzu.
-Po skutečné kompilaci kontroluje arm64 device bundle, Flutter frameworky,
-oprávnění, identitu a verzi. Teprve pak balí IPA, SHA256 a zdrojový commit.
-Artifact je uchovaný jeden den; repozitář je soukromý, minuty a úložiště
-mohou být účtované po vyčerpání kvóty. Časový limit je 40 minut na běh.
+Artifact `gymzapisnik-ios-sideload` vydrží jeden den. Stažení:
 
-Identita zůstává cz.radys.gymzapisnik / Gym zápisník. UI verze je beta.3+12;
-iOS bundle má číselnou verzi 1.0.0 a build 12. AI používá stávající HTTPS proxy.
-Na iOS tato beta nepodporuje tréninkové připomínky ani platby.
+```bash
+gh run download <run-id> -n gymzapisnik-ios-sideload -D dist/ios
+```
 
-## Po úspěšném sestavení
+## 2. Podpis a instalace (Windows)
 
-1. Zkontroluj SHA256 a importuj `gymzapisnik-1.0.0-beta.3-unsigned.ipa` do
-   iLoaderu. Podepsání a Apple přihlášení proveď lokálně podle jeho návodu.
-2. Zachovej identitu při dalších aktualizacích. Data Safari/PWA se do native
-   aplikace nepřenesou automaticky: nejdřív exportuj JSON, potom ho obnov v app.
-   Původní PWA ani její data kvůli tomu nemaž.
-3. Ověř celý trénink podle TESTERS.md, restart, opravu potvrzené série,
-   souhrn/historii a opakovanou obnovu bez duplicit. Pak skutečnou kameru,
-   galerii, odmítnutí oprávnění, zápis jídla a restart offline.
+Funguje to se zdarma Apple ID, jen podpis platí 7 dní a potom se musí obnovit.
 
-Úspěšný Xcode build ani podpis přes iLoader nejsou důkazem fyzického běhu.
-Pokud běh selže nebo gate odhalí nesprávný bundle, IPA se nepředává.
+**Sideloadly** (nejjednodušší):
+
+1. Nainstaluj iTunes a iCloud přímo od Applu (ne z Microsoft Store) a Sideloadly.
+2. Připoj iPhone kabelem a potvrď na něm „Důvěřovat tomuto počítači“.
+3. Přetáhni IPA do Sideloadly, zadej své Apple ID a dej Start.
+4. Na iPhonu otevři Nastavení → Obecné → Správa VPN a zařízení, vyber svůj Apple ID
+   profil a zvol Důvěřovat.
+5. Od iOS 16 zapni Nastavení → Soukromí a zabezpečení → Režim pro vývojáře. Telefon se
+   restartuje.
+
+Alternativy jsou **AltStore** (umí obnovovat podpis přes Wi-Fi) a **iLoader**.
+
+Před instalací zkontroluj SHA256 proti `SHA256.txt`:
+
+```powershell
+Get-FileHash .\gymzapisnik-*-unsigned.ipa -Algorithm SHA256
+```
+
+## 3. Aktualizace a data
+
+- Při podpisu nové verze zachovej stejné Apple ID a stejnou identitu. Aplikace se pak
+  přepíše a data v ní zůstanou.
+- Data z webové PWA se do nativní aplikace nepřenesou sama. V PWA dej Nastavení → Záloha,
+  v aplikaci pak Obnova ze souboru.
+- Když podpis vyprší, aplikace se nespustí, ale data zůstávají. Stačí ji znovu podepsat.
+
+## 4. Co ověřit na telefonu
+
+1. Úvod: kvíz, odhalení plánu, připomínka (povol oznámení), souhlas.
+2. Celý trénink: startovní váhy, potvrzení série, pauza se zamčeným telefonem (oznámení
+   na konci), dokončení a souhrn.
+3. Trenér: „Co mám dnes cvičit?“ musí vyjmenovat dnešní cviky. Pak jedna vlastní otázka.
+4. Strava: zápis jídla, čárový kód a AI lednička s fotkou z kamery i z galerie.
+5. Restart telefonu, letadlový režim (trénink jde zapsat offline), záloha a obnova.
+
+Úspěšný build a podpis ještě nedokazují, že aplikace na telefonu běží. To ukáže až
+průchod výše.
 
 Zdroje: [Flutter iOS build](https://docs.flutter.dev/deployment/ios),
-[image_picker oprávnění](https://pub.dev/packages/image_picker),
-[iLoader](https://github.com/nab138/iloader),
-[GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
+[Sideloadly](https://sideloadly.io), [AltStore](https://altstore.io),
+[iLoader](https://github.com/nab138/iloader).

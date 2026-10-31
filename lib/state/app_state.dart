@@ -4,10 +4,19 @@ import 'package:flutter/foundation.dart';
 
 import '../ai/ai_config.dart';
 import '../ai/fridge_coach.dart';
+import '../ai/trainer.dart';
 import '../coach/missions.dart';
+import '../coach/plan_quiz.dart';
+import '../coach/plates.dart';
 import '../coach/progression.dart';
 import '../coach/splits.dart';
+import '../coach/start_weight.dart';
+import '../coach/achievements.dart';
+import '../coach/coach_context.dart';
+import '../coach/local_coach.dart';
+import '../coach/recovery.dart';
 import '../coach/streak.dart';
+import '../coach/tips.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
@@ -20,6 +29,9 @@ import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/nutrition.dart';
 import '../domain/profile.dart';
+import '../domain/set_match.dart';
+import '../domain/stats.dart';
+import '../coach/nutrition_target.dart';
 import '../coach/reminders.dart';
 import '../notify/notifier.dart';
 import '../premium/entitlements.dart';
@@ -42,18 +54,25 @@ class AppState extends ChangeNotifier {
     this.notifier = const NoopNotifier(),
     ProductLookup? lookup,
     FridgeCoach? coach,
+    TrainerAi? trainer,
   }) : lookup = lookup ?? OffClient() {
+    // Dva klienti: zrušení u trenéra nesmí přerušit fotku ledničky.
     this.coach =
         coach ?? HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
+    this.trainer =
+        trainer ?? HttpFridgeCoach(baseUrl: aiBaseUrl, installId: installId);
   }
 
   /// AI kouč pro ledničku a návrhy jídel (v testech jde přepsat).
   late final FridgeCoach coach;
 
+  /// AI trenér: fotka stroje a chat (v testech jde přepsat).
+  late final TrainerAi trainer;
+
   /// Hledání produktů podle čárového kódu (v testech jde přepsat).
   final ProductLookup lookup;
 
-  /// Místní oznámení (na webu a iPhonu prázdná implementace).
+  /// Místní oznámení; ve webové verzi prázdná implementace.
   final Notifier notifier;
 
   /// Je zapnutý paywall (v testech jde přepsat).
@@ -83,39 +102,67 @@ class AppState extends ChangeNotifier {
     await store.open();
     final json = await store.get(Profile.id);
     profile = json == null ? const Profile() : Profile.fromJson(json);
-    final all = [
-      for (final w in await store.all(Kinds.workout)) Workout.fromJson(w),
-    ];
+    final all = _parsed(await store.all(Kinds.workout), Workout.fromJson);
     workouts = all.where((w) => w.finished).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
     final unfinished = all.where((w) => !w.finished).toList()
       ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
     active = unfinished.firstOrNull;
-    customExercises = [
-      for (final e in await store.all(Kinds.exercise)) Exercise.fromJson(e),
-    ]..sort((a, b) => a.name.compareTo(b.name));
-    bodyweights = [
-      for (final b in await store.all(Kinds.bodyweight)) BodyWeight.fromJson(b),
-    ]..sort((a, b) => b.date.compareTo(a.date));
-    foods = [for (final f in await store.all(Kinds.food)) FoodEntry.fromJson(f)]
+    customExercises = _parsed(
+      await store.all(Kinds.exercise),
+      Exercise.fromJson,
+    )..sort((a, b) => a.name.compareTo(b.name));
+    bodyweights = _parsed(
+      await store.all(Kinds.bodyweight),
+      BodyWeight.fromJson,
+    )..sort((a, b) => b.date.compareTo(a.date));
+    foods = _parsed(await store.all(Kinds.food), FoodEntry.fromJson)
       ..sort(_newestFood);
     notifyListeners();
     unawaited(syncReminders());
+    unawaited(syncRest());
   }
 
+  /// Načte dokumenty; poškozený řádek přeskočí (zůstane v databázi beze
+  /// změny), aby jeden vadný záznam nezablokoval spuštění aplikace.
+  static List<T> _parsed<T>(
+    Iterable<Map<String, dynamic>> rows,
+    T Function(Map<String, dynamic>) parse,
+  ) {
+    final result = <T>[];
+    for (final row in rows) {
+      try {
+        result.add(parse(row));
+      } catch (e) {
+        debugPrint('Přeskočen poškozený záznam ${row['id']}: $e');
+      }
+    }
+    return result;
+  }
+
+  /// Souhlas; s [welcomeVersion] zároveň uzavře uvítání jedním zápisem,
+  /// aby po pádu nezůstalo „uvítání hotové, souhlas chybí".
   Future<void> acceptConsent({
     required bool adult,
     required bool guardianConsent,
-  }) async {
-    final next = profile.acceptConsent(
+    String? welcomeVersion,
+    bool aiNotice = false,
+  }) => _updateProfile((current) {
+    final next = current.acceptConsent(
       adult: adult,
       guardianConsent: guardianConsent,
       now: DateTime.now(),
     );
-    await store.put(Kinds.profile, next.toJson());
-    profile = next;
-    notifyListeners();
-  }
+    return next.withExtra({
+      if (welcomeVersion != null) ...{
+        'welcomeSeen': true,
+        'seenVersion': welcomeVersion,
+        'onboardingStep': null,
+      },
+      // Upozornění na AI bylo součástí souhlasu: trenér se už neptá znovu.
+      if (aiNotice) 'aiNotice': true,
+    });
+  });
 
   /// Všechny cviky: vlastní + katalog.
   List<Exercise> get allExercises => [...customExercises, ...builtInExercises];
@@ -142,7 +189,7 @@ class AppState extends ChangeNotifier {
       type: type,
       custom: true,
     );
-    await store.put(Kinds.exercise, exercise.toJson());
+    await _enqueue(() => store.put(Kinds.exercise, exercise.toJson()));
     customExercises = [...customExercises, exercise]
       ..sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
@@ -165,7 +212,12 @@ class AppState extends ChangeNotifier {
     final next = previous == null
         ? Future<T>.sync(write)
         : previous.then((_) => write());
-    _writes = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    final chain = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _writes = chain;
+    // Doběhlá fronta se zahodí: další zápis pak nezávisí na zóně staré future.
+    chain.whenComplete(() {
+      if (identical(_writes, chain)) _writes = null;
+    });
     return next;
   }
 
@@ -194,6 +246,7 @@ class AppState extends ChangeNotifier {
     final existing = active;
     if (existing != null) return existing;
     final start = now ?? DateTime.now();
+    _dayPick = null;
     active = Workout(
       id: newId(),
       name: name ?? 'Trénink – ${_weekdays[start.weekday - 1]}',
@@ -230,6 +283,74 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  List<Workout>? _badgesOf;
+  List<Exercise>? _badgesExercises;
+  List<BadgeState> _badges = const [];
+
+  /// Stav odznaků (v mezipaměti, dokud se nezmění tréninky nebo cviky).
+  /// Platí jen proto, že `workouts` i `customExercises` se při každé změně
+  /// nahrazují novým seznamem; úprava na místě by mezipaměť nezneplatnila.
+  List<BadgeState> get badgeStates {
+    if (!identical(_badgesOf, workouts) ||
+        !identical(_badgesExercises, customExercises)) {
+      _badges = computeBadges(workouts, typeOf);
+      _badgesOf = workouts;
+      _badgesExercises = customExercises;
+    }
+    return _badges;
+  }
+
+  /// Odznaky odemčené daným tréninkem.
+  List<BadgeState> badgesFrom(String workoutId) => [
+    for (final b in badgeStates)
+      if (b.workoutId == workoutId) b,
+  ];
+
+  List<Workout>? _recordsOf;
+  final _records = <String, Map<RecordKind, PersonalRecord>>{};
+
+  /// Nejlepší výkony cviku z dokončených tréninků (v mezipaměti, dokud se
+  /// seznam tréninků nezmění; ten se při každé změně vytváří nový).
+  Map<RecordKind, PersonalRecord> recordsOf(String exerciseId) {
+    if (!identical(_recordsOf, workouts)) {
+      _records.clear();
+      _recordsOf = workouts;
+    }
+    return _records.putIfAbsent(
+      exerciseId,
+      () => allTimeRecords(workouts, exerciseId, typeOf(exerciseId)),
+    );
+  }
+
+  bool _isWeighted(SetEntry set) {
+    for (final e in active?.exercises ?? const <WorkoutExercise>[]) {
+      if (e.sets.any((s) => identical(s, set))) {
+        return typeOf(e.exerciseId) == ExerciseType.weighted;
+      }
+    }
+    return false;
+  }
+
+  /// Rekordy, které potvrzená série v aktivním tréninku právě drží.
+  List<RecordKind> liveRecords(SetEntry set) {
+    final workout = active;
+    if (workout == null || !set.counts) return const [];
+    String? exerciseId;
+    for (final e in workout.exercises) {
+      if (e.sets.any((s) => identical(s, set))) exerciseId = e.exerciseId;
+    }
+    if (exerciseId == null) return const [];
+    return liveRecordKinds(
+      set: set,
+      sessionSets: [
+        for (final e in workout.exercises)
+          if (e.exerciseId == exerciseId) ...e.sets,
+      ],
+      before: recordsOf(exerciseId),
+      type: typeOf(exerciseId),
+    );
+  }
+
   /// Série z posledního dokončeného provedení cviku (pro „minule“).
   List<SetEntry> lastSetsOf(String exerciseId) {
     final session = lastPerformance(workouts, exerciseId);
@@ -258,35 +379,146 @@ class AppState extends ChangeNotifier {
     return saveActive();
   }
 
+  /// Přidá rozcvičovací série podle první pracovní váhy cviku. Dřívější
+  /// nepotvrzené rozcvičky nahradí. Vrací počet přidaných sérií; `null`,
+  /// když už je nějaká rozcvička potvrzená nebo chybí pracovní váha.
+  Future<int?> addWarmups(WorkoutExercise entry) async {
+    if (entry.sets.any((s) => s.warmup && s.done)) return null;
+    final working = entry.sets.where((s) => !s.warmup && s.weight > 0);
+    if (working.isEmpty) return null;
+    final plan = warmupPlan(working.first.weight);
+    if (plan.isEmpty) return 0;
+    entry.sets = [
+      for (final w in plan)
+        SetEntry(weight: w.weight, reps: w.reps, warmup: true),
+      ...entry.sets.where((s) => !s.warmup),
+    ];
+    await saveActive();
+    return plan.length;
+  }
+
   Future<void> removeExercise(WorkoutExercise entry) {
     active?.exercises.remove(entry);
     return saveActive();
   }
 
-  /// Další série: hodnoty z minula na stejné pozici, jinak kopie poslední.
+  /// Posune cvik v tréninku o [delta] míst (záporně = nahoru).
+  Future<void> moveExercise(WorkoutExercise entry, int delta) {
+    final list = active?.exercises;
+    if (list == null) return Future.value();
+    final from = list.indexOf(entry);
+    final to = from + delta;
+    if (from < 0 || to < 0 || to >= list.length) return Future.value();
+    list
+      ..removeAt(from)
+      ..insert(to, entry);
+    return saveActive();
+  }
+
+  /// Přesune cvik tažením z indexu [from] na výsledný index [to].
+  Future<void> reorderExercise(int from, int to) {
+    final list = active?.exercises;
+    if (list == null || from < 0 || from >= list.length) {
+      return Future.value();
+    }
+    final target = to.clamp(0, list.length - 1);
+    if (target == from) return Future.value();
+    list.insert(target, list.removeAt(from));
+    return saveActive();
+  }
+
+  /// Hodnoty „minule" pro série cviku (stejný druh a pořadí v něm).
+  List<SetEntry?> previousFor(WorkoutExercise entry) =>
+      previousSets(entry.sets, lastSetsOf(entry.exerciseId));
+
+  /// Další pracovní série: hodnoty z minula na stejné pozici, jinak kopie
+  /// poslední pracovní série.
   Future<SetEntry> addSet(WorkoutExercise entry) async {
-    final last = lastSetsOf(entry.exerciseId);
-    final index = entry.sets.length;
-    final source = index < last.length
-        ? last[index]
-        : entry.sets.lastOrNull ?? SetEntry();
-    final set = source.copy(done: false)..warmup = false;
+    final set = nextWorkingSet(entry.sets, lastSetsOf(entry.exerciseId));
     entry.sets.add(set);
     await saveActive();
     return set;
   }
 
-  Future<void> removeSet(WorkoutExercise entry, SetEntry set) {
-    entry.sets.remove(set);
-    return saveActive();
+  /// Smaže sérii a vrátí její pozici (pro „Vrátit"), -1 když tam nebyla.
+  Future<int> removeSet(WorkoutExercise entry, SetEntry set) async {
+    final index = entry.sets.indexOf(set);
+    if (index < 0) return index;
+    entry.sets.removeAt(index);
+    await saveActive();
+    return index;
+  }
+
+  /// Vrátí smazanou sérii na původní místo. [sets] je seznam, ze kterého
+  /// se mazalo: po nahrazení cviku, jeho odebrání nebo dokončení tréninku
+  /// se nic nevrací (vrací `false`).
+  Future<bool> restoreSet(
+    WorkoutExercise entry,
+    SetEntry set,
+    int index, {
+    required List<SetEntry> sets,
+  }) async {
+    if (!(active?.exercises.contains(entry) ?? false) ||
+        !identical(entry.sets, sets) ||
+        sets.contains(set)) {
+      return false;
+    }
+    sets.insert(index.clamp(0, sets.length), set);
+    await saveActive();
+    return true;
+  }
+
+  /// Další nepotvrzené pracovní série téhož cviku, které mají stejné
+  /// hodnoty jako [set]. Volá se při otevření úprav, než se cokoli změní.
+  List<SetEntry> followersOf(SetEntry set) {
+    if (set.warmup) return const [];
+    final entry = active?.exercises
+        .where((e) => e.sets.any((s) => identical(s, set)))
+        .firstOrNull;
+    if (entry == null) return const [];
+    final start = entry.sets.indexWhere((s) => identical(s, set));
+    return [
+      for (final s in entry.sets.skip(start + 1))
+        if (!s.done &&
+            !s.warmup &&
+            s.weight == set.weight &&
+            s.reps == set.reps)
+          s,
+    ];
+  }
+
+  /// Přenese váhu a opakování z [set] na [followers] (z [followersOf]
+  /// při otevření úprav). Mezitím potvrzené nebo smazané série vynechá.
+  /// Vrací počet změněných sérií; uložení je na volajícím.
+  int carryForward(SetEntry set, List<SetEntry> followers) {
+    final sets = active?.exercises
+        .where((e) => e.sets.any((s) => identical(s, set)))
+        .firstOrNull
+        ?.sets;
+    if (sets == null) return 0;
+    var changed = 0;
+    for (final s in followers) {
+      if (s.done || s.warmup || !sets.any((x) => identical(x, s))) continue;
+      if (s.weight == set.weight && s.reps == set.reps) continue;
+      s
+        ..weight = set.weight
+        ..reps = set.reps;
+      changed++;
+    }
+    if (changed > 0) notifyListeners();
+    return changed;
   }
 
   /// Označí sérii jako hotovou (nebo zpět). Vrací chybovou hlášku,
   /// když se série nedá potvrdit. Potvrzení spustí pauzu.
+
   Future<String?> toggleDone(SetEntry set, {DateTime? now}) async {
     if (!set.done) {
       if (set.reps <= 0) return 'Zadej počet opakování.';
       if (set.weight < 0 || !set.weight.isFinite) return 'Neplatná váha.';
+      if (!set.warmup && set.weight == 0 && _isWeighted(set)) {
+        return 'Zadej váhu v kg.';
+      }
     }
     set.done = !set.done;
     if (set.done) {
@@ -295,6 +527,7 @@ class AppState extends ChangeNotifier {
       );
     }
     await saveActive();
+    await syncRest();
     return null;
   }
 
@@ -322,22 +555,73 @@ class AppState extends ChangeNotifier {
   }
 
   /// Prodlouží nebo zkrátí běžící pauzu; pod nulou ji ukončí.
-  Future<void> adjustRest(Duration delta, {DateTime? now}) {
+  Future<void> adjustRest(Duration delta, {DateTime? now}) async {
     final end = restEndsAt;
-    if (end == null) return Future.value();
+    if (end == null) return;
     final next = end.add(delta);
     _setRestEnd(next.isAfter(now ?? DateTime.now()) ? next : null);
-    return saveActive();
+    await saveActive();
+    await syncRest();
   }
 
-  Future<void> skipRest() {
-    if (restEndsAt == null) return Future.value();
+  Future<void> skipRest() async {
+    if (restEndsAt == null) return;
     _setRestEnd(null);
-    return saveActive();
+    await saveActive();
+    await syncRest();
+  }
+
+  bool get restAlerts => profile.extra['restAlerts'] == true;
+
+  Future<bool> setRestAlerts(bool enabled) async {
+    if (notifier is! RestNotifier) return false;
+    if (enabled && !await notifier.requestPermission()) return false;
+    await _updateProfile(
+      (p) => p.withExtra({'restAlerts': enabled ? true : null}),
+    );
+    await syncRest();
+    return true;
+  }
+
+  Future<void>? _restUpdates;
+
+  /// Vyhodnotit poslední stav až ve frontě, aby stará pauza nepřepsala
+  /// zrušení při dokončení tréninku. Chyba oznámení neblokuje zápis série.
+  Future<void> syncRest() {
+    final rest = notifier;
+    if (rest is! RestNotifier) return Future.value();
+    Future<void> update() async {
+      try {
+        final end = restEndsAt;
+        if (restAlerts && end != null && end.isAfter(DateTime.now())) {
+          await (rest as RestNotifier).scheduleRest(end);
+        } else {
+          await (rest as RestNotifier).cancelRest();
+        }
+      } catch (e) {
+        debugPrint('Upozornění na pauzu se nepodařilo naplánovat: $e');
+      }
+    }
+
+    final next = _restUpdates == null
+        ? update()
+        : _restUpdates!.then((_) => update());
+    _restUpdates = next;
+    next.whenComplete(() {
+      if (identical(_restUpdates, next)) _restUpdates = null;
+    });
+    return next;
   }
 
   Future<void> toggleWarmup(SetEntry set) {
     set.warmup = !set.warmup;
+    return saveActive();
+  }
+
+  /// Nastaví druh série (rozcvička / pracovní).
+  Future<void> setWarmup(SetEntry set, bool warmup) {
+    if (set.warmup == warmup) return Future.value();
+    set.warmup = warmup;
     return saveActive();
   }
 
@@ -393,6 +677,7 @@ class AppState extends ChangeNotifier {
       ..sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
     unawaited(syncReminders());
+    unawaited(syncRest());
     return (workout: finished, error: null);
   }
 
@@ -407,28 +692,168 @@ class AppState extends ChangeNotifier {
       rethrow;
     }
     notifyListeners();
+    await syncRest();
   }
 
   // ---------------------------------------------------------------------
   // Split a progrese
   // ---------------------------------------------------------------------
 
-  SplitTemplate? get split => findSplit(profile.splitId);
+  /// Zvolený program. Hotová šablona se přizpůsobí doporučenému počtu
+  /// cviků z dotazníku „Tvůj plán“; vlastní program zůstává, jak je.
+  SplitTemplate? get split {
+    if (!identical(_splitOf, profile)) {
+      final base = findSplit(profile.splitId, customPrograms);
+      _split = base == null ? null : fitted(base);
+      _splitOf = profile;
+    }
+    return _split;
+  }
+
+  /// Hotový program s dny upravenými na doporučený počet cviků
+  /// z dotazníku. Vlastní programy zůstávají, jak si je uživatel složil.
+  SplitTemplate fitted(SplitTemplate base) {
+    final answers = planAnswers;
+    if (base.custom || answers == null) return base;
+    final count = recommendPlan(answers).exercises;
+    return base.copyWith(days: [for (final d in base.days) fitDay(d, count)]);
+  }
+
+  Profile? _splitOf;
+  SplitTemplate? _split;
+
+  /// Odpovědi z dotazníku „Tvůj plán“; `null` = ještě nevyplněný.
+  PlanAnswers? get planAnswers => PlanAnswers.tryParse(profile.extra['plan']);
+
+  /// Uloží odpovědi a zapne doporučený program, počet tréninků týdně
+  /// a pauzu podle cíle. Bez [answers] (doporučení bez dotazníku) zapne
+  /// jen výchozí doporučený program a odpovědi neuloží.
+  Future<PlanRecommendation> applyPlan(PlanAnswers? answers) async {
+    final r = recommendPlan(answers ?? const PlanAnswers());
+    await _updateProfile((p) {
+      // Vybrané dny zůstanou, když jich je tolik, kolik plán chce.
+      final days = p.trainingDays;
+      return p.withExtra({
+        'plan': ?answers?.toJson(),
+        'split': r.splitId,
+        'weekGoal': r.perWeek,
+        if (days != null && days.length != r.perWeek) 'trainingDays': null,
+        'restSeconds': r.restSeconds,
+      });
+    });
+    unawaited(syncReminders());
+    return r;
+  }
+
+  Profile? _programsOf;
+  List<SplitTemplate> _programs = const [];
+
+  /// Vlastní programy (uložené v profilu, jdou i do zálohy).
+  List<SplitTemplate> get customPrograms {
+    if (!identical(_programsOf, profile)) {
+      _programsOf = profile;
+      final raw = profile.extra['programs'];
+      _programs = [
+        if (raw is List)
+          for (final json in raw) ?SplitTemplate.tryCustom(json),
+      ];
+    }
+    return _programs;
+  }
 
   Future<void> setSplit(String? id) async {
-    final next = profile.withExtra({'split': id});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile((p) => p.withExtra({'split': id}));
+    unawaited(syncReminders());
+  }
+
+  /// Uloží vlastní program (nový dostane ID). Vrací uložený program,
+  /// nebo hodí [ArgumentError] s českou zprávou.
+  Future<SplitTemplate> saveProgram(
+    SplitTemplate program, {
+    bool activate = false,
+  }) async {
+    final cleaned = program.copyWith(
+      id: program.id.startsWith(customProgramPrefix)
+          ? program.id
+          : '$customProgramPrefix${newId()}',
+      name: program.name.trim(),
+      custom: true,
+      // Vlastní program se cvičí dokola: doporučení = počet dnů.
+      perWeek: program.days.length.clamp(1, 7),
+      days: [for (final d in program.days) d.copyWith(name: d.name.trim())],
+    );
+    final error = programError(cleaned);
+    if (error != null) throw ArgumentError(error);
+    await _updateProfile((p) {
+      // Ostatní programy zůstanou tak, jak jsou uložené (i ty, které
+      // novější verze neumí přečíst), aby se uložením jednoho neztratily.
+      final list = [...p.extra['programs'] as List? ?? const []];
+      final at = list.indexWhere((e) => e is Map && e['id'] == cleaned.id);
+      if (at >= 0) {
+        list[at] = cleaned.toJson();
+      } else {
+        if (list.length >= maxCustomPrograms) {
+          throw ArgumentError(
+            'Vlastních programů může být nejvýš $maxCustomPrograms.',
+          );
+        }
+        list.add(cleaned.toJson());
+      }
+      return p.withExtra({'programs': list, if (activate) 'split': cleaned.id});
+    });
+    unawaited(syncReminders());
+    return cleaned;
+  }
+
+  /// Smaže vlastní program; byl-li zvolený, přejde na volné tréninky.
+  Future<void> deleteProgram(String id) async {
+    await _updateProfile((p) {
+      final list = [
+        for (final json in p.extra['programs'] as List? ?? const [])
+          if (json is Map && json['id'] != id) json,
+      ];
+      return p.withExtra({
+        'programs': list.isEmpty ? null : list,
+        if (p.splitId == id) 'split': null,
+      });
+    });
+    unawaited(syncReminders());
+  }
+
+  /// Frekvence: kolikrát týdně a volitelně ve které dny. Se zvolenými dny
+  /// je cíl jejich počet; `null` cíl = podle programu.
+  Future<void> setFrequency({int? perWeek, List<int>? days}) async {
+    final picked = days == null || days.isEmpty
+        ? null
+        : ({for (final d in days) d.clamp(1, 7)}.toList()..sort());
+    await _updateProfile(
+      (p) => p.withExtra({
+        'weekGoal': picked?.length ?? perWeek?.clamp(1, 7),
+        'trainingDays': picked,
+      }),
+    );
+    unawaited(syncReminders());
+  }
+
+  /// Přidá nebo odebere den tréninku (1 = pondělí). Čte aktuální profil
+  /// až ve frontě zápisů, takže rychlá klepnutí se nepřepíšou. Bez dnů
+  /// se cíl vrátí na počet podle programu.
+  Future<void> toggleTrainingDay(int day) async {
+    await _updateProfile((p) {
+      final days = [...?p.trainingDays];
+      if (!days.remove(day)) days.add(day.clamp(1, 7));
+      days.sort();
+      return p.withExtra({
+        'weekGoal': days.isEmpty ? null : days.length,
+        'trainingDays': days.isEmpty ? null : days,
+      });
+    });
     unawaited(syncReminders());
   }
 
   /// Označí profil jako Pro (až bude hotová platba, volá se po nákupu).
   Future<void> setPro(bool value) async {
-    final next = profile.withExtra({'pro': value ? true : null});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile((p) => p.withExtra({'pro': value ? true : null}));
   }
 
   /// Týdenní cíl tréninků: vlastní, jinak podle splitu, jinak 3.
@@ -440,10 +865,9 @@ class AppState extends ChangeNotifier {
     if (minutes != null && !await notifier.requestPermission()) {
       return false;
     }
-    final next = profile.withExtra({'reminder': minutes?.clamp(0, 1439)});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile(
+      (p) => p.withExtra({'reminder': minutes?.clamp(0, 1439)}),
+    );
     await syncReminders();
     return true;
   }
@@ -465,6 +889,7 @@ class AppState extends ChangeNotifier {
           minute: minutes % 60,
           goal: weekGoal,
           finished: workouts,
+          trainingDays: profile.trainingDays,
         ),
       );
     } catch (e) {
@@ -484,25 +909,19 @@ class AppState extends ChangeNotifier {
 
   /// Zapamatuje, že záloha právě vznikla.
   Future<void> markBackedUp() async {
-    final next = profile.withExtra({'backupCount': workouts.length});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
+    await _updateProfile((p) => p.withExtra({'backupCount': workouts.length}));
   }
 
-  Future<void> setWeekGoal(int? goal) async {
-    final next = profile.withExtra({'weekGoal': goal?.clamp(1, 7)});
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
-    unawaited(syncReminders());
-  }
+  /// Týdenní cíl bez pevných dnů (`null` = podle programu).
+  Future<void> setWeekGoal(int? goal) => setFrequency(perWeek: goal);
 
   /// Dnešní mise podle týdenního cíle a odcvičených tréninků.
   Mission mission([DateTime? now]) => todayMission(
     goal: weekGoal,
     finished: [for (final w in workouts) w.date],
     now: now ?? DateTime.now(),
+    startedAt: profile.consentAt?.toLocal(),
+    trainingDays: profile.trainingDays,
   );
 
   /// Týdny v řadě se splněným cílem.
@@ -518,28 +937,72 @@ class AppState extends ChangeNotifier {
     return s == null ? 0 : nextDayIndex(s, workouts);
   }
 
+  /// Ručně zvolený jiný den a program, ke kterému patří.
+  (String, int)? _dayPick;
+
+  /// Den, který je dnes na řadě: ručně zvolený na hlavní kartě, jinak
+  /// další v pořadí. Stejný den ukazuje hlavní karta i trenér.
+  int get todaySplitDay {
+    final s = split;
+    if (s == null || s.days.isEmpty) return 0;
+    if (_dayPick case (final id, final day) when id == s.id) {
+      return day % s.days.length;
+    }
+    return nextSplitDay;
+  }
+
+  SplitDay? get todayDay {
+    final s = split;
+    return s == null || s.days.isEmpty ? null : s.days[todaySplitDay];
+  }
+
+  /// Zvolí jiný den programu na dnešek (`null` = zpět na den na řadě).
+  void pickSplitDay(int? day) {
+    final s = split;
+    _dayPick = s == null || day == null ? null : (s.id, day);
+    notifyListeners();
+  }
+
   /// Návrh váhy a opakování pro každý cvik dne.
   ///
-  /// Bez Pro dostane každý cvik jen rozsah z plánu, bez návrhu váhy.
+  /// Cvik dělaný poprvé dostane startovní váhu vždy; další návrhy váhy
+  /// jsou v Pro, bez něj zůstane jen rozsah z plánu.
   List<(PlannedExercise, Suggestion)> plan(SplitDay day) => [
     for (final p in day.exercises)
-      (
-        p,
-        has(ProFeature.coach)
-            ? suggest(
-                p,
-                typeOf(p.exerciseId),
-                exerciseHistory(workouts, p.exerciseId),
-              )
-            : Suggestion(
-                kind: SuggestionKind.start,
-                weight: 0,
-                reps: p.repMin,
-                sets: p.sets,
-                reason: 'Návrh váhy od kouče je součástí Pro.',
-              ),
-      ),
+      (p, _suggestFor(p, exerciseHistory(workouts, p.exerciseId))),
   ];
+
+  /// Návrh na příští provedení cviku: rozsah z programu, když ho program
+  /// má, jinak 3 × 8–12.
+  Suggestion nextSuggestion(String exerciseId) {
+    final planned =
+        split?.days
+            .expand((d) => d.exercises)
+            .where((p) => p.exerciseId == exerciseId)
+            .firstOrNull ??
+        PlannedExercise(exerciseId, sets: 3, repMin: 8, repMax: 12);
+    return _suggestFor(planned, exerciseHistory(workouts, exerciseId));
+  }
+
+  /// Startovní váha poprvé (i bez Pro), potom návrh kouče.
+  Suggestion _suggestFor(PlannedExercise p, List<ExerciseSession> history) =>
+      has(ProFeature.coach) || history.isEmpty
+      ? suggest(
+          p,
+          typeOf(p.exerciseId),
+          history,
+          start: startLoad(
+            p.exerciseId,
+            planAnswers?.level ?? PlanLevel.beginner,
+          ),
+        )
+      : Suggestion(
+          kind: SuggestionKind.start,
+          weight: 0,
+          reps: p.repMin,
+          sets: p.sets,
+          reason: 'Návrh váhy od kouče je součástí Pro.',
+        );
 
   /// Začne trénink podle dne splitu s předvyplněnými návrhy.
   Future<Workout> startSplitDay(int dayIndex, {DateTime? now}) async {
@@ -552,6 +1015,20 @@ class AppState extends ChangeNotifier {
     workout.extra
       ..['split'] = s.id
       ..['splitDay'] = index;
+    await _fillPlanned(workout, day);
+    return workout;
+  }
+
+  /// Začne trénink sestavený mimo program (výběr partií a počtu cviků).
+  Future<Workout> startPlanned(SplitDay day, {DateTime? now}) async {
+    if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
+    if (day.exercises.isEmpty) throw StateError('Trénink nemá žádný cvik.');
+    final workout = await startWorkout(name: day.name, now: now);
+    await _fillPlanned(workout, day);
+    return workout;
+  }
+
+  Future<void> _fillPlanned(Workout workout, SplitDay day) async {
     for (final (p, suggestion) in plan(day)) {
       workout.exercises.add(
         WorkoutExercise(
@@ -563,7 +1040,6 @@ class AppState extends ChangeNotifier {
       );
     }
     await saveActive();
-    return workout;
   }
 
   // ---------------------------------------------------------------------
@@ -619,15 +1095,22 @@ class AppState extends ChangeNotifier {
   // ---------------------------------------------------------------------
 
   /// Změní nastavení v profilu (`null` = beze změny).
-  Future<void> setPreferences({int? restSeconds, String? theme}) async {
-    final next = profile.withExtra({
+  Future<void> setPreferences({
+    int? restSeconds,
+    String? theme,
+    String? accent,
+    String? look,
+    double? weightStep,
+  }) => _updateProfile(
+    (p) => p.withExtra({
       'restSeconds': ?restSeconds?.clamp(15, 600),
+      if (weightStep != null && weightSteps.contains(weightStep))
+        'weightStep': weightStep,
       'theme': ?theme,
-    });
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
-  }
+      'accent': ?accent,
+      'look': ?look,
+    }),
+  );
 
   /// Zapíše váhu; `false` = nesmyslná hodnota.
   Future<bool> addBodyweight(double kg, {DateTime? now}) async {
@@ -666,8 +1149,69 @@ class AppState extends ChangeNotifier {
     final seen = <String>{};
     return [
       for (final f in foods)
-        if (seen.add('${f.name.toLowerCase()}|${f.barcode ?? ''}')) f,
+        if (seen.add(foodKey(f))) f,
     ].take(8).toList();
+  }
+
+  /// Klíč jídla pro nedávná a oblíbená: název bez velikosti písmen + kód.
+  static String foodKey(FoodEntry f) =>
+      '${f.name.trim().toLowerCase()}|${f.barcode ?? ''}';
+
+  /// Připnutá jídla (šablony se stejným množstvím), nejnověji připnuté první.
+  List<FoodEntry> get favoriteFoods => [
+    if (profile.extra['favoriteFoods'] case final List list)
+      for (final f in list)
+        if (f is Map<String, dynamic>) ?_tryFood(f),
+  ];
+
+  static FoodEntry? _tryFood(Map<String, dynamic> json) {
+    try {
+      final f = FoodEntry.fromJson(json);
+      return f.name.trim().isEmpty ? null : f;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool isFavoriteFood(FoodEntry f) =>
+      favoriteFoods.any((x) => foodKey(x) == foodKey(f));
+
+  /// Připne nebo odepne jídlo; vrací `true`, když je teď oblíbené.
+  /// Nejvýš [maxFavoriteFoods], nejstarší připnuté vypadne.
+  Future<bool> toggleFavoriteFood(FoodEntry f) async {
+    late bool pinned;
+    await _updateProfile((p) {
+      final raw = p.extra['favoriteFoods'];
+      final current = [
+        if (raw is List)
+          for (final x in raw)
+            if (x is Map<String, dynamic>) ?_tryFood(x),
+      ];
+      final key = foodKey(f);
+      final rest = [
+        for (final x in current)
+          if (foodKey(x) != key) x,
+      ];
+      pinned = rest.length == current.length;
+      final next = pinned ? [f, ...rest].take(maxFavoriteFoods) : rest;
+      return p.withExtra({
+        'favoriteFoods': next.isEmpty
+            ? null
+            : [for (final x in next) x.toJson()],
+      });
+    });
+    return pinned;
+  }
+
+  /// Rychlé přidání: oblíbená první, pak nedávná bez opakování.
+  List<FoodEntry> get quickFoods {
+    final favorites = favoriteFoods;
+    final keys = {for (final f in favorites) foodKey(f)};
+    return [
+      ...favorites,
+      for (final f in recentFoods)
+        if (!keys.contains(foodKey(f))) f,
+    ];
   }
 
   /// Uloží nový záznam, nebo přepíše existující (stejné `id`).
@@ -701,19 +1245,25 @@ class AppState extends ChangeNotifier {
   // AI kouč: spíž, cíle, kontext pro návrhy
   // ---------------------------------------------------------------------
 
-  Future<void> _saveProfile(Profile next) async {
-    await _enqueue(() => store.put(Kinds.profile, next.toJson()));
-    profile = next;
-    notifyListeners();
-  }
+  /// Změna profilu počítaná až ve frontě z posledního uloženého stavu:
+  /// dvě rychlé změny (barva, souhlas) se navzájem nepřepíšou.
+  Future<void> _updateProfile(Profile Function(Profile current) change) =>
+      _enqueue(() async {
+        final next = change(profile);
+        await store.put(Kinds.profile, next.toJson());
+        profile = next;
+        notifyListeners();
+      });
 
   /// Náhodné ID instalace pro denní limit AI; vznikne při prvním použití.
   /// Nepatří do zálohy (jiné zařízení = jiná instalace).
   Future<String> installId() async {
-    final saved = profile.extra['installId'];
-    if (saved is String && saved.length == 36) return saved;
-    final id = newId();
-    await _saveProfile(profile.withExtra({'installId': id}));
+    late String id;
+    await _updateProfile((p) {
+      final saved = p.extra['installId'];
+      id = saved is String && saved.length == 36 ? saved : newId();
+      return p.withExtra({'installId': id});
+    });
     return id;
   }
 
@@ -724,23 +1274,206 @@ class AppState extends ChangeNotifier {
     return [for (final i in raw) ?PantryItem.tryParse(i)];
   }
 
-  Future<void> savePantry(List<PantryItem> items) => _saveProfile(
-    profile.withExtra({
+  Future<void> savePantry(List<PantryItem> items) => _updateProfile(
+    (p) => p.withExtra({
       'pantry': items.isEmpty
           ? null
-          : [for (final i in items) i.toJson()],
+          : [for (final i in mergePantry([], items)) i.toJson()],
     }),
   );
 
+  Set<String> get pantryExcluded => {
+    for (final name in (profile.extra['pantryExcluded'] as List? ?? const []))
+      if (name is String) pantryKey(name),
+  };
+  int get pantryMinutes => [10, 20, 40].contains(profile.extra['pantryMinutes'])
+      ? profile.extra['pantryMinutes'] as int
+      : 20;
+
+  Future<void> savePantrySelection(Set<String> excluded, int minutes) =>
+      _updateProfile(
+        (p) => p.withExtra({
+          'pantryExcluded': excluded.toList()..sort(),
+          'pantryMinutes': [10, 20, 40].contains(minutes) ? minutes : 20,
+        }),
+      );
+
+  List<MealIdea> get savedMealIdeas =>
+      parseMeals({'meals': profile.extra['mealIdeas']});
+  Future<void> saveMealIdeas(List<MealIdea> meals) => _updateProfile(
+    (p) => p.withExtra({
+      'mealIdeas': [for (final meal in meals.take(6)) meal.toJson()],
+    }),
+  );
+
+  /// Úvod je za uživatelem; zároveň zná novinky této verze.
+  Future<void> finishWelcome(String version) => _updateProfile(
+    (p) => p.withExtra({'welcomeSeen': true, 'seenVersion': version}),
+  );
+
+  Future<void> markVersionSeen(String version) =>
+      _updateProfile((p) => p.withExtra({'seenVersion': version}));
+
+  /// Zapamatuje si záložku; chyba uložení nesmí rozbít přepnutí.
+  Future<void> setLastTab(int tab) async {
+    try {
+      await _updateProfile(
+        (p) => p.withExtra({
+          'tab': tab == 1 || tab == 2 ? tab : null,
+          'lastTab': null,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Záložku se nepodařilo uložit: $e');
+    }
+  }
+
+  /// Chat s AI trenérem: posledních [maxCoachChat] zpráv v zařízení.
+  List<ChatMessage> get coachChat => [
+    if (profile.extra['coachChat'] case final List list)
+      for (final m in list) ?ChatMessage.tryParse(m),
+  ];
+
+  Future<void> saveCoachChat(List<ChatMessage> messages) => _updateProfile(
+    (p) => p.withExtra({
+      'coachChat': messages.isEmpty
+          ? null
+          : [
+              for (final m in messages.skip(
+                messages.length > maxCoachChat
+                    ? messages.length - maxCoachChat
+                    : 0,
+              ))
+                m.toJson(),
+            ],
+    }),
+  );
+
+  /// Souhrn tréninků pro trenéra (bez jména a poznámek).
+  Map<String, dynamic> trainerContext([DateTime? now]) {
+    final at = now ?? DateTime.now();
+    return coachContext(
+      now: at,
+      workouts: workouts,
+      exercise: exercise,
+      adult: profile.adult,
+      weekGoal: weekGoal,
+      split: split,
+      todayDay: todaySplitDay,
+      todaySuggestions: [
+        if (todayDay case final day?)
+          for (final (_, s) in plan(day)) s,
+      ],
+      mission: mission(at),
+      trainingDays: profile.trainingDays,
+      plan: planAnswers,
+      bodyweightKg: bodyweights.firstOrNull?.kg,
+      recovery: recoveryByFocus(
+        workouts,
+        at,
+        muscleOf: (id) => exercise(id).muscle,
+      ),
+      focusNames: {for (final f in dayFocuses) f.id: f.name},
+    );
+  }
+
+  /// Fakta pro místního trenéra: stejná čísla jako hlavní karta.
+  CoachFacts coachFacts([DateTime? now]) {
+    final at = now ?? DateTime.now();
+    final s = split;
+    final day = todayDay;
+    final names = {for (final f in dayFocuses) f.id: f.name};
+    final recovery = recoveryByFocus(
+      workouts,
+      at,
+      muscleOf: (id) => exercise(id).muscle,
+    );
+    String label(String id) => exercise(id).name;
+
+    final last = finishedNewestFirst(workouts).firstOrNull;
+    final days = profile.trainingDays;
+    const short = ['po', 'út', 'st', 'čt', 'pá', 'so', 'ne'];
+    return CoachFacts(
+      mission: mission(at),
+      program: s?.name,
+      day: day?.name,
+      dayNumber: todaySplitDay + 1,
+      dayCount: s?.days.length ?? 1,
+      plan: [
+        if (day != null)
+          for (final (pl, sug) in plan(day))
+            PlanLine(
+              name: label(pl.exerciseId),
+              sets: pl.sets,
+              repMin: pl.repMin,
+              repMax: pl.repMax,
+              suggestion: sug,
+              weighted: typeOf(pl.exerciseId) == ExerciseType.weighted,
+              start: sug.kind == SuggestionKind.start && sug.weight > 0
+                  ? startLoad(
+                      pl.exerciseId,
+                      planAnswers?.level ?? PlanLevel.beginner,
+                    )?.label
+                  : null,
+            ),
+      ],
+      hardSets: {
+        for (final e in weeklyHardSets(
+          workouts,
+          at,
+          (id) => exercise(id).muscle,
+        ).entries)
+          names[e.key] ?? e.key: e.value,
+      },
+      ready: [
+        for (final r in recovery.values)
+          if (r.isReady && r.focusId != 'core') names[r.focusId] ?? r.focusId,
+      ],
+      tired: [
+        for (final r in recovery.values)
+          if (!r.isReady) names[r.focusId] ?? r.focusId,
+      ],
+      stalls: findStalls(workouts, at, typeOf, label),
+      trainingDaysLeft: [
+        if (days != null)
+          for (final d in days)
+            if (d >= at.weekday) short[d - 1],
+      ],
+      daysSinceLast: last == null ? null : at.difference(last.date).inDays,
+      activeWorkout: active != null,
+    );
+  }
+
   Future<void> acceptAiNotice() =>
-      _saveProfile(profile.withExtra({'aiNotice': true}));
+      _updateProfile((p) => p.withExtra({'aiNotice': true}));
+
+  /// Krok úvodu, na kterém uživatel skončil (aplikace se mohla zavřít).
+  int get onboardingStep {
+    final v = profile.extra['onboardingStep'];
+    return v is num && v.isFinite ? v.toInt().clamp(0, 9) : 0;
+  }
+
+  Future<void> setOnboardingStep(int step) =>
+      _updateProfile((p) => p.withExtra({'onboardingStep': step}));
+
+  /// Doporučený cíl z poslední tělesné váhy a cíle z dotazníku;
+  /// `null` bez zapsané váhy.
+  SuggestedTargets? get suggestedTargets {
+    final kg = bodyweights.firstOrNull?.kg;
+    if (kg == null) return null;
+    return suggestTargets(
+      kg: kg,
+      goal: (planAnswers ?? const PlanAnswers()).goal,
+      adult: !profile.restrictWeightLoss,
+    );
+  }
 
   /// Nastaví cíle (`null` = bez cíle). Kalorický cíl jen pro dospělé.
   Future<void> setNutritionTargets({double? protein, double? kcal}) =>
-      _saveProfile(
-        profile.withExtra({
+      _updateProfile(
+        (p) => p.withExtra({
           'proteinTarget': protein?.clamp(20, 400).roundToDouble(),
-          'kcalTarget': profile.restrictWeightLoss
+          'kcalTarget': p.restrictWeightLoss
               ? null
               : kcal?.clamp(1000, 6000).roundToDouble(),
         }),
@@ -803,7 +1536,25 @@ class AppState extends ChangeNotifier {
         for (final e in backup.exercises)
           if (!haveExercises.contains(e.id)) e,
       ];
-      final nextProfile = profile.withExtra(backup.settings);
+      // Nic místního se nepřepíše: ze zálohy se doplní jen chybějící
+      // nastavení a programy, které tu ještě nejsou.
+      final localPrograms = [...profile.extra['programs'] as List? ?? const []];
+      final localIds = {
+        for (final e in localPrograms)
+          if (e is Map) e['id'],
+      };
+      final backupPrograms = backup.settings['programs'];
+      final nextProfile = profile.withExtra({
+        for (final e in backup.settings.entries)
+          if (e.key != 'programs' && !profile.extra.containsKey(e.key))
+            e.key: e.value,
+        if (backupPrograms is List)
+          'programs': [
+            ...localPrograms,
+            for (final e in backupPrograms)
+              if (e is Map && !localIds.contains(e['id'])) e,
+          ],
+      });
       final haveWeights = {for (final b in bodyweights) b.id};
       final newWeights = [
         for (final b in backup.bodyweights)
@@ -852,7 +1603,12 @@ class AppState extends ChangeNotifier {
   Future<int> importHevy(String source) async {
     final count = await _enqueue(() async {
       final parsed = parseHevyCsv(source, custom: customExercises);
-      final haveWorkouts = {for (final w in workouts) w.id};
+      // Smazaný trénink se opakovaným importem nevrací.
+      final deleted = <String>{
+        for (final w in parsed.workouts)
+          if ((await store.raw(w.id))?['deleted'] == 1) w.id,
+      };
+      final haveWorkouts = {for (final w in workouts) w.id, ...deleted};
       final haveExercises = {for (final e in customExercises) e.id};
       final newWorkouts = [
         for (final w in parsed.workouts)
@@ -888,5 +1644,7 @@ class AppState extends ChangeNotifier {
     foods = [];
     notifyListeners();
     if (notifier.supported) unawaited(notifier.cancelAll());
+    // Budík pauzy má vlastní id, cancelAll ho nezruší.
+    unawaited(syncRest());
   }
 }

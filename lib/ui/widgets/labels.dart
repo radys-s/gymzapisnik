@@ -21,6 +21,7 @@ String recordLabel(RecordKind kind, double value) => switch (kind) {
 /// Délka tréninku: „52 min" nebo „1 h 05 min".
 String durationLabel(Duration d) {
   final minutes = d.isNegative ? 0 : d.inMinutes;
+  if (minutes < 1) return '< 1 min';
   if (minutes < 60) return '$minutes min';
   return '${minutes ~/ 60} h ${(minutes % 60).toString().padLeft(2, '0')} min';
 }
@@ -28,12 +29,14 @@ String durationLabel(Duration d) {
 /// Objem s jednotkou podle typu cviku.
 String volumeLabel(ExerciseType type, double value) =>
     type == ExerciseType.weighted
-    ? '${formatKg(value.roundToDouble())} kg'
-    : '${value.round()} opak.';
+    ? '${formatVolume(value)} kg'
+    : '${formatVolume(value)} opak.';
 
 /// „1 série", „3 série", „5 sérií".
-String setsLabel(int n) =>
-    '$n ${n == 1 || (n >= 2 && n <= 4) ? 'série' : 'sérií'}';
+String setsLabel(int n) => '$n ${setsNoun(n)}';
+
+/// Jen slovo k počtu sérií (čeština podle CLDR: 22 sérií).
+String setsNoun(int n) => n == 1 || (n >= 2 && n <= 4) ? 'série' : 'sérií';
 
 /// „1 trénink", „3 tréninky", „5 tréninků".
 String workoutsLabel(int n) =>
@@ -51,6 +54,14 @@ String weeksLabel(int n) =>
         ? 'týdny'
         : 'týdnů'}';
 
+/// „1 cvik", „3 cviky", „5 cviků".
+String exercisesLabel(int n) =>
+    '$n ${n == 1
+        ? 'cvik'
+        : (n >= 2 && n <= 4)
+        ? 'cviky'
+        : 'cviků'}';
+
 /// „1 den", „3 dny", „5 dní".
 String daysLabel(int n) =>
     '$n ${n == 1
@@ -62,3 +73,15 @@ String daysLabel(int n) =>
 /// „Zbývá 1 trénink", „Zbývají 3 tréninky", „Zbývá 5 tréninků".
 String remainingWorkoutsLabel(int n) =>
     '${n >= 2 && n <= 4 ? 'Zbývají' : 'Zbývá'} ${workoutsLabel(n)}';
+
+/// Odhad délky tréninku: rozcvička a ~2,5 min na sérii i s pauzou,
+/// zaokrouhleno na 5 min.
+int workoutMinutes(int sets) => ((5 + sets * 2.5) / 5).round() * 5;
+
+/// Pozdrav podle denní doby. V noci pořád večer: „dobrou noc“ je loučení.
+String greeting(DateTime now) => switch (now.hour) {
+  >= 5 && < 9 => 'Dobré ráno',
+  >= 9 && < 12 => 'Dobré dopoledne',
+  >= 12 && < 18 => 'Dobré odpoledne',
+  _ => 'Dobrý večer',
+};

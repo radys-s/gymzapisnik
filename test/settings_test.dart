@@ -5,6 +5,7 @@ import 'package:gymzapisnik/app.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 import 'package:gymzapisnik/ui/settings/file_io.dart';
 import 'package:gymzapisnik/ui/settings/settings_page.dart';
 
@@ -32,6 +33,7 @@ void main() {
     await tester.runAsync(() async {
       await state.load();
       await state.acceptConsent(adult: true, guardianConsent: false);
+      await state.markVersionSeen(whatsNewRelease);
     });
     await tester.binding.setSurfaceSize(const Size(400, 2200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -50,6 +52,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(state.profile.restSeconds, 90);
 
+    // Závod (výchozí) je jen tmavý: světlý motiv jde jen v jiném vzhledu.
+    expect(find.text('Světlý'), findsNothing);
+    await tester.runAsync(() => state.setPreferences(look: 'aurora'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Světlý'));
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pumpAndSettle();
@@ -73,7 +79,8 @@ void main() {
     await tester.tap(find.text('Smazat vše'));
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pumpAndSettle();
-    expect(find.text('Než začneš'), findsOneWidget);
+    // Po smazání začíná aplikace znovu uvítáním.
+    expect(find.text('Sestavit můj plán'), findsOneWidget);
     expect(state.profile.hasValidConsent, isFalse);
   });
 }

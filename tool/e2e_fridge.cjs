@@ -1,5 +1,5 @@
 // E2E: AI kouč ledničky proti lokálnímu mock proxy (worker/dev/mock-server.mjs).
-// Souhlas → Výživa → Co mám v ledničce → fotka přes výběr souboru → upozornění →
+// Uvítání + souhlas → Strava → Co mám v ledničce → fotka přes výběr souboru → upozornění →
 // seznam potravin → návrhy jídel → zápis do deníku → reload a seznam zůstal.
 // Build: flutter build web --release --dart-define=AI_URL=http://localhost:8787
 const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
@@ -39,11 +39,14 @@ let ctx;
  const jpeg=await shot.screenshot({type:'jpeg',quality:70}); await shot.close();
 
  await p.goto('http://localhost:8099/'); await sem();
+ await see(has(/Gym zápisník/),'welcome');
+ for(let i=0;i<4;i++){ await tap('button','Pokračovat'); await p.waitForTimeout(400); }
+ await see(has(/Než začneš/),'consent');
  await tap('checkbox',/Souhlasím/);
  await tap('radio',/18 let nebo/);
  await tap('button','Pokračovat');
 
- await tapUntil('button',/^Výživa/,has(/Co mám v ledničce/),'nutrition page');
+ await tapUntil('tab',/Strava/,has(/Co mám v ledničce/),'nutrition tab');
  await tapUntil('button',/Co mám v ledničce/,has(/Vyfotit/),'fridge page');
 
  const chooser=p.waitForEvent('filechooser',{timeout:15000});
@@ -51,7 +54,8 @@ let ctx;
  await see(has(/Než použiješ AI/),'one-time AI notice');
  await tap('button','Rozumím');
  await (await chooser).setFiles({name:'lednicka.jpg',mimeType:'image/jpeg',buffer:jpeg});
- await see(has(/Přidáno 4/),'4 items recognised',20000);
+ await see(t=>/Zkontroluj rozpoznání/.test(t)&&/Mléko/.test(t),'4 items to review',20000);
+ await tap('button','Potvrdit seznam');
  await see(t=>/Vejce/.test(t)&&/6 ks/.test(t)&&/Tvaroh/.test(t),'items listed with amounts');
 
  await tap('button','10 min');

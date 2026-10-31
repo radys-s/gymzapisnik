@@ -2,6 +2,9 @@
 const currentConsentVersion = 1;
 
 /// Uživatelský profil uložený v zařízení (jeden dokument `profile`).
+/// Nabízené kroky tlačítek +/− u váhy.
+const weightSteps = [1.0, 1.25, 2.5, 5.0];
+
 class Profile {
   static const id = 'profile';
 
@@ -55,23 +58,73 @@ class Profile {
     return v is num ? v.toInt().clamp(1, 7) : null;
   }
 
+  /// Dny tréninku (1 = pondělí, seřazené); `null` = kdykoli v týdnu.
+  List<int>? get trainingDays {
+    final v = extra['trainingDays'];
+    if (v is! List) return null;
+    final days = {
+      for (final d in v)
+        if (d is num && d >= 1 && d <= 7) d.toInt(),
+    }.toList()..sort();
+    return days.isEmpty ? null : days;
+  }
+
   /// Čas připomínky v minutách od půlnoci; `null` = vypnuto.
   int? get reminderMinutes {
     final v = extra['reminder'];
     return v is num ? v.toInt().clamp(0, 1439) : null;
   }
 
-  /// Motiv: `system`, `dark` (výchozí) nebo `light`.
+  /// Motiv: `dark` (výchozí, hlavní režim aplikace), `light` nebo `system`
+  /// (podle telefonu).
   String get theme => switch (extra['theme']) {
-    'system' => 'system',
     'light' => 'light',
+    'system' => 'system',
     _ => 'dark',
+  };
+
+  /// Barevný motiv (`lime`, `lagoon`, `sunset`, `neon`); neznámý = výchozí.
+  String get accent => switch (extra['accent']) {
+    'lagoon' => 'lagoon',
+    'sunset' => 'sunset',
+    'neon' => 'neon',
+    _ => 'lime',
+  };
+
+  /// Vzhled (`pitwall`, `auto`, `aurora`, `studio`); nezvolený nebo
+  /// neznámý = `pitwall`, který vybrali testeři.
+  String get look => switch (extra['look']) {
+    'auto' => 'auto',
+    'aurora' => 'aurora',
+    'studio' => 'studio',
+    _ => 'pitwall',
+  };
+
+  /// Uživatel prošel úvodem (ukazuje se jen jednou).
+  bool get welcomeSeen => extra['welcomeSeen'] == true;
+
+  /// Verze, jejíž novinky už uživatel viděl.
+  String? get seenVersion => extra['seenVersion'] as String?;
+
+  /// Naposledy otevřená záložka (0 = Trénink, 1 = Pokrok, 2 = Strava).
+  /// Starší verze měly jen dvě (`lastTab` 1 = Strava).
+  int get lastTab => switch (extra['tab']) {
+    1 => 1,
+    2 => 2,
+    _ when extra['tab'] == null && extra['lastTab'] == 1 => 2,
+    _ => 0,
   };
 
   /// Výchozí pauza mezi sériemi v sekundách.
   int get restSeconds {
     final v = extra['restSeconds'];
     return v is num ? v.toInt().clamp(15, 600) : 120;
+  }
+
+  /// Krok tlačítek +/− u váhy v kg.
+  double get weightStep {
+    final v = extra['weightStep'];
+    return v is num && weightSteps.contains(v.toDouble()) ? v.toDouble() : 2.5;
   }
 
   /// Nezletilým aplikace nikdy nenastaví kalorický deficit ani hubnutí.

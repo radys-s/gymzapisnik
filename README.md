@@ -1,109 +1,155 @@
-# Gym zápisník (pracovní název)
+# Gym zápisník
 
-Česká mobilní aplikace pro zápis tréninků v gymu: rychlý zápis sérií, porovnání s minulým tréninkem,
-osobní rekordy, šablony splitů a denní mise. Nástupce zmrazeného projektu `athlete-os`.
+Česká aplikace pro silový trénink, která ti řekne, co máš dnes cvičit. Pak ti pomůže to
+zapsat a ukáže, jestli se zlepšuješ. Je pro lidi, kteří chodí do gymu a nechtějí vést
+tabulku ani platit předplatné za základní věci.
 
-Běží jako Android aplikace (APK) a jako webová PWA (iPhone). Data jsou uložená v zařízení (SQLite přes Drift,
-na webu v IndexedDB).
+**Vyzkoušet na webu:** https://gymzapisnik-app.gymzapisnik-ai.workers.dev. Funguje i jako PWA,
+v Safari přes Sdílet → Přidat na plochu.
 
-## Stav
+Aplikace běží na Androidu (APK), na iPhonu (IPA k sideloadu) a na webu. Data zůstávají v zařízení:
+SQLite přes Drift, na webu IndexedDB. Účet ani server pro data nejsou potřeba.
 
-- **M0 (hotovo):** kostra projektu, lokální úložiště, offline PWA, souhlas s podmínkami a potvrzení věku
-  (18+ nebo souhlas zákonného zástupce), navigace Domů / Historie / Cviky.
-- **M1 (hotovo):** model tréninku, katalog cviků, statistiky (odhad 1RM, objem, porovnání, osobní rekordy).
-- **M2 (hotovo):** zápis tréninku – předvyplnění z minula, potvrzení série jedním klepnutím, rozcvička,
-  poznámky, vlastní cviky, dokončení / zahození; rozepsaný trénink přežije zavření aplikace.
-- **M3 (hotovo):** pauza mezi sériemi – odpočet podle času konce (sedí i po návratu do aplikace),
-  ±15 s, přeskočit, vibrace a zvuk na konci.
-- **M4 (hotovo):** souhrn po dokončení – každý cvik proti minulému provedení (série ▲/▼, objem,
-  odhad 1RM), nové osobní rekordy, délka a objem tréninku.
-- **M5 (hotovo):** historie po měsících, detail tréninku se zopakováním, úpravou a smazáním,
-  záložka Cviky s hledáním a detailem cviku (rekordy, graf odhadu 1RM, historie provedení).
-- **M6 (hotovo):** 5 šablon splitů (Full body 3×, Upper/Lower, PPL, Arnold, Bro split) a kouč
-  v `lib/coach/`: dvojitá progrese (všechny série na horní hranici → +2,5 kg), po dvou
-  trénincích bez posunu odlehčení o 10 %. Domů ukazuje „Dnes: <den>" s návrhem pro každý cvik,
-  u cviku v tréninku je vysvětlení návrhu.
-- **M7 (hotovo):** dashboard na Domů – „Tento týden" (tréninky vůči plánu splitu, série, objem),
-  nedávné rekordy (max 3, jeden na cvik) a rychlý progres nejčastějšího cviku s malou křivkou.
-- **M8 (hotovo):** Nastavení (ikona na Domů): pauza mezi sériemi, motiv (tmavý/světlý/systém),
-  záloha do JSON souboru a obnova (doplní chybějící tréninky, lokální úpravy nepřepíše, souhlas se
-  nezálohuje), export CSV pro český Excel (BOM, středník, desetinná čárka, ochrana proti vzorcům),
-  smazání všech dat, verze. Fáze A (tracker) je kompletní.
-- **B1 (hotovo):** denní mise na Domů (trénuj dnes / máš hotovo / odpočinek / dnes je potřeba) a streak
-  po týdnech se žolíkem (zachrání jeden zmeškaný týden, obnoví se za 8 týdnů). Týdenní cíl podle splitu
-  nebo vlastní v Nastavení. Logika v `lib/coach/missions.dart` a `streak.dart`.
-- **B2 (hotovo):** shrnutí týdne na Domů – objem proti minulému týdnu a počet cviků s novým rekordem.
-- **B3 (hotovo):** příprava na Pro – `lib/premium/entitlements.dart`. Dokud je `paywallEnabled = false`,
-  je všechno odemčené (testeři). Přehled Pro je v Nastavení. Zamčené Pro: kouč s návrhem váhy, mise
-  a streak, shrnutí týdne, rychlý progres. Zdarma navždy: zápis, historie, cviky, záloha, CSV, import.
-  Platba později = přepnout konstantu a doplnit nákup.
-- B4 hotovo: import z Hevy (workout_data.csv, Nastavení → Import z Hevy, opakovaný import nic nezdvojí).
+## Co umí
 
-B6 hotovo: tělesná váha (karta na Domů, graf, záloha).
+### Trénink
+- **Plán na míru za minutu:** krátký kvíz (cíl, dny v týdnu, úroveň, čas, volitelně váha) sestaví
+  program z pěti splitů (Full body, Upper/Lower, PPL, Arnold, Bro split).
+- **Dnešní trénink na domovské obrazovce:** ukazuje, jaký den je na řadě, počet cviků a odhad
+  délky. Ve dny volna podle plánu ukazuje příští trénink.
+- **Rychlý zápis:** série jsou předvyplněné z minula nebo rozumnou startovní váhou. Potvrzení je
+  jedno klepnutí. Úprava série se přenese do dalších nepotvrzených sérií.
+- **Kouč v aplikaci:** dvojitá progrese (všechny série na horní hranici → +2,5 kg), po stagnaci
+  odlehčení. U každého cviku je vysvětlení, proč má takovou váhu.
+- **Pauza mezi sériemi:** odpočet podle času konce, takže sedí i po návratu do aplikace. Na konci
+  vibruje a pípne.
+- **Souhrn po tréninku:** srovnání s minulým tréninkem, nové rekordy, verdikt kouče, cíle na příště
+  a náhled dalšího tréninku.
 
-B5 hotovo: připomínky na Androidu (plán v coach/reminders.dart, oznámení přes flutter_local_notifications; iPhone PWA bez nich).
+### Pokrok
+- Křivka síly (odhad 1RM), osobní rekordy, statistiky, kalendář a historie po měsících.
+- Týdenní mise a streak se žolíkem na jeden zmeškaný týden. K tomu odznaky a tělesná váha s trendem.
+- Detail cviku: rekordy, graf a všechna provedení. Porovnání dvou tréninků.
 
-C (kód hotov, mobilní tok neověřen): výživový deník – karta Výživa na Domů, denní přehled s listováním dnů,
-ruční zápis (název, množství, kcal, bílkoviny, sacharidy, tuky; hodnoty na 100 g/ml nebo na porci, prázdné
-pole = neznámo, nula = nula), hledání podle čárového kódu v Open Food Facts API v3 (ručně zadané číslo
-s kontrolní číslicí; kamera se neskenuje), potvrzení a úprava před uložením, při nenalezení nebo výpadku ruční
-zápis, úprava/smazání se „Vrátit", záloha a obnova (nepovinný klíč `foods`, verze zálohy zůstává 1).
-Deník je v zařízení a funguje offline; internet je jen pro hledání kódu. Bez cílů a doporučení.
-Logika `lib/domain/nutrition.dart`, klient `lib/data/off_client.dart`, UI `lib/ui/nutrition/`.
+### Strava
+- Deník jídel s makry a vyhledávání podle čárového kódu (Open Food Facts). Oblíbená jídla.
+- Doporučený denní cíl bílkovin podle váhy a cíle. Energie se doporučuje jen dospělým.
+- **AI lednička:** z fotky lednice sestaví seznam potravin a navrhne tři jídla s postupem a makry.
 
-D1 (nasazeno 2026-10-08, živý model ověřen syntetickou fotkou, skutečná lednička z telefonu zatím ne): AI kouč ledničky – Výživa → „Co mám v ledničce“: fotka (image_picker,
-na webu výběr souboru) se zmenší na JPEG ≤ 1024 px a pošle přes vlastní proxy (`worker/`, Cloudflare Workers AI,
-model Mistral Small 3.1, žádný klíč v aplikaci) → upravitelný seznam potravin (uložený, v záloze jako `pantry`)
-→ „Navrhni jídlo“ (10/20/40 min) → 3 návrhy s postupem, časem a odhadem maker (přednostně z místní tabulky
-`lib/domain/food_table.dart`, jinak odhad AI) → „Zapsat do deníku“. Jednorázové upozornění před prvním odesláním.
-Volitelný denní cíl bílkovin (a energie jen pro dospělé) v Nastavení → Výživa, postup na stránce Výživa.
-AI se zapne buildem s `--dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-ai.workers.dev` (nasazená proxy,
-Workers Free plán); bez něj jsou AI tlačítka vypnutá. Webová PWA navíc potřebuje svůj HTTPS původ v
-`ALLOWED_ORIGINS` (`worker/wrangler.toml`), nativní APK ne. Nasazení proxy: [worker/README.md](worker/README.md).
+### AI trenér
+- Ptáš se česky („Co mám dnes cvičit?“, „Jak rozložit tréninky do konce týdne?“). Trenér zná tvůj
+  plán, dnešní den, týden i zotavení svalů. Odpověď může nabídnout akci, třeba „Začít trénink“
+  nebo „Otevřít program“.
+- Bez internetu nebo bez AI odpoví místní kouč z dat v aplikaci.
 
-R hotovo (kód): verze 1.0.0-beta.3+12, podmínky a soukromí, zpětná vazba, připomínka zálohy po 10 trénincích, podepsaný release APK (keystore lokálně, mimo git), návod docs/TESTERS.md.
+### Ostatní
+- Záloha a obnova do JSON (obnova nic nezdvojí), export do CSV pro český Excel, import z Hevy.
+- Připomínky tréninku na Androidu a iPhonu.
+- Souhlas s podmínkami a potvrzení věku (18+ nebo souhlas zákonného zástupce). Mladším 18 let
+  aplikace nenabízí kalorické cíle.
 
-Navazující review C/D1 a stav nové AI bety: [docs/D1_REVIEW.md](docs/D1_REVIEW.md).
-Neznámá jednotka se neodhaduje jako kusy; seznam ji ukáže a při úpravě vyžaduje
-výběr g/ml/ks. Makra z tabulky i kusové hmotnosti jsou orientační, ne ověřená
-databáze konkrétních výrobků. Návrh vždy zkontroluj před zápisem.
+## Soukromí
 
-Nezávislé review bety, důkazy testů a hranice ověření: [docs/REVIEW.md](docs/REVIEW.md).
-Zbývá fyzické Android/iPhone ověření, schválené hostování PWA na HTTPS, rozeslání
-APK testerům a sběr zpětné vazby. Název a kontaktní e-mail jsou zachované;
-jejich potvrzení a záloha podpisového klíče jsou před distribucí na Tomášovi.
+- Tréninky, jídla a váha jsou jen v zařízení. Zálohu si děláš sám do souboru.
+- AI funkce jdou přes vlastní proxy (`worker/`, Cloudflare Workers AI, model Mistral Small 3.1).
+  Aplikace v sobě nemá žádný API klíč. Proxy nic neukládá kromě denních počítadel limitů.
+- Fotka lednice se před odesláním zmenší na JPEG do 1024 px. Trenérovi jde jen souhrn tréninků,
+  žádné jméno.
+- Na každé zařízení platí denní limity AI. Celkový strop drží proxy v rámci Free plánu, takže
+  nic nestojí peníze.
+
+## Instalace
+
+| Platforma | Jak |
+|---|---|
+| Web / PWA | Otevři adresu výše. Na iPhonu v Safari dej Sdílet → Přidat na plochu. |
+| Android | Nainstaluj APK z `flutter build apk --release` (je potřeba povolit instalaci z neznámých zdrojů). |
+| iPhone | Nepodepsaná IPA z GitHub Actions, podepíše se lokálně přes Sideloadly nebo AltStore. Návod: [docs/IOS_SIDELOAD.md](docs/IOS_SIDELOAD.md). |
+
+Testovací scénáře pro testery: [docs/TESTERS.md](docs/TESTERS.md).
 
 ## Vývoj
 
+Potřebuješ Flutter 3.47.2 (Dart 3.13). Pro proxy Node 20 a víc.
+
 ```bash
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs   # po změně lib/data/database.dart
+dart run build_runner build --delete-conflicting-outputs   # jen po změně lib/data/database.dart
 flutter analyze
 flutter test
-node --test test/web_runtime_test.cjs
-cd worker && npm install && npm test   # AI proxy
-cd scripts && python -m unittest
 ```
 
-Webová verze:
+Build s AI:
 
 ```bash
-flutter build web --release
-python scripts/stamp_web_build.py      # verze offline cache podle obsahu buildu
+flutter build web --release --dart-define=AI_URL=https://gymzapisnik-ai.gymzapisnik-ai.workers.dev
+python scripts/stamp_web_build.py   # verze offline cache podle obsahu buildu
 ```
 
-E2E testy (běží proti `build/web` servírovanému na `http://localhost:8099`, profil = prázdná složka):
-`PLAYWRIGHT_CORE=<cesta k playwright-core> node tool/e2e_consent.cjs <složka profilu>` a
-`node tool/e2e_workout.cjs <složka profilu>` (zápis, pauza, reload, souhrn, opakování série jedním klepnutím, historie, detail cviku).
-AI lednička bez Cloudflare: `cd worker && npm run mock` (skutečný kód proxy, falešný model, port 8787), web build
-s `--dart-define=AI_URL=http://localhost:8787` a `node tool/e2e_fridge.cjs <složka profilu>` (fotka přes výběr
-souboru, upozornění, seznam, návrhy, zápis do deníku, reload).
+Bez `AI_URL` jsou AI tlačítka vypnutá a trenér odpovídá jen místně. Volitelně
+`--dart-define=FEEDBACK_EMAIL=…` zapne v Nastavení řádek „Napsat zpětnou vazbu“. V repozitáři
+žádná adresa není.
+
+### AI proxy (`worker/`)
+
+```bash
+cd worker
+npm install
+npm test             # testy proxy a promptů
+npm run mock         # skutečný kód proxy s falešným modelem na :8787, bez Cloudflare
+```
+
+Skutečná konfigurace `worker/wrangler.toml` obsahuje ID účtu, proto je v `.gitignore`. Vzor je
+`worker/wrangler.example.toml`. Celý postup nasazení je v [worker/README.md](worker/README.md).
+Webová PWA musí mít svůj HTTPS původ v `ALLOWED_ORIGINS`. Nativní aplikace Origin neposílá.
+
+### Hostování webu
+
+Statický `build/web` běží jako Cloudflare Worker s assety. Spouští se z prázdné složky, aby si
+wrangler nepřebral `worker/wrangler.toml`:
+
+```bash
+npx --prefix worker wrangler deploy --name gymzapisnik-app --assets build/web --compatibility-date 2026-10-01
+```
+
+### E2E testy
+
+Testy běží proti `build/web` servírovanému na `http://localhost:8099`. Spouští se s
+`PLAYWRIGHT_CORE=<cesta k playwright-core>`.
+
+- `node tool/e2e_consent.cjs`: uvítání, plán, souhlas, reload a offline reload ze service workeru.
+- `node tool/e2e_workout.cjs <prázdná složka profilu>`: zápis, pauza, reload, souhrn, historie,
+  Pokrok, program, Nastavení, záloha, obnova a import z Hevy.
+- `node tool/e2e_pwa.cjs <stejná složka>`: aktualizace service workeru a offline restart.
+- `node tool/e2e_fridge.cjs <složka>`: AI lednička proti `npm run mock`.
+- `node tool/review_mobile.cjs`: rychlý průchod v izolovaném mobilním prohlížeči.
+
+Past: headless Chrome 156 v persistentním profilu service worker nezaregistruje. Testy, které
+service worker potřebují, proto běží v dočasném kontextu.
 
 ## Struktura
 
-- `lib/data/` – databáze, úložiště dokumentů, webová perzistence
-- `lib/coach/` – splity a progresní pravidla (čistý Dart)
-- `lib/domain/` – čistá logika bez Flutteru (profil, tréninky, statistiky, historie)
-- `lib/state/` – stav aplikace pro obrazovky
-- `lib/ui/` – obrazovky
-- `web/` – PWA: zámek jednoho okna (`app_bootstrap.js`), offline cache (`service_worker.js`)
+```
+lib/
+  coach/     plán, progrese, mise, streak, místní trenér, startovní váhy (čistý Dart)
+  domain/    modely, statistiky, historie, rekordy (bez Flutteru)
+  data/      databáze Drift, úložiště, webová perzistence, Open Food Facts
+  ai/        klient AI proxy
+  state/     stav aplikace pro obrazovky
+  notify/    připomínky
+  premium/   příprava na Pro (dnes je všechno odemčené)
+  ui/        obrazovky: home, workout, summary, progress, nutrition, coach, onboarding…
+worker/      AI proxy (Cloudflare Worker, TypeScript)
+web/         PWA: offline cache (service_worker.js), zámek jednoho okna
+scripts/     kontrola iOS buildu, razítko webové cache
+tool/        E2E skripty (Playwright)
+test/        Flutter testy
+```
+
+## Stav
+
+Beta. Na Androidu, webu a v testech je hotový celý tok: plán, trénink, souhrn, pokrok, strava
+a AI trenér. Před rozesláním testerům zbývá ověřit aplikaci na fyzickém iPhonu a Androidu
+a sebrat první zpětnou vazbu.
+
+Aplikace nenahrazuje trenéra ani lékaře.

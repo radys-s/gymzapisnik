@@ -13,7 +13,8 @@ enum MissionKind {
   /// Dnes už se trénovalo.
   doneToday,
 
-  /// Zbývá tolik tréninků co dní: trénovat je potřeba dnes.
+  /// Zbývá právě tolik tréninků co dní: trénovat je potřeba dnes.
+  /// Ne v týdnu, kdy uživatel začal, a ne když už cíl stihnout nejde.
   catchUp,
 
   /// Včera se trénovalo a cíl se dá stihnout i bez tréninku dnes.
@@ -21,6 +22,9 @@ enum MissionKind {
 
   /// Dnes je dobrý den na trénink.
   trainToday,
+
+  /// Dnes není v plánu trénink (uživatel si zvolil dny tréninku).
+  plannedRest,
 }
 
 class Mission {
@@ -50,10 +54,13 @@ class Mission {
 }
 
 /// Mise na [now] podle dokončených tréninků ([finished]) a týdenního cíle.
+/// [startedAt] je začátek používání aplikace (první týden se nenaléhá).
 Mission todayMission({
   required int goal,
   required Iterable<DateTime> finished,
   required DateTime now,
+  DateTime? startedAt,
+  List<int>? trainingDays,
 }) {
   final today = dayStart(now);
   final monday = weekStart(now);
@@ -70,15 +77,23 @@ Mission todayMission({
   }
   final remaining = done >= goal ? 0 : goal - done;
   final daysLeft = 8 - today.weekday;
+  // První týden: začátek používání v tomto týdnu a žádná starší historie
+  // (stávající uživatel s novým souhlasem první týden nemá).
+  final firstWeek =
+      startedAt != null &&
+      !dayStart(startedAt).isBefore(monday) &&
+      !finished.any((f) => dayStart(f).isBefore(monday));
   final MissionKind kind;
   if (remaining == 0) {
     kind = MissionKind.weekDone;
   } else if (trainedToday) {
     kind = MissionKind.doneToday;
-  } else if (remaining >= daysLeft) {
+  } else if (remaining == daysLeft && !firstWeek) {
     kind = MissionKind.catchUp;
   } else if (trainedYesterday) {
     kind = MissionKind.rest;
+  } else if (trainingDays != null && !trainingDays.contains(today.weekday)) {
+    kind = MissionKind.plannedRest;
   } else {
     kind = MissionKind.trainToday;
   }

@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import os
 import plistlib
 import struct
 import sys
@@ -31,13 +32,13 @@ def has_arm64(path):
         return False
 
 
-def verify(app):
+def verify(app, build_number='12'):
     with (app / 'Info.plist').open('rb') as source:
         info = plistlib.load(source)
     expected = {
         'CFBundleIdentifier': 'cz.radys.gymzapisnik',
         'CFBundleShortVersionString': '1.0.0',
-        'CFBundleVersion': '12',
+        'CFBundleVersion': build_number,
     }
     for key, value in expected.items():
         if info.get(key) != value:
@@ -58,7 +59,7 @@ def verify(app):
 
 if __name__ == '__main__':
     app = Path(sys.argv[1])
-    result = verify(app)
+    result = verify(app, os.environ.get('IOS_BUILD_NUMBER', '12'))
     if len(sys.argv) == 3:
         ipa = Path(sys.argv[2])
         result['sha256'] = hashlib.sha256(ipa.read_bytes()).hexdigest()

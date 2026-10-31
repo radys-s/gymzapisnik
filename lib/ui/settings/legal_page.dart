@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../design/components.dart';
+import '../design/tokens.dart';
+
 /// Podmínky používání a zásady soukromí (beta verze).
 class LegalPage extends StatelessWidget {
   const LegalPage({super.key});
@@ -49,11 +52,38 @@ class LegalPage extends StatelessWidget {
           'funkce se nic neodesílá.',
     ),
     (
+      'AI: fotka stroje',
+      'Funkce „Vyfotit stroj“ při výběru cviku odešle fotku a seznam názvů '
+          'cviků z katalogu stejnou cestou do Cloudflare Workers AI. Fotka se '
+          'neukládá ani neloguje. AI jen navrhne až tři cviky z katalogu, '
+          'vybíráš ty; může se splést.',
+    ),
+    (
+      'AI: trenér',
+      'Chat s trenérem odešle tvoji otázku, posledních až 12 zpráv chatu '
+          'a krátký souhrn tréninků (program, poslední tréninky a série, '
+          'rekordy, regeneraci, odpovědi z dotazníku plánu a u dospělých '
+          'i tělesnou váhu) stejnou cestou do Cloudflare Workers AI. Jméno, '
+          'poznámky ani celá historie se neposílají a nic z toho se na '
+          'serveru neukládá. Chat (posledních 30 zpráv) zůstává v zařízení '
+          'a je v záloze. Trenér je AI: může se splést a nenahrazuje lékaře '
+          'ani trenéra naživo. Pod 18 let nedává rady k hubnutí ani '
+          'doplňkům stravy.',
+    ),
+    (
+      'Fotky a technika cviků',
+      'Fotky cviků pocházejí z projektu free-exercise-db '
+          '(github.com/yuhonas/free-exercise-db), který je volné dílo '
+          '(public domain, Unlicense). Jsou přibalené v aplikaci, nic se kvůli '
+          'nim nestahuje. Popisy techniky a častých chyb jsou naše vlastní '
+          'a nenahrazují vedení trenéra.',
+    ),
+    (
       'Záloha a smazání',
       'Protože data nejsou nikde jinde, ulož si zálohu do souboru '
-          '(Nastavení → Uložit zálohu). Smazáním dat prohlížeče, odinstalací '
+          '(Nastavení, řádek Uložit zálohu). Smazáním dat prohlížeče, odinstalací '
           'nebo vyčištěním úložiště data zmizí. Všechno v zařízení smažeš '
-          'v Nastavení → Smazat všechna data.',
+          'v Nastavení, řádek Smazat všechna data.',
     ),
     (
       'Zodpovědnost',
@@ -64,26 +94,29 @@ class LegalPage extends StatelessWidget {
     (
       'Změny a kontakt',
       'Podmínky se mohou změnit; o podstatné změně se dozvíš v aplikaci. '
-          'Dotazy a zpětnou vazbu pošli přes Nastavení → Napsat zpětnou vazbu.',
+          'Dotazy a zpětnou vazbu pošli v Nastavení, řádek Napsat zpětnou vazbu.',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Podmínky a soukromí')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-        children: [
-          for (final (title, body) in sections) ...[
-            const SizedBox(height: 12),
-            Text(title, style: text.titleMedium),
-            const SizedBox(height: 4),
-            Text(body),
-          ],
-        ],
+    return LargeTitlePage(
+      title: 'Podmínky a soukromí',
+      padding: const EdgeInsets.fromLTRB(
+        Space.page + Space.xs,
+        Space.s,
+        Space.page,
+        Space.xxxl,
       ),
+      children: [
+        for (final (title, body) in sections) ...[
+          const SizedBox(height: Space.m),
+          Text(title, style: text.titleMedium),
+          const SizedBox(height: Space.xs),
+          Text(body),
+        ],
+      ],
     );
   }
 }
