@@ -396,7 +396,9 @@ void main() {
         find.textContaining('Oběd ·').evaluate().length +
             find.textContaining('Snídaně ·').evaluate().length +
             find.textContaining('Svačina ·').evaluate().length +
-            find.textContaining('Večeře ·').evaluate().length,
+            find.textContaining('Večeře ·').evaluate().length +
+            // Po půlnoci jde jídlo do „V noci“.
+            find.textContaining('V noci ·').evaluate().length,
         1,
       );
       expect(state.foods, hasLength(1));

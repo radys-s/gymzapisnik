@@ -137,6 +137,7 @@ až nakonec (oprávnění, baterie, iOS sideload).
 | 2026-10-30 | tomas/app-vibe | P2: první trénink bez tření (startovní váhy, přenos sérií, dokončení) |
 | 2026-10-30 | tomas/app-vibe | P3: souhrn jako zážitek – verdikt kouče, cíle na příště, další trénink, animace |
 | 2026-10-30 | tomas/app-vibe | P4: tři taby Trénink·Pokrok·Strava, záložka Pokrok, domov jen o dnešku |
+| 2026-10-31 | tomas/app-vibe | P5: onboarding s kvízem, odhalením plánu a připomínkou, doporučený cíl bílkovin |
 
 **Ověření (Playwright, Chrome):**
 - Všech 20 telefonů jsem proklikal přes všech 5 obrazovek a otevřel všechny menu a sheety: 0 chyb v konzoli.
@@ -346,3 +347,38 @@ další fáze přidala vlastní čísla a appka by působila nesourodě.
 **Výsledky:** 365 testů zelených, včetně nového `progress_page_test` (mise, pozdravy, nulový stav, křivka a rekordy, sheet „Jiný trénink“). `dart analyze` je čistý. Webový průchod: onboarding, domov se světly a „5 cviků · ~45 min“, Pokrok prázdný, trénink, souhrn, Pokrok s daty, 0 chyb v konzoli.
 
 **Další krok:** P5. Onboarding má mít jeden slide s hodnotou, kvíz, odhalení plánu, připomínku a souhlas, s uloženým krokem. K tomu odvozený cíl bílkovin.
+
+## 2026-10-31 · tomas/app-vibe · P5: onboarding s kvízem, odhalením plánu a připomínkou, doporučený cíl bílkovin
+
+**Co a proč:** úvod byl brožura. Tři slidy s funkcemi, výběr barvy, kvíz a souhlas. Krok se neukládal a kvíz začínal od výchozích hodnot. Nový uživatel tak deset obrazovek nic nedostal. Teď úvod vede k jedné věci: k hotovému plánu.
+
+- `onboarding_page.dart` (přepsáno). Kroky:
+  - Jeden slide s hodnotou.
+  - Kvíz: cíl, počet tréninků, zkušenost, minuty, dny v týdnu a nepovinná váha.
+  - Odhalení plánu: program, týden a první trénink s cviky.
+  - Připomínka: jen na mobilu, s časy 7–20 h.
+  - Souhlas.
+- Krok se ukládá do `extra['onboardingStep']`. Po zavření aplikace se úvod vrátí, kde byl, a kvíz čte dřívější odpovědi. Výběr barvy zůstal jen v Nastavení.
+- `coach/nutrition_target.dart`:
+  - Bílkoviny podle cíle: 1,6–2,0 g na kg, zaokrouhleno na 5 g.
+  - Energie: 33 kcal na kg plus přebytek podle cíle, jen pro dospělé. Mladší 18 let kalorický cíl nedostanou.
+- Strava bez vlastních cílů:
+  - Ukáže doporučení z váhy a tlačítko „Nastavit jako cíl“.
+  - Bez váhy nabídne „Zapsat váhu“.
+- Domov ve volný den podle plánu psal „Dnes · Full body A“ a vedle „Dnes volno“. Teď píše „Příště · pondělí“ a tlačítko „Začít i dnes“.
+
+**Review (subagent) našel a opraveno:**
+- Dny odebrané po návratu do kvízu zůstávaly uložené. Teď se při jiném počtu smažou. Přidán regresní test.
+- „Přeskočit“ kvíz a pak zpět vedlo na odhalení plánu, který se neuložil. Teď vede zpět na kvíz.
+- Váha 72,55 se uložila jako 72,6 a porovnávala s 72,55, takže každý návrat přidal záznam. Teď se porovnává zaokrouhleně.
+- Pole váhy mělo jen nápovědu. Dostalo stálý popisek pro čtečku.
+- Nález pro E2E skripty v `tool/`, které čekají starý úvod, je přesunutý do P6.
+
+**Co nefungovalo:** headless průchod dvakrát spadl („Target crashed“). Příčina byla v testeru, ne v aplikaci. Dny mají roli `switch` a tester hledal `button`, takže u každého dne 14× scrolloval a čekal. Měření paměti při 60 scrollech ukázalo stabilních 36–38 MB, takže v aplikaci únik není.
+
+**Výsledky:**
+- 372 testů zelených.
+- `dart analyze` je čistý.
+- Webový průchod s čistým profilem: hodnota → kvíz (Po/St/Pá, 80 kg) → „Plán je hotový“ → souhlas → domov → Strava „Bílkoviny 0 z 160 g, Energie 0 z 2900 kcal, Doporučeno z tvé váhy 80 kg“ → nastavení cíle. Konzole bez chyb.
+
+**Další krok:** P6. AI na hostovaném webu (Cloudflare Pages a ALLOWED_ORIGINS), E2E skripty pro nový úvod a drobný polish.

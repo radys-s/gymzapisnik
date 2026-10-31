@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
 
 /// Zkratky dnů v týdnu (index 0 = pondělí).
@@ -139,7 +140,7 @@ class FrequencyPanel extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (var d = 1; d <= 7; d++)
-                _DayToggle(
+                DayToggle(
                   label: weekdayShort[d - 1],
                   spoken: weekdayLong[d - 1],
                   selected: days.contains(d),
@@ -162,12 +163,14 @@ class FrequencyPanel extends StatelessWidget {
   }
 }
 
-class _DayToggle extends StatelessWidget {
+/// Den v týdnu jako přepínač (Program, úvod).
+class DayToggle extends StatelessWidget {
   final String label;
   final String spoken;
   final bool selected;
   final VoidCallback onTap;
-  const _DayToggle({
+  const DayToggle({
+    super.key,
     required this.label,
     required this.spoken,
     required this.selected,
@@ -188,7 +191,7 @@ class _DayToggle extends StatelessWidget {
         onTap: onTap,
         radius: 24,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: Motion.of(context, Motion.instant),
           width: minTap,
           height: minTap,
           alignment: Alignment.center,

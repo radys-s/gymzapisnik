@@ -116,4 +116,22 @@ void main() {
     expect(find.text('Volný trénink'), findsOneWidget);
     expect(find.text('Sestavit podle partií'), findsOneWidget);
   });
+
+  testWidgets('home on a planned rest day points to the next one', (
+    tester,
+  ) async {
+    final state = await _state(tester);
+    await tester.runAsync(() async {
+      await state.setSplit('full_body_3');
+      await state.setFrequency(days: [1, 3, 5]);
+    });
+    // Sobota 31. 10. 2026: v plánu volno, další trénink v pondělí.
+    await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 31, 15)));
+    expect(find.textContaining('Příště · pondělí'), findsOneWidget);
+    expect(find.text('Začít i dnes'), findsOneWidget);
+    expect(find.text('Dnes volno podle plánu'), findsOneWidget);
+    // Ve středu se trénuje: zase „Dnes“.
+    await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 28, 15)));
+    expect(find.textContaining('Dnes · Full body'), findsOneWidget);
+  });
 }
