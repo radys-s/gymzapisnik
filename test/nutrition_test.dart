@@ -341,7 +341,7 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
-          theme: buildTheme(Brightness.dark),
+          theme: buildTheme(),
           home: NutritionPage(state, initialDay: day),
         ),
       );
@@ -564,7 +564,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: MediaQuery(
           data: const MediaQueryData(
             size: Size(320, 1600),

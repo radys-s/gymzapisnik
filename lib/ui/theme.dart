@@ -5,18 +5,12 @@ import 'design/tokens.dart';
 
 export 'design/tokens.dart';
 
-/// Celý vzhled aplikace z jednoho místa: barvy ve stylu iOS, systémové
-/// písmo (na iPhonu SF Pro) a zvolený barevný motiv. Žádná obrazovka
-/// nemá spadnout do výchozího vzhledu Materialu.
-ThemeData buildTheme(
-  Brightness brightness, [
-  Accent accent = Accent.lime,
-  Look look = Look.auto,
-  HeroSurface? surface,
-]) {
-  final p = AppPalette.of(brightness, accent, look, surface);
-  final studio = p.studio;
-  final dark = brightness == Brightness.dark;
+/// Celý vzhled aplikace z jednoho místa: jeden tmavý vzhled, úzké písmo
+/// na nadpisy a čísla, systémové písmo na text. Žádná obrazovka nemá
+/// spadnout do výchozího vzhledu Materialu.
+ThemeData buildTheme() {
+  const p = AppPalette.gym;
+  const brightness = Brightness.dark;
   final scheme = ColorScheme(
     brightness: brightness,
     primary: p.accent,
@@ -47,8 +41,8 @@ ThemeData buildTheme(
     outlineVariant: p.separator,
     shadow: Colors.black,
     scrim: Colors.black,
-    inverseSurface: dark ? const Color(0xFFF2F2F7) : const Color(0xFF1C1C1E),
-    onInverseSurface: dark ? Colors.black : Colors.white,
+    inverseSurface: AppPalette.gymGrey,
+    onInverseSurface: Colors.black,
     inversePrimary: p.gradient.first,
     surfaceTint: Colors.transparent,
   );
@@ -69,18 +63,13 @@ ThemeData buildTheme(
         color: p.label,
         height: 1.25,
       );
-  // Závod: nadpisy a čísla tučná kurzíva jako na grafice závodů.
-  // Tensor: úzké tučné písmo jako na datové tabuli, těsné řádky.
-  TextStyle race(TextStyle style) => p.pitwall
-      ? style.copyWith(fontStyle: FontStyle.italic, fontWeight: FontWeight.w900)
-      : p.tensor
-      ? style.copyWith(
-          fontFamily: condensedFont,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.2,
-          height: 1.05,
-        )
-      : style;
+  // Nadpisy a čísla úzkým tučným písmem jako na datové tabuli.
+  TextStyle race(TextStyle style) => style.copyWith(
+    fontFamily: condensedFont,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0.2,
+    height: 1.05,
+  );
   final text = t.copyWith(
     displaySmall: race(s(t.displaySmall, 40, FontWeight.w700, -0.8)),
     headlineLarge: race(s(t.headlineLarge, 34, FontWeight.w800, -1.0)),
@@ -112,14 +101,7 @@ ThemeData buildTheme(
   final control = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(p.controlRadius),
   );
-  // Studio má tlačítka jako tablety, Aurora zaoblené obdélníky.
-  final OutlinedBorder buttonShape = p.telemetry
-      ? RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(p.controlRadius),
-        )
-      : studio
-      ? const StadiumBorder()
-      : control;
+  final OutlinedBorder buttonShape = control;
   const buttonSize = Size(minTap, 52);
   final buttonText = text.labelLarge;
 
@@ -141,13 +123,7 @@ ThemeData buildTheme(
       actionsIconTheme: IconThemeData(color: p.accent),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: p.tensor
-          ? Colors.black
-          : p.pitwall
-          ? const Color(0xFF0E0E15)
-          : studio
-          ? p.background
-          : p.grouped,
+      backgroundColor: Colors.black,
       surfaceTintColor: Colors.transparent,
       indicatorColor: Colors.transparent,
       elevation: 0,
@@ -237,7 +213,9 @@ ThemeData buildTheme(
         disabledForegroundColor: p.tertiaryLabel,
         minimumSize: buttonSize,
         textStyle: buttonText,
-        shape: buttonShape,
+        // Hlavní akce: rovnoběžník jako závodní grafika.
+        shape: const SkewBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         elevation: 0,
       ),
     ),
@@ -280,11 +258,9 @@ ThemeData buildTheme(
       backgroundColor: p.accent,
       foregroundColor: scheme.onPrimary,
       elevation: 0,
-      shape: p.tensor
-          ? const BeveledRectangleBorder(
-              borderRadius: BorderRadius.only(topRight: Radius.circular(10)),
-            )
-          : const StadiumBorder(),
+      shape: const BeveledRectangleBorder(
+        borderRadius: BorderRadius.only(topRight: Radius.circular(10)),
+      ),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
@@ -293,21 +269,18 @@ ThemeData buildTheme(
         // a obrys v barvě akcentu.
         side: WidgetStateProperty.resolveWith(
           (st) => BorderSide(
-            color: st.contains(WidgetState.selected) && !studio
-                ? p.accent
-                : p.fill,
+            color: st.contains(WidgetState.selected) ? p.accent : p.fill,
             width: 2,
           ),
         ),
         backgroundColor: WidgetStateProperty.resolveWith(
           (st) => st.contains(WidgetState.selected)
-              ? (studio ? p.accent : p.accent.withValues(alpha: 0.22))
+              ? p.accent.withValues(alpha: 0.22)
               : p.fill,
         ),
         foregroundColor: WidgetStateProperty.resolveWith(
-          (st) => st.contains(WidgetState.selected)
-              ? (studio ? p.onAccent : p.label)
-              : p.secondaryLabel,
+          (st) =>
+              st.contains(WidgetState.selected) ? p.label : p.secondaryLabel,
         ),
         textStyle: WidgetStatePropertyAll(text.titleSmall),
         shape: WidgetStatePropertyAll(buttonShape),
@@ -316,10 +289,12 @@ ThemeData buildTheme(
     ),
     chipTheme: ChipThemeData(
       backgroundColor: p.fill,
-      selectedColor: p.accent.withValues(alpha: dark ? 0.25 : 0.15),
+      selectedColor: p.accent.withValues(alpha: 0.25),
       disabledColor: p.fill,
       side: BorderSide.none,
-      shape: const StadiumBorder(),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(p.controlRadius),
+      ),
       labelStyle: text.titleSmall?.copyWith(color: p.label),
       secondaryLabelStyle: text.titleSmall?.copyWith(color: p.accent),
       checkmarkColor: p.accent,
@@ -338,7 +313,7 @@ ThemeData buildTheme(
       ),
       checkColor: WidgetStatePropertyAll(scheme.onPrimary),
       side: BorderSide(color: p.tertiaryLabel, width: 1.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
     ),
     radioTheme: RadioThemeData(
       fillColor: WidgetStateProperty.resolveWith(
@@ -361,15 +336,11 @@ ThemeData buildTheme(
       elevation: 0,
       titleTextStyle: text.titleMedium,
       contentTextStyle: text.bodyMedium,
-      shape: p.tensor
-          ? p.cardShape()
-          : RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Radii.sheet),
-            ),
+      shape: p.cardShape(),
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: p.grouped,
-      modalBackgroundColor: dark ? p.grouped : p.background,
+      modalBackgroundColor: p.grouped,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       modalElevation: 0,
@@ -377,9 +348,7 @@ ThemeData buildTheme(
       dragHandleColor: p.tertiaryLabel,
       dragHandleSize: const Size(36, 5),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(p.tensor ? 2 : Radii.sheet),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -388,8 +357,8 @@ ThemeData buildTheme(
       contentTextStyle: text.bodyMedium?.copyWith(
         color: scheme.onInverseSurface,
       ),
-      // Pruh má opačnou světlost než aplikace, tak i barva akce.
-      actionTextColor: accent.solid(dark ? Brightness.light : Brightness.dark),
+      // Světlý pruh: akce tmavou zelenou.
+      actionTextColor: const Color(0xFF3A6B00),
       elevation: 0,
       insetPadding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.m),
       shape: RoundedRectangleBorder(

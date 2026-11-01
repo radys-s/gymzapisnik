@@ -85,7 +85,7 @@ void main() {
     await tester.runAsync(state.load);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: Scaffold(body: BodyweightCard(state)),
       ),
     );

@@ -29,7 +29,7 @@ Future<(AppState, Workout)> _setup(WidgetTester tester) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: buildTheme(Brightness.light),
+      theme: buildTheme(),
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(

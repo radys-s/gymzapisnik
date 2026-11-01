@@ -28,7 +28,7 @@ void main() {
       await state.addExercise('bench_press');
     });
     await tester.pumpWidget(
-      MaterialApp(theme: buildTheme(Brightness.dark), home: WorkoutPage(state)),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
 
     expect(find.text('77,5×8'), findsOneWidget);

@@ -42,7 +42,7 @@ void main() {
     SplitDay? result;
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => result = await Navigator.push<SplitDay>(
@@ -95,10 +95,7 @@ void main() {
     _tall(tester);
     final state = await _state(tester, active: true);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: WorkoutPage(state),
-      ),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
     await tester.tap(byLabel('Vyměnit cvik').first);
     await tester.pumpAndSettle();

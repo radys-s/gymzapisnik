@@ -59,7 +59,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: TrainerPage(state, now: () => DateTime(2026, 10, 22, 18)),
       ),
     );
@@ -136,7 +136,7 @@ void main() {
     // Druhý den: otázka bez odpovědi zůstala, jde ji poslat znovu.
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: TrainerPage(
           state,
           key: UniqueKey(),

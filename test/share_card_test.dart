@@ -37,7 +37,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: SummaryPage(state, last, justFinished: true),
       ),
     );

@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
-          if (context.palette.telemetry) _RecordsBoard(state),
+          _RecordsBoard(state),
           if (state.workouts.isNotEmpty && state.active == null) ...[
             const SectionHeader('Regenerace svalů'),
             RecoveryPanel(state: state, now: now, onBuild: _build),
@@ -290,11 +290,10 @@ class _TodayCard extends StatelessWidget {
         (n, e) => n + e.sets.where((s) => s.done).length,
       );
       children.addAll([
-        if (p.telemetry)
-          const Padding(
-            padding: EdgeInsets.only(bottom: Space.xs),
-            child: Align(alignment: Alignment.centerLeft, child: LiveTag()),
-          ),
+        const Padding(
+          padding: EdgeInsets.only(bottom: Space.xs),
+          child: Align(alignment: Alignment.centerLeft, child: LiveTag()),
+        ),
         _Eyebrow('Rozepsaný trénink', color: p.accent),
         Text(active.name, style: text.headlineSmall),
         const SizedBox(height: 2),
@@ -330,10 +329,7 @@ class _TodayCard extends StatelessWidget {
                     ' · ${split.name} · den '
                     '${dayIndex % split.days.length + 1}/${split.days.length}',
                   ),
-                  Text(
-                    day.name,
-                    style: p.telemetry ? text.displaySmall : text.headlineSmall,
-                  ),
+                  Text(day.name, style: text.displaySmall),
                 ],
               ),
             ),
@@ -379,14 +375,8 @@ class _TodayCard extends StatelessWidget {
         if (plan.length > 5)
           Text('a další ${plan.length - 5}', style: text.bodySmall),
         const SizedBox(height: Space.m),
-        // Jedno světlo na cvik; rozsah tréninku ukáže každý vzhled.
-        if (p.telemetry)
-          StartLights(count: plan.length, caption: scope)
-        else
-          Text(
-            scope,
-            style: text.labelMedium?.copyWith(color: p.secondaryLabel),
-          ),
+        // Jeden dílek na cvik a rozsah tréninku.
+        StartLights(count: plan.length, caption: scope),
         const SizedBox(height: Space.m),
         PrimaryButton(
           next == null ? 'Začít ${day.name}' : 'Začít i dnes',
@@ -491,22 +481,16 @@ class _Eyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 2),
-    child: context.palette.tensor
-        ? Text(
-            text,
-            style: TextStyle(
-              fontFamily: condensedFont,
-              color: color ?? context.palette.secondaryLabel,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-            ),
-          )
-        : Text(
-            text,
-            style: Theme.of(context).textTheme.labelMedium
-                ?.copyWith(color: color, fontWeight: FontWeight.w600),
-          ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontFamily: condensedFont,
+        color: color ?? context.palette.secondaryLabel,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.6,
+      ),
+    ),
   );
 }
 
@@ -535,10 +519,7 @@ class _MissionLine extends StatelessWidget {
             Icon(
               MissionCopy.icon(mission.kind),
               size: 20,
-              // Na světlé barevné kartě by oranžová splynula.
-              color: urgent && p.surface != HeroSurface.bright
-                  ? const Color(0xFFFF9F0A)
-                  : p.accent,
+              color: urgent ? const Color(0xFFFF9F0A) : p.accent,
             ),
             const SizedBox(width: Space.m),
             Expanded(
@@ -605,7 +586,7 @@ class _RecordsBoard extends StatelessWidget {
   const _RecordsBoard(this.state);
 
   static const _teams = [
-    AppPalette.raceRed,
+    AppPalette.yellow,
     Color(0xFFFF8000),
     Color(0xFF00D2BE),
   ];

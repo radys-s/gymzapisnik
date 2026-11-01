@@ -22,7 +22,7 @@ Future<void> _pump(WidgetTester tester, AppState state) async {
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    MaterialApp(theme: buildTheme(Brightness.light), home: ProgramPage(state)),
+    MaterialApp(theme: buildTheme(), home: ProgramPage(state)),
   );
   await tester.pumpAndSettle();
 }

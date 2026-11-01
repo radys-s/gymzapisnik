@@ -1095,22 +1095,14 @@ class AppState extends ChangeNotifier {
   // ---------------------------------------------------------------------
 
   /// Změní nastavení v profilu (`null` = beze změny).
-  Future<void> setPreferences({
-    int? restSeconds,
-    String? theme,
-    String? accent,
-    String? look,
-    double? weightStep,
-  }) => _updateProfile(
-    (p) => p.withExtra({
-      'restSeconds': ?restSeconds?.clamp(15, 600),
-      if (weightStep != null && weightSteps.contains(weightStep))
-        'weightStep': weightStep,
-      'theme': ?theme,
-      'accent': ?accent,
-      'look': ?look,
-    }),
-  );
+  Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
+      _updateProfile(
+        (p) => p.withExtra({
+          'restSeconds': ?restSeconds?.clamp(15, 600),
+          if (weightStep != null && weightSteps.contains(weightStep))
+            'weightStep': weightStep,
+        }),
+      );
 
   /// Zapíše váhu; `false` = nesmyslná hodnota.
   Future<bool> addBodyweight(double kg, {DateTime? now}) async {

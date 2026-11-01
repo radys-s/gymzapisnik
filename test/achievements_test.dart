@@ -146,10 +146,7 @@ void main() {
           .workout!;
     });
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: AchievementsPage(state),
-      ),
+      MaterialApp(theme: buildTheme(), home: AchievementsPage(state)),
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('2 z ${achievements.length}'), findsOneWidget);
@@ -169,7 +166,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: SummaryPage(state, saved, justFinished: true),
       ),
     );

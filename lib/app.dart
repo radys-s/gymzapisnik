@@ -26,9 +26,6 @@ class GymApp extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
     builder: (context, _) => appFrame(
-      accent: Accent.parse(state.profile.accent),
-      look: Look.parse(state.profile.look),
-      theme: state.profile.theme,
       home: state.profile.hasValidConsent
           ? AppShell(state)
           : OnboardingPage(state),
@@ -36,24 +33,12 @@ class GymApp extends StatelessWidget {
   );
 }
 
-/// Společný rámec: vzhled, motiv a čeština i pro systémové dialogy.
-MaterialApp appFrame({
-  required Widget home,
-  Accent accent = Accent.lime,
-  Look look = Look.auto,
-  String theme = 'dark',
-}) => MaterialApp(
+/// Společný rámec: vzhled a čeština i pro systémové dialogy.
+MaterialApp appFrame({required Widget home}) => MaterialApp(
   title: 'Gym zápisník',
   debugShowCheckedModeBanner: false,
-  theme: buildTheme(Brightness.light, accent, look),
-  darkTheme: buildTheme(Brightness.dark, accent, look),
-  // Tensor a Závod jsou jen tmavé, volba světlý / tmavý na ně nepůsobí.
-  themeMode: switch (theme) {
-    _ when look.fixed => ThemeMode.dark,
-    'light' => ThemeMode.light,
-    'dark' => ThemeMode.dark,
-    _ => ThemeMode.system,
-  },
+  theme: buildTheme(),
+  themeMode: ThemeMode.dark,
   locale: _czech,
   supportedLocales: const [_czech],
   localizationsDelegates: GlobalMaterialLocalizations.delegates,

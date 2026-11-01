@@ -11,7 +11,6 @@ import '../../notify/notifier.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
-import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
@@ -301,41 +300,6 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-            ],
-          ),
-          GroupedSection(
-            header: 'Vzhled',
-            dividerIndent: _indent,
-            children: [
-              // Tensor a Závod jsou vždy tmavé, volba světla by nic nezměnila.
-              if (!Look.parse(profile.look).fixed)
-                Padding(
-                  padding: const EdgeInsets.all(Space.m),
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'system', label: Text('Systém')),
-                      ButtonSegment(value: 'light', label: Text('Světlý')),
-                      ButtonSegment(value: 'dark', label: Text('Tmavý')),
-                    ],
-                    selected: {profile.theme},
-                    showSelectedIcon: false,
-                    onSelectionChanged: (s) =>
-                        state.setPreferences(theme: s.single),
-                  ),
-                ),
-              GroupedRow(
-                icon: Icons.palette_outlined,
-                iconColor: p.gradient.last,
-                title: 'Vzhled a barva',
-                subtitle: Look.parse(profile.look).fixed
-                    ? Look.parse(profile.look).label
-                    : '${Look.parse(profile.look).label} · '
-                          '${Accent.parse(profile.accent).label}',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => AppearancePage(state)),
-                ),
-              ),
             ],
           ),
           GroupedSection(

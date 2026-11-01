@@ -169,7 +169,7 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
-          theme: buildTheme(Brightness.dark),
+          theme: buildTheme(),
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(

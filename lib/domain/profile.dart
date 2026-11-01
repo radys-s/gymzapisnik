@@ -75,33 +75,6 @@ class Profile {
     return v is num ? v.toInt().clamp(0, 1439) : null;
   }
 
-  /// Motiv: `dark` (výchozí, hlavní režim aplikace), `light` nebo `system`
-  /// (podle telefonu).
-  String get theme => switch (extra['theme']) {
-    'light' => 'light',
-    'system' => 'system',
-    _ => 'dark',
-  };
-
-  /// Barevný motiv (`lime`, `lagoon`, `sunset`, `neon`); neznámý = výchozí.
-  String get accent => switch (extra['accent']) {
-    'lagoon' => 'lagoon',
-    'sunset' => 'sunset',
-    'neon' => 'neon',
-    _ => 'lime',
-  };
-
-  /// Vzhled (`tensor`, `pitwall`, `auto`, `aurora`, `studio`); nezvolený
-  /// nebo neznámý = `tensor`, který vyhrál finále testerů. Kdo si Závod
-  /// vybral sám, má ho uložený a zůstane mu.
-  String get look => switch (extra['look']) {
-    'pitwall' => 'pitwall',
-    'auto' => 'auto',
-    'aurora' => 'aurora',
-    'studio' => 'studio',
-    _ => 'tensor',
-  };
-
   /// Uživatel prošel úvodem (ukazuje se jen jednou).
   bool get welcomeSeen => extra['welcomeSeen'] == true;
 

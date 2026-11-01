@@ -500,16 +500,13 @@ class _Summary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (rings.isNotEmpty && p.tensor) ...[
+          if (rings.isNotEmpty) ...[
             _RingStack(
               kcal: kcalTarget == null ? null : (totals.kcal, kcalTarget),
               protein: proteinTarget == null
                   ? null
                   : (totals.protein, proteinTarget),
             ),
-            const SizedBox(height: Space.l),
-          ] else if (rings.isNotEmpty) ...[
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: rings),
             const SizedBox(height: Space.l),
           ],
           Row(
@@ -585,16 +582,34 @@ class _RingStack extends StatelessWidget {
     final rows = [
       if (kcal case (final v, final t)) ('Energie', v, t, 'kcal', p.gradient),
       if (protein case (final v, final t))
-        (
-          'Bílkoviny',
-          v,
-          t,
-          'g',
-          const [AppPalette.tensorCyan, Color(0xFF7BE4FF)],
-        ),
+        ('Bílkoviny', v, t, 'g', const [AppPalette.cyan, Color(0xFF7BE4FF)]),
     ];
     const outer = 132.0, stroke = 14.0;
-    return Row(
+    // Při velkém písmu nebo úzkém displeji legenda pod kruhy.
+    final narrow =
+        MediaQuery.textScalerOf(context).scale(10) > 13 ||
+        MediaQuery.sizeOf(context).width < 360;
+    final legend = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final (label, v, t, unit, colors) in rows)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: _RingLegend(
+              label: label,
+              value: v,
+              target: t,
+              unit: unit,
+              color: colors.first,
+            ),
+          ),
+      ],
+    );
+    return Flex(
+      direction: narrow ? Axis.vertical : Axis.horizontal,
+      crossAxisAlignment: narrow
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       children: [
         SizedBox.square(
           dimension: outer,
@@ -611,25 +626,8 @@ class _RingStack extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: Space.l),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final (label, v, t, unit, colors) in rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: _RingLegend(
-                    label: label,
-                    value: v,
-                    target: t,
-                    unit: unit,
-                    color: colors.first,
-                  ),
-                ),
-            ],
-          ),
-        ),
+        const SizedBox(width: Space.l, height: Space.m),
+        if (narrow) legend else Expanded(child: legend),
       ],
     );
   }
@@ -665,14 +663,16 @@ class _RingLegend extends StatelessWidget {
             children: [
               Container(width: 10, height: 10, color: color),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: condensedFont,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  letterSpacing: 0.6,
-                  color: p.secondaryLabel,
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: condensedFont,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    letterSpacing: 0.6,
+                    color: p.secondaryLabel,
+                  ),
                 ),
               ),
             ],

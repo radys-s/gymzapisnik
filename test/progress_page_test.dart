@@ -27,7 +27,7 @@ Future<void> _show(WidgetTester tester, Widget page) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: buildTheme(Brightness.dark),
+      theme: buildTheme(),
       home: Scaffold(body: page),
     ),
   );

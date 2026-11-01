@@ -340,7 +340,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     child: StatTile(
                       durationLabel(duration),
                       'Délka',
-                      big: p.telemetry,
+                      big: true,
                     ),
                   ),
                 Expanded(
@@ -349,7 +349,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     'Série',
                     countTo: sets.toDouble(),
                     format: (v) => '${v.round()}',
-                    big: p.telemetry,
+                    big: true,
                   ),
                 ),
                 Expanded(
@@ -358,7 +358,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     'Objem',
                     countTo: kg,
                     format: (v) => '${formatVolume(v)} kg',
-                    big: p.telemetry,
+                    big: true,
                   ),
                 ),
               ],

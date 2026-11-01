@@ -38,15 +38,15 @@ void main() {
     'concurrent pantry, appearance and AI consent retain every change',
     () async {
       await Future.wait([
-        state.setPreferences(accent: 'lagoon'),
+        state.setPreferences(restSeconds: 75),
         state.savePantry([const PantryItem('Tvaroh', amount: 250, unit: 'g')]),
         state.acceptAiNotice(),
       ]);
-      expect(state.profile.accent, 'lagoon');
+      expect(state.profile.restSeconds, 75);
       expect(state.pantry.single.name, 'Tvaroh');
       expect(state.profile.aiNoticeAccepted, isTrue);
       await state.load();
-      expect(state.profile.accent, 'lagoon');
+      expect(state.profile.restSeconds, 75);
       expect(state.pantry.single.name, 'Tvaroh');
     },
   );
@@ -61,12 +61,12 @@ void main() {
   test('rapid tab changes persist the last tap alongside appearance', () async {
     await Future.wait([
       state.setLastTab(1),
-      state.setPreferences(accent: 'sunset'),
+      state.setPreferences(restSeconds: 120),
       state.setLastTab(0),
     ]);
     await state.load();
     expect(state.profile.lastTab, 0);
-    expect(state.profile.accent, 'sunset');
+    expect(state.profile.restSeconds, 120);
   });
 
   test('pantry merge replaces a confirmed quantity without duplicates or losing known amounts', () {

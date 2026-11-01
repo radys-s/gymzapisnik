@@ -572,10 +572,9 @@ class _RestBarState extends State<_RestBar> {
     final seconds = (left.inMilliseconds / 1000).ceil();
     final finished = seconds <= 0;
     final p = context.palette;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    // Plovoucí tableta: ve světlém režimu tmavá, v tmavém bílá.
-    final bg = dark ? Colors.white : const Color(0xFF18181A);
-    final fg = dark ? Colors.black : Colors.white;
+    // Plovoucí tableta: bílá na černém podkladu.
+    const bg = Colors.white;
+    const fg = Colors.black;
     final chipFg = finished ? p.onGradient : fg;
     final text = finished
         ? 'Pauza hotová'
@@ -1198,9 +1197,7 @@ class _SetRowState extends State<_SetRow> {
                             : set.warmup
                             ? p.accent.withValues(alpha: 0.16)
                             : p.fill,
-                        borderRadius: BorderRadius.circular(
-                          context.palette.tensor ? 2 : 8,
-                        ),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                       // Rekordní série má místo čísla pohár.
                       child: record

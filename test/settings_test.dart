@@ -52,16 +52,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(state.profile.restSeconds, 90);
 
-    // Závod (výchozí) je jen tmavý: světlý motiv jde jen v jiném vzhledu.
+    // Jeden vzhled, vždy tmavý: volba světla ani motivu už není.
     expect(find.text('Světlý'), findsNothing);
-    await tester.runAsync(() => state.setPreferences(look: 'aurora'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Světlý'));
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pumpAndSettle();
-    expect(state.profile.theme, 'light');
-    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(app.themeMode, ThemeMode.light);
+    expect(find.text('Vzhled a barva'), findsNothing);
 
     await tester.tap(find.text('Uložit zálohu'));
     await tester.pumpAndSettle();

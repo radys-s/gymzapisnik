@@ -55,7 +55,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: SummaryPage(state, today, justFinished: true),
       ),
     );
@@ -97,7 +97,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -169,7 +169,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         // Otevřeno ze staršího: porovnání stejně dá novější vlevo.
         home: SummaryPage(state, saved.first),
       ),

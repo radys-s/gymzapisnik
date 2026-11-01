@@ -34,7 +34,7 @@ Future<AppState> _state(WidgetTester tester) async {
 Future<void> _pump(WidgetTester tester, AppState state, {double scale = 1}) =>
     tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: MediaQuery.withClampedTextScaling(
           minScaleFactor: scale,
           maxScaleFactor: scale,

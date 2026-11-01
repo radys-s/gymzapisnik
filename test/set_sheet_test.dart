@@ -38,7 +38,7 @@ void main() {
       await state.saveActive();
     });
     await tester.pumpWidget(
-      MaterialApp(theme: buildTheme(Brightness.dark), home: WorkoutPage(state)),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
     await tester.pumpAndSettle();
   }

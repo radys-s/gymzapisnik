@@ -142,7 +142,7 @@ void main() {
     List<String>? avoid;
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: Scaffold(
           body: RecoveryPanel(
             state: state,
@@ -182,7 +182,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: WorkoutBuilderPage(state, initialFocuses: built!),
       ),
     );
@@ -198,7 +198,7 @@ void main() {
     tester.view.physicalSize = const Size(320, 1600);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: MediaQuery(
           data: const MediaQueryData(
             size: Size(320, 1600),
