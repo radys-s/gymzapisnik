@@ -1311,7 +1311,8 @@ class AppState extends ChangeNotifier {
     try {
       await _updateProfile(
         (p) => p.withExtra({
-          'tab': tab == 1 || tab == 2 ? tab : null,
+          'tab4': tab > 0 && tab <= 3 ? tab : null,
+          'tab': null,
           'lastTab': null,
         }),
       );

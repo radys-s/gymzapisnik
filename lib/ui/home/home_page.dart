@@ -21,15 +21,12 @@ import '../program/plan_quiz.dart';
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
 import '../settings/settings_button.dart';
-import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
-import '../workout/builder_page.dart';
-import '../workout/workout_page.dart';
+import '../workout/launcher.dart';
 import 'dashboard.dart';
-import 'recovery_card.dart';
 
-/// Záložka Trénink: pozdrav, jedna hlavní akce, týden, regenerace
-/// a poslední tréninky. Statistiky, cviky a váha jsou v záložce Pokrok.
+/// Záložka Domů: pozdrav, jedna hlavní akce, týden, rekordy a poslední
+/// tréninky. Rutiny a regenerace jsou v záložce Trénink, statistiky v Profilu.
 class HomePage extends StatefulWidget {
   final AppState state;
   final DateTime Function() now;
@@ -39,130 +36,16 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  /// Pojistka proti dvojímu klepnutí na start (dvě obrazovky tréninku).
-  bool _starting = false;
-
+class _HomePageState extends State<HomePage> with WorkoutLauncher {
+  @override
   AppState get state => widget.state;
-
-  Future<void> _usePlan(PlanAnswers? answers) async {
-    if (_starting) return;
-    setState(() => _starting = true);
-    try {
-      await state.applyPlan(answers);
-    } catch (_) {
-      if (mounted) {
-        showToast(context, 'Plán se nepodařilo uložit. Zkus to znovu.');
-      }
-    } finally {
-      if (mounted) setState(() => _starting = false);
-    }
-  }
-
-  Future<void> _run(Future<void> Function() start) async {
-    if (_starting) return;
-    setState(() => _starting = true);
-    try {
-      await start();
-    } catch (e) {
-      if (mounted) {
-        showToast(
-          context,
-          e is StateError
-              ? e.message
-              : 'Trénink se nepodařilo začít. Zkus to znovu.',
-        );
-      }
-      if (mounted) setState(() => _starting = false);
-      return;
-    }
-    if (!mounted) return;
-    final nav = Navigator.of(context, rootNavigator: true);
-    final finished = nav.push<Workout>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => WorkoutPage(state),
-      ),
-    );
-    // Tlačítko se odemkne, jakmile je obrazovka tréninku nahoře.
-    setState(() => _starting = false);
-    final workout = await finished;
-    if (workout != null && mounted) {
-      await nav.push(
-        MaterialPageRoute(
-          builder: (_) => SummaryPage(state, workout, justFinished: true),
-        ),
-      );
-    }
-  }
 
   TrainerPage _trainer() => TrainerPage(
     state,
     now: widget.now,
-    onStartToday: () => _run(() => state.startSplitDay(state.todaySplitDay)),
+    onStartToday: () =>
+        runWorkout(() => state.startSplitDay(state.todaySplitDay)),
   );
-
-  /// Sestavení tréninku z partií; hotový den rovnou začne.
-  bool _opening = false;
-
-  Future<void> _build([
-    List<String> focuses = const [],
-    List<String> avoid = const [],
-  ]) async {
-    if (_opening || _starting) return;
-    _opening = true;
-    final SplitDay? day;
-    try {
-      day = await Navigator.push<SplitDay>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => WorkoutBuilderPage(
-            state,
-            initialFocuses: focuses,
-            avoidFocuses: avoid,
-          ),
-        ),
-      );
-    } finally {
-      _opening = false;
-    }
-    final picked = day;
-    if (picked == null || !mounted) return;
-    await _run(() => state.startPlanned(picked));
-  }
-
-  /// Jiný trénink než dnešní den plánu: volný, nebo sestavený z partií.
-  Future<void> _other() async {
-    final pick = await showModalBottomSheet<int>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheet) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: Space.l),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.bolt_rounded),
-                title: const Text('Volný trénink'),
-                subtitle: const Text('Cviky přidáváš průběžně'),
-                onTap: () => Navigator.pop(sheet, 0),
-              ),
-              ListTile(
-                leading: const Icon(Icons.tune_rounded),
-                title: const Text('Sestavit podle partií'),
-                subtitle: const Text('Vybereš svaly, cviky navrhne aplikace'),
-                onTap: () => Navigator.pop(sheet, 1),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (!mounted) return;
-    if (pick == 0) await _run(state.startWorkout);
-    if (pick == 1) await _build();
-  }
 
   void _push(Widget page) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => page));
@@ -174,7 +57,7 @@ class _HomePageState extends State<HomePage> {
       final now = widget.now();
       final recent = state.workouts.take(3).toList();
       return LargeTitlePage(
-        title: 'Trénink',
+        title: 'Domů',
         actions: [
           IconButton(
             tooltip: 'Trenér',
@@ -195,34 +78,18 @@ class _HomePageState extends State<HomePage> {
           _TodayCard(
             state: state,
             now: now,
-            busy: _starting,
+            busy: starting,
             dayIndex: state.todaySplitDay,
-            onStart: _run,
+            onStart: runWorkout,
             onPickDay: state.pickSplitDay,
             onProgram: () => _push(ProgramPage(state)),
-            onOther: _other,
+            onOther: otherWorkout,
             onQuiz: () => _push(PlanQuizPage(state)),
-            onUsePlan: _usePlan,
-          ),
-          const SizedBox(height: Space.m),
-          GroupedSection(
-            children: [
-              GroupedRow(
-                icon: Icons.forum_rounded,
-                iconColor: context.palette.accent,
-                title: 'Zeptej se trenéra',
-                subtitle: 'Co dnes, proč stagnuju, čím nahradit cvik',
-                onTap: () => _push(_trainer()),
-              ),
-            ],
+            onUsePlan: usePlan,
           ),
           const SectionHeader('Tento týden'),
           _WeekPanel(state: state, now: now),
           _RecordsBoard(state),
-          if (state.workouts.isNotEmpty && state.active == null) ...[
-            const SectionHeader('Regenerace svalů'),
-            RecoveryPanel(state: state, now: now, onBuild: _build),
-          ],
           if (recent.isNotEmpty) ...[
             SectionHeader(
               'Historie',

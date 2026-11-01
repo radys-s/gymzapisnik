@@ -352,7 +352,14 @@ class _WorkoutPageState extends State<WorkoutPage> {
           absorbing: _busy,
           child: Scaffold(
             appBar: AppBar(
-              // Název vlevo vedle křížku: na úzkém displeji se vejde víc.
+              // Šipka dolů trénink jen schová (běží dál v liště nad
+              // navigací, jako v Hevy); zrušit jde z menu vpravo.
+              leading: IconButton(
+                tooltip: 'Skrýt trénink',
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                onPressed: () => Navigator.maybePop(context),
+              ),
+              // Název vlevo vedle šipky: na úzkém displeji se vejde víc.
               centerTitle: false,
               titleSpacing: 0,
               title: Semantics(

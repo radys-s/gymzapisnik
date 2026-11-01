@@ -29,7 +29,8 @@ void main() {
     final next = p.withExtra({'lastTab': 1, 'welcomeSeen': true});
     // Dvě záložky ze starší verze: 1 byla Strava, teď 2.
     expect(next.lastTab, 2);
-    expect(p.withExtra({'tab': 1}).lastTab, 1);
+    expect(p.withExtra({'tab': 1}).lastTab, 3); // starý Pokrok je teď Profil
+    expect(p.withExtra({'tab4': 1, 'tab': 2}).lastTab, 1);
     expect(p.withExtra({'tab': 2, 'lastTab': 1}).lastTab, 2);
     expect(next.welcomeSeen, isTrue);
   });
