@@ -59,7 +59,6 @@ const _aliases = {
   'bicep curl': 'biceps_curl',
   'triceps pushdown': 'triceps_pushdown',
   'pull up': 'pull_up',
-  'chin up': 'pull_up',
   'push up': 'push_up',
   'standing calf raise': 'calf_raise',
   'lateral raise': 'lateral_raise',
@@ -88,6 +87,28 @@ const _equipmentAliases = {
   'lateral raise (cable)': 'cable_lateral_raise',
   'squat (smith machine)': 'smith_squat',
   'squat (machine)': 'hack_squat',
+  'deadlift (trap bar)': 'trap_bar_deadlift',
+  'chest fly (dumbbell)': 'dumbbell_fly',
+};
+
+/// Text v první závorce názvu malými písmeny: `Row (Cable)` → `cable`.
+String? _tag(String name) =>
+    RegExp(r'\(([^)]*)\)').firstMatch(name)?.group(1)?.trim().toLowerCase();
+
+/// Vybavení v závorce za názvem cviku v Hevy.
+const _hevyEquipment = {
+  'barbell': Equipment.barbell,
+  'ez bar': Equipment.barbell,
+  'dumbbell': Equipment.dumbbell,
+  'machine': Equipment.machine,
+  'cable': Equipment.cable,
+  'smith machine': Equipment.smith,
+  'bodyweight': Equipment.bodyweight,
+  'weighted': Equipment.bodyweight,
+  'kettlebell': Equipment.kettlebell,
+  'band': Equipment.band,
+  'resistance band': Equipment.band,
+  'plate': Equipment.plate,
 };
 
 /// Název bez závorky s vybavením a diakritiky: `Bench Press (Barbell)` → `bench press`.
@@ -126,10 +147,15 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
   String cell(List<String> row, int i) =>
       i >= 0 && i < row.length ? row[i].trim() : '';
 
-  // Existující cviky podle normalizovaného názvu.
-  final byName = <String, Exercise>{};
-  for (final e in [...builtInExercises, ...custom]) {
-    byName[_normalize(e.name)] = e;
+  // Vlastní cviky podle názvu, vestavěné podle aliasů (anglicky jako v Hevy).
+  final custom0 = <String, Exercise>{
+    for (final e in custom) _normalize(e.name): e,
+  };
+  final byAlias = <String, List<Exercise>>{};
+  for (final e in builtInExercises) {
+    for (final name in {e.name, ...e.aliases}) {
+      (byAlias[_normalize(name)] ??= []).add(e);
+    }
   }
   final newExercises = <String, Exercise>{};
 
@@ -145,26 +171,39 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
         if (e.id == equipment) return e;
       }
     }
+    final tag = _tag(hevyName);
+    // Hevy píše cviky s vlastní vahou bez závorky („Crunch“, „Pull Up“).
+    final wanted = tag == null ? Equipment.bodyweight : _hevyEquipment[tag];
     // Jednoručky, kettlebell nebo guma bez vlastního cviku v katalogu
     // nejsou varianta s tyčí: vlastní cvik, ať se nemíchají rekordy.
-    final variant = RegExp(
-      r'\((dumbbell|kettlebell|band|resistance band)\)',
-      caseSensitive: false,
-    ).firstMatch(hevyName)?.group(1)?.toLowerCase();
+    final variant =
+        const {
+          'dumbbell',
+          'kettlebell',
+          'band',
+          'resistance band',
+        }.contains(tag)
+        ? tag
+        : null;
     // Platí i pro vlastní cviky: „Bench Press“ s tyčí nesmí pohltit
     // jednoručky. Dřív importovaná varianta má typ v názvu, takže sedí.
-    bool fits(Exercise e) =>
-        variant == null ||
-        e.name.toLowerCase().contains(variant.split(' ').last);
-    final known = byName[key];
-    if (known != null && fits(known)) return known;
-    final aliased = _aliases[key];
-    if (aliased != null) {
-      for (final e in builtInExercises) {
-        if (e.id == aliased && fits(e)) return e;
-      }
+    final known = custom0[key];
+    if (known != null) {
+      final own = _tag(known.name);
+      if (own == tag || (own == null && variant == null)) return known;
     }
-    final newKey = variant == null ? key : '$key ($variant)';
+    final candidates = [
+      ...?byAlias[key],
+      for (final e in builtInExercises)
+        if (e.id == _aliases[key]) e,
+    ];
+    final exact = candidates.where((e) => e.equipment == wanted).firstOrNull;
+    if (exact != null) return exact;
+    // Známé vybavení bez shody (stroj, kladka, multipress) je jiný cvik:
+    // vlastní, ať se historie a rekordy nemíchají s variantou s osou.
+    final mismatch = tag != null && wanted != null;
+    if (!mismatch && candidates.isNotEmpty) return candidates.first;
+    final newKey = mismatch ? '$key ($tag)' : key;
     return newExercises.putIfAbsent(
       newKey,
       () => Exercise(

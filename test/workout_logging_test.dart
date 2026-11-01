@@ -184,8 +184,8 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'press');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Incline press'));
-    await tester.tap(find.text('Chest press machine'));
+    await tester.tap(find.text('Šikmý bench press (osa)'));
+    await tester.tap(find.text('Tlak na hrudník (stroj)'));
     await tester.pump();
     expect(find.text('Přidat cviky (2)'), findsOneWidget);
     await _write(tester, find.text('Přidat cviky (2)'));

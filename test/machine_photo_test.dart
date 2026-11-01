@@ -259,9 +259,26 @@ void main() {
       );
       expect(find.text('Hledat cvik'), findsOneWidget);
 
-      trainer.machine = const AiOk(MachineResult('Lavice', []));
+      trainer.machine = const AiOk(MachineResult(null, []));
       await snap(tester);
       expect(find.textContaining('stroj nepoznal'), findsOneWidget);
+      expect(popped, isNull);
+    });
+
+    testWidgets('known machine without a match offers a custom exercise', (
+      tester,
+    ) async {
+      await pump(tester);
+      trainer.machine = const AiOk(MachineResult('Stroj na adduktory', []));
+      await snap(tester);
+      expect(find.text('Na fotce: Stroj na adduktory'), findsOneWidget);
+      await tester.tap(find.text('Přidat jako vlastní cvik'));
+      await tester.pumpAndSettle();
+      // Dialog má předvyplněný název stroje.
+      expect(
+        find.widgetWithText(TextField, 'Stroj na adduktory'),
+        findsOneWidget,
+      );
       expect(popped, isNull);
     });
 

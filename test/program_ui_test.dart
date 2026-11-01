@@ -61,7 +61,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Série × opakování přes předvolbu.
-    await tester.tap(find.text('Barbell overhead press'));
+    await tester.tap(find.text('Tlak nad hlavu ve stoje (osa)'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Síla 4×5–8'));
     await tester.pumpAndSettle();

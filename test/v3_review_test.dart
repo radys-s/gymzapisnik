@@ -79,10 +79,9 @@ void main() {
       expect(pull.extra['assistKg'], 30);
       expect(sets.containsKey('romanian_deadlift'), isTrue);
       expect(sets['romanian_deadlift']!.weight, 80);
-      expect(
-        r.newExercises.map((e) => e.name),
-        contains('Romanian Deadlift (Dumbbell)'),
-      );
+      // Jednoručková varianta má vlastní cvik v katalogu.
+      expect(sets['dumbbell_rdl']!.weight, 22);
+      expect(r.newExercises, isEmpty);
     },
   );
 
