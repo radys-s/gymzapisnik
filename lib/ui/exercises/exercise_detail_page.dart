@@ -165,8 +165,8 @@ class ExerciseDetailPage extends StatelessWidget {
     String heads(List<String> ids) =>
         ids.map((id) => headById(id)?.name).nonNulls.join(', ');
     return [
-      if (exerciseImages(exercise.id).isNotEmpty) ...[
-        ExerciseGallery(exercise.id),
+      if (exercise.pattern.isNotEmpty) ...[
+        ExerciseAnimation(exercise),
         const SizedBox(height: Space.l),
       ],
       if (anatomy != null)

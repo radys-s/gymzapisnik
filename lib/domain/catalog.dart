@@ -564,7 +564,7 @@ const builtInExercises = <Exercise>[
     muscle: 'Střed těla',
     type: ExerciseType.bodyweight,
     equipment: Equipment.bodyweight,
-    pattern: 'leg_raise',
+    pattern: 'leg_raise_lying',
     aliases: ['lying leg raise'],
   ),
   // Rozšíření katalogu (1.0.0-beta.11): stroje a varianty z posilovny.

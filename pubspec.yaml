@@ -76,9 +76,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Fotky cviků z free-exercise-db (public domain, viz assets/exercises/LICENSE).
   assets:
-    - assets/exercises/
     - assets/fonts/OFL-BarlowCondensed.txt
 
   # Tensor: úzké tučné písmo pro nadpisy a čísla (SIL OFL 1.1).
