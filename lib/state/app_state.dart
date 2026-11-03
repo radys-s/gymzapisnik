@@ -524,9 +524,11 @@ class AppState extends ChangeNotifier {
     }
     set.done = !set.done;
     if (set.done) {
-      _setRestEnd(
-        (now ?? DateTime.now()).add(Duration(seconds: profile.restSeconds)),
-      );
+      final id = active?.exercises
+          .where((e) => e.sets.contains(set))
+          .firstOrNull
+          ?.exerciseId;
+      _setRestEnd((now ?? DateTime.now()).add(Duration(seconds: restFor(id))));
     }
     await saveActive();
     await syncRest();
@@ -615,10 +617,7 @@ class AppState extends ChangeNotifier {
     return next;
   }
 
-  Future<void> toggleWarmup(SetEntry set) {
-    set.warmup = !set.warmup;
-    return saveActive();
-  }
+  Future<void> toggleWarmup(SetEntry set) => setWarmup(set, !set.warmup);
 
   /// Nastaví druh série (rozcvička / pracovní).
   Future<void> setWarmup(SetEntry set, bool warmup) {
@@ -1115,7 +1114,25 @@ class AppState extends ChangeNotifier {
   // Nastavení, záloha, export
   // ---------------------------------------------------------------------
 
-  /// Změní nastavení v profilu (`null` = beze změny).
+  /// Pauza po sérii daného cviku: vlastní, jinak výchozí.
+  int restFor(String? exerciseId) =>
+      (exerciseId == null ? null : profile.restFor(exerciseId)) ??
+      profile.restSeconds;
+
+  /// Vlastní pauza u cviku; `null` vrátí výchozí.
+  Future<void> setExerciseRest(String exerciseId, int? seconds) =>
+      _updateProfile((p) {
+        final map = {
+          ...?(p.extra['restByExercise'] as Map?)?.cast<String, dynamic>(),
+        };
+        if (seconds == null) {
+          map.remove(exerciseId);
+        } else {
+          map[exerciseId] = seconds.clamp(15, 600);
+        }
+        return p.withExtra({'restByExercise': map.isEmpty ? null : map});
+      });
+
   Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
       _updateProfile(
         (p) => p.withExtra({

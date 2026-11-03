@@ -40,5 +40,8 @@ SetEntry nextWorkingSet(List<SetEntry> current, List<SetEntry> last) {
           (s) => !s.warmup,
           orElse: () => current.lastOrNull ?? SetEntry(),
         );
-  return source.copy(done: false)..warmup = false;
+  return source.copy(done: false)
+    ..warmup = false
+    ..kind = SetKind.normal
+    ..extra.remove('rpe');
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../coach/achievements.dart';
 import '../../coach/push.dart';
+import '../../coach/routine.dart';
 import '../../coach/summary_coach.dart';
 import '../../core/format.dart';
 import '../../domain/history.dart';
@@ -43,6 +44,8 @@ class SummaryPage extends StatefulWidget {
 class _SummaryPageState extends State<SummaryPage> {
   AppState get state => widget.state;
   bool _busy = false;
+  bool _savingRoutine = false;
+  bool _routineSaved = false;
   // Verdikt a cíle se počítají jednou; rebuildy (sync) je nepřepočítávají.
   (String, List<String>)? _coach;
 
@@ -72,6 +75,29 @@ class _SummaryPageState extends State<SummaryPage> {
     context,
     MaterialPageRoute(builder: (_) => EditWorkoutPage(state, workout)),
   );
+
+  /// Uloží trénink jako rutinu do „Moje rutiny“ na záložce Trénink.
+  Future<void> _saveRoutine(Workout workout) async {
+    final routine = routineFromWorkout(workout);
+    if (routine == null) {
+      showToast(context, 'Trénink nemá žádnou pracovní sérii.');
+      return;
+    }
+    setState(() => _savingRoutine = true);
+    try {
+      final saved = await state.saveProgram(routine);
+      _routineSaved = true;
+      if (mounted) {
+        showToast(context, 'Rutina „${saved.name}“ je v záložce Trénink.');
+      }
+    } on ArgumentError catch (e) {
+      if (mounted) showToast(context, '${e.message}');
+    } catch (_) {
+      if (mounted) showToast(context, 'Rutinu se nepodařilo uložit.');
+    } finally {
+      if (mounted) setState(() => _savingRoutine = false);
+    }
+  }
 
   Future<void> _repeat(Workout workout) async {
     if (_busy) return;
@@ -245,6 +271,15 @@ class _SummaryPageState extends State<SummaryPage> {
               when badges.isNotEmpty)
             _BadgesPanel(state: state, badges: badges, fresh: finished),
           if (finished && state.split != null) _NextPanel(state: state),
+          SecondaryButton(
+            _routineSaved ? 'Uloženo jako rutina' : 'Uložit jako rutinu',
+            icon: _routineSaved
+                ? Icons.bookmark_added_outlined
+                : Icons.bookmark_add_outlined,
+            onPressed: _routineSaved || _savingRoutine
+                ? null
+                : () => _saveRoutine(workout),
+          ),
         ].indexed)
           Padding(
             // Klíč podle typu bloku: pozdě přidaný blok nepřebere stav cizímu.

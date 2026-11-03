@@ -101,6 +101,13 @@ class Profile {
     return v is num ? v.toInt().clamp(15, 600) : 120;
   }
 
+  /// Vlastní pauza u cviku v sekundách; `null` = výchozí [restSeconds].
+  int? restFor(String exerciseId) {
+    final map = extra['restByExercise'];
+    final v = map is Map ? map[exerciseId] : null;
+    return v is num && v.isFinite ? v.toInt().clamp(15, 600) : null;
+  }
+
   /// Krok tlačítek +/− u váhy v kg.
   double get weightStep {
     final v = extra['weightStep'];

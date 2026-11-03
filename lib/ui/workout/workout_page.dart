@@ -17,6 +17,7 @@ import '../design/haptics.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
+import '../widgets/labels.dart';
 import '../widgets/set_kind.dart';
 import '../widgets/exercise_media.dart';
 import 'alternatives_page.dart';
@@ -39,6 +40,47 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
   void _snack(String text) {
     if (mounted) showToast(context, text);
+  }
+
+  /// Pauza jen pro tenhle cvik (těžký dřep chce víc než bicepsový zdvih).
+  Future<void> _pickRest(String exerciseId) async {
+    final own = state.profile.restFor(exerciseId);
+    final base = state.profile.restSeconds;
+    // 0 = výchozí z nastavení.
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            0,
+            Space.page,
+            Space.l,
+          ),
+          child: GroupedSection(
+            header: 'Pauza u cviku ${state.exercise(exerciseId).name}',
+            footer: 'Platí pro tento cvik i v dalších trénincích.',
+            children: [
+              for (final s in [0, 60, 90, 120, 150, 180, 240])
+                GroupedRow(
+                  title: s == 0 ? 'Výchozí (${restLabel(base)})' : restLabel(s),
+                  trailing: (s == 0 ? own == null : own == s)
+                      ? Icon(Icons.check_rounded, color: sheet.palette.accent)
+                      : null,
+                  onTap: () => Navigator.pop(sheet, s),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked == null) return;
+    try {
+      await state.setExerciseRest(exerciseId, picked == 0 ? null : picked);
+    } catch (_) {
+      _snack('Pauzu se nepodařilo uložit. Zkus to znovu.');
+    }
   }
 
   Future<List<String>?> _pickExercises({bool multiple = true}) =>
@@ -301,6 +343,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
         } catch (_) {
           _snack('Rozcvičku se nepodařilo přidat. Zkus to znovu.');
         }
+      case 'rest':
+        await _pickRest(entry.exerciseId);
       case 'plates':
         final next = entry.sets.where((s) => !s.warmup && !s.done);
         final any = entry.sets.where((s) => !s.warmup);
@@ -790,6 +834,12 @@ class _ExerciseCard extends StatelessWidget {
                   onSelected: onMenu,
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'note', child: Text('Poznámka')),
+                    PopupMenuItem(
+                      value: 'rest',
+                      child: Text(
+                        'Pauza: ${restLabel(state.restFor(exercise.id))}',
+                      ),
+                    ),
                     if (!bodyweight) ...[
                       const PopupMenuItem(
                         value: 'warmups',

@@ -253,6 +253,8 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
                           () => entry.sets.add(
                             (entry.sets.lastOrNull?.copy() ?? SetEntry())
                               ..warmup = false
+                              ..kind = SetKind.normal
+                              ..extra.remove('rpe')
                               ..done = true,
                           ),
                         ),
