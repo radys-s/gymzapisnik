@@ -40,14 +40,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
   late final bool reminders = state.notifier.supported;
 
   static const _quizStep = 1;
-  static const _planStep = 2;
-  int get _consentStep => reminders ? 4 : 3;
+  static const _prefsStep = 2;
+  static const _bodyStep = 3;
+  static const _planStep = 4;
+  int get _consentStep => reminders ? 6 : 5;
 
   late final int _first = state.onboardingStep.clamp(0, _consentStep);
   late final _pages = PageController(initialPage: _first);
   late int page = _first;
 
-  late PlanAnswers plan = state.planAnswers ?? const PlanAnswers();
+  late PlanAnswers plan =
+      state.planDraft ?? state.planAnswers ?? const PlanAnswers();
   late Set<int> days = {
     if (state.profile.trainingDays case final d? when d.length == plan.days)
       ...d,
@@ -70,8 +73,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       duration: Motion.of(context, Motion.base),
       curve: Motion.curve,
     );
-    // Uložení kroku nesmí zastavit úvod.
-    unawaited(state.setOnboardingStep(to).catchError((_) {}));
+    // Uložení kroku nesmí zastavit úvod. Odpovědi rozpracované mezi
+    // dotazníkem a odhalením plánu se ukládají s ním.
+    final draft = to == _prefsStep || to == _bodyStep ? plan : null;
+    unawaited(state.setOnboardingStep(to, draft: draft).catchError((_) {}));
   }
 
   /// Dotazník: plán, dny a váha se uloží najednou, pak přijde odhalení.
@@ -193,20 +198,49 @@ class _OnboardingPageState extends State<OnboardingPage> {
             lead:
                 'Pár otázek a sestavím ti program na míru. Změníš ho '
                 'kdykoli v Programu.',
-            action: 'Ukázat plán',
-            busy: busy,
+            action: 'Pokračovat',
             onBack: () => _go(0),
             onSkip: () {
               skipped = true;
               _go(_planStep + 1);
             },
-            onNext: _applyQuiz,
+            onNext: () => _go(_prefsStep),
             child: _Quiz(
               answers: plan,
               onChanged: _changePlan,
               days: days,
               onDay: _toggleDay,
+            ),
+          ),
+          _Step(
+            index: _prefsStep,
+            count: dots,
+            title: 'Jak cvičíš',
+            lead:
+                'Podle toho vyberu cviky, které můžeš dělat a které tě '
+                'nebudou bolet.',
+            action: 'Pokračovat',
+            onBack: () => _go(_quizStep),
+            onNext: () => _go(_bodyStep),
+            child: PlanPrefsForm(answers: plan, onChanged: _changePlan),
+          ),
+          _Step(
+            index: _bodyStep,
+            count: dots,
+            title: 'O tobě',
+            lead:
+                'Z těchhle údajů spočítám bílkoviny a kalorie ve Stravě '
+                'a trenér ti podle nich radí přesněji.',
+            action: 'Ukázat plán',
+            busy: busy,
+            onBack: () => _go(_prefsStep),
+            onNext: _applyQuiz,
+            child: _Body(
+              answers: plan,
+              onChanged: _changePlan,
               kg: _kg,
+              // Souhlas s věkem přijde až na konci úvodu.
+              adult: state.profile.adult ? true : null,
             ),
           ),
           _Step(
@@ -219,10 +253,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
           if (reminders)
             _ReminderStep(
-              index: 3,
+              index: _planStep + 1,
               count: dots,
               busy: busy,
-              onBack: () => _go(_back(3)),
+              onBack: () => _go(_back(_planStep + 1)),
               onEnable: _enableReminder,
               onSkip: () => _go(_consentStep),
             ),
@@ -467,13 +501,11 @@ class _Quiz extends StatelessWidget {
   final ValueChanged<PlanAnswers> onChanged;
   final Set<int> days;
   final ValueChanged<int> onDay;
-  final TextEditingController kg;
   const _Quiz({
     required this.answers,
     required this.onChanged,
     required this.days,
     required this.onDay,
-    required this.kg,
   });
 
   @override
@@ -519,35 +551,57 @@ class _Quiz extends StatelessWidget {
             ),
           ],
         ),
-        GroupedSection(
-          header: 'Tělesná váha',
-          footer:
-              'Nepovinné. Podle ní doporučím ve Stravě, kolik bílkovin '
-              'denně sníst.',
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Space.m),
-              child: Semantics(
-                // Nápověda po psaní zmizí, čtečka potřebuje stálý název.
-                label: 'Tělesná váha v kg',
-                child: TextField(
-                  controller: kg,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'např. 72,5',
-                    suffixText: 'kg',
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
+}
+
+/// Tělesná váha a údaje o těle.
+class _Body extends StatelessWidget {
+  final PlanAnswers answers;
+  final ValueChanged<PlanAnswers> onChanged;
+  final TextEditingController kg;
+  final bool? adult;
+  const _Body({
+    required this.answers,
+    required this.onChanged,
+    required this.kg,
+    required this.adult,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      GroupedSection(
+        header: 'Tělesná váha',
+        footer:
+            'Nepovinné. Podle ní doporučím ve Stravě, kolik bílkovin '
+            'denně sníst.',
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Space.m),
+            child: Semantics(
+              // Nápověda po psaní zmizí, čtečka potřebuje stálý název.
+              label: 'Tělesná váha v kg',
+              child: TextField(
+                controller: kg,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'např. 72,5',
+                  suffixText: 'kg',
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      BodyForm(answers: answers, onChanged: onChanged, adult: adult),
+    ],
+  );
 }
 
 /// Hotový plán: program, týden a první trénink. Čte uložený stav, takže

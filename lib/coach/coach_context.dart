@@ -141,8 +141,16 @@ Map<String, dynamic> coachContext({
       'plan': {
         'goal': plan.goal.label,
         'level': plan.level.label,
+        'trainingFor': plan.experience.label,
         'daysPerWeek': plan.days,
         'minutesPerWorkout': plan.minutes,
+        'place': plan.place.label,
+        if (plan.focus.isNotEmpty)
+          'focus': [for (final f in plan.focus) focusName(f)],
+        if (plan.avoid.isNotEmpty)
+          'sparesJoints': [for (final j in plan.avoid) j.label],
+        if (adult && plan.weightGoal != null)
+          'bodyweightGoal': plan.weightGoal!.label,
       },
     'weekGoal': weekGoal,
     'thisWeek': {

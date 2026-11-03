@@ -716,7 +716,11 @@ class AppState extends ChangeNotifier {
     final answers = planAnswers;
     if (base.custom || answers == null) return base;
     final count = recommendPlan(answers).exercises;
-    return base.copyWith(days: [for (final d in base.days) fitDay(d, count)]);
+    return base.copyWith(
+      days: [
+        for (final d in base.days) personalizeDay(fitDay(d, count), answers),
+      ],
+    );
   }
 
   Profile? _splitOf;
@@ -735,6 +739,7 @@ class AppState extends ChangeNotifier {
       final days = p.trainingDays;
       return p.withExtra({
         'plan': ?answers?.toJson(),
+        'planDraft': null,
         'split': r.splitId,
         'weekGoal': r.perWeek,
         if (days != null && days.length != r.perWeek) 'trainingDays': null,
@@ -1446,8 +1451,19 @@ class AppState extends ChangeNotifier {
     return v is num && v.isFinite ? v.toInt().clamp(0, 9) : 0;
   }
 
-  Future<void> setOnboardingStep(int step) =>
-      _updateProfile((p) => p.withExtra({'onboardingStep': step}));
+  /// Uloží krok úvodu; s [draft] i rozpracované odpovědi, ať je po
+  /// zavření aplikace uprostřed úvodu neztratí.
+  Future<void> setOnboardingStep(int step, {PlanAnswers? draft}) =>
+      _updateProfile(
+        (p) => p.withExtra({
+          'onboardingStep': step,
+          if (draft != null) 'planDraft': draft.toJson(),
+        }),
+      );
+
+  /// Rozpracované odpovědi z úvodu, dokud se plán neuloží.
+  PlanAnswers? get planDraft =>
+      PlanAnswers.tryParse(profile.extra['planDraft']);
 
   /// Doporučený cíl z poslední tělesné váhy a cíle z dotazníku;
   /// `null` bez zapsané váhy.
@@ -1458,6 +1474,7 @@ class AppState extends ChangeNotifier {
       kg: kg,
       goal: (planAnswers ?? const PlanAnswers()).goal,
       adult: !profile.restrictWeightLoss,
+      plan: planAnswers,
     );
   }
 

@@ -11,7 +11,13 @@ void main() {
   group('recommendPlan', () {
     String id(int days, [PlanLevel l = PlanLevel.beginner, PlanGoal? g]) =>
         recommendPlan(
-          PlanAnswers(days: days, level: l, goal: g ?? PlanGoal.muscle),
+          PlanAnswers(
+            days: days,
+            experience: l == PlanLevel.advanced
+                ? Experience.two
+                : Experience.quarter,
+            goal: g ?? PlanGoal.muscle,
+          ),
         ).splitId;
 
     test('program follows days, level and goal', () {
@@ -52,7 +58,7 @@ void main() {
     const a = PlanAnswers(
       goal: PlanGoal.fitness,
       days: 5,
-      level: PlanLevel.advanced,
+      experience: Experience.two,
       minutes: 45,
     );
     final back = PlanAnswers.tryParse(a.toJson())!;
