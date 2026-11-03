@@ -290,13 +290,13 @@ String _dayName(List<DayFocus> chosen) {
 const focusHeads = <String, List<String>>{
   'chest': ['chest_upper', 'chest_mid'],
   'back': ['lats', 'upper_back', 'lower_back'],
-  'legs': ['quads', 'hamstrings'],
-  'glutes': ['glutes'],
+  'legs': ['quads', 'hamstrings', 'adductors'],
+  'glutes': ['glutes', 'glutes_med'],
   'shoulders': ['delt_front', 'delt_side', 'delt_rear'],
   'biceps': ['biceps_long', 'biceps_short', 'brachialis'],
   'triceps': ['triceps_long', 'triceps_lateral'],
   'calves': ['calves_gastro', 'calves_soleus'],
-  'core': ['abs', 'abs_lower'],
+  'core': ['abs', 'abs_lower', 'obliques'],
 };
 
 /// Nejvíc cviků v sestaveném tréninku.

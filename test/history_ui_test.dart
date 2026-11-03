@@ -27,7 +27,7 @@ void main() {
       }
     });
     Widget app(Widget home) => MaterialApp(
-      theme: buildTheme(Brightness.dark),
+      theme: buildTheme(),
       home: Scaffold(body: home),
     );
 

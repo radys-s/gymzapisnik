@@ -27,7 +27,7 @@ Future<void> _show(WidgetTester tester, Widget page) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: buildTheme(Brightness.dark),
+      theme: buildTheme(),
       home: Scaffold(body: page),
     ),
   );
@@ -94,9 +94,12 @@ void main() {
     });
     await _show(tester, ProgressPage(state));
     expect(find.text('Pokrok začne prvním tréninkem'), findsNothing);
-    expect(find.text('Bench press'), findsWidgets); // křivka i rekordy
+    expect(find.text('Bench press (osa)'), findsWidgets); // křivka i rekordy
     expect(find.textContaining('Odhad 1RM'), findsOneWidget);
-    expect(find.textContaining('Rekord: Bench press 82,5 kg'), findsOneWidget);
+    expect(
+      find.textContaining('Rekord: Bench press (osa) 82,5 kg'),
+      findsOneWidget,
+    );
     // Souhrn: 3 tréninky a 3 série, v přehledu historie taky 3.
     expect(find.text('tréninky'), findsOneWidget);
     expect(find.text('3'), findsNWidgets(3));

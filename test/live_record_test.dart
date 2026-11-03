@@ -123,10 +123,7 @@ void main() {
       await state.saveActive();
     });
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: WorkoutPage(state),
-      ),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.emoji_events_rounded), findsNothing);

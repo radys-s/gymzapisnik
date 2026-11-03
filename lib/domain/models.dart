@@ -15,6 +15,26 @@ enum ExerciseType {
       value == 'bodyweight' ? bodyweight : weighted;
 }
 
+/// Vybavení cviku. Název v katalogu ho nese v závorce: „Dřep (osa)“.
+enum Equipment {
+  barbell('osa'),
+  dumbbell('jednoručky'),
+  machine('stroj'),
+  cable('kladka'),
+  smith('multipress'),
+  bodyweight('vlastní váha'),
+  kettlebell('kettlebell'),
+  band('guma'),
+  plate('kotouč'),
+  other('jiné');
+
+  final String label;
+  const Equipment(this.label);
+
+  static Equipment parse(Object? value) =>
+      values.firstWhere((e) => e.name == value, orElse: () => other);
+}
+
 Map<String, dynamic> _extra(Map<String, dynamic> json, Set<String> known) => {
   for (final e in json.entries)
     if (!known.contains(e.key)) e.key: e.value,
@@ -30,6 +50,13 @@ class Exercise {
   final String muscle;
   final ExerciseType type;
   final bool custom;
+  final Equipment equipment;
+
+  /// Další názvy pro hledání a import (anglicky jako v Hevy, slang).
+  final List<String> aliases;
+
+  /// Pohybový vzor pro obrázek postavy (`movementPatterns`).
+  final String pattern;
   final Map<String, dynamic> extra;
 
   const Exercise({
@@ -38,10 +65,13 @@ class Exercise {
     required this.muscle,
     this.type = ExerciseType.weighted,
     this.custom = false,
+    this.equipment = Equipment.other,
+    this.aliases = const [],
+    this.pattern = '',
     this.extra = const {},
   });
 
-  static const _known = {'id', 'name', 'muscle', 'type', 'custom'};
+  static const _known = {'id', 'name', 'muscle', 'type', 'custom', 'equipment'};
 
   factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
     id: json['id'] as String,
@@ -49,6 +79,7 @@ class Exercise {
     muscle: json['muscle'] as String? ?? 'Ostatní',
     type: ExerciseType.parse(json['type']),
     custom: json['custom'] == true,
+    equipment: Equipment.parse(json['equipment']),
     extra: _extra(json, _known),
   );
 
@@ -59,7 +90,23 @@ class Exercise {
     'muscle': muscle,
     'type': type.name,
     'custom': custom,
+    'equipment': equipment.name,
   };
+}
+
+/// Druh pracovní série. Rozcvička má vlastní příznak [SetEntry.warmup].
+enum SetKind {
+  normal('', 'Pracovní série'),
+  drop('D', 'Drop série'),
+  failure('S', 'Do selhání');
+
+  /// Písmeno na odznaku místo čísla série.
+  final String badge;
+  final String label;
+  const SetKind(this.badge, this.label);
+
+  static SetKind parse(Object? v) =>
+      values.where((k) => k.name == v).firstOrNull ?? normal;
 }
 
 class SetEntry {
@@ -80,6 +127,22 @@ class SetEntry {
 
   /// Dokončená pracovní série (rozcvička se nepočítá do objemu ani PR).
   bool get counts => done && !warmup && reps > 0;
+
+  /// Drop série nebo do selhání se počítají jako pracovní.
+  SetKind get kind => warmup ? SetKind.normal : SetKind.parse(extra['kind']);
+  set kind(SetKind k) {
+    if (k == SetKind.normal) {
+      extra.remove('kind');
+    } else {
+      extra['kind'] = k.name;
+    }
+  }
+
+  /// Volitelná náročnost 1–10 (z importu nebo zadaná ručně).
+  double? get rpe {
+    final v = extra['rpe'];
+    return v is num && v >= 1 && v <= 10 ? v.toDouble() : null;
+  }
 
   SetEntry copy({bool? done}) => SetEntry(
     weight: weight,

@@ -7,12 +7,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'coach/tips.dart';
 import 'state/app_state.dart';
+import 'ui/widgets/keyboard_done_bar.dart';
 import 'ui/home/home_page.dart';
 import 'ui/nutrition/nutrition_page.dart';
 import 'ui/design/components.dart';
 import 'ui/onboarding/onboarding_page.dart';
 import 'ui/design/motion.dart';
 import 'ui/progress/progress_page.dart';
+import 'ui/training/training_page.dart';
+import 'ui/workout/active_workout_bar.dart';
 import 'ui/theme.dart';
 import 'ui/welcome/whats_new.dart';
 
@@ -26,9 +29,6 @@ class GymApp extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
     builder: (context, _) => appFrame(
-      accent: Accent.parse(state.profile.accent),
-      look: Look.parse(state.profile.look),
-      theme: state.profile.theme,
       home: state.profile.hasValidConsent
           ? AppShell(state)
           : OnboardingPage(state),
@@ -36,32 +36,22 @@ class GymApp extends StatelessWidget {
   );
 }
 
-/// Společný rámec: vzhled, motiv a čeština i pro systémové dialogy.
-MaterialApp appFrame({
-  required Widget home,
-  Accent accent = Accent.lime,
-  Look look = Look.auto,
-  String theme = 'dark',
-}) => MaterialApp(
+/// Společný rámec: vzhled a čeština i pro systémové dialogy.
+MaterialApp appFrame({required Widget home}) => MaterialApp(
   title: 'Gym zápisník',
   debugShowCheckedModeBanner: false,
-  theme: buildTheme(Brightness.light, accent, look),
-  darkTheme: buildTheme(Brightness.dark, accent, look),
-  // Závod je jen tmavý, volba světlý / tmavý na něj nepůsobí.
-  themeMode: switch (theme) {
-    _ when look == Look.pitwall => ThemeMode.dark,
-    'light' => ThemeMode.light,
-    'dark' => ThemeMode.dark,
-    _ => ThemeMode.system,
-  },
+  theme: buildTheme(),
+  themeMode: ThemeMode.dark,
   locale: _czech,
   supportedLocales: const [_czech],
   localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  builder: (_, child) => KeyboardDoneBar(child: child!),
   home: home,
 );
 
-/// Hlavní navigace: Trénink / Pokrok / Strava. Každá záložka má vlastní navigaci,
-/// takže přepnutí neztratí rozpracovanou stránku, hledání ani posun.
+/// Hlavní navigace: Domů / Trénink / Strava / Profil. Každá záložka má vlastní
+/// navigaci, takže přepnutí neztratí rozpracovanou stránku, hledání ani posun.
+/// Nad lištou visí běžící trénink, ať je odkudkoli na jedno klepnutí.
 class AppShell extends StatefulWidget {
   final AppState state;
   const AppShell(this.state, {super.key});
@@ -83,9 +73,10 @@ class _AppShellState extends State<AppShell> {
   }
 
   final _navigators = [
+    GlobalKey<NavigatorState>(debugLabel: 'Domů'),
     GlobalKey<NavigatorState>(debugLabel: 'Trénink'),
-    GlobalKey<NavigatorState>(debugLabel: 'Pokrok'),
     GlobalKey<NavigatorState>(debugLabel: 'Strava'),
+    GlobalKey<NavigatorState>(debugLabel: 'Profil'),
   ];
 
   void _select(int i) {
@@ -126,39 +117,52 @@ class _AppShellState extends State<AppShell> {
           index: tab,
           children: [
             _tab(0, HomePage(widget.state)),
-            _tab(1, ProgressPage(widget.state)),
+            _tab(1, TrainingPage(widget.state)),
             _tab(2, NutritionPage(widget.state, root: true)),
+            _tab(3, ProgressPage(widget.state)),
           ],
         ),
-        bottomNavigationBar: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: p.separator, width: 0.5)),
-          ),
-          child: NavigationBar(
-            selectedIndex: tab,
-            onDestinationSelected: _select,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.fitness_center_outlined),
-                selectedIcon: Icon(Icons.fitness_center),
-                label: 'Trénink',
-                // Popisek je vidět pořád; tooltip na webu visel.
-                tooltip: '',
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ActiveWorkoutBar(widget.state),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: p.separator, width: 0.5)),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.show_chart_outlined),
-                selectedIcon: Icon(Icons.show_chart),
-                label: 'Pokrok',
-                tooltip: '',
+              child: NavigationBar(
+                selectedIndex: tab,
+                onDestinationSelected: _select,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home_rounded),
+                    label: 'Domů',
+                    // Popisek je vidět pořád; tooltip na webu visel.
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.fitness_center_outlined),
+                    selectedIcon: Icon(Icons.fitness_center),
+                    label: 'Trénink',
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.restaurant_outlined),
+                    selectedIcon: Icon(Icons.restaurant),
+                    label: 'Strava',
+                    tooltip: '',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline_rounded),
+                    selectedIcon: Icon(Icons.person_rounded),
+                    label: 'Profil',
+                    tooltip: '',
+                  ),
+                ],
               ),
-              NavigationDestination(
-                icon: Icon(Icons.restaurant_outlined),
-                selectedIcon: Icon(Icons.restaurant),
-                label: 'Strava',
-                tooltip: '',
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

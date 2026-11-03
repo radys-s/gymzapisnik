@@ -38,7 +38,7 @@ void main() {
 
   test('backup round trip into a fresh device', () async {
     final source = await newState();
-    await source.setPreferences(restSeconds: 90, theme: 'light');
+    await source.setPreferences(restSeconds: 90);
     await source.setSplit('ppl');
     await logWorkout(source, DateTime(2026, 9, 1, 17), 'bench_press', [
       SetEntry(weight: 80, reps: 8, done: true),
@@ -49,7 +49,7 @@ void main() {
     expect(await target.restoreBackup(json), 1);
     expect(target.workouts.single.exercises.single.sets.single.weight, 80);
     expect(target.profile.restSeconds, 90);
-    expect(target.profile.theme, 'light');
+    expect(target.profile.restSeconds, 90);
     expect(target.profile.splitId, 'ppl');
     expect(target.profile.hasValidConsent, isTrue);
 
@@ -110,16 +110,17 @@ void main() {
     expect(b.workouts, isEmpty); // rozepsaný trénink se neobnovuje
   });
 
-  test('backup keeps look and accent, rejects a wrong type', () {
+  test('backup drops old look and accent, rejects a wrong type', () {
     final b = decodeBackup(
       '{"format":"$backupFormat","version":1,'
-      '"settings":{"look":"studio","accent":"neon"},"workouts":[]}',
+      '"settings":{"look":"studio","accent":"neon","split":"ppl"},'
+      '"workouts":[]}',
     );
-    expect(b.settings, {'look': 'studio', 'accent': 'neon'});
+    expect(b.settings, {'split': 'ppl'});
     expect(
       () => decodeBackup(
         '{"format":"$backupFormat","version":1,'
-        '"settings":{"look":1},"workouts":[]}',
+        '"settings":{"split":1},"workouts":[]}',
       ),
       throwsA(anything),
     );

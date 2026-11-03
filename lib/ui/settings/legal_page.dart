@@ -71,12 +71,10 @@ class LegalPage extends StatelessWidget {
           'doplňkům stravy.',
     ),
     (
-      'Fotky a technika cviků',
-      'Fotky cviků pocházejí z projektu free-exercise-db '
-          '(github.com/yuhonas/free-exercise-db), který je volné dílo '
-          '(public domain, Unlicense). Jsou přibalené v aplikaci, nic se kvůli '
-          'nim nestahuje. Popisy techniky a častých chyb jsou naše vlastní '
-          'a nenahrazují vedení trenéra.',
+      'Figurky a technika cviků',
+      'Figurky cviků kreslí aplikace sama, nic se kvůli nim nestahuje. '
+          'Popisy techniky a častých chyb jsou naše vlastní a nenahrazují '
+          'vedení trenéra.',
     ),
     (
       'Záloha a smazání',

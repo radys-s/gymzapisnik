@@ -85,3 +85,10 @@ String greeting(DateTime now) => switch (now.hour) {
   >= 12 && < 18 => 'Dobré odpoledne',
   _ => 'Dobrý večer',
 };
+
+/// Pauza: „90 s“, „2 min“, „2 min 30 s“.
+String restLabel(int seconds) {
+  if (seconds < 60) return '$seconds s';
+  final m = seconds ~/ 60, s = seconds % 60;
+  return s == 0 ? '$m min' : '$m min $s s';
+}

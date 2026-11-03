@@ -43,7 +43,7 @@ void main() {
 
   testWidgets('legal page shows privacy sections', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(theme: buildTheme(Brightness.dark), home: const LegalPage()),
+      MaterialApp(theme: buildTheme(), home: const LegalPage()),
     );
     expect(find.text('Jaká data a kde'), findsOneWidget);
     expect(find.textContaining('jen v tomto zařízení'), findsOneWidget);

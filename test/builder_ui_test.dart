@@ -42,7 +42,7 @@ void main() {
     SplitDay? result;
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => result = await Navigator.push<SplitDay>(
@@ -68,15 +68,15 @@ void main() {
     await tester.tap(find.byTooltip('Méně: Počet cviků'));
     await tester.pumpAndSettle();
     expect(find.text('Vrátit'), findsOneWidget);
-    expect(find.text('Lateral raise'), findsOneWidget);
+    expect(find.text('Upažování (jednoručky)'), findsOneWidget);
 
     // Výměna bočního deltu za alternativu na stejnou hlavu.
-    await tester.tap(find.text('Lateral raise'));
+    await tester.tap(find.text('Upažování (jednoručky)'));
     await tester.pumpAndSettle();
     expect(find.text('Stejná hlava: Boční delt'), findsOneWidget);
-    await tester.tap(find.text('Cable lateral raise'));
+    await tester.tap(find.text('Upažování (kladka)'));
     await tester.pumpAndSettle();
-    expect(find.text('Lateral raise'), findsNothing);
+    expect(find.text('Upažování (jednoručky)'), findsNothing);
 
     await tester.tap(find.text('Začít trénink'));
     await tester.pumpAndSettle();
@@ -95,17 +95,14 @@ void main() {
     _tall(tester);
     final state = await _state(tester, active: true);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: WorkoutPage(state),
-      ),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
     await tester.tap(byLabel('Vyměnit cvik').first);
     await tester.pumpAndSettle();
     expect(find.text('Stejná hlava: Boční delt'), findsOneWidget);
     expect(find.text('Zadní delt'), findsWidgets);
     await tester.runAsync(() async {
-      await tester.tap(find.text('Face pull'));
+      await tester.tap(find.text('Face pull (kladka)'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pumpAndSettle();

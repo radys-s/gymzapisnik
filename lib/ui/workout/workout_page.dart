@@ -7,7 +7,9 @@ import '../../coach/plates.dart';
 import '../../coach/progression.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
+import '../../domain/last_delta.dart';
 import '../../domain/models.dart';
+import '../../domain/set_match.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -15,6 +17,8 @@ import '../design/haptics.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
+import '../widgets/labels.dart';
+import '../widgets/set_kind.dart';
 import '../widgets/exercise_media.dart';
 import 'alternatives_page.dart';
 import 'exercise_picker.dart';
@@ -36,6 +40,47 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
   void _snack(String text) {
     if (mounted) showToast(context, text);
+  }
+
+  /// Pauza jen pro tenhle cvik (těžký dřep chce víc než bicepsový zdvih).
+  Future<void> _pickRest(String exerciseId) async {
+    final own = state.profile.restFor(exerciseId);
+    final base = state.profile.restSeconds;
+    // 0 = výchozí z nastavení.
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            0,
+            Space.page,
+            Space.l,
+          ),
+          child: GroupedSection(
+            header: 'Pauza u cviku ${state.exercise(exerciseId).name}',
+            footer: 'Platí pro tento cvik i v dalších trénincích.',
+            children: [
+              for (final s in [0, 60, 90, 120, 150, 180, 240])
+                GroupedRow(
+                  title: s == 0 ? 'Výchozí (${restLabel(base)})' : restLabel(s),
+                  trailing: (s == 0 ? own == null : own == s)
+                      ? Icon(Icons.check_rounded, color: sheet.palette.accent)
+                      : null,
+                  onTap: () => Navigator.pop(sheet, s),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked == null) return;
+    try {
+      await state.setExerciseRest(exerciseId, picked == 0 ? null : picked);
+    } catch (_) {
+      _snack('Pauzu se nepodařilo uložit. Zkus to znovu.');
+    }
   }
 
   Future<List<String>?> _pickExercises({bool multiple = true}) =>
@@ -298,6 +343,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
         } catch (_) {
           _snack('Rozcvičku se nepodařilo přidat. Zkus to znovu.');
         }
+      case 'rest':
+        await _pickRest(entry.exerciseId);
       case 'plates':
         final next = entry.sets.where((s) => !s.warmup && !s.done);
         final any = entry.sets.where((s) => !s.warmup);
@@ -350,7 +397,14 @@ class _WorkoutPageState extends State<WorkoutPage> {
           absorbing: _busy,
           child: Scaffold(
             appBar: AppBar(
-              // Název vlevo vedle křížku: na úzkém displeji se vejde víc.
+              // Šipka dolů trénink jen schová (běží dál v liště nad
+              // navigací, jako v Hevy); zrušit jde z menu vpravo.
+              leading: IconButton(
+                tooltip: 'Skrýt trénink',
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                onPressed: () => Navigator.maybePop(context),
+              ),
+              // Název vlevo vedle šipky: na úzkém displeji se vejde víc.
               centerTitle: false,
               titleSpacing: 0,
               title: Semantics(
@@ -358,7 +412,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 button: true,
                 hint: 'Přejmenovat trénink',
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(Radii.control),
+                  borderRadius: BorderRadius.circular(
+                    context.palette.controlRadius,
+                  ),
                   onTap: () => _rename(workout),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,10 +624,9 @@ class _RestBarState extends State<_RestBar> {
     final seconds = (left.inMilliseconds / 1000).ceil();
     final finished = seconds <= 0;
     final p = context.palette;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    // Plovoucí tableta: ve světlém režimu tmavá, v tmavém bílá.
-    final bg = dark ? Colors.white : const Color(0xFF18181A);
-    final fg = dark ? Colors.black : Colors.white;
+    // Plovoucí tableta: bílá na černém podkladu.
+    const bg = Colors.white;
+    const fg = Colors.black;
     final chipFg = finished ? p.onGradient : fg;
     final text = finished
         ? 'Pauza hotová'
@@ -707,7 +762,9 @@ class _ExerciseCard extends StatelessWidget {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final exercise = state.exercise(entry.exerciseId);
-    final previous = state.previousFor(entry);
+    // Minulé série se hledají v celé historii: jednou na kartu.
+    final last = state.lastSetsOf(entry.exerciseId);
+    final previous = previousSets(entry.sets, last);
     final bodyweight = exercise.type == ExerciseType.bodyweight;
     var workingIndex = 0;
     return Padding(
@@ -727,7 +784,9 @@ class _ExerciseCard extends StatelessWidget {
                 Expanded(
                   // Fotka a název otevřou kartu cviku: technika, svaly.
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(Radii.control),
+                    borderRadius: BorderRadius.circular(
+                      context.palette.controlRadius,
+                    ),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => ExerciseDetailPage(state, exercise.id),
@@ -775,6 +834,12 @@ class _ExerciseCard extends StatelessWidget {
                   onSelected: onMenu,
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'note', child: Text('Poznámka')),
+                    PopupMenuItem(
+                      value: 'rest',
+                      child: Text(
+                        'Pauza: ${restLabel(state.restFor(exercise.id))}',
+                      ),
+                    ),
                     if (!bodyweight) ...[
                       const PopupMenuItem(
                         value: 'warmups',
@@ -843,6 +908,9 @@ class _ExerciseCard extends StatelessWidget {
                 ),
                 child: Text(entry.note, style: text.bodySmall),
               ),
+            if (!bodyweight)
+              if (compareToLast(entry.sets, last) case final d?)
+                _LastDeltaRow(d),
             ExcludeSemantics(
               child: Padding(
                 padding: const EdgeInsets.only(right: _edgeInset),
@@ -879,7 +947,7 @@ class _ExerciseCard extends StatelessWidget {
                 key: ObjectKey(entry.sets[i]),
                 state: state,
                 set: entry.sets[i],
-                label: entry.sets[i].warmup ? 'R' : '${++workingIndex}',
+                label: setBadge(entry.sets[i], ++workingIndex),
                 bodyweight: bodyweight,
                 previous: previous[i],
                 onRemove: () => onRemoveSet(entry.sets[i]),
@@ -944,7 +1012,7 @@ class _SetRowState extends State<_SetRow> {
   static String _repsText(int v) => v == 0 ? '' : '$v';
 
   /// Název série pro čtečku obrazovky.
-  String get _name => widget.set.warmup ? 'Rozcvička' : 'Série ${widget.label}';
+  String get _name => setName(widget.set, widget.label);
 
   /// Hodnoty se mohou změnit zvenku (přenos z předchozí série).
   @override
@@ -1069,6 +1137,10 @@ class _SetRowState extends State<_SetRow> {
   void _typeMenu(String action) => switch (action) {
     'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
     'warmup' => _persist(() => widget.state.setWarmup(widget.set, true)),
+    'drop' => _persist(() => widget.state.setKind(widget.set, SetKind.drop)),
+    'failure' => _persist(
+      () => widget.state.setKind(widget.set, SetKind.failure),
+    ),
     _ => widget.onRemove(),
   };
 
@@ -1126,7 +1198,7 @@ class _SetRowState extends State<_SetRow> {
         padding: const EdgeInsets.only(right: Space.xl),
         decoration: BoxDecoration(
           color: p.negative,
-          borderRadius: BorderRadius.circular(Radii.control),
+          borderRadius: BorderRadius.circular(context.palette.controlRadius),
         ),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
@@ -1139,7 +1211,7 @@ class _SetRowState extends State<_SetRow> {
         padding: const EdgeInsets.only(right: _edgeInset),
         decoration: BoxDecoration(
           color: set.done ? p.accent.withValues(alpha: 0.12) : null,
-          borderRadius: BorderRadius.circular(Radii.control),
+          borderRadius: BorderRadius.circular(context.palette.controlRadius),
         ),
         child: Row(
           children: [
@@ -1155,16 +1227,7 @@ class _SetRowState extends State<_SetRow> {
                   padding: EdgeInsets.zero,
                   onSelected: _typeMenu,
                   itemBuilder: (_) => [
-                    CheckedPopupMenuItem(
-                      value: 'working',
-                      checked: !set.warmup,
-                      child: const Text('Pracovní série'),
-                    ),
-                    CheckedPopupMenuItem(
-                      value: 'warmup',
-                      checked: set.warmup,
-                      child: const Text('Rozcvička'),
-                    ),
+                    ...setTypeItems(set),
                     const PopupMenuDivider(),
                     PopupMenuItem(
                       value: 'delete',
@@ -1184,10 +1247,10 @@ class _SetRowState extends State<_SetRow> {
                       decoration: BoxDecoration(
                         color: record
                             ? p.gold.withValues(alpha: 0.2)
-                            : set.warmup
+                            : set.warmup || set.kind != SetKind.normal
                             ? p.accent.withValues(alpha: 0.16)
                             : p.fill,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                       // Rekordní série má místo čísla pohár.
                       child: record
@@ -1201,7 +1264,9 @@ class _SetRowState extends State<_SetRow> {
                               widget.label,
                               textAlign: TextAlign.center,
                               style: text.titleSmall?.copyWith(
-                                color: set.warmup ? p.accent : p.label,
+                                color: set.warmup || set.kind != SetKind.normal
+                                    ? p.accent
+                                    : p.label,
                                 fontFeatures: tabular,
                               ),
                             ),
@@ -1245,7 +1310,9 @@ class _SetRowState extends State<_SetRow> {
                 decoration: BoxDecoration(
                   gradient: set.done ? p.linear : null,
                   color: set.done ? null : p.fill,
-                  borderRadius: BorderRadius.circular(Radii.control),
+                  borderRadius: BorderRadius.circular(
+                    context.palette.controlRadius,
+                  ),
                 ),
                 // Bez tooltipu: na webu po potvrzení visel přes další řádek.
                 // Vlastní uzel s akcí, jinak splyne s řádkem a čtečka
@@ -1265,7 +1332,9 @@ class _SetRowState extends State<_SetRow> {
                           ? p.onGradient
                           : p.secondaryLabel,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(Radii.control),
+                        borderRadius: BorderRadius.circular(
+                          context.palette.controlRadius,
+                        ),
                       ),
                     ),
                     icon: AnimatedScale(
@@ -1387,4 +1456,66 @@ class _ReorderSheet extends StatelessWidget {
       );
     },
   );
+}
+
+/// Řádek „proti minule“: nejtěžší série a objem dnes vs. minulý trénink
+/// tohoto cviku. Šipka ukáže, jestli se dnes jde nahoru.
+class _LastDeltaRow extends StatelessWidget {
+  final LastDelta d;
+  const _LastDeltaRow(this.d);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final last = d.lastTop;
+    final now = d.nowTop;
+    final lastLabel = '${formatKg(last.weight)}×${last.reps}';
+    final String headline;
+    Color? tone;
+    if (now == null) {
+      headline = 'Minule nejvíc $lastLabel · objem ${_kg(d.lastVolume)}';
+    } else {
+      final diff = now.weight - last.weight;
+      final repsDiff = now.reps - last.reps;
+      final up = diff > 0 || (diff == 0 && repsDiff > 0);
+      // Pokles hlásí až po tolika sériích jako minule: lehčí první
+      // série na začátku tréninku není zhoršení.
+      final down =
+          (diff < 0 || (diff == 0 && repsDiff < 0)) && d.nowSets >= d.lastSets;
+      final change = diff != 0
+          ? '${diff > 0 ? '+' : '−'}${formatKg(diff.abs())} kg'
+          : repsDiff != 0
+          ? '${repsDiff > 0 ? '+' : '−'}${repsDiff.abs()} opak.'
+          : 'stejně';
+      tone = up
+          ? p.positive
+          : down
+          ? p.secondaryLabel
+          : null;
+      final sign = up
+          ? '▲ $change'
+          : down
+          ? '▼ $change'
+          : change == 'stejně'
+          ? '= stejně'
+          : 'zatím $change';
+      headline =
+          '$sign proti minule ($lastLabel) · '
+          'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}';
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.xs, 0, Space.s, Space.s),
+      child: Text(
+        headline,
+        style: text.bodySmall?.copyWith(
+          color: tone ?? p.secondaryLabel,
+          fontFeatures: tabular,
+          fontWeight: tone == null ? null : FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  static String _kg(double v) => '${formatKg(v)} kg';
 }

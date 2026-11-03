@@ -18,11 +18,9 @@ const backupVersion = 1;
 /// Klíče profilu, které jsou nastavením a patří do zálohy.
 const backupSettingsKeys = {
   'restSeconds',
+  'restByExercise',
   'weightStep',
   'split',
-  'theme',
-  'accent',
-  'look',
   'weekGoal',
   'proteinTarget',
   'kcalTarget',
@@ -130,7 +128,7 @@ Backup decodeBackup(String source) {
       throw const FormatException('Záloha obsahuje neplatné nastavení.');
     }
     if (rawSettings is Map) {
-      for (final key in ['split', 'theme', 'accent', 'look']) {
+      for (final key in ['split']) {
         if (rawSettings[key] != null && rawSettings[key] is! String) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
@@ -155,6 +153,13 @@ Backup decodeBackup(String source) {
         if (value != null && (value is! num || !value.isFinite)) {
           throw const FormatException('Záloha obsahuje neplatné nastavení.');
         }
+      }
+      final rests = rawSettings['restByExercise'];
+      if (rests != null &&
+          (rests is! Map ||
+              rests.keys.any((k) => k is! String) ||
+              rests.values.any((v) => v is! num || !v.isFinite))) {
+        throw const FormatException('Záloha obsahuje neplatné pauzy cviků.');
       }
       final plan = rawSettings['plan'];
       if (plan != null && PlanAnswers.tryParse(plan) == null) {

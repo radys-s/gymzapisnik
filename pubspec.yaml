@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0-beta.9+18
+version: 1.0.0-beta.11+20
 
 environment:
   sdk: ^3.13.2
@@ -76,9 +76,19 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Fotky cviků z free-exercise-db (public domain, viz assets/exercises/LICENSE).
   assets:
-    - assets/exercises/
+    - assets/fonts/OFL-BarlowCondensed.txt
+
+  # Tensor: úzké tučné písmo pro nadpisy a čísla (SIL OFL 1.1).
+  fonts:
+    - family: Barlow Condensed
+      fonts:
+        - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BarlowCondensed-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

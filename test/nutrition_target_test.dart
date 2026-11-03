@@ -27,7 +27,7 @@ Future<void> _show(WidgetTester tester, AppState state) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: buildTheme(Brightness.dark),
+      theme: buildTheme(),
       home: NutritionPage(state, initialDay: DateTime(2026, 10, 5)),
     ),
   );
@@ -66,8 +66,11 @@ void main() {
     await tester.runAsync(() => state.addBodyweight(80));
     await _show(tester, state);
     expect(find.text('Doporučeno z tvé váhy 80 kg.'), findsOneWidget);
-    expect(find.text('z 160 g'), findsOneWidget);
-    expect(find.text('z 2900 kcal'), findsOneWidget);
+    expect(find.textContaining('/ 160 g', findRichText: true), findsOneWidget);
+    expect(
+      find.textContaining('/ 2900 kcal', findRichText: true),
+      findsOneWidget,
+    );
     await tester.runAsync(() async {
       await tester.tap(find.text('Nastavit jako cíl'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -82,7 +85,10 @@ void main() {
     final state = await _state(tester, adult: false);
     await tester.runAsync(() => state.addBodyweight(60));
     await _show(tester, state);
-    expect(find.text('z 120 g'), findsOneWidget); // 60 × 2,0 (výchozí cíl)
+    expect(
+      find.textContaining('/ 120 g', findRichText: true),
+      findsOneWidget,
+    ); // 60 × 2,0 (výchozí cíl)
     // Bez kalorického cíle: jen kruh bílkovin.
     expect(find.text('Energie'), findsNothing);
     expect(find.text('Bílkoviny'), findsOneWidget);

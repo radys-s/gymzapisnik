@@ -136,7 +136,17 @@ class SectionHeader extends StatelessWidget {
           child: Semantics(
             container: true,
             header: true,
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+            // Štítek datové tabule, ne velký nadpis.
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontFamily: condensedFont,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                letterSpacing: 0.8,
+                color: context.palette.secondaryLabel,
+              ),
+            ),
           ),
         ),
         if (action != null)
@@ -195,7 +205,7 @@ class GroupedSection extends StatelessWidget {
             ),
           Material(
             color: p.grouped,
-            borderRadius: p.cardRadius(),
+            shape: p.cardShape(),
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -365,13 +375,7 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    final radius = BorderRadius.circular(
-      p.pitwall
-          ? 4
-          : p.studio
-          ? 26
-          : Radii.control,
-    );
+    const shape = SkewBorder();
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -381,13 +385,12 @@ class PrimaryButton extends StatelessWidget {
         type: MaterialType.transparency,
         child: Ink(
           height: 52,
-          decoration: BoxDecoration(
-            gradient: enabled && p.cta == null ? p.linear : null,
+          decoration: ShapeDecoration(
             color: enabled ? p.cta : p.fill,
-            borderRadius: radius,
+            shape: shape,
           ),
           child: InkWell(
-            borderRadius: radius,
+            customBorder: shape,
             onTap: enabled
                 ? () {
                     HapticFeedback.lightImpact();
@@ -403,30 +406,31 @@ class PrimaryButton extends StatelessWidget {
                         color: p.secondaryLabel,
                       ),
                     )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (icon != null) ...[
-                          Icon(icon, color: fg, size: 22),
-                          const SizedBox(width: Space.s),
-                        ],
-                        Flexible(
-                          child: Text(
-                            label,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: fg,
-                                  fontStyle: p.pitwall
-                                      ? FontStyle.italic
-                                      : null,
-                                  fontWeight: p.pitwall
-                                      ? FontWeight.w900
-                                      : null,
-                                ),
+                  // Popisek vlevo úzkým písmem, šipka vpravo.
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              label,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: fg,
+                                fontFamily: condensedFont,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 17,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                          Icon(
+                            icon ?? Icons.arrow_forward,
+                            color: fg,
+                            size: 20,
+                          ),
+                        ],
+                      ),
                     ),
             ),
           ),
@@ -469,18 +473,16 @@ class SecondaryButton extends StatelessWidget {
   }
 }
 
-/// Výrazná karta pro to nejdůležitější na obrazovce (větší zaoblení).
+/// Výrazná karta pro to nejdůležitější na obrazovce.
 ///
-/// `vivid` = barevná karta: v Auroře ve dne celá v přechodu motivu,
-/// jinak tmavá s měkkou září, která plynule mizí do podkladu. Obsah
-/// dostane vlastní motiv, proto barvy čti z `context` uvnitř karty
-/// (např. přes [Builder]), ne zvenku.
+/// `vivid` = datový displej: jemná mřížka, zelená rohová značka a velké
+/// číslo v pozadí. Jinak obyčejná karta se zkoseným rohem.
 class HeroCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
   final bool vivid;
 
-  /// Velké obrysové číslo v pozadí (Závod: číslo jezdce), jen ozdoba.
+  /// Velké číslo v pozadí výrazné karty, jen ozdoba.
   final String? watermark;
   const HeroCard({
     super.key,
@@ -493,126 +495,53 @@ class HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final radius = BorderRadius.circular(Radii.hero);
-    if (vivid && p.pitwall) {
-      return _RaceHero(padding: padding, watermark: watermark, child: child);
+    if (vivid) {
+      return _TensorHero(padding: padding, watermark: watermark, child: child);
     }
-    if (!vivid) {
-      return Container(
-        padding: padding,
-        decoration: BoxDecoration(color: p.grouped, borderRadius: radius),
-        child: child,
-      );
-    }
-    final brightness = Theme.of(context).brightness;
-    // Světlý přechod jen u motivů, na kterých je čitelný tmavý text.
-    final bright =
-        !p.studio &&
-        brightness == Brightness.light &&
-        p.preset.onGradient == Colors.black;
-    final surface = bright ? HeroSurface.bright : HeroSurface.glow;
-    final theme = buildTheme(brightness, p.preset, p.look, surface);
-    final inner = theme.extension<AppPalette>()!;
-    Widget content = Theme(
-      data: theme,
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: inner.label),
-        child: IconTheme.merge(
-          data: IconThemeData(color: inner.label),
-          child: Padding(padding: padding, child: child),
-        ),
-      ),
+    return Material(
+      color: p.grouped,
+      shape: p.cardShape(),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(padding: padding, child: child),
     );
-    DecoratedBox layer(Gradient g, Widget c) => DecoratedBox(
-      decoration: BoxDecoration(gradient: g),
-      child: c,
-    );
-    RadialGradient glow(Alignment at, double r, Color c, double a) =>
-        RadialGradient(
-          center: at,
-          radius: r,
-          colors: [
-            c.withValues(alpha: a),
-            c.withValues(alpha: 0),
-          ],
-        );
-    final g = inner.gradient;
-    if (bright) {
-      // Přechod motivu a světlý odlesk vlevo nahoře („aurora“).
-      content = layer(
-        LinearGradient(
-          colors: g,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        layer(
-          glow(const Alignment(-0.9, -1.1), 1.1, Colors.white, 0.45),
-          content,
-        ),
-      );
-    } else {
-      // Tmavý podklad a záře v sytých tmavých odstínech motivu: barva
-      // plynule mizí do podkladu, bílý text zůstane čitelný a světlé
-      // barvy (limetka) nezešednou do olivové.
-      final base = brightness == Brightness.dark
-          ? p.grouped
-          : const Color(0xFF111113);
-      content = DecoratedBox(
-        decoration: BoxDecoration(color: base),
-        child: layer(
-          // Úhlopříčný přechod nezávisí na poměru stran karty.
-          LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              deepTone(g.last).withValues(alpha: 0.95),
-              deepTone(g[1]).withValues(alpha: 0.4),
-              deepTone(g[1]).withValues(alpha: 0),
-            ],
-            stops: const [0, 0.55, 1],
-          ),
-          layer(
-            glow(const Alignment(1.0, 1.25), 1.6, deepTone(g[1]), 0.55),
-            content,
-          ),
-        ),
-      );
-    }
-    return ClipRRect(borderRadius: radius, child: content);
   }
 }
 
-/// Hlavní karta Závodu jako karta jezdce: tmavý přechod, červený pruh
-/// vlevo a obrysové číslo, které při zobrazení přijede zprava. Paleta
-/// zůstává stránková, je dost tmavá i pro text na kartě.
-class _RaceHero extends StatelessWidget {
+/// Hlavní karta Tensoru jako datový displej: černá s jemnou mřížkou,
+/// tenká linka, zkosený roh a zelená značka vlevo nahoře. Velké číslo
+/// v pozadí je plné a skoro splývá s podkladem.
+class _TensorHero extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
   final String? watermark;
-  const _RaceHero({required this.child, required this.padding, this.watermark});
+  const _TensorHero({
+    required this.child,
+    required this.padding,
+    this.watermark,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final still = MediaQuery.disableAnimationsOf(context);
-    return ClipRRect(
-      borderRadius: p.cardRadius(16),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF262636), Color(0xFF1C1C27)],
-          ),
-          border: Border(left: BorderSide(color: AppPalette.raceRed, width: 4)),
-        ),
+    return Material(
+      color: p.grouped,
+      shape: p.cardShape(),
+      clipBehavior: Clip.antiAlias,
+      child: CustomPaint(
+        painter: const _GridPainter(Color(0xFF141414)),
         child: Stack(
           children: [
+            // Zelená rohová značka: tady se rozhoduje.
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(width: 28, height: 3, color: p.accent),
+            ),
             if (watermark != null)
-              // Celé číslo uvnitř karty, vlevo od menu (dřív se ořezávalo).
               Positioned(
-                right: 48,
-                top: 6,
+                right: 44,
+                top: 0,
                 child: ExcludeSemantics(
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: still ? 0 : 1, end: 0),
@@ -621,25 +550,21 @@ class _RaceHero extends StatelessWidget {
                     builder: (context, t, child) => Opacity(
                       opacity: 1 - t,
                       child: Transform.translate(
-                        offset: Offset(60 * t, 0),
+                        offset: Offset(0, 24 * t),
                         child: child,
                       ),
                     ),
                     child: Text(
                       watermark!,
-                      // Dekorace: neroste s velikostí písma, jinak se ořízne.
                       textScaler: TextScaler.noScaling,
                       maxLines: 1,
                       softWrap: false,
-                      style: TextStyle(
-                        fontSize: 128,
+                      style: const TextStyle(
+                        fontFamily: condensedFont,
+                        fontSize: 132,
                         height: 1,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w900,
-                        foreground: Paint()
-                          ..style = PaintingStyle.stroke
-                          ..strokeWidth = 2
-                          ..color = Colors.white.withValues(alpha: 0.12),
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF181818),
                       ),
                     ),
                   ),
@@ -653,8 +578,30 @@ class _RaceHero extends StatelessWidget {
   }
 }
 
-/// Pět startovních světel: rozsvítí se jedno po druhém (jednou) a pak
-/// zůstanou svítit. Bez animací svítí rovnou.
+/// Jemná mřížka 22 px jako na měřicím displeji.
+class _GridPainter extends CustomPainter {
+  final Color color;
+  const _GridPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    for (var x = 22.0; x < size.width; x += 22) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 22.0; y < size.height; y += 22) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPainter old) => old.color != color;
+}
+
+/// Startovní dílky, jeden na cvik: rozsvítí se jeden po druhém (jednou)
+/// a pak zůstanou svítit. Bez animací svítí rovnou.
 class StartLights extends StatefulWidget {
   /// Jedno světlo na cvik dnešního tréninku; víc než 8 se nevejde,
   /// přesný počet říká [caption].
@@ -711,69 +658,77 @@ class _StartLightsState extends State<StartLights>
   @override
   Widget build(BuildContext context) {
     final caption = widget.caption;
+    return _segments(context, caption);
+  }
+}
+
+extension on _StartLightsState {
+  /// Jeden dílek na cvik, dílky se postupně rozsvítí zeleně.
+  Widget _segments(BuildContext context, String? caption) {
+    final p = context.palette;
     return Semantics(
       label: caption,
       excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0C0C12),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Column(
-          children: [
-            AnimatedBuilder(
-              animation: _c,
-              builder: (context, _) {
-                final at = _c.value * _total;
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var i = 0; i < _n; i++)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: _Light(on: at >= _delay + i * _step),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final at = _c.value * _total;
+              return Row(
+                children: [
+                  for (var i = 0; i < _n; i++) ...[
+                    if (i > 0) const SizedBox(width: 3),
+                    Expanded(
+                      child: _Segment(
+                        on:
+                            at >=
+                            _StartLightsState._delay +
+                                i * _StartLightsState._step,
                       ),
+                    ),
                   ],
-                );
-              },
-            ),
-            if (caption != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                caption,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFB8B8C8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.6,
-                ),
+                ],
+              );
+            },
+          ),
+          if (caption != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              caption,
+              style: TextStyle(
+                fontFamily: condensedFont,
+                color: p.secondaryLabel,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _Light extends StatelessWidget {
+class _Segment extends StatelessWidget {
   final bool on;
-  const _Light({required this.on});
+  const _Segment({required this.on});
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: 24,
-    height: 24,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: on ? const Color(0xFFFF1801) : const Color(0xFF2A2A36),
-      boxShadow: on
-          ? const [BoxShadow(color: Color(0xAAFF1801), blurRadius: 14)]
-          : null,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final a = context.palette.accent;
+    return Container(
+      height: 10,
+      decoration: BoxDecoration(
+        color: on ? a : const Color(0xFF1A1A1A),
+        boxShadow: on
+            ? [BoxShadow(color: a.withValues(alpha: 0.5), blurRadius: 8)]
+            : null,
+      ),
+    );
+  }
 }
 
 /// Štítek „ŽIVĚ" s tečkou, která třikrát blikne a pak svítí.
@@ -841,20 +796,6 @@ class _LiveTagState extends State<LiveTag> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Sytý tmavý odstín barvy pro záři pod bílým textem.
-Color deepTone(Color c) {
-  var h = HSLColor.fromColor(c);
-  h = h
-      .withLightness((h.lightness * 0.6).clamp(0.22, 0.4))
-      .withSaturation(math.min(1, h.saturation * 1.1));
-  // Zelené a žluté tóny jsou při stejné světlosti jasnější: ztmavit,
-  // dokud bílý text nemá kontrast aspoň 4,5:1 i s průhledností.
-  while (h.toColor().computeLuminance() > 0.1 && h.lightness > 0.1) {
-    h = h.withLightness(h.lightness - 0.01);
-  }
-  return h.toColor();
-}
-
 /// Obyčejná seskupená karta.
 class Panel extends StatelessWidget {
   final Widget child;
@@ -876,19 +817,9 @@ class Panel extends StatelessWidget {
     );
     return Material(
       color: p.grouped,
-      borderRadius: p.cardRadius(),
+      shape: p.cardShape(),
       clipBehavior: Clip.antiAlias,
-      // Závod: červený pruh vlevo jako na boxové tabuli.
-      child: p.pitwall
-          ? DecoratedBox(
-              decoration: const BoxDecoration(
-                border: Border(
-                  left: BorderSide(color: AppPalette.raceRed, width: 4),
-                ),
-              ),
-              child: content,
-            )
-          : content,
+      child: content,
     );
   }
 }
@@ -900,12 +831,16 @@ class ProgressRing extends StatelessWidget {
   final double stroke;
   final Widget? child;
 
+  /// Barvy oblouku; bez nich přechod z palety.
+  final List<Color>? colors;
+
   const ProgressRing({
     super.key,
     required this.value,
     this.size = 72,
     this.stroke = 8,
     this.child,
+    this.colors,
   });
 
   @override
@@ -920,7 +855,7 @@ class ProgressRing extends StatelessWidget {
             : const Duration(milliseconds: 600),
         curve: Curves.easeOutCubic,
         builder: (context, v, _) => CustomPaint(
-          painter: _RingPainter(v, stroke, p.fill, p.gradient),
+          painter: _RingPainter(v, stroke, p.fill, colors ?? p.gradient),
           child: Center(child: child),
         ),
       ),
@@ -1021,6 +956,9 @@ class StatTile extends StatelessWidget {
   /// a vypíše se přes [format] (jinak se ukáže [value]).
   final double? countTo;
   final String Function(double v)? format;
+
+  /// Velké číslo jako na výsledkové tabuli (souhrn v telemetrických vzhledech).
+  final bool big;
   const StatTile(
     this.value,
     this.label, {
@@ -1028,11 +966,15 @@ class StatTile extends StatelessWidget {
     this.align = CrossAxisAlignment.start,
     this.countTo,
     this.format,
+    this.big = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final valueStyle = (big ? text.headlineMedium : text.titleLarge)?.copyWith(
+      fontFeatures: tabular,
+    );
     return Column(
       crossAxisAlignment: align,
       mainAxisSize: MainAxisSize.min,
@@ -1044,16 +986,8 @@ class StatTile extends StatelessWidget {
               ? Alignment.centerRight
               : Alignment.centerLeft,
           child: countTo != null && format != null
-              ? CountUp(
-                  value: countTo!,
-                  format: format!,
-                  style: text.titleLarge?.copyWith(fontFeatures: tabular),
-                )
-              : Text(
-                  value,
-                  style: text.titleLarge?.copyWith(fontFeatures: tabular),
-                  maxLines: 1,
-                ),
+              ? CountUp(value: countTo!, format: format!, style: valueStyle)
+              : Text(value, style: valueStyle, maxLines: 1),
         ),
         FittedBox(
           fit: BoxFit.scaleDown,

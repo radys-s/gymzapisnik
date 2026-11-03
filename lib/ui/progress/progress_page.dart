@@ -17,11 +17,12 @@ import '../home/dashboard.dart';
 import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
 import '../settings/settings_button.dart';
+import '../settings/settings_page.dart';
 import '../stats/stats_page.dart';
 import '../widgets/labels.dart';
 
-/// Záložka Pokrok: křivka síly, rekordy, souhrn a cesty ke statistikám,
-/// cvikům, odznakům a váze. Domov zůstává jen o dnešním tréninku.
+/// Záložka Profil: souhrn, křivka síly, rekordy a cesty ke statistikám,
+/// cvikům, odznakům, váze a nastavení.
 class ProgressPage extends StatelessWidget {
   final AppState state;
   final DateTime Function() now;
@@ -88,7 +89,7 @@ class ProgressPage extends StatelessWidget {
         ],
       ];
       return LargeTitlePage(
-        title: 'Pokrok',
+        title: 'Profil',
         actions: [SettingsButton(state)],
         children: [
           for (final (i, b) in blocks.indexed)
@@ -168,6 +169,16 @@ class ProgressPage extends StatelessWidget {
         title: 'Rady pro růst svalů',
         subtitle: 'Objem, technika, jídlo, spánek',
         onTap: () => push(GrowthPage(state, now: now)),
+      ),
+      GroupedRow(
+        icon: Icons.settings_outlined,
+        iconColor: context.palette.secondaryLabel,
+        title: 'Nastavení',
+        subtitle: 'Pauza, krok váhy, záloha, soukromí',
+        onTap: () => Navigator.of(
+          context,
+          rootNavigator: true,
+        ).push(MaterialPageRoute(builder: (_) => SettingsPage(state))),
       ),
     ];
   }

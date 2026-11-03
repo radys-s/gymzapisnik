@@ -77,7 +77,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: page?.call(state) ?? FridgePage(state, picker: (_) async => jpeg),
       ),
     );
@@ -122,7 +122,7 @@ void main() {
       });
       await tester.pumpWidget(
         MaterialApp(
-          theme: buildTheme(Brightness.dark),
+          theme: buildTheme(),
           home: FridgePage(state, key: UniqueKey()),
         ),
       );
@@ -193,7 +193,7 @@ void main() {
       });
       await tester.pumpWidget(
         MaterialApp(
-          theme: buildTheme(Brightness.dark),
+          theme: buildTheme(),
           home: FridgePage(state, key: UniqueKey()),
         ),
       );
@@ -260,7 +260,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: FridgePage(state, key: UniqueKey(), picker: (_) async => jpeg),
       ),
     );
@@ -312,7 +312,7 @@ void main() {
     await tester.runAsync(() => state.savePantry(const [PantryItem('rýže')]));
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: FridgePage(state, key: UniqueKey(), picker: (_) async => jpeg),
       ),
     );

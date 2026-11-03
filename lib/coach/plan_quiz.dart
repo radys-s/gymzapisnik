@@ -3,8 +3,13 @@
 library;
 
 import '../domain/anatomy.dart';
+import '../domain/catalog.dart';
+import '../domain/models.dart';
+import 'plan_prefs.dart';
 import 'splits.dart';
 import 'tips.dart';
+
+export 'plan_prefs.dart';
 
 enum PlanGoal {
   muscle('Svaly', 'Víc svalů a lepší postava'),
@@ -39,35 +44,107 @@ class PlanAnswers {
 
   /// Kolikrát týdně chce cvičit (2–6).
   final int days;
-  final PlanLevel level;
+  final Experience experience;
 
   /// Kolik minut má na jeden trénink.
   final int minutes;
+  final TrainingPlace place;
+
+  /// Partie, kterým dát přednost (`focusChoices`).
+  final Set<String> focus;
+
+  /// Klouby, které se mají šetřit.
+  final Set<Joint> avoid;
+
+  /// Cviky, které si chce v plánu nechat (`favoriteChoices`).
+  final Set<String> favorites;
+  final Sex? sex;
+  final int? heightCm;
+  final int? birthYear;
+  final WeightGoal? weightGoal;
 
   const PlanAnswers({
     this.goal = PlanGoal.muscle,
     this.days = 3,
-    this.level = PlanLevel.beginner,
+    this.experience = Experience.quarter,
     this.minutes = 60,
+    this.place = TrainingPlace.gym,
+    this.focus = const {},
+    this.avoid = const {},
+    this.favorites = const {},
+    this.sex,
+    this.heightCm,
+    this.birthYear,
+    this.weightGoal,
   });
+
+  /// Do roka cvičení začátečník, pak pokročilý.
+  PlanLevel get level =>
+      experience.months >= 12 ? PlanLevel.advanced : PlanLevel.beginner;
 
   PlanAnswers copyWith({
     PlanGoal? goal,
     int? days,
-    PlanLevel? level,
+    Experience? experience,
     int? minutes,
+    TrainingPlace? place,
+    Set<String>? focus,
+    Set<Joint>? avoid,
+    Set<String>? favorites,
   }) => PlanAnswers(
     goal: goal ?? this.goal,
     days: days ?? this.days,
-    level: level ?? this.level,
+    experience: experience ?? this.experience,
     minutes: minutes ?? this.minutes,
+    place: place ?? this.place,
+    focus: focus ?? this.focus,
+    avoid: avoid ?? this.avoid,
+    favorites: favorites ?? this.favorites,
+    sex: sex,
+    heightCm: heightCm,
+    birthYear: birthYear,
+    weightGoal: weightGoal,
   );
+
+  /// Údaje o těle; `null` hodnotu smaže (pole jsou nepovinná).
+  PlanAnswers withBody({
+    required Sex? sex,
+    required int? heightCm,
+    required int? birthYear,
+    required WeightGoal? weightGoal,
+  }) => PlanAnswers(
+    goal: goal,
+    days: days,
+    experience: experience,
+    minutes: minutes,
+    place: place,
+    focus: focus,
+    avoid: avoid,
+    favorites: favorites,
+    sex: sex,
+    heightCm: heightCm,
+    birthYear: birthYear,
+    weightGoal: weightGoal,
+  );
+
+  /// Věk v roce [now]; `null` bez roku narození.
+  int? ageIn(DateTime now) => birthYear == null ? null : now.year - birthYear!;
 
   Map<String, dynamic> toJson() => {
     'goal': goal.name,
     'days': days,
+    // Starší verze aplikace čtou jen úroveň.
     'level': level.name,
+    'experience': experience.name,
     'minutes': minutes,
+    'place': place.name,
+    if (focus.isNotEmpty) 'focus': focus.toList(),
+    if (avoid.isNotEmpty) 'avoid': [for (final j in avoid) j.name],
+    if (favorites.isNotEmpty) 'favorites': favorites.toList(),
+    'sex': ?sex?.name,
+    'heightCm': ?heightCm,
+    'birthYear': ?birthYear,
+    'weightGoal': ?weightGoal?.name,
   };
 
   /// Odpovědi ze zálohy nebo profilu; neplatné vrací `null`.
@@ -78,11 +155,31 @@ class PlanAnswers {
     if (days is! num || minutes is! num) return null;
     if (!days.isFinite || !minutes.isFinite) return null;
     final m = minutes.toInt();
+    Set<String> ids(Object? v, List<String> allowed) => {
+      if (v is List)
+        for (final x in v)
+          if (x is String && allowed.contains(x)) x,
+    };
+    int? whole(Object? v, int min, int max) =>
+        v is num && v.isFinite && v >= min && v <= max ? v.toInt() : null;
+    final year = DateTime.now().year;
     return PlanAnswers(
       goal: PlanGoal.parse(json['goal']),
       days: days.toInt().clamp(2, 6),
-      level: PlanLevel.parse(json['level']),
+      experience:
+          Experience.tryParse(json['experience']) ??
+          (PlanLevel.parse(json['level']) == PlanLevel.advanced
+              ? Experience.two
+              : Experience.quarter),
       minutes: planMinutes.contains(m) ? m : 60,
+      place: TrainingPlace.parse(json['place']),
+      focus: ids(json['focus'], focusChoices),
+      avoid: Joint.parseAll(json['avoid']),
+      favorites: ids(json['favorites'], favoriteChoices),
+      sex: Sex.tryParse(json['sex']),
+      heightCm: whole(json['heightCm'], 120, 230),
+      birthYear: whole(json['birthYear'], year - 100, year - 10),
+      weightGoal: WeightGoal.tryParse(json['weightGoal']),
     );
   }
 }
@@ -198,4 +295,79 @@ SplitDay fitDay(SplitDay day, int count) {
   return day.copyWith(
     exercises: [...day.exercises, ...extra.take(n - day.exercises.length)],
   );
+}
+
+/// Den přizpůsobený odpovědím z úvodu. Oblíbený cvik nahradí cvik na
+/// stejný sval, cvik bez vybavení nebo na šetřený kloub se vymění (když
+/// náhrada není, vypadne), první cvik prioritní partie dostane sérii
+/// navíc a úplný nováček cvičí méně sérií s víc opakováními.
+SplitDay personalizeDay(SplitDay day, PlanAnswers a) {
+  final taken = {for (final e in day.exercises) e.exerciseId};
+  final out = <PlannedExercise>[];
+  for (final planned in day.exercises) {
+    final id = planned.exerciseId;
+    final e = findExercise(id, const []);
+    final favorite = a.favorites.where((f) {
+      final fav = findExercise(f, const []);
+      return !taken.contains(f) &&
+          e != null &&
+          fav != null &&
+          _sameRole(e, fav) &&
+          exerciseAllowed(fav, a.place, a.avoid);
+    }).firstOrNull;
+    if (favorite != null) {
+      taken.add(favorite);
+      out.add(planned.copyWith(exerciseId: favorite));
+      continue;
+    }
+    if (e == null || e.custom || exerciseAllowed(e, a.place, a.avoid)) {
+      out.add(planned);
+      continue;
+    }
+    final swap = replacementFor(
+      id,
+      place: a.place,
+      avoid: a.avoid,
+      taken: taken,
+    );
+    if (swap == null) continue;
+    taken.add(swap.id);
+    out.add(planned.copyWith(exerciseId: swap.id));
+  }
+  // Bez vybavení nemusí zbýt nic: radši původní den než prázdný.
+  if (out.isEmpty) return day;
+  // Začátečník nejdřív méně sérií a víc opakování, teprve pak přidá
+  // série partiím, na které se chce zaměřit.
+  if (a.experience == Experience.fresh) {
+    for (final (i, planned) in out.indexed) {
+      final repMin = planned.repMin < 10 ? 10 : planned.repMin;
+      out[i] = planned.copyWith(
+        sets: planned.sets.clamp(1, 3),
+        repMin: repMin,
+        repMax: planned.repMax < repMin + 2 ? repMin + 2 : planned.repMax,
+      );
+    }
+  }
+  final boosted = <String>{};
+  for (final (i, planned) in out.indexed) {
+    final head = primaryHead(planned.exerciseId);
+    final focus = head == null ? null : focusOfHead(head);
+    if (focus != null && a.focus.contains(focus) && boosted.add(focus)) {
+      out[i] = planned.copyWith(sets: (planned.sets + 1).clamp(1, 5));
+    }
+  }
+  return day.copyWith(exercises: out);
+}
+
+/// Oblíbený cvik zastoupí plánovaný, když dělá stejnou práci: stejný
+/// pohybový vzor (mrtvý tah za rumunský), nebo jde o dvě izolace se
+/// stejnou hlavní hlavou svalu. Vícekloubový cvik tak nikdy nezabere
+/// místo izolace a leg press nevytlačí dřep.
+bool _sameRole(Exercise planned, Exercise favorite) {
+  if (planned.pattern == favorite.pattern) return true;
+  final head = primaryHead(planned.id);
+  final favHead = primaryHead(favorite.id);
+  final plannedMulti = (anatomyOf(planned.id)?.primary.length ?? 0) > 1;
+  final favMulti = (anatomyOf(favorite.id)?.primary.length ?? 0) > 1;
+  return head != null && head == favHead && !plannedMulti && !favMulti;
 }

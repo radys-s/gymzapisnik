@@ -11,7 +11,6 @@ import '../../notify/notifier.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
-import '../onboarding/accent_picker.dart';
 import '../premium/premium_page.dart';
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
@@ -19,6 +18,7 @@ import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
 import 'file_io.dart';
 import 'legal_page.dart';
+import 'wipe_dialog.dart';
 
 /// Nastavení: pauza, motiv, záloha, export, smazání dat, o aplikaci.
 class SettingsPage extends StatelessWidget {
@@ -158,15 +158,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _wipe(BuildContext context) async {
-    final ok = await confirmAction(
-      context,
-      title: 'Smazat všechna data?',
-      message:
-          'Tréninky, vlastní cviky i nastavení v tomto zařízení se trvale '
-          'smažou. Nejdřív si ulož zálohu do souboru.',
-      confirm: 'Smazat vše',
-      destructive: true,
-    );
+    final ok = await confirmWipe(context);
     if (!ok || !context.mounted) return;
     try {
       await state.wipeAll();
@@ -202,7 +194,7 @@ class SettingsPage extends StatelessWidget {
                   value: restOptions.contains(rest) ? rest : null,
                   hint: Text(restLabel(rest)),
                   underline: const SizedBox.shrink(),
-                  borderRadius: BorderRadius.circular(Radii.card),
+                  borderRadius: context.palette.cardRadius(),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: p.secondaryLabel,
                     fontFeatures: tabular,
@@ -222,7 +214,7 @@ class SettingsPage extends StatelessWidget {
                 trailing: DropdownButton<double>(
                   value: profile.weightStep,
                   underline: const SizedBox.shrink(),
-                  borderRadius: BorderRadius.circular(Radii.card),
+                  borderRadius: context.palette.cardRadius(),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: p.secondaryLabel,
                     fontFeatures: tabular,
@@ -301,41 +293,6 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-            ],
-          ),
-          GroupedSection(
-            header: 'Vzhled',
-            dividerIndent: _indent,
-            children: [
-              // Závod je vždy tmavý, volba světla by nic nezměnila.
-              if (Look.parse(profile.look) != Look.pitwall)
-                Padding(
-                  padding: const EdgeInsets.all(Space.m),
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'system', label: Text('Systém')),
-                      ButtonSegment(value: 'light', label: Text('Světlý')),
-                      ButtonSegment(value: 'dark', label: Text('Tmavý')),
-                    ],
-                    selected: {profile.theme},
-                    showSelectedIcon: false,
-                    onSelectionChanged: (s) =>
-                        state.setPreferences(theme: s.single),
-                  ),
-                ),
-              GroupedRow(
-                icon: Icons.palette_outlined,
-                iconColor: p.gradient.last,
-                title: 'Vzhled a barva',
-                subtitle: Look.parse(profile.look) == Look.pitwall
-                    ? Look.pitwall.label
-                    : '${Look.parse(profile.look).label} · '
-                          '${Accent.parse(profile.accent).label}',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => AppearancePage(state)),
-                ),
-              ),
             ],
           ),
           GroupedSection(
@@ -471,16 +428,6 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           GroupedSection(
-            children: [
-              GroupedRow(
-                title: 'Smazat všechna data',
-                destructive: true,
-                chevron: false,
-                onTap: () => _wipe(context),
-              ),
-            ],
-          ),
-          GroupedSection(
             header: 'O aplikaci',
             footer:
                 'Gym zápisník, verze $appVersion. Aplikace nenahrazuje '
@@ -513,6 +460,17 @@ class SettingsPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (_) => const LegalPage()),
                 ),
+              ),
+            ],
+          ),
+          // Schválně až úplně dole a přes víc kroků, ať se nedá smazat omylem.
+          GroupedSection(
+            children: [
+              GroupedRow(
+                title: 'Smazat všechna data',
+                destructive: true,
+                chevron: false,
+                onTap: () => _wipe(context),
               ),
             ],
           ),

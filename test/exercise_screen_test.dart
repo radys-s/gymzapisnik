@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/ui/widgets/exercise_media.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/anatomy.dart';
@@ -11,17 +12,15 @@ import 'package:gymzapisnik/ui/theme.dart';
 import 'package:gymzapisnik/ui/exercises/exercise_detail_page.dart';
 
 void main() {
-  test('every catalog exercise has technique and two images', () {
+  test('every catalog exercise has technique and anatomy', () {
     for (final e in builtInExercises) {
       final t = techniqueOf(e.id);
       expect(t, isNotNull, reason: e.id);
       expect(t!.steps, hasLength(3), reason: e.id);
       expect(t.mistakes, isNotEmpty, reason: e.id);
-      expect(exerciseImages(e.id), hasLength(2), reason: e.id);
       expect(anatomyOf(e.id), isNotNull, reason: e.id);
     }
     expect(techniques.keys.toSet(), builtInExercises.map((e) => e.id).toSet());
-    expect(exerciseImages('custom_x'), isEmpty);
   });
 
   testWidgets('exercise screen shows muscles, technique and alternatives', (
@@ -40,7 +39,7 @@ void main() {
     await tester.runAsync(state.load);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: ExerciseDetailPage(state, 'lateral_raise'),
       ),
     );
@@ -51,9 +50,9 @@ void main() {
     expect(find.text('Technika'), findsOneWidget);
     expect(find.text('Časté chyby'), findsOneWidget);
     expect(find.text('Alternativy'), findsOneWidget);
-    expect(find.text('Začátek pohybu'), findsOneWidget);
+    expect(find.byType(ExerciseAnimation), findsOneWidget);
 
-    await tester.tap(find.text('Cable lateral raise'));
+    await tester.tap(find.text(findExercise('cable_lateral_raise', [])!.name));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     final top = find.byType(ExerciseDetailPage).last;

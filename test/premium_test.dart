@@ -68,7 +68,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: Scaffold(body: HomePage(state, now: monday)),
       ),
     );
@@ -90,7 +90,7 @@ void main() {
     await tester.runAsync(state.load);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: Scaffold(body: HomePage(state, now: monday)),
       ),
     );

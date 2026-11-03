@@ -38,7 +38,7 @@ void main() {
       await state.saveActive();
     });
     await tester.pumpWidget(
-      MaterialApp(theme: buildTheme(Brightness.dark), home: WorkoutPage(state)),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
     await tester.pumpAndSettle();
   }
@@ -61,7 +61,7 @@ void main() {
 
     await tester.tap(field('Váha v kg, Série 2'));
     await tester.pumpAndSettle();
-    expect(find.text('Bench press · Série 2'), findsOneWidget);
+    expect(find.text('Bench press (osa) · Série 2'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(byLabel('Přidat 2,5 kg'));
@@ -132,7 +132,7 @@ void main() {
   ) async {
     await pump(tester);
     expect(byLabel('Vyměnit cvik'), findsOneWidget);
-    await tester.tap(find.text('Bench press'));
+    await tester.tap(find.text('Bench press (osa)'));
     await tester.pumpAndSettle();
     expect(find.byType(ExerciseDetailPage), findsOneWidget);
     expect(find.text('Technika'), findsOneWidget);

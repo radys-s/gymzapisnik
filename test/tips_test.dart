@@ -91,7 +91,7 @@ void main() {
       await state.acceptConsent(adult: false, guardianConsent: true);
     });
     await tester.pumpWidget(
-      MaterialApp(theme: buildTheme(Brightness.light), home: GrowthPage(state)),
+      MaterialApp(theme: buildTheme(), home: GrowthPage(state)),
     );
     await tester.pumpAndSettle();
     expect(find.text('Tvůj týden'), findsOneWidget);

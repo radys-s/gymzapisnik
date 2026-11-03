@@ -22,7 +22,7 @@ Future<void> _pump(WidgetTester tester, AppState state) async {
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    MaterialApp(theme: buildTheme(Brightness.light), home: ProgramPage(state)),
+    MaterialApp(theme: buildTheme(), home: ProgramPage(state)),
   );
   await tester.pumpAndSettle();
 }
@@ -61,7 +61,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Série × opakování přes předvolbu.
-    await tester.tap(find.text('Barbell overhead press'));
+    await tester.tap(find.text('Tlak nad hlavu ve stoje (osa)'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Síla 4×5–8'));
     await tester.pumpAndSettle();

@@ -55,7 +55,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         home: SummaryPage(state, today, justFinished: true),
       ),
     );
@@ -69,12 +69,12 @@ void main() {
     expect(find.text('Hotovo'), findsOneWidget);
     // Kouč řekne verdikt a konkrétní cíl na příště.
     expect(
-      find.text('Nové rekordy: Bench press. Takhle vypadá progres.'),
+      find.text('Nové rekordy: Bench press (osa). Takhle vypadá progres.'),
       findsOneWidget,
     );
     expect(find.text('Příště'), findsOneWidget);
     expect(
-      find.textContaining(RegExp(r'^Bench press [\d,]+ kg × \d+$')),
+      find.textContaining(RegExp(r'^Bench press \(osa\) [\d,]+ kg × \d+$')),
       findsOneWidget,
     );
     await tester.pumpAndSettle();
@@ -97,7 +97,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -169,7 +169,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         // Otevřeno ze staršího: porovnání stejně dá novější vlevo.
         home: SummaryPage(state, saved.first),
       ),

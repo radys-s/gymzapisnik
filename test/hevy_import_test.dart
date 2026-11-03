@@ -24,7 +24,11 @@ const sample =
     'Push A,"15 Jul 2026, 09:00","15 Jul 2026, 10:05","Dobrý, těžký",'
     'Plank,,,0,normal,0,0,,60,\r\n'
     'Legs,"17 Jul 2026, 18:30","17 Jul 2026, 19:20",,'
-    'Squat (Barbell),,,0,normal,100,5,,,\r\n';
+    'Squat (Barbell),,,0,normal,100,5,,,\r\n'
+    'Legs,"17 Jul 2026, 18:30","17 Jul 2026, 19:20",,'
+    'Squat (Barbell),,,1,dropset,80,8,,,\r\n'
+    'Legs,"17 Jul 2026, 18:30","17 Jul 2026, 19:20",,'
+    'Squat (Barbell),,,2,failure,60,12,,,9.5\r\n';
 
 void main() {
   test('parses sets, warm-ups, names and times', () {
@@ -48,6 +52,8 @@ void main() {
       (80.0, 8, false),
     ]);
     expect(bench.sets.every((s) => s.done), isTrue);
+    expect(bench.sets[1].rpe, 8);
+    expect(bench.sets[1].kind, SetKind.normal);
 
     expect(r.newExercises, hasLength(1));
     expect(r.newExercises.single.name, 'Zvláštní cvik "X"');
@@ -56,6 +62,15 @@ void main() {
 
     final legs = r.workouts.firstWhere((w) => w.name == 'Legs');
     expect(legs.exercises.single.exerciseId, 'squat');
+    final squat = legs.exercises.single.sets;
+    expect(squat.map((s) => s.kind), [
+      SetKind.normal,
+      SetKind.drop,
+      SetKind.failure,
+    ]);
+    expect(squat.last.rpe, 9.5);
+    // Drop i do selhání jsou pracovní série.
+    expect(legs.exercises.single.countedSets, hasLength(3));
   });
 
   test('converts pounds and rejects foreign files', () {

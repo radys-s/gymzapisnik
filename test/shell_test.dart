@@ -41,13 +41,13 @@ void main() {
     await tester.pumpWidget(GymApp(state));
     await tester.pumpAndSettle();
 
-    // Podstránka v záložce Pokrok: zpět ji zavře, lišta zůstává.
+    // Podstránka v záložce Profil: zpět ji zavře, lišta zůstává.
     await tester.runAsync(() async {
-      await tester.tap(find.text('Pokrok'));
+      await tester.tap(find.text('Profil'));
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await tester.pumpAndSettle();
-    expect(state.profile.lastTab, 1);
+    expect(state.profile.lastTab, 3);
     await tester.tap(find.text('Cviky a rekordy'));
     await tester.pumpAndSettle();
     expect(find.text('Cviky'), findsWidgets);
@@ -56,7 +56,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Cviky a rekordy'), findsOneWidget);
 
-    // Ze Stravy vede zpět na Trénink a záložka se pamatuje.
+    // Ze Stravy vede zpět na Domů a záložka se pamatuje.
     await tester.runAsync(() async {
       await tester.tap(find.text('Strava'));
       await Future<void>.delayed(const Duration(milliseconds: 50));

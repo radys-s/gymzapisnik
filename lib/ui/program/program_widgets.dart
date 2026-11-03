@@ -63,7 +63,7 @@ class StepperControl extends StatelessWidget {
           foregroundColor: p.label,
           disabledForegroundColor: p.tertiaryLabel,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Radii.control),
+            borderRadius: BorderRadius.circular(context.palette.controlRadius),
           ),
         ),
         icon: Icon(icon, size: 20),
@@ -198,7 +198,7 @@ class DayToggle extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: selected ? p.linear : null,
             color: selected ? null : p.fill,
-            borderRadius: BorderRadius.circular(Radii.control),
+            borderRadius: BorderRadius.circular(context.palette.controlRadius),
           ),
           child: Text(
             label,

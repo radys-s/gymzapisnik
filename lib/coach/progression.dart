@@ -5,12 +5,17 @@
 ///    uživatel zvolí sám; cíl je spodní hranice rozsahu.
 /// 2. Dvakrát po sobě bez posunu (nejlepší série) → odlehčení o 10 %.
 /// 3. Všechny plánované série na horní hranici → přidat váhu, zpět na spodní.
+///    Hodnocení „lehký“ stačí o opakování méně, „na hraně“ váhu podrží;
+///    s málem bílkovin je krok poloviční.
 /// 4. Jinak držet váhu a přidat opakování.
 library;
+
+import 'dart:math' as math;
 
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/stats.dart';
+import 'push.dart';
 import 'splits.dart';
 import 'start_weight.dart';
 
@@ -61,7 +66,7 @@ String _kg(double v) {
 double roundTo(double value, double step) =>
     step <= 0 ? value : (value / step).round() * step;
 
-bool _wasDeload(ExerciseSession s) {
+bool wasDeload(ExerciseSession s) {
   final coach = s.entry.extra[coachKey];
   return coach is Map && coach['kind'] == SuggestionKind.deload.name;
 }
@@ -73,6 +78,7 @@ Suggestion suggest(
   List<ExerciseSession> history, {
   double increment = 2.5,
   StartLoad? start,
+  bool proteinLow = false,
 }) {
   if (history.isEmpty) {
     final range = '${plan.repMin}–${plan.repMax}';
@@ -102,9 +108,7 @@ Suggestion suggest(
   final maxReps = working.map((s) => s.reps).reduce((a, b) => a > b ? a : b);
 
   // Po odlehčení zpět na váhu před ním, jak slibuje jeho vysvětlení.
-  if (_wasDeload(last) &&
-      history.length >= 2 &&
-      type == ExerciseType.weighted) {
+  if (wasDeload(last) && history.length >= 2 && type == ExerciseType.weighted) {
     final before = history[history.length - 2].entry.countedSets;
     final back = before.isEmpty
         ? 0.0
@@ -130,7 +134,7 @@ Suggestion suggest(
     final stalled =
         compareSets(type, best[1], best[0]) <= 0 &&
         compareSets(type, best[2], best[1]) <= 0;
-    if (stalled && !recent.any(_wasDeload) && topWeight > 0) {
+    if (stalled && !recent.any(wasDeload) && topWeight > 0) {
       final lighter = roundTo(topWeight * 0.9, increment);
       return Suggestion(
         kind: SuggestionKind.deload,
@@ -160,17 +164,41 @@ Suggestion suggest(
     );
   }
 
+  final rating = ratingOf(last.workout);
   final allAtTop = atTop.length >= plan.sets && minReps >= plan.repMax;
-  if (allAtTop) {
-    final next = topWeight + increment;
+  // Lehký trénink s rezervou: stačí být opakování pod horní hranicí.
+  final easyNearTop =
+      rating == WorkoutRating.easy &&
+      atTop.length >= plan.sets &&
+      minReps >= plan.repMax - 1;
+  if ((allAtTop || easyNearTop) && rating == WorkoutRating.limit) {
+    return Suggestion(
+      kind: SuggestionKind.hold,
+      weight: topWeight,
+      reps: plan.repMax,
+      sets: plan.sets,
+      reason:
+          'Minule to bylo na hraně. Zopakuj ${_kg(topWeight)} kg × '
+          '${plan.repMax} s čistou technikou, váhu přidáš příště.',
+    );
+  }
+  if (allAtTop || easyNearTop) {
+    // Málo bílkovin: menší krok, tělo nestíhá regenerovat.
+    final step = proteinLow
+        ? math.max(0.25, (increment / 2 / 0.25).floor() * 0.25)
+        : increment;
+    final next = topWeight + step;
+    final why = easyNearTop && !allAtTop
+        ? 'Minule lehké s rezervou na ${_kg(topWeight)} kg'
+        : 'Minule ${atTop.length}× ${plan.repMax}+ na ${_kg(topWeight)} kg';
     return Suggestion(
       kind: SuggestionKind.increase,
       weight: next,
       reps: plan.repMin,
       sets: plan.sets,
       reason:
-          'Minule ${atTop.length}× ${plan.repMax}+ na ${_kg(topWeight)} kg'
-          ', přidej ${_kg(increment)} kg a začni na ${plan.repMin} opakováních.',
+          '$why, přidej ${_kg(step)} kg a začni na ${plan.repMin} opakováních.'
+          '${proteinLow ? ' Krok je menší: bílkovin jíš pod cíl.' : ''}',
     );
   }
   final target = (minReps + 1).clamp(plan.repMin, plan.repMax);

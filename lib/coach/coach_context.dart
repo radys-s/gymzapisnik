@@ -12,6 +12,7 @@ import '../domain/stats.dart';
 import 'missions.dart';
 import 'plan_quiz.dart';
 import 'progression.dart';
+import 'push.dart';
 import 'recovery.dart';
 import 'splits.dart';
 
@@ -50,6 +51,10 @@ Map<String, dynamic> coachContext({
   double? bodyweightKg,
   Map<String, FocusRecovery> recovery = const {},
   Map<String, String> focusNames = const {},
+  WeekFocus? weekFocus,
+  FocusProgress? focusProgress,
+  List<Plateau> plateaus = const [],
+  ProteinWeek? protein,
   int maxChars = 5500,
 }) {
   final finished = finishedNewestFirst(workouts);
@@ -66,6 +71,7 @@ Map<String, dynamic> coachContext({
     for (final w in finished.take(5))
       {
         'date': _day(w.date),
+        if (ratingOf(w) case final r?) 'felt': r.label,
         if (w.finishedAt case final end?)
           'minutes': end.difference(w.startedAt).inMinutes.clamp(0, 600),
         'exercises': [
@@ -141,8 +147,16 @@ Map<String, dynamic> coachContext({
       'plan': {
         'goal': plan.goal.label,
         'level': plan.level.label,
+        'trainingFor': plan.experience.label,
         'daysPerWeek': plan.days,
         'minutesPerWorkout': plan.minutes,
+        'place': plan.place.label,
+        if (plan.focus.isNotEmpty)
+          'focus': [for (final f in plan.focus) focusName(f)],
+        if (plan.avoid.isNotEmpty)
+          'sparesJoints': [for (final j in plan.avoid) j.label],
+        if (adult && plan.weightGoal != null)
+          'bodyweightGoal': plan.weightGoal!.label,
       },
     'weekGoal': weekGoal,
     'thisWeek': {
@@ -175,6 +189,29 @@ Map<String, dynamic> coachContext({
               ? 'připraveno'
               : 'za ${r.readyAt!.difference(now).inHours.clamp(1, 72)} h',
       },
+    if (weekFocus != null && focusProgress != null)
+      'weekFocus': {
+        'goal': weekFocus.kind == FocusKind.strength
+            ? 'síla: ${name(weekFocus.exerciseId!)}'
+            : weekFocus.kind.label,
+        'progress':
+            '${_num(focusProgress.value)} / ${_num(focusProgress.target)} '
+            '${focusProgress.unit}',
+      },
+    if (plateaus.isNotEmpty)
+      'stalled': [
+        for (final p in plateaus.take(3))
+          {
+            'name': name(p.exerciseId),
+            'sessionsWithoutPR': p.sessions,
+            'best1RM': _num(p.best.roundToDouble()),
+          },
+      ],
+    if (protein != null)
+      'protein7d': {
+        'avg': protein.average.round(),
+        'target': protein.target.round(),
+      },
     'recentWorkouts': recent,
     'lifts': lifts,
   };
@@ -182,6 +219,9 @@ Map<String, dynamic> coachContext({
   while (jsonEncode(out).length > maxChars) {
     if (recent.length > 1) {
       recent.removeLast();
+    } else if (out.remove('stalled') != null ||
+        out.remove('protein7d') != null) {
+      continue;
     } else if (lifts.isNotEmpty) {
       lifts.removeLast();
     } else if (recent.isNotEmpty) {

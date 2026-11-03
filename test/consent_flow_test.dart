@@ -58,8 +58,22 @@ void main() {
       await tester.tap(find.widgetWithText(DayToggle, d));
       await tester.pump();
     }
-    await tester.ensureVisible(find.byType(TextField));
-    await tester.enterText(find.byType(TextField), '80');
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
+
+    // Kde cvičí a co šetřit: plán vymění cviky, které nejdou.
+    expect(find.text('Jak cvičíš'), findsOneWidget);
+    await tester.tap(find.text('Doma'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Kolena'));
+    await tester.tap(find.text('Kolena'));
+    await tester.pump();
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
+
+    // O tobě: váha a výška pro bílkoviny a kalorie.
+    expect(find.text('O tobě'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).at(0), '80');
+    await tester.enterText(find.byType(TextField).at(1), '180');
+    await tester.pump();
     await _tapAndSave(tester, find.text('Ukázat plán'));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 200)),
@@ -70,19 +84,27 @@ void main() {
     expect(state.profile.trainingDays, [1, 2, 4, 5]);
     expect(state.planAnswers?.days, 4);
     expect(state.bodyweights.first.kg, 80);
+    expect(state.planAnswers?.place, TrainingPlace.home);
+    expect(state.planAnswers?.avoid, {Joint.knees});
+    expect(state.planAnswers?.heightCm, 180);
+    for (final d in state.split!.days) {
+      for (final e in d.exercises) {
+        expect(e.exerciseId, isNot(contains('squat')), reason: d.name);
+      }
+    }
 
     // Odhalení plánu ukazuje uložený program a první trénink.
     expect(find.text('Plán je hotový'), findsOneWidget);
     expect(find.text('Upper / Lower'), findsOneWidget);
     expect(find.textContaining('První trénink · '), findsOneWidget);
-    await _tapAndSave(tester, find.text('Pokračovat'));
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
 
     // Na webu/testu (bez oznámení) krok připomínky odpadá.
     expect(find.text('Než začneš'), findsOneWidget);
     await tester.tap(find.text('Souhlasím s podmínkami používání'));
     await tester.tap(find.text('Je mi 18 let nebo víc'));
     await tester.pump();
-    await _tapAndSave(tester, find.text('Pokračovat'));
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 300)),
     );
@@ -102,7 +124,7 @@ void main() {
     final state = await _fresh(tester);
     await tester.runAsync(() async {
       await state.applyPlan(
-        const PlanAnswers(days: 5, level: PlanLevel.advanced),
+        const PlanAnswers(days: 5, experience: Experience.two),
       );
       await state.setOnboardingStep(1);
     });
@@ -139,6 +161,8 @@ void main() {
       await tester.tap(find.widgetWithText(DayToggle, d));
       await tester.pump();
     }
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _tapAndSave(tester, find.text('Ukázat plán'));
     expect(state.profile.trainingDays, isNull);
     expect(find.text('Plán je hotový'), findsOneWidget);
@@ -170,7 +194,7 @@ void main() {
     await tester.pump();
     expect(button().onPressed, isNotNull);
 
-    await _tapAndSave(tester, find.text('Pokračovat'));
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     expect(find.text('Trénink'), findsWidgets);
     expect(state.profile.adult, isFalse);
     expect(state.profile.restrictWeightLoss, isTrue);
@@ -223,7 +247,7 @@ void main() {
     expect(find.text('Co je nového'), findsOneWidget);
     await tester.ensureVisible(find.text('Pokračovat'));
     await tester.pumpAndSettle();
-    await _tapAndSave(tester, find.text('Pokračovat'));
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     expect(find.text('Co je nového'), findsNothing);
     expect(state.profile.seenVersion, whatsNewRelease);
 

@@ -75,50 +75,37 @@ class Profile {
     return v is num ? v.toInt().clamp(0, 1439) : null;
   }
 
-  /// Motiv: `dark` (výchozí, hlavní režim aplikace), `light` nebo `system`
-  /// (podle telefonu).
-  String get theme => switch (extra['theme']) {
-    'light' => 'light',
-    'system' => 'system',
-    _ => 'dark',
-  };
-
-  /// Barevný motiv (`lime`, `lagoon`, `sunset`, `neon`); neznámý = výchozí.
-  String get accent => switch (extra['accent']) {
-    'lagoon' => 'lagoon',
-    'sunset' => 'sunset',
-    'neon' => 'neon',
-    _ => 'lime',
-  };
-
-  /// Vzhled (`pitwall`, `auto`, `aurora`, `studio`); nezvolený nebo
-  /// neznámý = `pitwall`, který vybrali testeři.
-  String get look => switch (extra['look']) {
-    'auto' => 'auto',
-    'aurora' => 'aurora',
-    'studio' => 'studio',
-    _ => 'pitwall',
-  };
-
   /// Uživatel prošel úvodem (ukazuje se jen jednou).
   bool get welcomeSeen => extra['welcomeSeen'] == true;
 
   /// Verze, jejíž novinky už uživatel viděl.
   String? get seenVersion => extra['seenVersion'] as String?;
 
-  /// Naposledy otevřená záložka (0 = Trénink, 1 = Pokrok, 2 = Strava).
-  /// Starší verze měly jen dvě (`lastTab` 1 = Strava).
-  int get lastTab => switch (extra['tab']) {
-    1 => 1,
-    2 => 2,
-    _ when extra['tab'] == null && extra['lastTab'] == 1 => 2,
-    _ => 0,
-  };
+  /// Naposledy otevřená záložka (0 = Domů, 1 = Trénink, 2 = Strava,
+  /// 3 = Profil). Starší verze ukládaly `tab` (1 = Pokrok, 2 = Strava)
+  /// a ještě starší `lastTab` (1 = Strava).
+  int get lastTab {
+    final t = extra['tab4'];
+    if (t is int && t >= 0 && t <= 3) return t;
+    return switch (extra['tab']) {
+      1 => 3,
+      2 => 2,
+      _ when extra['tab'] == null && extra['lastTab'] == 1 => 2,
+      _ => 0,
+    };
+  }
 
   /// Výchozí pauza mezi sériemi v sekundách.
   int get restSeconds {
     final v = extra['restSeconds'];
     return v is num ? v.toInt().clamp(15, 600) : 120;
+  }
+
+  /// Vlastní pauza u cviku v sekundách; `null` = výchozí [restSeconds].
+  int? restFor(String exerciseId) {
+    final map = extra['restByExercise'];
+    final v = map is Map ? map[exerciseId] : null;
+    return v is num && v.isFinite ? v.toInt().clamp(15, 600) : null;
   }
 
   /// Krok tlačítek +/− u váhy v kg.

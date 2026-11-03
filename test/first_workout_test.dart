@@ -114,10 +114,7 @@ void main() {
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: WorkoutPage(state),
-      ),
+      MaterialApp(theme: buildTheme(), home: WorkoutPage(state)),
     );
     // Potvrzení série je pro čtečku samostatné tlačítko s akcí.
     final semantics = tester.ensureSemantics();

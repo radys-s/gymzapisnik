@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../coach/achievements.dart';
+import '../../coach/push.dart';
+import '../../coach/routine.dart';
 import '../../coach/summary_coach.dart';
 import '../../core/format.dart';
 import '../../domain/history.dart';
@@ -8,6 +10,8 @@ import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../coach/achievements_page.dart';
+import '../coach/push_widgets.dart';
+import '../coach/trainer_page.dart';
 import '../design/components.dart';
 import '../design/haptics.dart';
 import '../design/motion.dart';
@@ -40,6 +44,8 @@ class SummaryPage extends StatefulWidget {
 class _SummaryPageState extends State<SummaryPage> {
   AppState get state => widget.state;
   bool _busy = false;
+  bool _savingRoutine = false;
+  bool _routineSaved = false;
   // Verdikt a cíle se počítají jednou; rebuildy (sync) je nepřepočítávají.
   (String, List<String>)? _coach;
 
@@ -69,6 +75,29 @@ class _SummaryPageState extends State<SummaryPage> {
     context,
     MaterialPageRoute(builder: (_) => EditWorkoutPage(state, workout)),
   );
+
+  /// Uloží trénink jako rutinu do „Moje rutiny“ na záložce Trénink.
+  Future<void> _saveRoutine(Workout workout) async {
+    final routine = routineFromWorkout(workout);
+    if (routine == null) {
+      showToast(context, 'Trénink nemá žádnou pracovní sérii.');
+      return;
+    }
+    setState(() => _savingRoutine = true);
+    try {
+      final saved = await state.saveProgram(routine);
+      _routineSaved = true;
+      if (mounted) {
+        showToast(context, 'Rutina „${saved.name}“ je v záložce Trénink.');
+      }
+    } on ArgumentError catch (e) {
+      if (mounted) showToast(context, '${e.message}');
+    } catch (_) {
+      if (mounted) showToast(context, 'Rutinu se nepodařilo uložit.');
+    } finally {
+      if (mounted) setState(() => _savingRoutine = false);
+    }
+  }
 
   Future<void> _repeat(Workout workout) async {
     if (_busy) return;
@@ -219,11 +248,38 @@ class _SummaryPageState extends State<SummaryPage> {
                 targets: targets,
               ),
             },
+          RatingPanel(state: state, workout: workout),
+          if (_plateau(workout) case final plateau?)
+            PlateauPanel(
+              state: state,
+              plateau: plateau,
+              onAsk: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TrainerPage(
+                    state,
+                    draft: plateauQuestion(
+                      state.exercise(plateau.exerciseId).name,
+                      plateau,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (records.isNotEmpty) _RecordsPanel(state: state, records: records),
           if (state.badgesFrom(workout.id) case final badges
               when badges.isNotEmpty)
             _BadgesPanel(state: state, badges: badges, fresh: finished),
           if (finished && state.split != null) _NextPanel(state: state),
+          SecondaryButton(
+            _routineSaved ? 'Uloženo jako rutina' : 'Uložit jako rutinu',
+            icon: _routineSaved
+                ? Icons.bookmark_added_outlined
+                : Icons.bookmark_add_outlined,
+            onPressed: _routineSaved || _savingRoutine
+                ? null
+                : () => _saveRoutine(workout),
+          ),
         ].indexed)
           Padding(
             // Klíč podle typu bloku: pozdě přidaný blok nepřebere stav cizímu.
@@ -280,6 +336,18 @@ class _SummaryPageState extends State<SummaryPage> {
     );
   }
 
+  /// První zaseknutý cvik z tohoto tréninku; jen u posledního provedení,
+  /// starší tréninky by radily podle dnešní historie.
+  Plateau? _plateau(Workout workout) {
+    for (final entry in workout.exercises) {
+      final history = exerciseHistory(state.workouts, entry.exerciseId);
+      if (history.isEmpty || history.last.workout.id != workout.id) continue;
+      final p = state.plateauFor(entry.exerciseId);
+      if (p != null) return p;
+    }
+    return null;
+  }
+
   /// Cíle na příště pro cviky z tohoto tréninku (nejvýš tři).
   List<String> _targets(Workout workout) => [
     for (final entry in workout.exercises)
@@ -301,6 +369,7 @@ class _SummaryPageState extends State<SummaryPage> {
     double kg,
   ) => HeroCard(
     vivid: true,
+    watermark: '$number',
     child: Builder(
       builder: (context) {
         final p = context.palette;
@@ -332,15 +401,23 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
             const SizedBox(height: Space.l),
             Row(
+              spacing: Space.s,
               children: [
                 if (duration != null)
-                  Expanded(child: StatTile(durationLabel(duration), 'Délka')),
+                  Expanded(
+                    child: StatTile(
+                      durationLabel(duration),
+                      'Délka',
+                      big: true,
+                    ),
+                  ),
                 Expanded(
                   child: StatTile(
                     '$sets',
                     'Série',
                     countTo: sets.toDouble(),
                     format: (v) => '${v.round()}',
+                    big: true,
                   ),
                 ),
                 Expanded(
@@ -349,6 +426,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     'Objem',
                     countTo: kg,
                     format: (v) => '${formatVolume(v)} kg',
+                    big: true,
                   ),
                 ),
               ],
@@ -551,7 +629,9 @@ class _BadgesPanel extends StatelessWidget {
           ],
           for (final b in main)
             InkWell(
-              borderRadius: BorderRadius.circular(Radii.control),
+              borderRadius: BorderRadius.circular(
+                context.palette.controlRadius,
+              ),
               onTap: open,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: Space.xs),
@@ -576,7 +656,9 @@ class _BadgesPanel extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(top: main.isEmpty ? 0 : Space.s),
               child: InkWell(
-                borderRadius: BorderRadius.circular(Radii.control),
+                borderRadius: BorderRadius.circular(
+                  context.palette.controlRadius,
+                ),
                 onTap: open,
                 child: Wrap(
                   spacing: Space.s,

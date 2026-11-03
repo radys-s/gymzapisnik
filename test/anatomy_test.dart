@@ -37,7 +37,10 @@ void main() {
   test('alternatives start with the same head, then other heads', () {
     final s = alternativesFor('lateral_raise', builtInExercises);
     expect(s.first.title, 'Stejná hlava: Boční delt');
-    expect(s.first.exercises.map((e) => e.id), ['cable_lateral_raise']);
+    expect(
+      s.first.exercises.map((e) => e.id),
+      containsAll(['cable_lateral_raise', 'machine_lateral_raise']),
+    );
     final titles = s.map((x) => x.title).toList();
     expect(titles, containsAll(['Přední delt', 'Zadní delt']));
     final ids = [for (final x in s) ...x.exercises.map((e) => e.id)];
@@ -116,7 +119,13 @@ void main() {
   test('built day handles limits', () {
     expect(buildDay([], 4).exercises, isEmpty);
     expect(buildDay(['chest'], 0).exercises, isEmpty);
-    expect(buildDay(['core'], 9).exercises, hasLength(4)); // víc jich není
+    // Víc lýtkových cviků katalog nemá.
+    final calfCount = builtInExercises
+        .where(
+          (e) => anatomyOf(e.id)!.primary.any(focusHeads['calves']!.contains),
+        )
+        .length;
+    expect(buildDay(['calves'], 20).exercises, hasLength(calfCount));
     expect(
       buildDay(focusHeads.keys, 50).exercises,
       hasLength(maxBuiltExercises),
