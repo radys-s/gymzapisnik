@@ -67,9 +67,33 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('není platná záloha'), findsOneWidget);
 
+    await tester.scrollUntilVisible(find.text('Smazat všechna data'), 300);
     await tester.tap(find.text('Smazat všechna data'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Smazat vše'));
+    await tester.tap(find.text('Pokračovat'));
+    await tester.pumpAndSettle();
+    // Bez zaškrtnutí podržení nic nesmaže.
+    final hold = find.text('Podrž 3 s pro smazání');
+    var gesture = await tester.startGesture(tester.getCenter(hold));
+    await tester.pump(const Duration(seconds: 4));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(hold, findsOneWidget);
+    await tester.tap(find.text('Rozumím, že se data nedají vrátit'));
+    await tester.pump();
+    // Krátké podržení se vrátí zpět.
+    gesture = await tester.startGesture(tester.getCenter(hold));
+    await tester.pump(const Duration(seconds: 1));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(hold, findsOneWidget);
+    gesture = await tester.startGesture(tester.getCenter(hold));
+    // První snímek animaci teprve spustí, pak běží 3 s.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(find.text('Drž dál…'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1600));
+    await gesture.up();
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pumpAndSettle();
     // Po smazání začíná aplikace znovu uvítáním.

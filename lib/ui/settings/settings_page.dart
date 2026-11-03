@@ -18,6 +18,7 @@ import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
 import 'file_io.dart';
 import 'legal_page.dart';
+import 'wipe_dialog.dart';
 
 /// Nastavení: pauza, motiv, záloha, export, smazání dat, o aplikaci.
 class SettingsPage extends StatelessWidget {
@@ -157,15 +158,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _wipe(BuildContext context) async {
-    final ok = await confirmAction(
-      context,
-      title: 'Smazat všechna data?',
-      message:
-          'Tréninky, vlastní cviky i nastavení v tomto zařízení se trvale '
-          'smažou. Nejdřív si ulož zálohu do souboru.',
-      confirm: 'Smazat vše',
-      destructive: true,
-    );
+    final ok = await confirmWipe(context);
     if (!ok || !context.mounted) return;
     try {
       await state.wipeAll();
@@ -435,16 +428,6 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           GroupedSection(
-            children: [
-              GroupedRow(
-                title: 'Smazat všechna data',
-                destructive: true,
-                chevron: false,
-                onTap: () => _wipe(context),
-              ),
-            ],
-          ),
-          GroupedSection(
             header: 'O aplikaci',
             footer:
                 'Gym zápisník, verze $appVersion. Aplikace nenahrazuje '
@@ -477,6 +460,17 @@ class SettingsPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (_) => const LegalPage()),
                 ),
+              ),
+            ],
+          ),
+          // Schválně až úplně dole a přes víc kroků, ať se nedá smazat omylem.
+          GroupedSection(
+            children: [
+              GroupedRow(
+                title: 'Smazat všechna data',
+                destructive: true,
+                chevron: false,
+                onTap: () => _wipe(context),
               ),
             ],
           ),

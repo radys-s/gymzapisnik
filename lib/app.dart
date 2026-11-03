@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'coach/tips.dart';
 import 'state/app_state.dart';
+import 'ui/widgets/keyboard_done_bar.dart';
 import 'ui/home/home_page.dart';
 import 'ui/nutrition/nutrition_page.dart';
 import 'ui/design/components.dart';
@@ -44,6 +45,7 @@ MaterialApp appFrame({required Widget home}) => MaterialApp(
   locale: _czech,
   supportedLocales: const [_czech],
   localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  builder: (_, child) => KeyboardDoneBar(child: child!),
   home: home,
 );
 
