@@ -27,11 +27,15 @@ class TrainerPage extends StatefulWidget {
 
   /// Začne dnešní trénink (trenér se před tím zavře).
   final VoidCallback? onStartToday;
+
+  /// Předvyplněná otázka (třeba ze zaseknuté váhy); odešle ji uživatel.
+  final String? draft;
   const TrainerPage(
     this.state, {
     super.key,
     this.now = DateTime.now,
     this.onStartToday,
+    this.draft,
   });
 
   @override
@@ -40,7 +44,7 @@ class TrainerPage extends StatefulWidget {
 
 class _TrainerPageState extends State<TrainerPage> {
   late List<ChatMessage> messages = widget.state.coachChat;
-  final input = TextEditingController();
+  late final input = TextEditingController(text: widget.draft);
   final scroll = ScrollController();
   bool waiting = false;
   bool sending = false;

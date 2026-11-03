@@ -133,6 +133,7 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
   final iExercise = col('exercise_title');
   final iNote = col('exercise_notes');
   final iType = col('set_type');
+  final iRpe = col('rpe');
   final iReps = col('reps');
   final iDesc = col('description');
   var iWeight = col('weight_kg');
@@ -270,13 +271,23 @@ HevyImport parseHevyCsv(String source, {Iterable<Exercise> custom = const []}) {
       note: cell(row, iNote),
     );
     if (!workout.exercises.contains(entry)) workout.exercises.add(entry);
+    final type = cell(row, iType).toLowerCase();
+    final rpeValue = double.tryParse(cell(row, iRpe).replaceAll(',', '.'));
+    final rpe = rpeValue != null && rpeValue >= 1 && rpeValue <= 10
+        ? rpeValue
+        : null;
     entry.sets.add(
       SetEntry(
         weight: weight,
         reps: reps,
-        warmup: cell(row, iType).toLowerCase() == 'warmup',
+        warmup: type == 'warmup',
         done: true,
-        extra: {if (assist > 0) 'assistKg': assist},
+        extra: {
+          if (assist > 0) 'assistKg': assist,
+          if (type == 'dropset' || type == 'drop') 'kind': SetKind.drop.name,
+          if (type == 'failure') 'kind': SetKind.failure.name,
+          'rpe': ?rpe,
+        },
       ),
     );
   }

@@ -17,6 +17,7 @@ import '../design/haptics.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
+import '../widgets/set_kind.dart';
 import '../widgets/exercise_media.dart';
 import 'alternatives_page.dart';
 import 'exercise_picker.dart';
@@ -896,7 +897,7 @@ class _ExerciseCard extends StatelessWidget {
                 key: ObjectKey(entry.sets[i]),
                 state: state,
                 set: entry.sets[i],
-                label: entry.sets[i].warmup ? 'R' : '${++workingIndex}',
+                label: setBadge(entry.sets[i], ++workingIndex),
                 bodyweight: bodyweight,
                 previous: previous[i],
                 onRemove: () => onRemoveSet(entry.sets[i]),
@@ -961,7 +962,7 @@ class _SetRowState extends State<_SetRow> {
   static String _repsText(int v) => v == 0 ? '' : '$v';
 
   /// Název série pro čtečku obrazovky.
-  String get _name => widget.set.warmup ? 'Rozcvička' : 'Série ${widget.label}';
+  String get _name => setName(widget.set, widget.label);
 
   /// Hodnoty se mohou změnit zvenku (přenos z předchozí série).
   @override
@@ -1086,6 +1087,10 @@ class _SetRowState extends State<_SetRow> {
   void _typeMenu(String action) => switch (action) {
     'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
     'warmup' => _persist(() => widget.state.setWarmup(widget.set, true)),
+    'drop' => _persist(() => widget.state.setKind(widget.set, SetKind.drop)),
+    'failure' => _persist(
+      () => widget.state.setKind(widget.set, SetKind.failure),
+    ),
     _ => widget.onRemove(),
   };
 
@@ -1172,16 +1177,7 @@ class _SetRowState extends State<_SetRow> {
                   padding: EdgeInsets.zero,
                   onSelected: _typeMenu,
                   itemBuilder: (_) => [
-                    CheckedPopupMenuItem(
-                      value: 'working',
-                      checked: !set.warmup,
-                      child: const Text('Pracovní série'),
-                    ),
-                    CheckedPopupMenuItem(
-                      value: 'warmup',
-                      checked: set.warmup,
-                      child: const Text('Rozcvička'),
-                    ),
+                    ...setTypeItems(set),
                     const PopupMenuDivider(),
                     PopupMenuItem(
                       value: 'delete',
@@ -1201,7 +1197,7 @@ class _SetRowState extends State<_SetRow> {
                       decoration: BoxDecoration(
                         color: record
                             ? p.gold.withValues(alpha: 0.2)
-                            : set.warmup
+                            : set.warmup || set.kind != SetKind.normal
                             ? p.accent.withValues(alpha: 0.16)
                             : p.fill,
                         borderRadius: BorderRadius.circular(2),
@@ -1218,7 +1214,9 @@ class _SetRowState extends State<_SetRow> {
                               widget.label,
                               textAlign: TextAlign.center,
                               style: text.titleSmall?.copyWith(
-                                color: set.warmup ? p.accent : p.label,
+                                color: set.warmup || set.kind != SetKind.normal
+                                    ? p.accent
+                                    : p.label,
                                 fontFeatures: tabular,
                               ),
                             ),

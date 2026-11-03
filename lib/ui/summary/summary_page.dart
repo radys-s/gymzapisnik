@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../coach/achievements.dart';
+import '../../coach/push.dart';
 import '../../coach/summary_coach.dart';
 import '../../core/format.dart';
 import '../../domain/history.dart';
@@ -8,6 +9,8 @@ import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../coach/achievements_page.dart';
+import '../coach/push_widgets.dart';
+import '../coach/trainer_page.dart';
 import '../design/components.dart';
 import '../design/haptics.dart';
 import '../design/motion.dart';
@@ -219,6 +222,24 @@ class _SummaryPageState extends State<SummaryPage> {
                 targets: targets,
               ),
             },
+          RatingPanel(state: state, workout: workout),
+          if (_plateau(workout) case final plateau?)
+            PlateauPanel(
+              state: state,
+              plateau: plateau,
+              onAsk: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TrainerPage(
+                    state,
+                    draft: plateauQuestion(
+                      state.exercise(plateau.exerciseId).name,
+                      plateau,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (records.isNotEmpty) _RecordsPanel(state: state, records: records),
           if (state.badgesFrom(workout.id) case final badges
               when badges.isNotEmpty)
@@ -278,6 +299,18 @@ class _SummaryPageState extends State<SummaryPage> {
       better: better,
       worse: worse,
     );
+  }
+
+  /// První zaseknutý cvik z tohoto tréninku; jen u posledního provedení,
+  /// starší tréninky by radily podle dnešní historie.
+  Plateau? _plateau(Workout workout) {
+    for (final entry in workout.exercises) {
+      final history = exerciseHistory(state.workouts, entry.exerciseId);
+      if (history.isEmpty || history.last.workout.id != workout.id) continue;
+      final p = state.plateauFor(entry.exerciseId);
+      if (p != null) return p;
+    }
+    return null;
   }
 
   /// Cíle na příště pro cviky z tohoto tréninku (nejvýš tři).

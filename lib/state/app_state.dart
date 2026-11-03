@@ -9,6 +9,8 @@ import '../coach/missions.dart';
 import '../coach/plan_quiz.dart';
 import '../coach/plates.dart';
 import '../coach/progression.dart';
+import '../coach/push.dart';
+import '../coach/weeks.dart';
 import '../coach/splits.dart';
 import '../coach/start_weight.dart';
 import '../coach/achievements.dart';
@@ -620,8 +622,21 @@ class AppState extends ChangeNotifier {
 
   /// Nastaví druh série (rozcvička / pracovní).
   Future<void> setWarmup(SetEntry set, bool warmup) {
-    if (set.warmup == warmup) return Future.value();
-    set.warmup = warmup;
+    if (set.warmup == warmup && set.kind == SetKind.normal) {
+      return Future.value();
+    }
+    set
+      ..kind = SetKind.normal
+      ..warmup = warmup;
+    return saveActive();
+  }
+
+  /// Drop série nebo do selhání; pracovní série zůstává pracovní.
+  Future<void> setKind(SetEntry set, SetKind kind) {
+    if (!set.warmup && set.kind == kind) return Future.value();
+    set
+      ..warmup = false
+      ..kind = kind;
     return saveActive();
   }
 
@@ -1000,6 +1015,7 @@ class AppState extends ChangeNotifier {
             p.exerciseId,
             planAnswers?.level ?? PlanLevel.beginner,
           ),
+          proteinLow: proteinLow(proteinWeek()),
         )
       : Suggestion(
           kind: SuggestionKind.start,
@@ -1372,6 +1388,16 @@ class AppState extends ChangeNotifier {
         muscleOf: (id) => exercise(id).muscle,
       ),
       focusNames: {for (final f in dayFocuses) f.id: f.name},
+      weekFocus: weekFocus(at),
+      focusProgress: weekFocusProgress(at),
+      plateaus: [
+        for (final id in {
+          for (final w in workouts.take(10))
+            for (final e in w.exercises) e.exerciseId,
+        })
+          ?plateauFor(id),
+      ],
+      protein: proteinWeek(at),
     );
   }
 
@@ -1488,6 +1514,123 @@ class AppState extends ChangeNotifier {
               : kcal?.clamp(1000, 6000).roundToDouble(),
         }),
       );
+
+  /// Bílkoviny posledních sedmi dní (bez dneška, ten ještě není celý).
+  /// `null` bez cíle nebo s méně než třemi zapsanými dny.
+  ProteinWeek? proteinWeek([DateTime? now]) {
+    final target = profile.proteinTarget;
+    if (target == null) return null;
+    final today = dayStart(now ?? DateTime.now());
+    final key = (foods, dayKey(today), target);
+    final cached = _proteinCache;
+    if (cached != null &&
+        identical(cached.key.$1, key.$1) &&
+        cached.key.$2 == key.$2 &&
+        cached.key.$3 == key.$3) {
+      return cached.value;
+    }
+    final byDay = <String, List<FoodEntry>>{};
+    for (final f in foods) {
+      (byDay[f.day] ??= []).add(f);
+    }
+    final eaten = <double>[];
+    for (var i = 1; i <= 7; i++) {
+      final day =
+          byDay[dayKey(DateTime(today.year, today.month, today.day - i))];
+      if (day == null) continue;
+      final totals = totalsOf(day);
+      // Den se zapsanou jen kávou nic neříká: počítají se dny, kdy je
+      // zapsané aspoň nějaké jídlo navíc.
+      if (totals.kcal >= _proteinMinKcal) eaten.add(totals.protein);
+    }
+    final value = eaten.length < 3
+        ? null
+        : (
+            average: eaten.reduce((a, b) => a + b) / eaten.length,
+            target: target,
+            days: eaten.length,
+          );
+    _proteinCache = (key: key, value: value);
+    return value;
+  }
+
+  static const _proteinMinKcal = 800.0;
+  ({(List<FoodEntry>, String, double) key, ProteinWeek? value})? _proteinCache;
+
+  /// Dny tohoto týdne, kdy snědené bílkoviny dosáhly cíle.
+  int proteinDaysThisWeek([DateTime? now]) {
+    final target = profile.proteinTarget;
+    if (target == null) return 0;
+    final at = now ?? DateTime.now();
+    final monday = weekStart(at);
+    var n = 0;
+    for (var i = 0; i < 7; i++) {
+      final day = DateTime(monday.year, monday.month, monday.day + i);
+      if (day.isAfter(at)) break;
+      if (totalsOf(foodsOn(dayKey(day))).protein >= target) n++;
+    }
+    return n;
+  }
+
+  /// Týdenní cíl; po skončení týdne neplatí.
+  WeekFocus? weekFocus([DateTime? now]) {
+    final f = WeekFocus.tryParse(profile.extra[weekFocusKey]);
+    return f != null && f.activeAt(now ?? DateTime.now()) ? f : null;
+  }
+
+  Future<void> setWeekFocus(
+    FocusKind? kind, {
+    String? exerciseId,
+    DateTime? now,
+  }) => _updateProfile(
+    (p) => p.withExtra({
+      weekFocusKey: kind == null
+          ? null
+          : WeekFocus(
+              kind,
+              week: weekStart(now ?? DateTime.now()),
+              exerciseId: exerciseId,
+            ).toJson(),
+    }),
+  );
+
+  /// Stav týdenního cíle; `null` bez cíle.
+  FocusProgress? weekFocusProgress([DateTime? now]) {
+    final at = now ?? DateTime.now();
+    final f = weekFocus(at);
+    if (f == null) return null;
+    return focusProgress(
+      f,
+      workouts: workouts,
+      now: at,
+      typeOf: typeOf,
+      nameOf: (id) => exercise(id).name,
+      weekGoal: weekGoal,
+      proteinDays: proteinDaysThisWeek(at),
+    );
+  }
+
+  /// Zaseknutí u cviku; `null`, když váha roste nebo je málo historie.
+  Plateau? plateauFor(String exerciseId) => plateauOf(
+    exerciseId,
+    typeOf(exerciseId),
+    exerciseHistory(workouts, exerciseId),
+  );
+
+  /// Ohodnotí dokončený trénink; `null` hodnocení smaže.
+  Future<void> rateWorkout(Workout workout, WorkoutRating? rating) async {
+    if (!workout.finished) throw StateError('Trénink není dokončený.');
+    final edited = workout.copy();
+    if (rating == null) {
+      edited.extra.remove(ratingKey);
+    } else {
+      edited.extra[ratingKey] = rating.name;
+    }
+    // Jen hodnocení: série zůstanou přesně, jak byly uložené.
+    await _enqueue(() => store.put(Kinds.workout, edited.toJson()));
+    workouts = [for (final w in workouts) w.id == edited.id ? edited : w];
+    notifyListeners();
+  }
 
   /// Kolik bílkovin dnes zbývá do cíle; `null` bez cíle.
   double? proteinLeft([DateTime? now]) {

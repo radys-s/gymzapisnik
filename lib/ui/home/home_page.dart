@@ -11,6 +11,7 @@ import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
+import '../coach/push_widgets.dart';
 import '../coach/trainer_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -88,6 +89,8 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
             onUsePlan: usePlan,
           ),
           const SectionHeader('Tento týden'),
+          WeekFocusCard(state: state, now: now),
+          const SizedBox(height: Space.m),
           _WeekPanel(state: state, now: now),
           _RecordsBoard(state),
           if (recent.isNotEmpty) ...[

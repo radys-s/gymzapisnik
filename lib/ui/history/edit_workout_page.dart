@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/models.dart';
+import '../widgets/set_kind.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -230,11 +231,21 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
                         _EditSetRow(
                           key: ObjectKey(set),
                           set: set,
-                          label: set.warmup
-                              ? 'R'
-                              : '${entry.sets.take(i).where((s) => !s.warmup).length + 1}',
+                          label: setBadge(
+                            set,
+                            entry.sets.take(i).where((s) => !s.warmup).length +
+                                1,
+                          ),
                           onChanged: _changed,
-                          onWarmup: (v) => setState(() => set.warmup = v),
+                          onType: (v) => setState(() {
+                            set
+                              ..warmup = v == 'warmup'
+                              ..kind =
+                                  SetKind.values
+                                      .where((k) => k.name == v)
+                                      .firstOrNull ??
+                                  SetKind.normal;
+                          }),
                           onRemove: () => _removeSet(entry, set),
                         ),
                       TextButton.icon(
@@ -262,14 +273,14 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
 class _EditSetRow extends StatefulWidget {
   final SetEntry set;
   final String label;
-  final ValueChanged<bool> onWarmup;
+  final ValueChanged<String> onType;
   final VoidCallback onRemove;
   final VoidCallback onChanged;
   const _EditSetRow({
     super.key,
     required this.set,
     required this.label,
-    required this.onWarmup,
+    required this.onType,
     required this.onRemove,
     required this.onChanged,
   });
@@ -286,7 +297,7 @@ class _EditSetRowState extends State<_EditSetRow> {
     text: widget.set.reps == 0 ? '' : '${widget.set.reps}',
   );
 
-  String get _name => widget.set.warmup ? 'Rozcvička' : 'Série ${widget.label}';
+  String get _name => setName(widget.set, widget.label);
 
   @override
   void dispose() {
@@ -339,7 +350,7 @@ class _EditSetRowState extends State<_EditSetRow> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
-    final warmup = widget.set.warmup;
+    final warmup = widget.set.warmup || widget.set.kind != SetKind.normal;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -352,19 +363,10 @@ class _EditSetRowState extends State<_EditSetRow> {
               padding: EdgeInsets.zero,
               onSelected: (v) => switch (v) {
                 'delete' => widget.onRemove(),
-                _ => widget.onWarmup(v == 'warmup'),
+                _ => widget.onType(v),
               },
               itemBuilder: (_) => [
-                CheckedPopupMenuItem(
-                  value: 'working',
-                  checked: !warmup,
-                  child: const Text('Pracovní série'),
-                ),
-                CheckedPopupMenuItem(
-                  value: 'warmup',
-                  checked: warmup,
-                  child: const Text('Rozcvička'),
-                ),
+                ...setTypeItems(widget.set),
                 const PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'delete',

@@ -94,6 +94,21 @@ class Exercise {
   };
 }
 
+/// Druh pracovní série. Rozcvička má vlastní příznak [SetEntry.warmup].
+enum SetKind {
+  normal('', 'Pracovní série'),
+  drop('D', 'Drop série'),
+  failure('S', 'Do selhání');
+
+  /// Písmeno na odznaku místo čísla série.
+  final String badge;
+  final String label;
+  const SetKind(this.badge, this.label);
+
+  static SetKind parse(Object? v) =>
+      values.where((k) => k.name == v).firstOrNull ?? normal;
+}
+
 class SetEntry {
   /// Kg; u cviku s vlastní váhou přidaná zátěž.
   double weight;
@@ -112,6 +127,22 @@ class SetEntry {
 
   /// Dokončená pracovní série (rozcvička se nepočítá do objemu ani PR).
   bool get counts => done && !warmup && reps > 0;
+
+  /// Drop série nebo do selhání se počítají jako pracovní.
+  SetKind get kind => warmup ? SetKind.normal : SetKind.parse(extra['kind']);
+  set kind(SetKind k) {
+    if (k == SetKind.normal) {
+      extra.remove('kind');
+    } else {
+      extra['kind'] = k.name;
+    }
+  }
+
+  /// Volitelná náročnost 1–10 (z importu nebo zadaná ručně).
+  double? get rpe {
+    final v = extra['rpe'];
+    return v is num && v >= 1 && v <= 10 ? v.toDouble() : null;
+  }
 
   SetEntry copy({bool? done}) => SetEntry(
     weight: weight,
