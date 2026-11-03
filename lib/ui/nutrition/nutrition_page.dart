@@ -50,12 +50,59 @@ String mealOf(DateTime at) {
 
 const _meals = ['Snídaně', 'Oběd', 'Svačina', 'Večeře', 'V noci'];
 
+/// Typický čas jídla, když se přidává do jiné části dne než právě teď.
+const _mealTimes = {
+  'Snídaně': (8, 0),
+  'Oběd': (12, 30),
+  'Svačina': (16, 0),
+  'Večeře': (19, 0),
+  'V noci': (1, 0),
+};
+
+const _addTo = {
+  'Snídaně': 'Přidat ke snídani',
+  'Oběd': 'Přidat k obědu',
+  'Svačina': 'Přidat ke svačině',
+  'Večeře': 'Přidat k večeři',
+  'V noci': 'Přidat k jídlu v noci',
+};
+
+/// Čas nového záznamu v části dne [meal]: dnes v ní právě jsme → teď,
+/// jinak typický čas té části dne.
+DateTime mealTime(String day, String meal, DateTime now) {
+  if (dayKey(now) == day && mealOf(now) == meal) return now;
+  final d = parseDayKey(day) ?? now;
+  final (h, m) = _mealTimes[meal] ?? (now.hour, now.minute);
+  return DateTime(d.year, d.month, d.day, h, m);
+}
+
+/// Najde jídlo podle čárového kódu a otevře formulář.
+Future<void> barcodeFlow(
+  BuildContext context,
+  AppState state,
+  String day, {
+  DateTime? at,
+}) async {
+  final outcome = await showBarcodeDialog(context, state.lookup);
+  if (!context.mounted || outcome == null) return;
+  await openFoodForm(
+    context,
+    state,
+    day: day,
+    product: outcome.product,
+    barcode: outcome.barcode,
+    at: at,
+  );
+}
+
 /// Zvolí způsob přidání (čárový kód / ručně / nedávné) a otevře formulář.
+/// [at] je čas nového jídla, když se přidává do konkrétní části dne.
 Future<void> addFoodFlow(
   BuildContext context,
   AppState state,
-  String day,
-) async {
+  String day, {
+  DateTime? at,
+}) async {
   final choice = await showModalBottomSheet<Object>(
     context: context,
     // Nad spodní lištou, ne uvnitř záložky (jinak by zůstal viset po přepnutí).
@@ -110,19 +157,11 @@ Future<void> addFoodFlow(
   if (!context.mounted || choice == null) return;
   switch (choice) {
     case 'manual':
-      await openFoodForm(context, state, day: day);
+      await openFoodForm(context, state, day: day, at: at);
     case 'barcode':
-      final outcome = await showBarcodeDialog(context, state.lookup);
-      if (!context.mounted || outcome == null) return;
-      await openFoodForm(
-        context,
-        state,
-        day: day,
-        product: outcome.product,
-        barcode: outcome.barcode,
-      );
+      await barcodeFlow(context, state, day, at: at);
     case FoodEntry recent:
-      await openFoodForm(context, state, day: day, copyOf: recent);
+      await openFoodForm(context, state, day: day, copyOf: recent, at: at);
   }
 }
 
@@ -293,6 +332,34 @@ class _NutritionPageState extends State<NutritionPage> {
           ),
           const SizedBox(height: Space.m),
           _Summary(state, totals: totals, empty: entries.isEmpty),
+          const SizedBox(height: Space.m),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _EntryTile(
+                    icon: Icons.qr_code_2,
+                    title: 'Čárový kód',
+                    subtitle: 'Najdi jídlo v databázi',
+                    onTap: () => barcodeFlow(context, state, key),
+                  ),
+                ),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: _EntryTile(
+                    icon: Icons.kitchen_outlined,
+                    title: 'Lednička',
+                    subtitle: 'Vyfoť a nech si navrhnout jídlo',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => FridgePage(state)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           if (anyMissing)
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 0),
@@ -342,48 +409,51 @@ class _NutritionPageState extends State<NutritionPage> {
             ),
           ],
           const SizedBox(height: Space.xxl),
-          GroupedSection(
-            children: [
-              GroupedRow(
-                icon: Icons.kitchen_outlined,
-                title: 'Co mám v ledničce',
-                subtitle: 'Vyfoť ledničku a nech si navrhnout jídlo',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => FridgePage(state)),
-                ),
-              ),
-            ],
-          ),
           if (entries.isEmpty)
-            const EmptyState(
-              icon: Icons.restaurant_outlined,
-              title: 'Tento den nic nezapsáno.',
-              message: 'Jídlo přidáš tlačítkem dole nebo čárovým kódem.',
-            )
-          else
-            for (final meal in _meals)
-              if (byMeal[meal] case final list?)
-                GroupedSection(
-                  header:
-                      '$meal · ${lower(totalsOf(list).kcalMissing)}'
-                      '${_n(totalsOf(list).kcal)} kcal',
-                  children: [
-                    for (final e in list)
-                      GroupedRow(
-                        title: e.name,
-                        subtitle: _subtitle(e),
-                        onTap: () =>
-                            openFoodForm(context, state, day: key, entry: e),
-                        chevron: false,
-                        trailing: IconButton(
-                          tooltip: 'Smazat záznam',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _delete(e),
-                        ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.s),
+              child: Text(
+                'Tento den nic nezapsáno.',
+                style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+              ),
+            ),
+          // Čtyři jídla dne vždy, noc jen když v ní něco je.
+          for (final meal in _meals)
+            if (meal != 'V noci' || byMeal.containsKey(meal))
+              GroupedSection(
+                header: switch (byMeal[meal]) {
+                  final list? =>
+                    '$meal · ${lower(totalsOf(list).kcalMissing)}'
+                        '${_n(totalsOf(list).kcal)} kcal',
+                  null => meal,
+                },
+                children: [
+                  for (final e in byMeal[meal] ?? const <FoodEntry>[])
+                    GroupedRow(
+                      title: e.name,
+                      subtitle: _subtitle(e),
+                      onTap: () =>
+                          openFoodForm(context, state, day: key, entry: e),
+                      chevron: false,
+                      trailing: IconButton(
+                        tooltip: 'Smazat záznam',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _delete(e),
                       ),
-                  ],
-                ),
+                    ),
+                  GroupedRow(
+                    icon: Icons.add_rounded,
+                    title: _addTo[meal]!,
+                    chevron: false,
+                    onTap: () => addFoodFlow(
+                      context,
+                      state,
+                      key,
+                      at: mealTime(key, meal, DateTime.now()),
+                    ),
+                  ),
+                ],
+              ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.l),
             child: Text(
@@ -403,6 +473,47 @@ class _NutritionPageState extends State<NutritionPage> {
     final kcal = v.kcal == null ? '– kcal' : '${_n(v.kcal!)} kcal';
     return '${amountLabel(e)} · $kcal · B ${_g(v.protein)} · '
         'S ${_g(v.carbs)} · T ${_g(v.fat)}';
+  }
+}
+
+/// Jeden ze dvou rovnocenných vstupů nahoře: čárový kód a lednička.
+class _EntryTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _EntryTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle',
+      excludeSemantics: true,
+      child: Panel(
+        onTap: onTap,
+        padding: const EdgeInsets.all(Space.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IconTile(icon, color: p.accent),
+            const SizedBox(height: Space.s),
+            Text(title, style: text.titleMedium),
+            Text(
+              subtitle,
+              style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

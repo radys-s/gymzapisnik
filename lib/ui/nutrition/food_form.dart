@@ -15,6 +15,8 @@ import '../design/tokens.dart';
 /// - [product]: produkt z Open Food Facts k potvrzení a úpravě,
 /// - [copyOf]: nový záznam podle dřívějšího,
 /// - nic z toho: ruční zápis ([barcode] se dá předvyplnit po nenalezení).
+///
+/// [at] je čas nového záznamu (jídlo dne vybrané tlačítkem „+“).
 Future<bool> openFoodForm(
   BuildContext context,
   AppState state, {
@@ -23,6 +25,7 @@ Future<bool> openFoodForm(
   OffProduct? product,
   FoodEntry? copyOf,
   String? barcode,
+  DateTime? at,
 }) async {
   final saved = await Navigator.push<bool>(
     context,
@@ -34,6 +37,7 @@ Future<bool> openFoodForm(
         product: product,
         copyOf: copyOf,
         barcode: barcode,
+        at: at,
       ),
     ),
   );
@@ -50,6 +54,7 @@ class FoodFormPage extends StatefulWidget {
   final OffProduct? product;
   final FoodEntry? copyOf;
   final String? barcode;
+  final DateTime? at;
   const FoodFormPage(
     this.state, {
     super.key,
@@ -58,6 +63,7 @@ class FoodFormPage extends StatefulWidget {
     this.product,
     this.copyOf,
     this.barcode,
+    this.at,
   });
 
   @override
@@ -198,11 +204,14 @@ class _FoodFormPageState extends State<FoodFormPage> {
       day: day,
       loggedAt:
           existing?.loggedAt ??
-          loggedAtFor(
-            day,
-            DateTime.now(),
-            timeOf: widget.copyOf?.loggedAt.toLocal(),
-          ),
+          // Den se ve formuláři dá změnit: čas jídla platí jen pro původní.
+          (widget.at != null && dayKey(widget.at!) == day
+              ? widget.at!
+              : loggedAtFor(
+                  day,
+                  DateTime.now(),
+                  timeOf: widget.at ?? widget.copyOf?.loggedAt.toLocal(),
+                )),
       name: name.text.trim(),
       brand: brand,
       barcode: barcode,

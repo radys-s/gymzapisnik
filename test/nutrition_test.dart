@@ -355,6 +355,42 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    testWidgets('plus in a meal logs into that meal on a past day', (
+      tester,
+    ) async {
+      final state = await pump(tester, day: DateTime(2026, 10, 5));
+      // Prázdný den ukazuje čtyři jídla, noc ne.
+      expect(find.text('Snídaně'), findsOneWidget);
+      expect(find.text('Večeře'), findsOneWidget);
+      expect(find.text('V noci'), findsNothing);
+      expect(find.text('Čárový kód'), findsOneWidget);
+      expect(find.text('Lednička'), findsOneWidget);
+
+      await tester.tap(find.text('Přidat k večeři'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Zadat ručně'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Název jídla'),
+        'Těstoviny',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Množství (g)'),
+        '100',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Energie (kcal) na 100 g'),
+        '350',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Uložit'));
+      await settle(tester);
+
+      final saved = state.foodsOn('2026-10-05').single;
+      expect(saved.loggedAt.toLocal(), DateTime(2026, 10, 5, 19));
+      expect(find.text('Večeře · 350 kcal'), findsOneWidget);
+    });
+
     testWidgets('manual entry shows in day overview and can be deleted', (
       tester,
     ) async {
@@ -535,6 +571,17 @@ void main() {
       loggedAtFor('2026-10-05', now, timeOf: DateTime(2026, 9, 1, 8)),
       DateTime(2026, 10, 5, 8),
     );
+  });
+
+  test('plus in a meal picks now or the typical time', () {
+    final now = DateTime(2026, 10, 5, 13);
+    expect(mealTime('2026-10-05', 'Oběd', now), now);
+    expect(mealTime('2026-10-05', 'Snídaně', now), DateTime(2026, 10, 5, 8));
+    expect(mealTime('2026-10-04', 'Oběd', now), DateTime(2026, 10, 4, 12, 30));
+    // Typický čas každé části dne do ní opravdu patří.
+    for (final meal in ['Snídaně', 'Oběd', 'Svačina', 'Večeře', 'V noci']) {
+      expect(mealOf(mealTime('2026-10-04', meal, now)), meal);
+    }
   });
 
   test('meal slot by time of day', () {
