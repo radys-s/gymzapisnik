@@ -33,10 +33,7 @@ void main() {
     t,
   ) async {
     await t.pumpWidget(
-      _app(
-        const StaggerColumn(children: [Text('A'), Text('B')]),
-        reduce: true,
-      ),
+      _app(const StaggerColumn(children: [Text('A'), Text('B')]), reduce: true),
     );
     await t.pump();
     for (final o in t.widgetList<Opacity>(find.byType(Opacity))) {

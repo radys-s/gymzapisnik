@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/ui/widgets/muscle_tile_grid.dart';
 import 'package:gymzapisnik/coach/recovery.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
@@ -187,10 +188,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final chip = tester.widget<FilterChip>(
-      find.widgetWithText(FilterChip, 'Záda'),
-    );
-    expect(chip.selected, isTrue);
+    final grid = tester.widget<MuscleTileGrid>(find.byType(MuscleTileGrid));
+    expect(grid.selected, contains('back'));
     expect(find.text('Vyber aspoň jednu partii'), findsNothing);
 
     // Úzký displej a velké písmo: nic nepřeteče, partie z obou stran

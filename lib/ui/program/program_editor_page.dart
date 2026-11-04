@@ -8,6 +8,7 @@ import '../design/components.dart';
 import '../design/tokens.dart';
 import '../workout/alternatives_page.dart';
 import '../workout/exercise_picker.dart';
+import '../widgets/muscle_tile_grid.dart';
 import 'program_widgets.dart';
 
 /// Rozpracovaný den v editoru (název v poli, cviky v seznamu).
@@ -577,85 +578,85 @@ class _AddDaySheetState extends State<_AddDaySheet> {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final day = dayFromFocuses(_picked);
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Space.xxl, 0, Space.xxl, Space.xl),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Den ${widget.number}', style: text.headlineSmall),
-            const SizedBox(height: Space.xs),
-            Text(
-              'Co ten den procvičíš? Klidně víc partií najednou.',
-              style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
-            ),
-            const SizedBox(height: Space.l),
-            Wrap(
-              spacing: Space.s,
-              runSpacing: Space.s,
-              children: [
-                for (final f in dayFocuses)
-                  FilterChip(
-                    label: Text(f.name),
-                    selected: _picked.contains(f.id),
-                    onSelected: (on) => setState(
-                      () => on ? _picked.add(f.id) : _picked.remove(f.id),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: Space.l),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              alignment: Alignment.topCenter,
-              child: day.exercises.isEmpty
-                  ? const SizedBox(width: double.infinity)
-                  : Panel(
-                      child: Semantics(
-                        container: true,
-                        liveRegion: true,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(day.name, style: text.titleMedium),
-                            const SizedBox(height: Space.xs),
-                            for (final e in day.exercises)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 2,
-                                ),
-                                child: Text(
-                                  '${widget.state.exercise(e.exerciseId).name}'
-                                  ' · ${planLabel(e)}',
-                                  style: text.bodyMedium?.copyWith(
-                                    color: p.secondaryLabel,
+    // Pevná výška: list neroste s náhledem, takže dlaždice nahoře stojí.
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.85,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(Space.xxl, 0, Space.xxl, Space.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Den ${widget.number}', style: text.headlineSmall),
+              const SizedBox(height: Space.xs),
+              Text(
+                'Co ten den procvičíš? Klidně víc partií najednou.',
+                style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+              ),
+              const SizedBox(height: Space.l),
+              MuscleTileGrid(
+                selected: _picked,
+                onToggle: (id) => setState(
+                  () => _picked.contains(id)
+                      ? _picked.remove(id)
+                      : _picked.add(id),
+                ),
+              ),
+              const SizedBox(height: Space.l),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                alignment: Alignment.topCenter,
+                child: day.exercises.isEmpty
+                    ? const SizedBox(width: double.infinity)
+                    : Panel(
+                        child: Semantics(
+                          container: true,
+                          liveRegion: true,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(day.name, style: text.titleMedium),
+                              const SizedBox(height: Space.xs),
+                              for (final e in day.exercises)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  child: Text(
+                                    '${widget.state.exercise(e.exerciseId).name}'
+                                    ' · ${planLabel(e)}',
+                                    style: text.bodyMedium?.copyWith(
+                                      color: p.secondaryLabel,
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-            ),
-            const SizedBox(height: Space.l),
-            PrimaryButton(
-              _picked.isEmpty
-                  ? 'Vyber partie'
-                  : 'Přidat den · ${day.exercises.length} '
-                        '${day.exercises.length == 1
-                            ? 'cvik'
-                            : day.exercises.length < 5
-                            ? 'cviky'
-                            : 'cviků'}',
-              onPressed: _picked.isEmpty ? null : () => popOnce(context, day),
-            ),
-            const SizedBox(height: Space.s),
-            TextButton(
-              onPressed: () =>
-                  popOnce(context, SplitDay('Den ${widget.number}', const [])),
-              child: const Text('Prázdný den, cviky vyberu sám'),
-            ),
-          ],
+              ),
+              const SizedBox(height: Space.l),
+              PrimaryButton(
+                _picked.isEmpty
+                    ? 'Vyber partie'
+                    : 'Přidat den · ${day.exercises.length} '
+                          '${day.exercises.length == 1
+                              ? 'cvik'
+                              : day.exercises.length < 5
+                              ? 'cviky'
+                              : 'cviků'}',
+                onPressed: _picked.isEmpty ? null : () => popOnce(context, day),
+              ),
+              const SizedBox(height: Space.s),
+              TextButton(
+                onPressed: () => popOnce(
+                  context,
+                  SplitDay('Den ${widget.number}', const []),
+                ),
+                child: const Text('Prázdný den, cviky vyberu sám'),
+              ),
+            ],
+          ),
         ),
       ),
     );

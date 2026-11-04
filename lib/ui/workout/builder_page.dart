@@ -7,6 +7,7 @@ import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../program/program_widgets.dart';
+import '../widgets/muscle_tile_grid.dart';
 import 'alternatives_page.dart';
 
 /// Sestavení tréninku: partie + počet cviků, náhled s možností vyměnit
@@ -100,19 +101,11 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
             style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
           ),
           const SizedBox(height: Space.l),
-          Wrap(
-            spacing: Space.s,
-            runSpacing: Space.s,
-            children: [
-              for (final f in dayFocuses)
-                FilterChip(
-                  label: Text(f.name),
-                  selected: focuses.contains(f.id),
-                  onSelected: (on) => _change(
-                    () => on ? focuses.add(f.id) : focuses.remove(f.id),
-                  ),
-                ),
-            ],
+          MuscleTileGrid(
+            selected: focuses,
+            onToggle: (id) => _change(
+              () => focuses.contains(id) ? focuses.remove(id) : focuses.add(id),
+            ),
           ),
           const SizedBox(height: Space.l),
           Panel(
