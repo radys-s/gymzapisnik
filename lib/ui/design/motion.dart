@@ -19,6 +19,12 @@ abstract final class Motion {
   /// Větší bloky, počítadla.
   static const slow = Duration(milliseconds: 700);
 
+  /// Potvrzení série: dost na to, aby bylo vidět, nikdy nebrzdí další klik.
+  static const setDone = Duration(milliseconds: 400);
+
+  /// Oslava v souhrnu (rekord, dokreslený kruh).
+  static const celebrate = Duration(milliseconds: 1100);
+
   /// Rychlý nájezd, klidné dosednutí.
   static const curve = Cubic(0.22, 1, 0.36, 1);
 
@@ -77,7 +83,8 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
       _c.value = 1;
       return;
     }
-    _delay = Timer(Motion.stagger * widget.index, _c.forward);
+    // Strop zpoždění: dlouhý seznam nesmí čekat sekundy na poslední řádek.
+    _delay = Timer(Motion.stagger * widget.index.clamp(0, 8), _c.forward);
   }
 
   @override
@@ -128,3 +135,180 @@ class CountUp extends StatelessWidget {
     ),
   );
 }
+
+/// Sloupec, jehož děti vjedou postupně za sebou (jednou, při prvním
+/// zobrazení). Mezery dělá [gap], ne okraje dětí.
+class StaggerColumn extends StatelessWidget {
+  final List<Widget> children;
+  final CrossAxisAlignment crossAxisAlignment;
+  final double gap;
+
+  /// Posun indexů, když sloupec navazuje na jiné postupné prvky.
+  final int startIndex;
+
+  const StaggerColumn({
+    super.key,
+    required this.children,
+    this.crossAxisAlignment = CrossAxisAlignment.stretch,
+    this.gap = 0,
+    this.startIndex = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: crossAxisAlignment,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      for (var i = 0; i < children.length; i++) ...[
+        if (i > 0 && gap > 0) SizedBox(height: gap),
+        Reveal(index: startIndex + i, child: children[i]),
+      ],
+    ],
+  );
+}
+
+/// Při stisku se obsah lehce zmenší (0,97) – hmatový pocit tlačítka bez
+/// vibrace. Gesta neodchytává, jen poslouchá ukazatel.
+class PressScale extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+  final double scale;
+  const PressScale({
+    super.key,
+    required this.child,
+    this.enabled = true,
+    this.scale = 0.97,
+  });
+
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (_down != v && mounted) setState(() => _down = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled || !Motion.on(context)) return widget.child;
+    return Listener(
+      onPointerDown: (_) => _set(true),
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _down ? widget.scale : 1,
+        duration: _down ? Motion.instant : Motion.quick,
+        curve: Motion.curve,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Krátké „poskočení“ (1 → 1,06 → 1), když se [selected] zapne.
+/// Velikost v layoutu se nemění, jen kreslení.
+class PopSelect extends StatefulWidget {
+  final bool selected;
+  final Widget child;
+  const PopSelect({super.key, required this.selected, required this.child});
+
+  @override
+  State<PopSelect> createState() => _PopSelectState();
+}
+
+class _PopSelectState extends State<PopSelect>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: Motion.quick,
+  );
+  late final Animation<double> _s = TweenSequence([
+    TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.06), weight: 40),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.06,
+        end: 1.0,
+      ).chain(CurveTween(curve: Motion.curve)),
+      weight: 60,
+    ),
+  ]).animate(_c);
+
+  @override
+  void didUpdateWidget(PopSelect old) {
+    super.didUpdateWidget(old);
+    if (widget.selected && !old.selected && Motion.on(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      ScaleTransition(scale: _s, child: widget.child);
+}
+
+/// IndexedStack, jehož nově zvolené dítě se prolne (a lehce vyjede).
+/// Stav záložek zůstává jako u IndexedStack.
+class FadeIndexedStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+  const FadeIndexedStack({
+    super.key,
+    required this.index,
+    required this.children,
+  });
+
+  @override
+  State<FadeIndexedStack> createState() => _FadeIndexedStackState();
+}
+
+class _FadeIndexedStackState extends State<FadeIndexedStack>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: Motion.quick,
+    value: 1,
+  );
+  late final Animation<double> _t = CurvedAnimation(
+    parent: _c,
+    curve: Motion.curve,
+  );
+
+  @override
+  void didUpdateWidget(FadeIndexedStack old) {
+    super.didUpdateWidget(old);
+    if (widget.index != old.index && Motion.on(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _t,
+    builder: (_, child) => Opacity(
+      opacity: 0.2 + 0.8 * _t.value,
+      child: Transform.translate(
+        offset: Offset(0, (1 - _t.value) * 8),
+        child: child,
+      ),
+    ),
+    child: IndexedStack(index: widget.index, children: widget.children),
+  );
+}
+
+/// Značky pro sdílené přechody (Hero) – jedna funkce, ať se nerozejdou.
+String heroTag(String kind, Object id) => 'hero:$kind:$id';

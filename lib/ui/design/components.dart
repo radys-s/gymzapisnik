@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart' show CupertinoDialogAction;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme.dart';
 import 'motion.dart';
@@ -381,57 +380,56 @@ class PrimaryButton extends StatelessWidget {
       container: true,
       button: true,
       enabled: enabled,
-      child: Material(
-        type: MaterialType.transparency,
-        child: Ink(
-          height: 52,
-          decoration: ShapeDecoration(
-            color: enabled ? p.cta : p.fill,
-            shape: shape,
-          ),
-          child: InkWell(
-            customBorder: shape,
-            onTap: enabled
-                ? () {
-                    HapticFeedback.lightImpact();
-                    onPressed!();
-                  }
-                : null,
-            child: Center(
-              child: busy
-                  ? SizedBox.square(
-                      dimension: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: p.secondaryLabel,
-                      ),
-                    )
-                  // Popisek vlevo úzkým písmem, šipka vpravo.
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              label,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: fg,
-                                fontFamily: condensedFont,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 17,
-                                letterSpacing: 0.8,
+      child: PressScale(
+        enabled: enabled,
+        child: Material(
+          type: MaterialType.transparency,
+          child: Ink(
+            height: 52,
+            decoration: ShapeDecoration(
+              color: enabled ? p.cta : p.fill,
+              shape: shape,
+            ),
+            child: InkWell(
+              customBorder: shape,
+              // Bez vibrace: haptika jen u důležitých momentů (pauza, rekord).
+              onTap: enabled ? onPressed : null,
+              child: Center(
+                child: busy
+                    ? SizedBox.square(
+                        dimension: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: p.secondaryLabel,
+                        ),
+                      )
+                    // Popisek vlevo úzkým písmem, šipka vpravo.
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                label,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: fg,
+                                  fontFamily: condensedFont,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 17,
+                                  letterSpacing: 0.8,
+                                ),
                               ),
                             ),
-                          ),
-                          Icon(
-                            icon ?? Icons.arrow_forward,
-                            color: fg,
-                            size: 20,
-                          ),
-                        ],
+                            Icon(
+                              icon ?? Icons.arrow_forward,
+                              color: fg,
+                              size: 20,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+              ),
             ),
           ),
         ),
@@ -462,14 +460,21 @@ class SecondaryButton extends StatelessWidget {
       foregroundColor: destructive ? p.negative : p.accent,
       minimumSize: const Size.fromHeight(52),
     );
-    return icon == null
-        ? OutlinedButton(onPressed: onPressed, style: style, child: Text(label))
-        : OutlinedButton.icon(
-            onPressed: onPressed,
-            style: style,
-            icon: Icon(icon, size: 20),
-            label: Text(label),
-          );
+    return PressScale(
+      enabled: onPressed != null,
+      child: icon == null
+          ? OutlinedButton(
+              onPressed: onPressed,
+              style: style,
+              child: Text(label),
+            )
+          : OutlinedButton.icon(
+              onPressed: onPressed,
+              style: style,
+              icon: Icon(icon, size: 20),
+              label: Text(label),
+            ),
+    );
   }
 }
 
@@ -815,11 +820,15 @@ class Panel extends StatelessWidget {
       onTap: onTap,
       child: Padding(padding: padding, child: child),
     );
-    return Material(
-      color: p.grouped,
-      shape: p.cardShape(),
-      clipBehavior: Clip.antiAlias,
-      child: content,
+    return PressScale(
+      enabled: onTap != null,
+      scale: 0.985,
+      child: Material(
+        color: p.grouped,
+        shape: p.cardShape(),
+        clipBehavior: Clip.antiAlias,
+        child: content,
+      ),
     );
   }
 }
@@ -848,12 +857,15 @@ class ProgressRing extends StatelessWidget {
     final p = context.palette;
     return SizedBox.square(
       dimension: size,
+      // Při prvním zobrazení se oblouk dokreslí od nuly, pak plynule
+      // navazuje na každou změnu.
       child: TweenAnimationBuilder<double>(
-        tween: Tween(end: value.clamp(0, 1).toDouble()),
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 600),
-        curve: Curves.easeOutCubic,
+        tween: Tween(
+          begin: Motion.on(context) ? 0 : value.clamp(0, 1).toDouble(),
+          end: value.clamp(0, 1).toDouble(),
+        ),
+        duration: Motion.of(context, Motion.slow),
+        curve: Motion.curve,
         builder: (context, v, _) => CustomPaint(
           painter: _RingPainter(v, stroke, p.fill, colors ?? p.gradient),
           child: Center(child: child),

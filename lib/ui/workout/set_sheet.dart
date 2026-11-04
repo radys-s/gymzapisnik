@@ -113,7 +113,6 @@ class _SetSheetState extends State<SetSheet> {
     final next = (cur + by).clamp(0.0, math.max(cur, maxStepKg));
     final v = double.parse(next.toStringAsFixed(2));
     weight.text = v == 0 ? '' : formatKg(v);
-    HapticFeedback.selectionClick();
     _changed();
   }
 
@@ -125,7 +124,6 @@ class _SetSheetState extends State<SetSheet> {
     }
     final next = (cur + by).clamp(0, 999);
     reps.text = next == 0 ? '' : '$next';
-    HapticFeedback.selectionClick();
     _changed();
   }
 

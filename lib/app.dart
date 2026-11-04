@@ -113,7 +113,7 @@ class _AppShellState extends State<AppShell> {
         }
       },
       child: Scaffold(
-        body: IndexedStack(
+        body: FadeIndexedStack(
           index: tab,
           children: [
             _tab(0, HomePage(widget.state)),
