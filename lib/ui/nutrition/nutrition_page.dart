@@ -333,32 +333,12 @@ class _NutritionPageState extends State<NutritionPage> {
           const SizedBox(height: Space.m),
           _Summary(state, totals: totals, empty: entries.isEmpty),
           const SizedBox(height: Space.m),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _EntryTile(
-                    icon: Icons.qr_code_2,
-                    title: 'Čárový kód',
-                    subtitle: 'Najdi jídlo v databázi',
-                    onTap: () => barcodeFlow(context, state, key),
-                  ),
-                ),
-                const SizedBox(width: Space.m),
-                Expanded(
-                  child: _EntryTile(
-                    icon: Icons.kitchen_outlined,
-                    title: 'Lednička',
-                    subtitle: 'Vyfoť a nech si navrhnout jídlo',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => FridgePage(state)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          // Zápis jídla nahoře, nápady (AI lednička) až pod jídly dne.
+          _EntryTile(
+            icon: Icons.qr_code_2,
+            title: 'Čárový kód',
+            subtitle: 'Najdi jídlo v databázi',
+            onTap: () => barcodeFlow(context, state, key),
           ),
           if (anyMissing)
             Padding(
@@ -454,6 +434,20 @@ class _NutritionPageState extends State<NutritionPage> {
                   ),
                 ],
               ),
+          GroupedSection(
+            header: 'Nápady',
+            children: [
+              GroupedRow(
+                icon: Icons.kitchen_outlined,
+                title: 'Lednička',
+                subtitle: 'Vyfoť ji a nech si navrhnout jídlo',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FridgePage(state)),
+                ),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.l),
             child: Text(
@@ -476,7 +470,7 @@ class _NutritionPageState extends State<NutritionPage> {
   }
 }
 
-/// Jeden ze dvou rovnocenných vstupů nahoře: čárový kód a lednička.
+/// Vstup nahoře: čárový kód.
 class _EntryTile extends StatelessWidget {
   final IconData icon;
   final String title;

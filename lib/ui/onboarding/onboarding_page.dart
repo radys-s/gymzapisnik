@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../coach/plan_quiz.dart';
+import '../../core/diagnostics.dart';
 import '../../core/format.dart';
 import '../../coach/reminders.dart';
 import '../../domain/bodyweight.dart';
@@ -175,7 +176,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final draft = to.index > _S.value.index && to.index <= _S.path.index
         ? plan
         : null;
-    unawaited(state.setOnboardingStep(index, draft: draft).catchError((_) {}));
+    unawaited(
+      state
+          .setOnboardingStep(index, draft: draft)
+          .catchError(
+            (Object e, StackTrace s) =>
+                Diagnostics.record(e, stack: s, where: 'krok úvodu'),
+          ),
+    );
   }
 
   /// Další krok po [from] v tomto běhu.

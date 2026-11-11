@@ -19,6 +19,7 @@ import '../program/program_page.dart';
 import '../program/program_widgets.dart';
 import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
+import 'diagnostics_page.dart';
 import 'file_io.dart';
 import 'legal_page.dart';
 import 'wipe_dialog.dart';
@@ -369,29 +370,30 @@ class SettingsPage extends StatelessWidget {
               ],
             ],
           ),
-          GroupedSection(
-            header: 'Gym zápisník Pro',
-            dividerIndent: _indent,
-            children: [
-              GroupedRow(
-                icon: Icons.workspace_premium_outlined,
-                iconColor: _purple,
-                title: 'Co obsahuje Pro',
-                subtitle: state.paywall
-                    ? null
-                    : 'Zatím odemčeno zdarma pro testery',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => PremiumPage(state)),
+          // Bez paywallu je všechno odemčené: nabídka Pro by jen mátla.
+          if (state.paywall)
+            GroupedSection(
+              header: 'Gym zápisník Pro',
+              dividerIndent: _indent,
+              children: [
+                GroupedRow(
+                  icon: Icons.workspace_premium_outlined,
+                  iconColor: _purple,
+                  title: 'Co obsahuje Pro',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => PremiumPage(state)),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           GroupedSection(
             header: 'Data',
-            footer:
-                'Data jsou jen v tomto zařízení. Zálohu si ulož do souboru '
-                'aspoň jednou za pár týdnů.',
+            footer: [
+              'Data jsou jen v tomto zařízení. Zálohu si ulož do souboru '
+                  'aspoň jednou za pár týdnů.',
+              ?storageStatusLine(),
+            ].join(' '),
             dividerIndent: _indent,
             children: [
               GroupedRow(
@@ -472,6 +474,16 @@ class SettingsPage extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const LegalPage()),
+                ),
+              ),
+              GroupedRow(
+                icon: Icons.bug_report_outlined,
+                iconColor: _grey,
+                title: 'Diagnostika',
+                subtitle: 'Chyby od spuštění a stav úložiště',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DiagnosticsPage()),
                 ),
               ),
             ],

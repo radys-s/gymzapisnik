@@ -8,7 +8,12 @@ extension ActiveWorkoutOps on AppState {
     final next = previous == null
         ? Future<T>.sync(write)
         : previous.then((_) => write());
-    final chain = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    // Volající chybu ukáže uživateli; sem patří jen záznam do Diagnostiky.
+    final chain = next.then<void>(
+      (_) {},
+      onError: (Object e, StackTrace s) =>
+          Diagnostics.record(e, stack: s, where: 'zápis'),
+    );
     _writes = chain;
     // Doběhlá fronta se zahodí: další zápis pak nezávisí na zóně staré future.
     chain.whenComplete(() {

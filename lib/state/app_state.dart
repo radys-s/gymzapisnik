@@ -19,6 +19,7 @@ import '../coach/local_coach.dart';
 import '../coach/recovery.dart';
 import '../coach/streak.dart';
 import '../coach/tips.dart';
+import '../core/diagnostics.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
@@ -172,7 +173,10 @@ class AppState extends ChangeNotifier {
       try {
         result.add(parse(row));
       } catch (e) {
-        debugPrint('Přeskočen poškozený záznam ${row['id']}: $e');
+        Diagnostics.record(
+          'Přeskočen poškozený záznam ${row['id']}: $e',
+          where: 'načtení',
+        );
       }
     }
     return result;
