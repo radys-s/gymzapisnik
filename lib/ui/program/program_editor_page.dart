@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../../coach/plan_quiz.dart';
+import '../../coach/routine_audit.dart';
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -10,6 +11,7 @@ import '../design/tokens.dart';
 import '../workout/alternatives_page.dart';
 import '../workout/exercise_picker.dart';
 import '../widgets/muscle_tile_grid.dart';
+import 'audit_panel.dart';
 import 'program_widgets.dart';
 
 /// Rozpracovaný den v editoru (název v poli, cviky v seznamu).
@@ -241,6 +243,22 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
     }
   }
 
+  /// Vloží navržený cvik z kontroly do dne, kam patří.
+  void _addSuggested(AuditFinding f) {
+    final id = f.exerciseId;
+    if (id == null || _days.isEmpty) return;
+    final day = _days[f.dayIndex.clamp(0, _days.length - 1)];
+    if (day.exercises.length >= maxDayExercises) {
+      showToast(context, 'Den může mít nejvýš $maxDayExercises cviků.');
+      return;
+    }
+    setState(() => day.exercises = [...day.exercises, PlannedExercise(id)]);
+    showToast(
+      context,
+      '${state.exercise(id).name} přidán do dne ${day.name.text.trim()}.',
+    );
+  }
+
   Future<void> _save() async {
     if (_busy) return;
     final draft = _draft();
@@ -287,6 +305,12 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final exercises = _days.fold(0, (n, d) => n + d.exercises.length);
+    final answers = state.planAnswers;
+    final findings = exercises == 0
+        ? const <AuditFinding>[]
+        : auditRoutine([
+            for (final d in _days) d.toDay(),
+          ], allowed: answers?.allows);
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: (didPop, _) {
@@ -326,6 +350,8 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
               ),
             ),
           ),
+          if (exercises > 0)
+            AuditPanel(state: state, findings: findings, onAdd: _addSuggested),
           SectionHeader(
             _days.isEmpty
                 ? 'Dny'
