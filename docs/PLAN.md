@@ -27,7 +27,7 @@ Legend: **P0** blocks daily use, **P1** clearly felt by the user, **P2** quality
 | 3 | Split `AppState`, typed profile keys | A3, A4 | done (8f0df71, 85c8313): extensions in `lib/state/app_state/` |
 | 4 | One plan-question flow, split giant files | A5, A6 | done (A5 `PlanSetupPage` b355844, A6 split 7470aa2) |
 | 5 | Laboratoř, premium off, storage safety, error reporting | S1–S3, D1, D2 | D1 persist + storage line, S2 Pro hidden without paywall, S3 fridge moved below meals, error log (Diagnostika) done; S1 waits on Tomáš, D2 in step 6 |
-| 6 | Logging feel, summary sequence, Home rebuild | U1–U9 | todo |
+| 6 | Logging feel, summary sequence, Home rebuild | U1–U9 | U1 drawn check, U2 quiet PRs, U3 staged summary, U4/U5 Home order + food block, F5 coverage card, D2 backup reminder done; U6–U9 todo |
 | 7 | Release beta.12 (web + IPA) | R1–R4 | todo |
 | later | Backlog below | everything else | — |
 
@@ -58,7 +58,7 @@ Legend: **P0** blocks daily use, **P1** clearly felt by the user, **P2** quality
 | F2 | P0 | Moje posilovna: 4 gym types, untick missing machines, photo of a machine | written, tests pending |
 | F3 | P0 | Routine audit logic (`routine_audit.dart`): missing head, missing focus, low/high volume, suggestion | written, tests pending |
 | F4 | P0 | Audit panel live in the program editor with "Přidat" | todo |
-| F5 | P1 | Weekly muscle coverage card on Home from the same audit | todo (step 6) |
+| F5 | P1 | Weekly muscle coverage card on Home from the same audit | done (step 6) |
 | F6 | P1 | Generator draws from all available exercises, not fixed pools of ~5 | partly (respects `unavailable`); widen pools |
 
 ## 5. UX and feel

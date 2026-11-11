@@ -2,6 +2,13 @@ part of '../app_state.dart';
 
 /// AI kouč: spíž, cíle, kontext pro návrhy.
 extension CoachOps on AppState {
+  /// [weekCoverage] dne [now], spočtené jednou do další změny historie.
+  Map<String, double> coverageOn(DateTime now) => memo(
+    'coverage:${now.year}-${now.month}-${now.day}',
+    _historyDeps,
+    () => weekCoverage(workouts, now),
+  );
+
   /// Změna profilu počítaná až ve frontě z posledního uloženého stavu:
   /// dvě rychlé změny (barva, souhlas) se navzájem nepřepíšou.
   Future<void> _updateProfile(Profile Function(Profile current) change) =>

@@ -104,7 +104,14 @@ abstract final class Diagnostics {
     _notifyQueued = true;
     scheduleMicrotask(() {
       _notifyQueued = false;
-      changes.value++;
+      // Chyba posluchače by přes globální obsluhu volala záznam znovu.
+      _recording = true;
+      try {
+        changes.value++;
+      } catch (_) {
+      } finally {
+        _recording = false;
+      }
     });
   }
 

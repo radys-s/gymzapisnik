@@ -104,6 +104,16 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
     );
   }
 
+  @override
+  void didUpdateWidget(Reveal old) {
+    super.didUpdateWidget(old);
+    if (identical(old.skip, widget.skip)) return;
+    old.skip?.removeListener(_onSkip);
+    if (_c.isCompleted) return;
+    widget.skip?.addListener(_onSkip);
+    _onSkip();
+  }
+
   void _onSkip() {
     if (!(widget.skip?.value ?? false)) return;
     _delay?.cancel();

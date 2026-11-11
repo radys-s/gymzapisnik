@@ -323,11 +323,13 @@ class _SummaryPageState extends State<SummaryPage> {
           ),
       ],
     );
-    if (!finished) return page;
     // Dotek nebo posun přeskočí postupné odhalení (nic se nezablokuje).
+    // Listener vždy, ať se strom při změně režimu nepřestaví.
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _skip.value = true,
+      onPointerDown: (_) {
+        if (finished) _skip.value = true;
+      },
       child: page,
     );
   }

@@ -247,3 +247,31 @@ List<AuditFinding> auditRoutine(
   out.sort((a, b) => rank(a.kind).compareTo(rank(b.kind)));
   return out;
 }
+
+/// Odcvičené série na partii od pondělí do [now] (hlavní cvik 1, vedlejší
+/// 0,5, jako [auditRoutine]). Pro kartu pokrytí partií na Domů.
+Map<String, double> weekCoverage(Iterable<Workout> workouts, DateTime now) {
+  final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+  final out = <String, double>{};
+  for (final w in workouts) {
+    if (!w.finished || w.date.isBefore(monday) || w.date.isAfter(now)) {
+      continue;
+    }
+    for (final e in w.exercises) {
+      final a = anatomyOf(e.exerciseId);
+      final sets = e.countedSets.length;
+      if (a == null || sets == 0) continue;
+      final focuses = <String, double>{};
+      for (final h in a.primary) {
+        if (_focusOfHead[h] case final f?) focuses[f] = 1;
+      }
+      for (final h in a.secondary) {
+        if (_focusOfHead[h] case final f?) focuses.putIfAbsent(f, () => 0.5);
+      }
+      for (final MapEntry(key: f, value: wgt) in focuses.entries) {
+        out[f] = (out[f] ?? 0) + sets * wgt;
+      }
+    }
+  }
+  return out;
+}

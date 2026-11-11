@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../ai/ai_config.dart';
 import '../ai/fridge_coach.dart';
 import '../ai/trainer.dart';
+import '../coach/routine_audit.dart' show weekCoverage;
 import '../coach/missions.dart';
 import '../coach/plan_quiz.dart';
 import '../coach/plates.dart';

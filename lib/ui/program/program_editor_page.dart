@@ -6,6 +6,7 @@ import '../../coach/plan_quiz.dart';
 import '../../coach/routine_audit.dart';
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
+import '../design/motion.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../workout/alternatives_page.dart';
@@ -636,7 +637,7 @@ class _AddDaySheetState extends State<_AddDaySheet> {
               ),
               const SizedBox(height: Space.l),
               AnimatedSize(
-                duration: const Duration(milliseconds: 180),
+                duration: Motion.of(context, Motion.instant),
                 alignment: Alignment.topCenter,
                 child: day.exercises.isEmpty
                     ? const SizedBox(width: double.infinity)

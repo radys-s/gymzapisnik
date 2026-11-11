@@ -240,38 +240,8 @@ class _NutritionPageState extends State<NutritionPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// Stejné jídlo ve stejném množství jedním klepnutím, s možností vrátit.
-  Future<void> _quickAdd(FoodEntry f, String key) async {
-    final messenger = ScaffoldMessenger.of(context);
-    // Jiný den: stejná část dne jako původní jídlo.
-    final at = loggedAtFor(key, DateTime.now(), timeOf: f.loggedAt.toLocal());
-    final entry = FoodEntry(
-      id: newId(),
-      day: key,
-      loggedAt: at,
-      name: f.name,
-      brand: f.brand,
-      barcode: f.barcode,
-      basis: f.basis,
-      unit: f.unit,
-      amount: f.amount,
-      values: f.values,
-    );
-    final error = await state.saveFood(entry);
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(error ?? 'Přidáno: ${f.name}, ${amountLabel(f)}'),
-          action: error != null
-              ? null
-              : SnackBarAction(
-                  label: 'Vrátit',
-                  onPressed: () => state.removeFood(entry.id),
-                ),
-        ),
-      );
-  }
+  Future<void> _quickAdd(FoodEntry f, String key) =>
+      quickAddFood(context, state, f, key);
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -873,4 +843,43 @@ class _FavoriteButton extends StatelessWidget {
       },
     );
   }
+}
+
+/// Stejné jídlo ve stejném množství jedním klepnutím, s možností vrátit.
+/// Sdílí Strava i blok jídla na Domů.
+Future<void> quickAddFood(
+  BuildContext context,
+  AppState state,
+  FoodEntry f,
+  String key,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  // Jiný den: stejná část dne jako původní jídlo.
+  final at = loggedAtFor(key, DateTime.now(), timeOf: f.loggedAt.toLocal());
+  final entry = FoodEntry(
+    id: newId(),
+    day: key,
+    loggedAt: at,
+    name: f.name,
+    brand: f.brand,
+    barcode: f.barcode,
+    basis: f.basis,
+    unit: f.unit,
+    amount: f.amount,
+    values: f.values,
+  );
+  final error = await state.saveFood(entry);
+  messenger
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Přidáno: ${f.name}, ${amountLabel(f)}'),
+        action: error != null
+            ? null
+            : SnackBarAction(
+                label: 'Vrátit',
+                onPressed: () => state.removeFood(entry.id),
+              ),
+      ),
+    );
 }
