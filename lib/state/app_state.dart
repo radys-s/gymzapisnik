@@ -764,6 +764,53 @@ class AppState extends ChangeNotifier {
     return r;
   }
 
+  /// Moje posilovna: typ a stroje, které chybí nebo navíc jsou. Program
+  /// ani počet tréninků nemění, jen cviky v hotovém plánu se přizpůsobí.
+  Future<void> setGym({
+    TrainingPlace? place,
+    Set<String>? missing,
+    Set<String>? present,
+  }) async {
+    final base = planAnswers ?? const PlanAnswers();
+    final next = base.copyWith(
+      place: place,
+      missing: missing,
+      present: present,
+    );
+    await _updateProfile((p) => p.withExtra({'plan': next.toJson()}));
+  }
+
+  /// Jestli cvik v téhle posilovně jde (bez dotazníku vše).
+  bool gymHas(String exerciseId) =>
+      !(planAnswers?.unavailable.contains(exerciseId) ?? false);
+
+  /// Přepne, jestli posilovna stroj na cvik [id] má.
+  Future<void> toggleGymExercise(String id) async {
+    final a = planAnswers ?? const PlanAnswers();
+    final missing = {...a.missing};
+    final present = {...a.present};
+    final has = !a.unavailable.contains(id);
+    if (a.place.presetMissing.contains(id)) {
+      has ? present.remove(id) : present.add(id);
+      missing.remove(id);
+    } else {
+      has ? missing.add(id) : missing.remove(id);
+    }
+    await setGym(missing: missing, present: present);
+  }
+
+  /// Stroje z fotky: cviky, které posilovna určitě má.
+  Future<void> markGymHas(Iterable<String> ids) async {
+    final a = planAnswers ?? const PlanAnswers();
+    final missing = {...a.missing}..removeAll(ids);
+    final present = {
+      ...a.present,
+      for (final id in ids)
+        if (a.place.presetMissing.contains(id)) id,
+    };
+    await setGym(missing: missing, present: present);
+  }
+
   Profile? _programsOf;
   List<SplitTemplate> _programs = const [];
 

@@ -1,3 +1,6 @@
+import '../../coach/plan_quiz.dart' show TrainingPlace;
+import 'my_gym_page.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../core/parse.dart';
@@ -242,6 +245,16 @@ class SettingsPage extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => ProgramPage(state)),
+                ),
+              ),
+              GroupedRow(
+                icon: Icons.fitness_center_rounded,
+                iconColor: _indigo,
+                title: 'Moje posilovna',
+                value: (state.planAnswers?.place ?? TrainingPlace.gym).label,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => MyGymPage(state)),
                 ),
               ),
             ],

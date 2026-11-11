@@ -39,6 +39,8 @@ enum PlanLevel {
 /// Nabízené délky tréninku v minutách.
 const planMinutes = [30, 45, 60, 90];
 
+final _builtInIds = [for (final e in builtInExercises) e.id];
+
 class PlanAnswers {
   final PlanGoal goal;
 
@@ -58,6 +60,12 @@ class PlanAnswers {
 
   /// Cviky, které si chce v plánu nechat (`favoriteChoices`).
   final Set<String> favorites;
+
+  /// Stroje, které v posilovně chybí (odškrtnuté v Moje posilovna).
+  final Set<String> missing;
+
+  /// Stroje, které posilovna má navzdory typu (zaškrtnuté zpátky).
+  final Set<String> present;
   final Sex? sex;
   final int? heightCm;
   final int? birthYear;
@@ -72,11 +80,24 @@ class PlanAnswers {
     this.focus = const {},
     this.avoid = const {},
     this.favorites = const {},
+    this.missing = const {},
+    this.present = const {},
     this.sex,
     this.heightCm,
     this.birthYear,
     this.weightGoal,
   });
+
+  /// Cviky, které v posilovně nejdou: chybějící stroje podle typu
+  /// a uživatelových úprav.
+  Set<String> get unavailable => {
+    ...place.presetMissing.difference(present),
+    ...missing,
+  };
+
+  /// Cvik jde v téhle posilovně a nebolí.
+  bool allows(Exercise e) =>
+      exerciseAllowed(e, place, avoid, unavailable: unavailable);
 
   /// Do roka cvičení začátečník, pak pokročilý.
   PlanLevel get level =>
@@ -91,6 +112,8 @@ class PlanAnswers {
     Set<String>? focus,
     Set<Joint>? avoid,
     Set<String>? favorites,
+    Set<String>? missing,
+    Set<String>? present,
   }) => PlanAnswers(
     goal: goal ?? this.goal,
     days: days ?? this.days,
@@ -100,6 +123,8 @@ class PlanAnswers {
     focus: focus ?? this.focus,
     avoid: avoid ?? this.avoid,
     favorites: favorites ?? this.favorites,
+    missing: missing ?? this.missing,
+    present: present ?? this.present,
     sex: sex,
     heightCm: heightCm,
     birthYear: birthYear,
@@ -121,6 +146,8 @@ class PlanAnswers {
     focus: focus,
     avoid: avoid,
     favorites: favorites,
+    missing: missing,
+    present: present,
     sex: sex,
     heightCm: heightCm,
     birthYear: birthYear,
@@ -141,6 +168,8 @@ class PlanAnswers {
     if (focus.isNotEmpty) 'focus': focus.toList(),
     if (avoid.isNotEmpty) 'avoid': [for (final j in avoid) j.name],
     if (favorites.isNotEmpty) 'favorites': favorites.toList(),
+    if (missing.isNotEmpty) 'missing': missing.toList(),
+    if (present.isNotEmpty) 'present': present.toList(),
     'sex': ?sex?.name,
     'heightCm': ?heightCm,
     'birthYear': ?birthYear,
@@ -176,6 +205,8 @@ class PlanAnswers {
       focus: ids(json['focus'], focusChoices),
       avoid: Joint.parseAll(json['avoid']),
       favorites: ids(json['favorites'], favoriteChoices),
+      missing: ids(json['missing'], _builtInIds),
+      present: ids(json['present'], _builtInIds),
       sex: Sex.tryParse(json['sex']),
       heightCm: whole(json['heightCm'], 120, 230),
       birthYear: whole(json['birthYear'], year - 100, year - 10),
@@ -313,14 +344,14 @@ SplitDay personalizeDay(SplitDay day, PlanAnswers a) {
           e != null &&
           fav != null &&
           _sameRole(e, fav) &&
-          exerciseAllowed(fav, a.place, a.avoid);
+          a.allows(fav);
     }).firstOrNull;
     if (favorite != null) {
       taken.add(favorite);
       out.add(planned.copyWith(exerciseId: favorite));
       continue;
     }
-    if (e == null || e.custom || exerciseAllowed(e, a.place, a.avoid)) {
+    if (e == null || e.custom || a.allows(e)) {
       out.add(planned);
       continue;
     }
@@ -329,6 +360,7 @@ SplitDay personalizeDay(SplitDay day, PlanAnswers a) {
       place: a.place,
       avoid: a.avoid,
       taken: taken,
+      unavailable: a.unavailable,
     );
     if (swap == null) continue;
     taken.add(swap.id);

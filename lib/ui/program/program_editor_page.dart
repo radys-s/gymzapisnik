@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../coach/plan_quiz.dart';
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -577,7 +578,12 @@ class _AddDaySheetState extends State<_AddDaySheet> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
-    final day = dayFromFocuses(_picked);
+    // Návrh dne bere jen cviky, na které má posilovna vybavení.
+    final answers = widget.state.planAnswers;
+    final raw = dayFromFocuses(_picked);
+    final day = answers == null || raw.exercises.isEmpty
+        ? raw
+        : SplitDay(raw.name, personalizeDay(raw, answers).exercises);
     // Pevná výška: list neroste s náhledem, takže dlaždice nahoře stojí.
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.85,

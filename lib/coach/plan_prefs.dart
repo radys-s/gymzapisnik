@@ -32,9 +32,10 @@ enum Experience {
 
 /// Kde cvičí: určuje, jaké vybavení plán smí použít.
 enum TrainingPlace {
-  gym('Posilovna', 'Stroje, kladky, osa i jednoručky'),
-  home('Doma', 'Jednoručky, kettlebell, gumy a lavička'),
-  bodyweight('Bez vybavení', 'Jen vlastní váha a guma');
+  gym('Velké fitko', 'Extrifit, Form Factory a podobné: všechny stroje'),
+  smallGym('Menší fitko', 'Osa, jednoručky, kladky a základní stroje'),
+  home('Doma s činkami', 'Jednoručky, kettlebell, gumy a lavička'),
+  bodyweight('Jen vlastní váha', 'Bez vybavení, nanejvýš guma');
 
   final String label;
   final String hint;
@@ -43,8 +44,15 @@ enum TrainingPlace {
   static TrainingPlace parse(Object? v) =>
       values.where((p) => p.name == v).firstOrNull ?? gym;
 
+  /// Stroje, které menší fitko obvykle nemá. Uživatel si je v Moje
+  /// posilovna může zaškrtnout zpátky.
+  Set<String> get presetMissing => switch (this) {
+    smallGym => smallGymMissing,
+    _ => const {},
+  };
+
   bool allows(Equipment e) => switch (this) {
-    gym => true,
+    gym || smallGym => true,
     home => const {
       Equipment.dumbbell,
       Equipment.kettlebell,
@@ -144,9 +152,38 @@ const focusChoices = [
 String focusName(String id) =>
     dayFocuses.where((f) => f.id == id).firstOrNull?.name ?? id;
 
-/// Cvik smí do plánu: vybavení je k dispozici a nešetřený kloub netrpí.
-bool exerciseAllowed(Exercise e, TrainingPlace place, Set<Joint> avoid) =>
-    place.allows(e.equipment) && !avoid.any((j) => j.stresses(e));
+/// Specializované stroje, které v menším fitku většinou nejsou.
+const smallGymMissing = {
+  'hack_squat',
+  'pendulum_squat',
+  'belt_squat',
+  'hip_thrust_machine',
+  'glute_kickback_machine',
+  't_bar_row',
+  'machine_high_row',
+  'machine_lateral_raise',
+  'machine_preacher_curl',
+  'triceps_dip_machine',
+  'torso_rotation_machine',
+  'seated_calf_raise',
+  'standing_leg_curl',
+  'incline_chest_press_machine',
+  'reverse_pec_deck',
+  'hip_adduction',
+  'hip_abduction',
+};
+
+/// Cvik smí do plánu: vybavení je k dispozici, stroj v posilovně je
+/// (není v [unavailable]) a nešetřený kloub netrpí.
+bool exerciseAllowed(
+  Exercise e,
+  TrainingPlace place,
+  Set<Joint> avoid, {
+  Set<String> unavailable = const {},
+}) =>
+    place.allows(e.equipment) &&
+    !unavailable.contains(e.id) &&
+    !avoid.any((j) => j.stresses(e));
 
 /// Hlavní hlava cviku; vlastní cviky žádnou nemají.
 String? primaryHead(String id) => anatomyOf(id)?.primary.firstOrNull;
@@ -158,12 +195,14 @@ Exercise? replacementFor(
   required TrainingPlace place,
   required Set<Joint> avoid,
   required Set<String> taken,
+  Set<String> unavailable = const {},
 }) {
   final head = primaryHead(exerciseId);
   if (head == null) return null;
   final focus = focusOfHead(head);
   bool ok(Exercise e) =>
-      !taken.contains(e.id) && exerciseAllowed(e, place, avoid);
+      !taken.contains(e.id) &&
+      exerciseAllowed(e, place, avoid, unavailable: unavailable);
   final pool = builtInExercises.where(ok).toList();
   return pool.where((e) => primaryHead(e.id) == head).firstOrNull ??
       pool.where((e) {
