@@ -79,17 +79,10 @@ class _SetRowState extends State<_SetRow> {
     _toggleCooldown = Timer(const Duration(milliseconds: 300), () {});
     setState(() => _saving = true);
     try {
+      // Uprostřed tréninku bez oslav a vibrací: rekord ukáže jen tichý
+      // pohár u série, oslava patří do souhrnu. Vibrace až na konci pauzy.
       final error = await widget.state.toggleDone(widget.set);
       if (error != null && mounted) widget.onError(error);
-      final records = widget.state.liveRecords(widget.set);
-      if (error == null && widget.set.done && mounted) {
-        if (records.isEmpty) {
-          Haptics.confirm();
-        } else {
-          Haptics.record();
-          _celebrate(records);
-        }
-      }
     } catch (_) {
       if (mounted) {
         widget.onError(
@@ -99,29 +92,6 @@ class _SetRowState extends State<_SetRow> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  void _celebrate(List<RecordKind> records) {
-    final p = context.palette;
-    // Bez hideCurrentSnackBar: nabídka „Vrátit“ po smazání musí zůstat.
-    // Krátké trvání, ať se série rekordů nehromadí ve frontě.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 2),
-        content: Row(
-          children: [
-            Icon(Icons.emoji_events_rounded, color: p.gold),
-            const SizedBox(width: Space.s),
-            Expanded(
-              child: Text(
-                'Nový osobní rekord: '
-                '${records.map((r) => r.label.toLowerCase()).join(', ')}',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// List s velkými čísly a − / +. Změny se ukládají hned jako psaní.
@@ -365,11 +335,9 @@ class _SetRowState extends State<_SetRow> {
                         ),
                       ),
                     ),
-                    icon: AnimatedScale(
-                      scale: set.done ? 1 : 0.8,
-                      duration: Motion.of(context, Motion.base),
-                      curve: Curves.elasticOut,
-                      child: const Icon(Icons.check_rounded),
+                    icon: _DrawnCheck(
+                      done: set.done,
+                      color: set.done ? p.onGradient : p.secondaryLabel,
                     ),
                   ),
                 ),
@@ -380,4 +348,56 @@ class _SetRowState extends State<_SetRow> {
       ),
     );
   }
+}
+
+/// Fajfka, která se po potvrzení sama dokreslí (Motion.setDone, při
+/// omezeném pohybu hned). Nepotvrzená série ukazuje tlumený obrys.
+class _DrawnCheck extends StatelessWidget {
+  final bool done;
+  final Color color;
+
+  const _DrawnCheck({required this.done, required this.color});
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(end: done ? 1 : 0),
+    duration: Motion.of(context, Motion.setDone),
+    curve: Motion.curve,
+    builder: (context, t, _) => CustomPaint(
+      size: const Size.square(24),
+      painter: _CheckPainter(progress: t, color: color),
+    ),
+  );
+}
+
+class _CheckPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  const _CheckPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width * 0.22, size.height * 0.53)
+      ..lineTo(size.width * 0.42, size.height * 0.72)
+      ..lineTo(size.width * 0.79, size.height * 0.31);
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    // Podklad: celá fajfka slabě, ať je vidět, kam klepnout.
+    canvas.drawPath(path, stroke..color = color.withValues(alpha: 0.35));
+    if (progress <= 0) return;
+    final metric = path.computeMetrics().first;
+    canvas.drawPath(
+      metric.extractPath(0, metric.length * progress),
+      stroke..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CheckPainter old) =>
+      old.progress != progress || old.color != color;
 }

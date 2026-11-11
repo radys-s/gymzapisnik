@@ -174,7 +174,8 @@ class AppState extends ChangeNotifier {
         result.add(parse(row));
       } catch (e) {
         Diagnostics.record(
-          'Přeskočen poškozený záznam ${row['id']}: $e',
+          // Jen typ chyby: zpráva parseru může nést obsah záznamu.
+          'Přeskočen poškozený záznam: ${e.runtimeType}',
           where: 'načtení',
         );
       }

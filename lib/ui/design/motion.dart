@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Jeden zdroj pravdy pro pohyb: doby, křivka a rozestupy.
@@ -31,6 +32,10 @@ abstract final class Motion {
   /// Rozestup mezi sourozenci ve skupině.
   static const stagger = Duration(milliseconds: 70);
 
+  /// Krok postupně odhalovaného souhrnu: kratší než [base], ať se bloky
+  /// překrývají a sekvence nikdy nestojí.
+  static const stage = Duration(milliseconds: 320);
+
   /// Má se animovat? Ne, když si uživatel v systému omezil animace.
   static bool on(BuildContext context) =>
       !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
@@ -51,11 +56,19 @@ class Reveal extends StatefulWidget {
   final int index;
   final double offset;
 
+  /// Rozestup místo [Motion.stagger] (postupný souhrn).
+  final Duration? step;
+
+  /// Když přepne na true, prvek se ukáže hned (přeskočení sekvence).
+  final ValueListenable<bool>? skip;
+
   const Reveal({
     super.key,
     required this.child,
     this.index = 0,
     this.offset = 16,
+    this.step,
+    this.skip,
   });
 
   @override
@@ -79,16 +92,27 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
     super.didChangeDependencies();
     if (_started) return;
     _started = true;
-    if (!Motion.on(context)) {
+    if (!Motion.on(context) || (widget.skip?.value ?? false)) {
       _c.value = 1;
       return;
     }
+    widget.skip?.addListener(_onSkip);
     // Strop zpoždění: dlouhý seznam nesmí čekat sekundy na poslední řádek.
-    _delay = Timer(Motion.stagger * widget.index.clamp(0, 8), _c.forward);
+    _delay = Timer(
+      (widget.step ?? Motion.stagger) * widget.index.clamp(0, 8),
+      _c.forward,
+    );
+  }
+
+  void _onSkip() {
+    if (!(widget.skip?.value ?? false)) return;
+    _delay?.cancel();
+    _c.value = 1;
   }
 
   @override
   void dispose() {
+    widget.skip?.removeListener(_onSkip);
     _delay?.cancel();
     _c.dispose();
     super.dispose();

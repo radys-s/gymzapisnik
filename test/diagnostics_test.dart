@@ -20,6 +20,20 @@ void main() {
     expect(report, contains('[test] chyba 24'));
   });
 
+  test('repeated error is counted, not appended, and never throws', () {
+    Diagnostics.record('stejná', where: 'kreslení');
+    Diagnostics.record('stejná', where: 'kreslení');
+    Diagnostics.record('x' * 1000, where: 'kreslení');
+    expect(Diagnostics.entries, hasLength(2));
+    expect(Diagnostics.entries.last.count, 2);
+    expect(
+      Diagnostics.entries.first.message.length,
+      Diagnostics.maxMessage + 1,
+    );
+    expect(() => Diagnostics.record(_Broken()), returnsNormally);
+    expect(Diagnostics.entries.first.message, '_Broken');
+  });
+
   testWidgets('Diagnostika lists errors and clears them', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -37,4 +51,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Žádné chyby'), findsOneWidget);
   });
+}
+
+class _Broken {
+  @override
+  String toString() => throw StateError('rozbité toString');
 }

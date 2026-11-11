@@ -10,7 +10,6 @@ import '../../core/parse.dart';
 import '../../domain/last_delta.dart';
 import '../../domain/models.dart';
 import '../../domain/set_match.dart';
-import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/haptics.dart';

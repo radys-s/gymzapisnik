@@ -51,8 +51,8 @@ class DiagnosticsPage extends StatelessWidget {
             GroupedSection(
               header: 'Chyby od spuštění (${entries.length})',
               footer:
-                  'Jen v tomto zařízení a jen do zavření aplikace. Text '
-                  'neobsahuje tréninky ani jídla.',
+                  'Jen v tomto zařízení a jen do zavření aplikace. Před '
+                  'odesláním si text projdi.',
               children: [
                 for (final e in entries)
                   Padding(
