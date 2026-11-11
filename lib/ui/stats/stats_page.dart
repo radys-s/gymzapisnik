@@ -35,7 +35,7 @@ class StatsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final at = now();
       final p = context.palette;

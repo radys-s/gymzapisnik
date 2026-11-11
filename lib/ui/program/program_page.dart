@@ -42,7 +42,7 @@ class ProgramPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final p = context.palette;
       final current = state.split;

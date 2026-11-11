@@ -36,6 +36,20 @@
       setTimeout(function () { s.remove(); }, 250);
     });
   </script>
+  <script>
+    // Tréninky jsou jen v IndexedDB: požádat prohlížeč, ať je při nedostatku
+    // místa nebo po nečinnosti nemaže. Výsledek si přečte Nastavení.
+    window.appStoragePersisted = null;
+    window.addEventListener('load', function () {
+      var s = navigator.storage;
+      if (!s || !s.persisted || !s.persist) return;
+      s.persisted().then(function (already) {
+        return already ? true : s.persist();
+      }).then(function (granted) {
+        window.appStoragePersisted = !!granted;
+      }).catch(function () {});
+    });
+  </script>
   <script src="app_bootstrap.js"></script>
   <script>
     (function () {

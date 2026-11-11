@@ -27,7 +27,7 @@ class GymApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.consent,
     builder: (context, _) => appFrame(
       home: state.profile.hasValidConsent
           ? AppShell(state)

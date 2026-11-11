@@ -24,13 +24,13 @@ class ExerciseDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final exercise = state.exercise(exerciseId);
       final type = exercise.type;
-      final sessions = exerciseHistory(state.workouts, exerciseId);
-      final records = allTimeRecords(state.workouts, exerciseId, type);
-      final points = progressSeries(state.workouts, exerciseId, type);
+      final sessions = state.historyOf(exerciseId);
+      final records = state.recordsOf(exerciseId);
+      final points = state.progressOf(exerciseId);
       final p = context.palette;
       final text = Theme.of(context).textTheme;
       final last = sessions.lastOrNull;

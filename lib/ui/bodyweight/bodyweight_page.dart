@@ -85,7 +85,7 @@ class BodyweightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      ListenableBuilder(listenable: state, builder: _card);
+      ListenableBuilder(listenable: state.on.resting, builder: _card);
 
   Widget _card(BuildContext context, Widget? _) {
     final scheme = Theme.of(context).colorScheme;
@@ -129,7 +129,7 @@ class BodyweightPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final list = state.bodyweights;
       return LargeTitlePage(

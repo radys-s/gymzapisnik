@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../core/text.dart';
 import '../../domain/catalog.dart';
-import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
@@ -31,7 +30,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: widget.state,
+    listenable: widget.state.on.resting,
     builder: (context, _) {
       final state = widget.state;
       final folded = fold(query.trim());
@@ -62,7 +61,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
       }
 
       final records = folded.isEmpty
-          ? recentRecords(state.workouts, state.typeOf)
+          ? state.recentRecordList()
           : const <PersonalRecord>[];
       final withHistory = all.where((e) => trained.containsKey(e.id)).toList()
         ..sort((a, b) => trained[b.id]!.compareTo(trained[a.id]!));

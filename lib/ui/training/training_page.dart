@@ -29,7 +29,7 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.any,
     builder: (context, _) {
       final p = context.palette;
       final split = state.split;

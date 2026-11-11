@@ -31,10 +31,7 @@ Map<String, List<Exercise>> gymMachinesByMuscle(TrainingPlace place) {
     }
     (out[e.muscle] ??= []).add(e);
   }
-  return {
-    for (final m in muscleGroups)
-      m: ?out[m],
-  };
+  return {for (final m in muscleGroups) m: ?out[m]};
 }
 
 /// Moje posilovna: typ posilovny a stroje, které tam jsou. Plán pak
@@ -96,7 +93,7 @@ class _MyGymPageState extends State<MyGymPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: state,
+      listenable: state.on.resting,
       builder: (context, _) {
         final p = context.palette;
         final text = Theme.of(context).textTheme;

@@ -100,6 +100,29 @@ class AppState extends ChangeNotifier {
   /// Výživový deník, nejnovější záznam první.
   List<FoodEntry> foods = [];
 
+  /// Zvyšuje se při každé změně rozepsaného tréninku na místě (série,
+  /// pauza), protože objekt [active] zůstává stejný.
+  int _activeRev = 0;
+
+  /// Úzké odběry změn: obrazovka se překreslí, jen když se změní data,
+  /// která opravdu ukazuje. Ťuknutí na sérii tak nepřekreslí Stravu
+  /// ani Pokrok.
+  late final StateSlices on = StateSlices._(this);
+
+  /// Mezipaměť odvozených hodnot; platí, dokud se nezmění [deps].
+  /// Seznamy se při změně vždy nahrazují novými, takže stačí identita.
+  final Map<String, (Object?, Object?)> _memo = {};
+
+  /// Spočítá [compute] jen jednou pro stejné [deps] (porovnání `==`,
+  /// u seznamů tedy identita).
+  T memo<T>(String key, Object? deps, T Function() compute) {
+    final hit = _memo[key];
+    if (hit != null && hit.$1 == deps) return hit.$2 as T;
+    final value = compute();
+    _memo[key] = (deps, value);
+    return value;
+  }
+
   Future<void> load() async {
     await store.open();
     final json = await store.get(Profile.id);
@@ -228,6 +251,7 @@ class AppState extends ChangeNotifier {
     final workout = active;
     if (workout == null) return _writes ?? Future.value();
     final json = workout.toJson();
+    _activeRev++;
     notifyListeners();
     return _enqueue(() => store.put(Kinds.workout, json));
   }
@@ -323,6 +347,57 @@ class AppState extends ChangeNotifier {
       () => allTimeRecords(workouts, exerciseId, typeOf(exerciseId)),
     );
   }
+
+  // Odvozené přehledy z historie: počítají se jednou, dokud se tréninky
+  // nebo vlastní cviky nezmění (dřív při každém překreslení).
+  Object get _historyDeps => (workouts, customExercises);
+  static (int, int, int) _day(DateTime t) {
+    final l = t.toLocal();
+    return (l.year, l.month, l.day);
+  }
+
+  /// Poslední rekordy (Domů, Pokrok, Cviky).
+  List<PersonalRecord> recentRecordList() => memo(
+    'recentRecords',
+    _historyDeps,
+    () => recentRecords(workouts, typeOf),
+  );
+
+  /// Nejčastěji cvičený cvik.
+  String? mostTrained() =>
+      memo('mostTrained', workouts, () => mostTrainedExercise(workouts));
+
+  /// Křivka síly cviku.
+  List<ProgressPoint> progressOf(String exerciseId) => memo(
+    'progress:$exerciseId',
+    _historyDeps,
+    () => progressSeries(workouts, exerciseId, typeOf(exerciseId)),
+  );
+
+  /// Všechna provedení cviku, od nejstaršího.
+  List<ExerciseSession> historyOf(String exerciseId) => memo(
+    'history:$exerciseId',
+    workouts,
+    () => exerciseHistory(workouts, exerciseId),
+  );
+
+  /// Souhrn týdne, do kterého patří [now].
+  WeekSummary weekSummaryAt(DateTime now) => memo('week', (
+    _historyDeps,
+    _day(now),
+  ), () => weekSummary(workouts, now, typeOf));
+
+  /// Souhrn minulého týdne vůči [now].
+  WeekSummary previousWeekAt(DateTime now) => memo('prevWeek', (
+    _historyDeps,
+    _day(now),
+  ), () => previousWeekSummary(workouts, now, typeOf));
+
+  /// Počet rekordů v týdnu [now].
+  int weekRecordsAt(DateTime now) => memo('weekRecords', (
+    _historyDeps,
+    _day(now),
+  ), () => weekRecordCount(workouts, now, typeOf));
 
   bool _isWeighted(SetEntry set) {
     for (final e in active?.exercises ?? const <WorkoutExercise>[]) {
@@ -507,7 +582,10 @@ class AppState extends ChangeNotifier {
         ..reps = set.reps;
       changed++;
     }
-    if (changed > 0) notifyListeners();
+    if (changed > 0) {
+      _activeRev++;
+      notifyListeners();
+    }
     return changed;
   }
 
@@ -1864,4 +1942,75 @@ class AppState extends ChangeNotifier {
     // Budík pauzy má vlastní id, cancelAll ho nezruší.
     unawaited(syncRest());
   }
+}
+
+/// Odběr jen části stavu: ozve se, když se změní klíč z [_key].
+class StateSlice extends ChangeNotifier {
+  final AppState _state;
+  final Object? Function(AppState s) _key;
+  Object? _last;
+  int _listeners = 0;
+
+  StateSlice._(this._state, this._key);
+
+  void _check() {
+    final next = _key(_state);
+    if (next == _last) return;
+    _last = next;
+    notifyListeners();
+  }
+
+  @override
+  void addListener(VoidCallback listener) {
+    if (_listeners++ == 0) {
+      _last = _key(_state);
+      _state.addListener(_check);
+    }
+    super.addListener(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    super.removeListener(listener);
+    if (--_listeners == 0) _state.removeListener(_check);
+  }
+}
+
+/// Části stavu, na které obrazovky reagují.
+class StateSlices {
+  /// Rozepsaný trénink: série, pauza, začátek a konec.
+  final StateSlice active;
+
+  /// Dokončené tréninky, vlastní cviky a tělesná váha.
+  final StateSlice history;
+
+  /// Výživový deník.
+  final StateSlice food;
+
+  /// Profil: nastavení, plán, cíle.
+  final StateSlice profile;
+
+  /// Jen platnost souhlasu (rozhoduje mezi úvodem a aplikací).
+  final StateSlice consent;
+
+  StateSlices._(AppState s)
+    : active = StateSlice._(s, (s) => (s.active, s._activeRev)),
+      history = StateSlice._(
+        s,
+        (s) => (s.workouts, s.customExercises, s.bodyweights),
+      ),
+      food = StateSlice._(s, (s) => s.foods),
+      profile = StateSlice._(s, (s) => (s.profile, s._dayPick)),
+      consent = StateSlice._(s, (s) => s.profile.hasValidConsent);
+
+  /// Všechno kromě rozepsaného tréninku (obrazovky mimo trénink).
+  late final Listenable resting = Listenable.merge([history, food, profile]);
+
+  /// Všechno.
+  late final Listenable any = Listenable.merge([
+    active,
+    history,
+    food,
+    profile,
+  ]);
 }

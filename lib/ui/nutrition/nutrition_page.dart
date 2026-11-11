@@ -131,7 +131,7 @@ Future<void> addFoodFlow(
           ),
           if (state.quickFoods.isNotEmpty)
             ListenableBuilder(
-              listenable: state,
+              listenable: state.on.resting,
               builder: (sheet, _) => GroupedSection(
                 header: 'Oblíbená a nedávná',
                 footer: 'Hvězdičkou jídlo připneš do Rychle přidat.',
@@ -275,7 +275,7 @@ class _NutritionPageState extends State<NutritionPage> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final key = dayKey(day);
       final entries = state.foodsOn(key);

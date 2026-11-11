@@ -14,7 +14,7 @@ class ActiveWorkoutBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.active,
     builder: (context, _) {
       final active = state.active;
       if (active == null) return const SizedBox.shrink();

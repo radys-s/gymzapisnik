@@ -30,15 +30,15 @@ class ProgressPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final finished = state.workouts.where((w) => w.finished).toList();
       // Spočte se jednou a předá kartám (záložka je pořád v IndexedStack).
-      final top = mostTrainedExercise(state.workouts);
+      final top = state.mostTrained();
       final series = top == null
           ? const <ProgressPoint>[]
-          : progressSeries(state.workouts, top, state.typeOf(top));
-      final records = recentRecords(state.workouts, state.typeOf);
+          : state.progressOf(top);
+      final records = state.recentRecordList();
       final sets = finished.fold(
         0,
         (n, w) =>

@@ -7,7 +7,6 @@ import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
 import '../../core/format.dart';
-import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
@@ -53,7 +52,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final now = widget.now();
       final recent = state.workouts.take(3).toList();
@@ -144,7 +143,11 @@ class _TodayCard extends StatelessWidget {
     vivid: true,
     // Závod: číslo jezdce = pořadí dnešního tréninku.
     watermark: '${state.workouts.where((w) => w.finished).length + 1}',
-    child: Builder(builder: _content),
+    // Rozepsaný trénink se mění při každé sérii: překreslí se jen karta.
+    child: ListenableBuilder(
+      listenable: state.on.active,
+      builder: (context, _) => _content(context),
+    ),
   );
 
   Widget _content(BuildContext context) {
@@ -463,7 +466,7 @@ class _RecordsBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final records = recentRecords(state.workouts, state.typeOf);
+    final records = state.recentRecordList();
     if (records.isEmpty) return const SizedBox.shrink();
     final p = context.palette;
     final text = Theme.of(context).textTheme;
@@ -549,15 +552,11 @@ class _WeekPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final week = weekSummary(state.workouts, now, state.typeOf);
+    final week = state.weekSummaryAt(now);
     final goal = state.weekGoal;
     final streak = state.has(ProFeature.mission) ? state.streak(now) : null;
     final lines = state.has(ProFeature.recap) && state.workouts.isNotEmpty
-        ? recapLines(
-            week,
-            previousWeekSummary(state.workouts, now, state.typeOf),
-            weekRecordCount(state.workouts, now, state.typeOf),
-          )
+        ? recapLines(week, state.previousWeekAt(now), state.weekRecordsAt(now))
         : const <String>[];
     return Panel(
       child: Column(

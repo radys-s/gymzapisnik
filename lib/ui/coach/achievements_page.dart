@@ -46,7 +46,7 @@ class AchievementsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final p = context.palette;
       final text = Theme.of(context).textTheme;
