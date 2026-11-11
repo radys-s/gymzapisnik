@@ -1,3 +1,5 @@
+import 'profile_keys.dart';
+
 /// Aktuální verze podmínek. Zvýšení vynutí nový souhlas.
 const currentConsentVersion = 1;
 
@@ -34,7 +36,7 @@ class Profile {
       (adult || guardianConsent);
 
   /// Zvolený split (ID šablony z `coach/splits.dart`), `null` = volné tréninky.
-  String? get splitId => extra['split'] as String?;
+  String? get splitId => extra[ProfileKey.split] as String?;
 
   /// Kopie s jinými hodnotami v `extra` (`null` hodnotu klíč odstraní).
   Profile withExtra(Map<String, dynamic> changes) {
@@ -50,17 +52,17 @@ class Profile {
 
   /// Má zaplacené Pro. Platí jen při zapnutém paywallu
   /// (viz `premium/entitlements.dart`).
-  bool get isPro => extra['pro'] == true;
+  bool get isPro => extra[ProfileKey.pro] == true;
 
   /// Vlastní týdenní cíl tréninků (1–7); `null` = podle splitu.
   int? get weekGoal {
-    final v = extra['weekGoal'];
+    final v = extra[ProfileKey.weekGoal];
     return v is num ? v.toInt().clamp(1, 7) : null;
   }
 
   /// Dny tréninku (1 = pondělí, seřazené); `null` = kdykoli v týdnu.
   List<int>? get trainingDays {
-    final v = extra['trainingDays'];
+    final v = extra[ProfileKey.trainingDays];
     if (v is! List) return null;
     final days = {
       for (final d in v)
@@ -71,46 +73,49 @@ class Profile {
 
   /// Čas připomínky v minutách od půlnoci; `null` = vypnuto.
   int? get reminderMinutes {
-    final v = extra['reminder'];
+    final v = extra[ProfileKey.reminder];
     return v is num ? v.toInt().clamp(0, 1439) : null;
   }
 
   /// Uživatel prošel úvodem (ukazuje se jen jednou).
-  bool get welcomeSeen => extra['welcomeSeen'] == true;
+  bool get welcomeSeen => extra[ProfileKey.welcomeSeen] == true;
 
   /// Verze, jejíž novinky už uživatel viděl.
-  String? get seenVersion => extra['seenVersion'] as String?;
+  String? get seenVersion => extra[ProfileKey.seenVersion] as String?;
 
   /// Naposledy otevřená záložka (0 = Domů, 1 = Trénink, 2 = Strava,
   /// 3 = Profil). Starší verze ukládaly `tab` (1 = Pokrok, 2 = Strava)
   /// a ještě starší `lastTab` (1 = Strava).
   int get lastTab {
-    final t = extra['tab4'];
+    final t = extra[ProfileKey.tab];
     if (t is int && t >= 0 && t <= 3) return t;
-    return switch (extra['tab']) {
+    return switch (extra[ProfileKey.legacyTab]) {
       1 => 3,
       2 => 2,
-      _ when extra['tab'] == null && extra['lastTab'] == 1 => 2,
+      _
+          when extra[ProfileKey.legacyTab] == null &&
+              extra[ProfileKey.legacyLastTab] == 1 =>
+        2,
       _ => 0,
     };
   }
 
   /// Výchozí pauza mezi sériemi v sekundách.
   int get restSeconds {
-    final v = extra['restSeconds'];
+    final v = extra[ProfileKey.restSeconds];
     return v is num ? v.toInt().clamp(15, 600) : 120;
   }
 
   /// Vlastní pauza u cviku v sekundách; `null` = výchozí [restSeconds].
   int? restFor(String exerciseId) {
-    final map = extra['restByExercise'];
+    final map = extra[ProfileKey.restByExercise];
     final v = map is Map ? map[exerciseId] : null;
     return v is num && v.isFinite ? v.toInt().clamp(15, 600) : null;
   }
 
   /// Krok tlačítek +/− u váhy v kg.
   double get weightStep {
-    final v = extra['weightStep'];
+    final v = extra[ProfileKey.weightStep];
     return v is num && weightSteps.contains(v.toDouble()) ? v.toDouble() : 2.5;
   }
 
@@ -121,14 +126,15 @@ class Profile {
       v is num && v.isFinite && v >= min && v <= max ? v.toDouble() : null;
 
   /// Volitelný denní cíl bílkovin v gramech (nastavuje uživatel sám).
-  double? get proteinTarget => _num(extra['proteinTarget'], 20, 400);
+  double? get proteinTarget => _num(extra[ProfileKey.proteinTarget], 20, 400);
 
   /// Volitelný denní cíl energie v kcal; jen pro dospělé.
-  double? get kcalTarget =>
-      restrictWeightLoss ? null : _num(extra['kcalTarget'], 1000, 6000);
+  double? get kcalTarget => restrictWeightLoss
+      ? null
+      : _num(extra[ProfileKey.kcalTarget], 1000, 6000);
 
   /// Uživatel viděl upozornění, kam jde fotka pro AI.
-  bool get aiNoticeAccepted => extra['aiNotice'] == true;
+  bool get aiNoticeAccepted => extra[ProfileKey.aiNotice] == true;
 
   /// Nezletilý bez souhlasu zákonného zástupce souhlas udělit nemůže.
   Profile acceptConsent({

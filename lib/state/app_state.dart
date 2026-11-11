@@ -31,6 +31,7 @@ import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/nutrition.dart';
 import '../domain/profile.dart';
+import '../domain/profile_keys.dart';
 import '../domain/set_match.dart';
 import '../domain/stats.dart';
 import '../coach/nutrition_target.dart';
@@ -180,12 +181,12 @@ class AppState extends ChangeNotifier {
     );
     return next.withExtra({
       if (welcomeVersion != null) ...{
-        'welcomeSeen': true,
-        'seenVersion': welcomeVersion,
-        'onboardingStep': null,
+        ProfileKey.welcomeSeen: true,
+        ProfileKey.seenVersion: welcomeVersion,
+        ProfileKey.onboardingStep: null,
       },
       // Upozornění na AI bylo součástí souhlasu: trenér se už neptá znovu.
-      if (aiNotice) 'aiNotice': true,
+      if (aiNotice) ProfileKey.aiNotice: true,
     });
   });
 
@@ -653,13 +654,13 @@ class AppState extends ChangeNotifier {
     await syncRest();
   }
 
-  bool get restAlerts => profile.extra['restAlerts'] == true;
+  bool get restAlerts => profile.extra[ProfileKey.restAlerts] == true;
 
   Future<bool> setRestAlerts(bool enabled) async {
     if (notifier is! RestNotifier) return false;
     if (enabled && !await notifier.requestPermission()) return false;
     await _updateProfile(
-      (p) => p.withExtra({'restAlerts': enabled ? true : null}),
+      (p) => p.withExtra({ProfileKey.restAlerts: enabled ? true : null}),
     );
     await syncRest();
     return true;
@@ -819,7 +820,8 @@ class AppState extends ChangeNotifier {
   SplitTemplate? _split;
 
   /// Odpovědi z dotazníku „Tvůj plán“; `null` = ještě nevyplněný.
-  PlanAnswers? get planAnswers => PlanAnswers.tryParse(profile.extra['plan']);
+  PlanAnswers? get planAnswers =>
+      PlanAnswers.tryParse(profile.extra[ProfileKey.plan]);
 
   /// Uloží odpovědi a zapne doporučený program, počet tréninků týdně
   /// a pauzu podle cíle. Bez [answers] (doporučení bez dotazníku) zapne
@@ -830,12 +832,13 @@ class AppState extends ChangeNotifier {
       // Vybrané dny zůstanou, když jich je tolik, kolik plán chce.
       final days = p.trainingDays;
       return p.withExtra({
-        'plan': ?answers?.toJson(),
-        'planDraft': null,
-        'split': r.splitId,
-        'weekGoal': r.perWeek,
-        if (days != null && days.length != r.perWeek) 'trainingDays': null,
-        'restSeconds': r.restSeconds,
+        ProfileKey.plan: ?answers?.toJson(),
+        ProfileKey.planDraft: null,
+        ProfileKey.split: r.splitId,
+        ProfileKey.weekGoal: r.perWeek,
+        if (days != null && days.length != r.perWeek)
+          ProfileKey.trainingDays: null,
+        ProfileKey.restSeconds: r.restSeconds,
       });
     });
     unawaited(syncReminders());
@@ -855,7 +858,7 @@ class AppState extends ChangeNotifier {
       missing: missing,
       present: present,
     );
-    await _updateProfile((p) => p.withExtra({'plan': next.toJson()}));
+    await _updateProfile((p) => p.withExtra({ProfileKey.plan: next.toJson()}));
   }
 
   /// Jestli cvik v téhle posilovně jde (bez dotazníku vše).
@@ -896,7 +899,7 @@ class AppState extends ChangeNotifier {
   List<SplitTemplate> get customPrograms {
     if (!identical(_programsOf, profile)) {
       _programsOf = profile;
-      final raw = profile.extra['programs'];
+      final raw = profile.extra[ProfileKey.programs];
       _programs = [
         if (raw is List)
           for (final json in raw) ?SplitTemplate.tryCustom(json),
@@ -906,7 +909,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> setSplit(String? id) async {
-    await _updateProfile((p) => p.withExtra({'split': id}));
+    await _updateProfile((p) => p.withExtra({ProfileKey.split: id}));
     unawaited(syncReminders());
   }
 
@@ -931,7 +934,7 @@ class AppState extends ChangeNotifier {
     await _updateProfile((p) {
       // Ostatní programy zůstanou tak, jak jsou uložené (i ty, které
       // novější verze neumí přečíst), aby se uložením jednoho neztratily.
-      final list = [...p.extra['programs'] as List? ?? const []];
+      final list = [...p.extra[ProfileKey.programs] as List? ?? const []];
       final at = list.indexWhere((e) => e is Map && e['id'] == cleaned.id);
       if (at >= 0) {
         list[at] = cleaned.toJson();
@@ -943,7 +946,10 @@ class AppState extends ChangeNotifier {
         }
         list.add(cleaned.toJson());
       }
-      return p.withExtra({'programs': list, if (activate) 'split': cleaned.id});
+      return p.withExtra({
+        ProfileKey.programs: list,
+        if (activate) ProfileKey.split: cleaned.id,
+      });
     });
     unawaited(syncReminders());
     return cleaned;
@@ -953,12 +959,12 @@ class AppState extends ChangeNotifier {
   Future<void> deleteProgram(String id) async {
     await _updateProfile((p) {
       final list = [
-        for (final json in p.extra['programs'] as List? ?? const [])
+        for (final json in p.extra[ProfileKey.programs] as List? ?? const [])
           if (json is Map && json['id'] != id) json,
       ];
       return p.withExtra({
-        'programs': list.isEmpty ? null : list,
-        if (p.splitId == id) 'split': null,
+        ProfileKey.programs: list.isEmpty ? null : list,
+        if (p.splitId == id) ProfileKey.split: null,
       });
     });
     unawaited(syncReminders());
@@ -972,8 +978,8 @@ class AppState extends ChangeNotifier {
         : ({for (final d in days) d.clamp(1, 7)}.toList()..sort());
     await _updateProfile(
       (p) => p.withExtra({
-        'weekGoal': picked?.length ?? perWeek?.clamp(1, 7),
-        'trainingDays': picked,
+        ProfileKey.weekGoal: picked?.length ?? perWeek?.clamp(1, 7),
+        ProfileKey.trainingDays: picked,
       }),
     );
     unawaited(syncReminders());
@@ -988,8 +994,8 @@ class AppState extends ChangeNotifier {
       if (!days.remove(day)) days.add(day.clamp(1, 7));
       days.sort();
       return p.withExtra({
-        'weekGoal': days.isEmpty ? null : days.length,
-        'trainingDays': days.isEmpty ? null : days,
+        ProfileKey.weekGoal: days.isEmpty ? null : days.length,
+        ProfileKey.trainingDays: days.isEmpty ? null : days,
       });
     });
     unawaited(syncReminders());
@@ -997,7 +1003,9 @@ class AppState extends ChangeNotifier {
 
   /// Označí profil jako Pro (až bude hotová platba, volá se po nákupu).
   Future<void> setPro(bool value) async {
-    await _updateProfile((p) => p.withExtra({'pro': value ? true : null}));
+    await _updateProfile(
+      (p) => p.withExtra({ProfileKey.pro: value ? true : null}),
+    );
   }
 
   /// Týdenní cíl tréninků: vlastní, jinak podle splitu, jinak 3.
@@ -1010,7 +1018,7 @@ class AppState extends ChangeNotifier {
       return false;
     }
     await _updateProfile(
-      (p) => p.withExtra({'reminder': minutes?.clamp(0, 1439)}),
+      (p) => p.withExtra({ProfileKey.reminder: minutes?.clamp(0, 1439)}),
     );
     await syncReminders();
     return true;
@@ -1046,14 +1054,16 @@ class AppState extends ChangeNotifier {
   static const backupEvery = 10;
 
   bool get backupDue {
-    final saved = profile.extra['backupCount'];
+    final saved = profile.extra[ProfileKey.backupCount];
     final at = saved is num ? saved.toInt() : 0;
     return workouts.length - at >= backupEvery;
   }
 
   /// Zapamatuje, že záloha právě vznikla.
   Future<void> markBackedUp() async {
-    await _updateProfile((p) => p.withExtra({'backupCount': workouts.length}));
+    await _updateProfile(
+      (p) => p.withExtra({ProfileKey.backupCount: workouts.length}),
+    );
   }
 
   /// Týdenní cíl bez pevných dnů (`null` = podle programu).
@@ -1245,25 +1255,27 @@ class AppState extends ChangeNotifier {
       profile.restSeconds;
 
   /// Vlastní pauza u cviku; `null` vrátí výchozí.
-  Future<void> setExerciseRest(String exerciseId, int? seconds) =>
-      _updateProfile((p) {
-        final map = {
-          ...?(p.extra['restByExercise'] as Map?)?.cast<String, dynamic>(),
-        };
-        if (seconds == null) {
-          map.remove(exerciseId);
-        } else {
-          map[exerciseId] = seconds.clamp(15, 600);
-        }
-        return p.withExtra({'restByExercise': map.isEmpty ? null : map});
-      });
+  Future<void> setExerciseRest(
+    String exerciseId,
+    int? seconds,
+  ) => _updateProfile((p) {
+    final map = {
+      ...?(p.extra[ProfileKey.restByExercise] as Map?)?.cast<String, dynamic>(),
+    };
+    if (seconds == null) {
+      map.remove(exerciseId);
+    } else {
+      map[exerciseId] = seconds.clamp(15, 600);
+    }
+    return p.withExtra({ProfileKey.restByExercise: map.isEmpty ? null : map});
+  });
 
   Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
       _updateProfile(
         (p) => p.withExtra({
-          'restSeconds': ?restSeconds?.clamp(15, 600),
+          ProfileKey.restSeconds: ?restSeconds?.clamp(15, 600),
           if (weightStep != null && weightSteps.contains(weightStep))
-            'weightStep': weightStep,
+            ProfileKey.weightStep: weightStep,
         }),
       );
 
@@ -1314,7 +1326,7 @@ class AppState extends ChangeNotifier {
 
   /// Připnutá jídla (šablony se stejným množstvím), nejnověji připnuté první.
   List<FoodEntry> get favoriteFoods => [
-    if (profile.extra['favoriteFoods'] case final List list)
+    if (profile.extra[ProfileKey.favoriteFoods] case final List list)
       for (final f in list)
         if (f is Map<String, dynamic>) ?_tryFood(f),
   ];
@@ -1336,7 +1348,7 @@ class AppState extends ChangeNotifier {
   Future<bool> toggleFavoriteFood(FoodEntry f) async {
     late bool pinned;
     await _updateProfile((p) {
-      final raw = p.extra['favoriteFoods'];
+      final raw = p.extra[ProfileKey.favoriteFoods];
       final current = [
         if (raw is List)
           for (final x in raw)
@@ -1350,7 +1362,7 @@ class AppState extends ChangeNotifier {
       pinned = rest.length == current.length;
       final next = pinned ? [f, ...rest].take(maxFavoriteFoods) : rest;
       return p.withExtra({
-        'favoriteFoods': next.isEmpty
+        ProfileKey.favoriteFoods: next.isEmpty
             ? null
             : [for (final x in next) x.toJson()],
       });
@@ -1415,68 +1427,75 @@ class AppState extends ChangeNotifier {
   Future<String> installId() async {
     late String id;
     await _updateProfile((p) {
-      final saved = p.extra['installId'];
+      final saved = p.extra[ProfileKey.installId];
       id = saved is String && saved.length == 36 ? saved : newId();
-      return p.withExtra({'installId': id});
+      return p.withExtra({ProfileKey.installId: id});
     });
     return id;
   }
 
   /// Poslední potvrzený seznam potravin doma.
   List<PantryItem> get pantry {
-    final raw = profile.extra['pantry'];
+    final raw = profile.extra[ProfileKey.pantry];
     if (raw is! List) return const [];
     return [for (final i in raw) ?PantryItem.tryParse(i)];
   }
 
   Future<void> savePantry(List<PantryItem> items) => _updateProfile(
     (p) => p.withExtra({
-      'pantry': items.isEmpty
+      ProfileKey.pantry: items.isEmpty
           ? null
           : [for (final i in mergePantry([], items)) i.toJson()],
     }),
   );
 
   Set<String> get pantryExcluded => {
-    for (final name in (profile.extra['pantryExcluded'] as List? ?? const []))
+    for (final name
+        in (profile.extra[ProfileKey.pantryExcluded] as List? ?? const []))
       if (name is String) pantryKey(name),
   };
-  int get pantryMinutes => [10, 20, 40].contains(profile.extra['pantryMinutes'])
-      ? profile.extra['pantryMinutes'] as int
+  int get pantryMinutes =>
+      [10, 20, 40].contains(profile.extra[ProfileKey.pantryMinutes])
+      ? profile.extra[ProfileKey.pantryMinutes] as int
       : 20;
 
   Future<void> savePantrySelection(Set<String> excluded, int minutes) =>
       _updateProfile(
         (p) => p.withExtra({
-          'pantryExcluded': excluded.toList()..sort(),
-          'pantryMinutes': [10, 20, 40].contains(minutes) ? minutes : 20,
+          ProfileKey.pantryExcluded: excluded.toList()..sort(),
+          ProfileKey.pantryMinutes: [10, 20, 40].contains(minutes)
+              ? minutes
+              : 20,
         }),
       );
 
   List<MealIdea> get savedMealIdeas =>
-      parseMeals({'meals': profile.extra['mealIdeas']});
+      parseMeals({'meals': profile.extra[ProfileKey.mealIdeas]});
   Future<void> saveMealIdeas(List<MealIdea> meals) => _updateProfile(
     (p) => p.withExtra({
-      'mealIdeas': [for (final meal in meals.take(6)) meal.toJson()],
+      ProfileKey.mealIdeas: [for (final meal in meals.take(6)) meal.toJson()],
     }),
   );
 
   /// Úvod je za uživatelem; zároveň zná novinky této verze.
   Future<void> finishWelcome(String version) => _updateProfile(
-    (p) => p.withExtra({'welcomeSeen': true, 'seenVersion': version}),
+    (p) => p.withExtra({
+      ProfileKey.welcomeSeen: true,
+      ProfileKey.seenVersion: version,
+    }),
   );
 
   Future<void> markVersionSeen(String version) =>
-      _updateProfile((p) => p.withExtra({'seenVersion': version}));
+      _updateProfile((p) => p.withExtra({ProfileKey.seenVersion: version}));
 
   /// Zapamatuje si záložku; chyba uložení nesmí rozbít přepnutí.
   Future<void> setLastTab(int tab) async {
     try {
       await _updateProfile(
         (p) => p.withExtra({
-          'tab4': tab > 0 && tab <= 3 ? tab : null,
-          'tab': null,
-          'lastTab': null,
+          ProfileKey.tab: tab > 0 && tab <= 3 ? tab : null,
+          ProfileKey.legacyTab: null,
+          ProfileKey.legacyLastTab: null,
         }),
       );
     } catch (e) {
@@ -1486,13 +1505,13 @@ class AppState extends ChangeNotifier {
 
   /// Chat s AI trenérem: posledních [maxCoachChat] zpráv v zařízení.
   List<ChatMessage> get coachChat => [
-    if (profile.extra['coachChat'] case final List list)
+    if (profile.extra[ProfileKey.coachChat] case final List list)
       for (final m in list) ?ChatMessage.tryParse(m),
   ];
 
   Future<void> saveCoachChat(List<ChatMessage> messages) => _updateProfile(
     (p) => p.withExtra({
-      'coachChat': messages.isEmpty
+      ProfileKey.coachChat: messages.isEmpty
           ? null
           : [
               for (final m in messages.skip(
@@ -1611,11 +1630,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> acceptAiNotice() =>
-      _updateProfile((p) => p.withExtra({'aiNotice': true}));
+      _updateProfile((p) => p.withExtra({ProfileKey.aiNotice: true}));
 
   /// Krok úvodu, na kterém uživatel skončil (aplikace se mohla zavřít).
   int get onboardingStep {
-    final v = profile.extra['onboardingStep'];
+    final v = profile.extra[ProfileKey.onboardingStep];
     return v is num && v.isFinite ? v.toInt().clamp(0, 9) : 0;
   }
 
@@ -1624,14 +1643,14 @@ class AppState extends ChangeNotifier {
   Future<void> setOnboardingStep(int step, {PlanAnswers? draft}) =>
       _updateProfile(
         (p) => p.withExtra({
-          'onboardingStep': step,
-          if (draft != null) 'planDraft': draft.toJson(),
+          ProfileKey.onboardingStep: step,
+          if (draft != null) ProfileKey.planDraft: draft.toJson(),
         }),
       );
 
   /// Rozpracované odpovědi z úvodu, dokud se plán neuloží.
   PlanAnswers? get planDraft =>
-      PlanAnswers.tryParse(profile.extra['planDraft']);
+      PlanAnswers.tryParse(profile.extra[ProfileKey.planDraft]);
 
   /// Doporučený cíl z poslední tělesné váhy a cíle z dotazníku;
   /// `null` bez zapsané váhy.
@@ -1650,8 +1669,8 @@ class AppState extends ChangeNotifier {
   Future<void> setNutritionTargets({double? protein, double? kcal}) =>
       _updateProfile(
         (p) => p.withExtra({
-          'proteinTarget': protein?.clamp(20, 400).roundToDouble(),
-          'kcalTarget': p.restrictWeightLoss
+          ProfileKey.proteinTarget: protein?.clamp(20, 400).roundToDouble(),
+          ProfileKey.kcalTarget: p.restrictWeightLoss
               ? null
               : kcal?.clamp(1000, 6000).roundToDouble(),
         }),
@@ -1833,18 +1852,20 @@ class AppState extends ChangeNotifier {
       ];
       // Nic místního se nepřepíše: ze zálohy se doplní jen chybějící
       // nastavení a programy, které tu ještě nejsou.
-      final localPrograms = [...profile.extra['programs'] as List? ?? const []];
+      final localPrograms = [
+        ...profile.extra[ProfileKey.programs] as List? ?? const [],
+      ];
       final localIds = {
         for (final e in localPrograms)
           if (e is Map) e['id'],
       };
-      final backupPrograms = backup.settings['programs'];
+      final backupPrograms = backup.settings[ProfileKey.programs];
       final nextProfile = profile.withExtra({
         for (final e in backup.settings.entries)
           if (e.key != 'programs' && !profile.extra.containsKey(e.key))
             e.key: e.value,
         if (backupPrograms is List)
-          'programs': [
+          ProfileKey.programs: [
             ...localPrograms,
             for (final e in backupPrograms)
               if (e is Map && !localIds.contains(e['id'])) e,

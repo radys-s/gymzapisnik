@@ -4,6 +4,7 @@ library;
 
 import '../domain/history.dart';
 import '../domain/models.dart';
+import '../domain/profile_keys.dart';
 import '../domain/stats.dart';
 import 'progression.dart';
 import 'weeks.dart';
@@ -191,7 +192,8 @@ enum FocusKind {
       values.where((k) => k.name == v).firstOrNull;
 }
 
-const weekFocusKey = 'weekFocus';
+/// Klíč v profilu se zvoleným zaměřením týdne.
+const weekFocusKey = ProfileKey.weekFocus;
 
 /// Krátkodobý cíl na jeden týden (od pondělí). Ukládá se do profilu.
 class WeekFocus {
