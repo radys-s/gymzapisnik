@@ -17,7 +17,7 @@ import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
-import '../program/plan_quiz.dart';
+import '../onboarding/onboarding_page.dart' show PlanSetupPage;
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
 import '../settings/settings_button.dart';
@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
             onPickDay: state.pickSplitDay,
             onProgram: () => _push(ProgramPage(state)),
             onOther: otherWorkout,
-            onQuiz: () => _push(PlanQuizPage(state)),
+            onQuiz: () => _push(PlanSetupPage(state)),
             onUsePlan: usePlan,
           ),
           const SectionHeader('Tento týden'),

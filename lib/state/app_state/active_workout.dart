@@ -2,6 +2,7 @@ part of '../app_state.dart';
 
 /// Aktivní trénink.
 extension ActiveWorkoutOps on AppState {
+  /// Zápis do úložiště ve frontě za předchozími (viz [AppState._writes]).
   Future<T> _enqueue<T>(Future<T> Function() write) {
     final previous = _writes;
     final next = previous == null
@@ -89,17 +90,12 @@ extension ActiveWorkoutOps on AppState {
   ];
 
   /// Nejlepší výkony cviku z dokončených tréninků (v mezipaměti, dokud se
-  /// seznam tréninků nezmění; ten se při každé změně vytváří nový).
-  Map<RecordKind, PersonalRecord> recordsOf(String exerciseId) {
-    if (!identical(_recordsOf, workouts)) {
-      _records.clear();
-      _recordsOf = workouts;
-    }
-    return _records.putIfAbsent(
-      exerciseId,
-      () => allTimeRecords(workouts, exerciseId, typeOf(exerciseId)),
-    );
-  }
+  /// nezmění tréninky nebo vlastní cviky, podle kterých se určí typ cviku).
+  Map<RecordKind, PersonalRecord> recordsOf(String exerciseId) => memo(
+    'records:$exerciseId',
+    _historyDeps,
+    () => allTimeRecords(workouts, exerciseId, typeOf(exerciseId)),
+  );
 
   // Odvozené přehledy z historie: počítají se jednou, dokud se tréninky
   // nebo vlastní cviky nezmění (dřív při každém překreslení).

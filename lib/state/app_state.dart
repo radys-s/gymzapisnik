@@ -256,8 +256,6 @@ class AppState extends ChangeNotifier {
   List<Workout>? _badgesOf;
   List<Exercise>? _badgesExercises;
   List<BadgeState> _badges = const [];
-  List<Workout>? _recordsOf;
-  final _records = <String, Map<RecordKind, PersonalRecord>>{};
   static (int, int, int) _day(DateTime t) {
     final l = t.toLocal();
     return (l.year, l.month, l.day);
@@ -308,7 +306,7 @@ class StateSlice extends ChangeNotifier {
   final AppState _state;
   final Object? Function(AppState s) _key;
   Object? _last;
-  int _listeners = 0;
+  bool _attached = false;
 
   StateSlice._(this._state, this._key);
 
@@ -321,7 +319,8 @@ class StateSlice extends ChangeNotifier {
 
   @override
   void addListener(VoidCallback listener) {
-    if (_listeners++ == 0) {
+    if (!_attached) {
+      _attached = true;
       _last = _key(_state);
       _state.addListener(_check);
     }
@@ -331,7 +330,12 @@ class StateSlice extends ChangeNotifier {
   @override
   void removeListener(VoidCallback listener) {
     super.removeListener(listener);
-    if (--_listeners == 0) _state.removeListener(_check);
+    // Podle skutečných posluchačů, ne počítadla: odebrání neznámého
+    // posluchače tak nikdy neodpojí ostatní.
+    if (_attached && !hasListeners) {
+      _attached = false;
+      _state.removeListener(_check);
+    }
   }
 }
 

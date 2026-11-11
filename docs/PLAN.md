@@ -21,12 +21,12 @@ Legend: **P0** blocks daily use, **P1** clearly felt by the user, **P2** quality
 
 | # | Step | Items | Status |
 |---|---|---|---|
-| 0 | Land uncommitted onboarding, Moje posilovna, routine audit | F1–F4 | in progress |
-| 1 | CI on push | Q1 | todo |
-| 2 | Scoped rebuilds + derived-data cache | A1, A2 | todo |
-| 3 | Split `AppState`, typed profile keys | A3, A4 | todo |
-| 4 | One plan-question flow, split giant files | A5, A6 | todo |
-| 5 | Laboratoř, premium off, storage safety, error reporting | S1–S3, D1, D2 | todo |
+| 0 | Land uncommitted onboarding, Moje posilovna, routine audit | F1–F4 | done (e3af2a2) |
+| 1 | CI on push | Q1 | done (e3de62e) |
+| 2 | Scoped rebuilds + derived-data cache | A1, A2 | done (6a08ce8) |
+| 3 | Split `AppState`, typed profile keys | A3, A4 | done (8f0df71, 85c8313): extensions in `lib/state/app_state/` |
+| 4 | One plan-question flow, split giant files | A5, A6 | A5 done (`PlanSetupPage`), A6 todo |
+| 5 | Laboratoř, premium off, storage safety, error reporting | S1–S3, D1, D2 | D1 persist request done, rest todo |
 | 6 | Logging feel, summary sequence, Home rebuild | U1–U9 | todo |
 | 7 | Release beta.12 (web + IPA) | R1–R4 | todo |
 | later | Backlog below | everything else | — |
