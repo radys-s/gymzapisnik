@@ -28,7 +28,7 @@ Legend: **P0** blocks daily use, **P1** clearly felt by the user, **P2** quality
 | 4 | One plan-question flow, split giant files | A5, A6 | done (A5 `PlanSetupPage` b355844, A6 split 7470aa2) |
 | 5 | Laboratoř, premium off, storage safety, error reporting | S1–S3, D1, D2 | D1 persist + storage line, S2 Pro hidden without paywall, S3 fridge moved below meals, error log (Diagnostika) done; S1 waits on Tomáš, D2 in step 6 |
 | 6 | Logging feel, summary sequence, Home rebuild | U1–U9 | U1 drawn check, U2 quiet PRs, U3 staged summary, U4/U5 Home order + food block, F5 coverage card, D2 backup reminder done; U6–U9 todo |
-| 7 | Release beta.12 (web + IPA) | R1–R4 | todo |
+| 7 | Release beta.12 (web + IPA) | R1–R4 | R1 version, APK + web tester build workflow, R4 entry done; R2 deploy and R3 IPA run by Tomáš |
 | later | Backlog below | everything else | — |
 
 ## 3. Architecture
