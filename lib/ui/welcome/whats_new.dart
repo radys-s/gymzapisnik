@@ -6,42 +6,39 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.5';
+const whatsNewRelease = '1.6';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
   (
-    Icons.flag_outlined,
-    'Plán na míru',
-    'Odpověz na čtyři otázky a aplikace doporučí program a počet cviků. '
-        'Změníš ho v Program, Změnit plán.',
+    Icons.home_outlined,
+    'Nový Domov',
+    'Nahoře jídlo dne s rychlým přidáním, pod ním dnešní trénink '
+        'a kolik sérií má která partie tento týden.',
   ),
   (
-    Icons.forum_outlined,
-    'Trenér',
-    'Zeptej se, co dnes cvičit, proč stagnuješ nebo čím nahradit cvik. '
-        'Trenér vidí tvoje tréninky, ne jméno ani poznámky.',
+    Icons.fact_check_outlined,
+    'Kontrola rutiny',
+    'Editor programu ukáže, co v rutině chybí, a navržený cvik '
+        'přidá jedním klepnutím.',
   ),
   (
-    Icons.photo_camera_outlined,
-    'Cvik podle fotky',
-    'Při přidávání cviku vyfoť stroj a AI navrhne cvik ze seznamu.',
+    Icons.store_outlined,
+    'Moje posilovna',
+    'Odškrtni stroje, které tvoje posilovna nemá, a plán je nebude '
+        'nabízet.',
   ),
   (
-    Icons.image_outlined,
-    'Obrazovka cviku',
-    'Obrázky, zapojené svaly, technika a alternativy. Cvik v tréninku '
-        'vyměníš ikonou vedle názvu.',
+    Icons.check_circle_outline,
+    'Klidnější zápis',
+    'Potvrzení série bez rušení uprostřed tréninku. Rekordy oslavíš '
+        'v souhrnu, který se odhaluje postupně.',
   ),
   (
-    Icons.accessibility_new_rounded,
-    'Mapa regenerace',
-    'Postava zepředu a zezadu ukáže, které partie jsou odpočaté.',
-  ),
-  (
-    Icons.restaurant_outlined,
-    'Nová Strava',
-    'Kruh bílkovin, rychlé přidání a jídla podle části dne.',
+    Icons.save_outlined,
+    'Bezpečnější data',
+    'Připomínka zálohy na Domově a v Nastavení Diagnostika chyb '
+        'pro hlášení problémů.',
   ),
 ];
 
