@@ -37,6 +37,7 @@ class ActiveWorkoutBar extends StatelessWidget {
           detail: detail,
           done: done,
           start: active.startedAt,
+          restEndsAt: state.restEndsAt,
           onTap: () => openWorkout(context, state),
         ),
       );
@@ -49,12 +50,17 @@ class _Bar extends StatefulWidget {
   final String detail;
   final int done;
   final DateTime start;
+
+  /// Konec běžící pauzy: lišta pak odpočítává pauzu místo času tréninku,
+  /// takže je vidět i z jiné záložky.
+  final DateTime? restEndsAt;
   final VoidCallback onTap;
   const _Bar({
     required this.title,
     required this.detail,
     required this.done,
     required this.start,
+    required this.restEndsAt,
     required this.onTap,
   });
 
@@ -79,7 +85,20 @@ class _BarState extends State<_Bar> {
     super.dispose();
   }
 
+  /// Zbývající pauza, `null` když neběží.
+  Duration? _restLeft() {
+    final end = widget.restEndsAt;
+    if (end == null) return null;
+    final left = end.difference(DateTime.now());
+    return left > Duration.zero ? left : null;
+  }
+
   String _clock() {
+    final rest = _restLeft();
+    if (rest != null) {
+      final s = (rest.inMilliseconds / 1000).ceil();
+      return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+    }
     final d = DateTime.now().difference(widget.start);
     final m = d.inMinutes;
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
@@ -93,11 +112,14 @@ class _BarState extends State<_Bar> {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final clock = _clock();
+    final resting = _restLeft() != null;
+    final detail = resting ? 'Pauza · ${widget.detail}' : widget.detail;
+    final minutes = DateTime.now().difference(widget.start).inMinutes;
+    final time = resting ? 'pauza $clock' : '$minutes min';
     return Semantics(
       button: true,
       label:
-          'Běžící trénink ${widget.title}, '
-          '${DateTime.now().difference(widget.start).inMinutes} min, '
+          'Běžící trénink ${widget.title}, $time, '
           '${widget.detail}, ${widget.done} sérií hotovo. Pokračovat',
       excludeSemantics: true,
       child: Material(
@@ -132,7 +154,7 @@ class _BarState extends State<_Bar> {
                         style: text.titleSmall,
                       ),
                       Text(
-                        widget.detail,
+                        detail,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: text.bodySmall?.copyWith(
