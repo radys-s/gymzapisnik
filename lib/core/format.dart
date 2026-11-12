@@ -1,8 +1,10 @@
 /// Váha bez zbytečných nul a s desetinnou čárkou: 80 → "80", 77.5 → "77,5".
 String formatKg(double kg) {
-  final text = kg == kg.roundToDouble()
-      ? kg.toStringAsFixed(0)
-      : kg.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
+  // Zaokrouhlit dřív, než se porovná: 363.00000000000006 je „363“, ne „363,“.
+  final fixed = kg.toStringAsFixed(2);
+  final text = fixed.endsWith('.00')
+      ? fixed.substring(0, fixed.length - 3)
+      : fixed.replaceFirst(RegExp(r'0+$'), '');
   return text.replaceAll('.', ',');
 }
 

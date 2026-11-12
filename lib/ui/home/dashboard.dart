@@ -44,7 +44,7 @@ class RecentRecordsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final records = this.records ?? recentRecords(state.workouts, state.typeOf);
+    final records = this.records ?? state.recentRecordList();
     if (records.isEmpty) return const SizedBox.shrink();
     final p = context.palette;
     final text = Theme.of(context).textTheme;
@@ -126,10 +126,10 @@ class QuickProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final id = exerciseId ?? mostTrainedExercise(state.workouts);
+    final id = exerciseId ?? state.mostTrained();
     if (id == null) return const SizedBox.shrink();
     final type = state.typeOf(id);
-    final all = series ?? progressSeries(state.workouts, id, type);
+    final all = series ?? state.progressOf(id);
     if (all.length < 2) return const SizedBox.shrink();
     final points = all.length > maxPoints
         ? all.sublist(all.length - maxPoints)

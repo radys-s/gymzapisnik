@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/ui/widgets/muscle_tile_grid.dart';
 import 'package:gymzapisnik/coach/splits.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
@@ -53,8 +54,18 @@ void main() {
     );
     await tester.tap(find.text('Přidat den'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilterChip, 'Ramena'));
-    await tester.tap(find.widgetWithText(FilterChip, 'Triceps'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MuscleTileGrid),
+        matching: find.text('Ramena'),
+      ),
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MuscleTileGrid),
+        matching: find.text('Triceps'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Ramena a triceps'), findsOneWidget);
     await tester.tap(find.text('Přidat den · 6 cviků'));

@@ -10,9 +10,6 @@ abstract final class Haptics {
   /// Stisk hlavního tlačítka.
   static void tap() => HapticFeedback.lightImpact();
 
-  /// Potvrzená série.
-  static void confirm() => HapticFeedback.mediumImpact();
-
   /// Nový rekord.
   static void record() => HapticFeedback.heavyImpact();
 

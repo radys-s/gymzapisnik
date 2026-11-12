@@ -1,0 +1,152 @@
+name: Tester build (Android APK + web)
+
+# Run by hand: Actions → Tester build → Run workflow, or
+#   gh workflow run tester-build.yml --ref <branch>
+# Android signing: add repository secrets ANDROID_KEYSTORE_BASE64 (base64 of the
+# release keystore, JKS or PKCS12), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+# They must be the same key as earlier APKs, otherwise testers cannot update over
+# the installed app. Without them the APK is debug-signed and only fit for a fresh install.
+
+on:
+  workflow_dispatch:
+  # Every PR gets installable builds as artifacts for testers.
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tester-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AI_URL: https://gymzapisnik-ai.gymzapisnik-ai.workers.dev
+  # Optional repository variable: shows "Napsat zpětnou vazbu" in Settings.
+  FEEDBACK_EMAIL: ${{ vars.FEEDBACK_EMAIL }}
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install pinned Flutter SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Restore locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Release signing key
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64}" ]; then
+            echo "SIGNING=debug" >> "$GITHUB_ENV"
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: APK is debug-signed and cannot update an app signed with the release key."
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          {
+            echo "storeFile=$RUNNER_TEMP/release.keystore"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+          echo "SIGNING=release" >> "$GITHUB_ENV"
+      - name: Build APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^version: *//p' pubspec.yaml)
+          label=${version%%+*}
+          flutter build apk --release --no-pub --dart-define=AI_URL="$AI_URL" --dart-define=FEEDBACK_EMAIL="$FEEDBACK_EMAIL"
+          mkdir -p dist/android
+          apk="dist/android/gymzapisnik-${label}-${SIGNING}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$apk"
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          cert=$("$apksigner" verify --print-certs "$apk" | sed -n 's/.*SHA-256 digest: //p' | head -1)
+          [ -n "$cert" ] || { echo "APK signature did not verify"; exit 1; }
+          (cd dist/android && sha256sum ./*.apk > SHA256.txt)
+          printf '%s\n' "$GITHUB_SHA" > dist/android/SOURCE_COMMIT.txt
+          rm -f android/key.properties
+          {
+            echo "### Android APK"
+            echo "- version: \`$version\`, signing: **$SIGNING**, certificate SHA-256: \`$cert\`"
+            echo "- \`$(cat dist/android/SHA256.txt)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.7.1
+        with:
+          name: gymzapisnik-android
+          path: dist/android/
+          if-no-files-found: error
+          retention-days: 7
+
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Install pinned Flutter SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Build web
+        run: |
+          set -euo pipefail
+          flutter pub get --enforce-lockfile
+          flutter build web --release --no-pub --dart-define=AI_URL="$AI_URL" --dart-define=FEEDBACK_EMAIL="$FEEDBACK_EMAIL"
+          python3 scripts/stamp_web_build.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.7.1
+        with:
+          name: gymzapisnik-web
+          path: build/web/
+          if-no-files-found: error
+          retention-days: 7
+
+  # Real-app screenshot tour of the web build (tool/e2e_tour.cjs) for UX review.
+  tour:
+    needs: web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gymzapisnik-web
+          path: site
+      - name: Run tour
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --prefix "$RUNNER_TEMP/pw" playwright-core@1.49.1
+          python3 -m http.server 8099 --directory site >/dev/null 2>&1 &
+          sleep 2
+          PLAYWRIGHT_CORE="$RUNNER_TEMP/pw/node_modules/playwright-core" \
+          CHROME="$(command -v google-chrome)" E2E_DIR=e2e-shots \
+            node tool/e2e_tour.cjs "$RUNNER_TEMP/profile"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: gymzapisnik-tour
+          path: e2e-shots/
+          retention-days: 7

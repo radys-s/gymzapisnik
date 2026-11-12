@@ -6,6 +6,7 @@ import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import 'program_detail_page.dart';
+import '../onboarding/onboarding_page.dart' show PlanSetupPage;
 import 'plan_quiz.dart';
 import 'program_editor_page.dart';
 import 'program_widgets.dart';
@@ -42,7 +43,7 @@ class ProgramPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final p = context.palette;
       final current = state.split;
@@ -84,7 +85,7 @@ class ProgramPage extends StatelessWidget {
                 chevron: true,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => PlanQuizPage(state)),
+                  MaterialPageRoute(builder: (_) => PlanSetupPage(state)),
                 ),
               ),
             ],

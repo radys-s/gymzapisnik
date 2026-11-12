@@ -97,7 +97,7 @@ void main() {
     });
   });
 
-  testWidgets('confirming a record set shows a trophy and a message', (
+  testWidgets('confirming a record set shows a quiet trophy, no message', (
     tester,
   ) async {
     tester.view
@@ -132,9 +132,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pump();
-    expect(find.textContaining('Nový osobní rekord'), findsOneWidget);
-    // Pohár u série a v hlášce.
-    expect(find.byIcon(Icons.emoji_events_rounded), findsNWidgets(2));
+    // Oslava patří do souhrnu; během tréninku jen pohár u série.
+    expect(find.textContaining('Nový osobní rekord'), findsNothing);
+    expect(find.byIcon(Icons.emoji_events_rounded), findsOneWidget);
   });
 
   test('warm-ups replace open warm-ups before the working sets', () async {

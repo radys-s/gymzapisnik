@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymzapisnik/core/format.dart';
+import 'package:gymzapisnik/core/parse.dart';
 
 void main() {
   test('calendar days ignore clock time and DST shift', () {
@@ -35,5 +36,21 @@ void main() {
     expect(formatVolume(950.4), '950');
     expect(formatVolume(8732), '8 732');
     expect(formatVolume(1234567.6), '1 234 568');
+  });
+
+  test('kg never ends with a dangling decimal comma', () {
+    // 247,5 kg × 14 opakování: odhad 1RM je 363.00000000000006.
+    expect(formatKg(247.5 * (1 + 14 / 30)), '363');
+    expect(formatKg(77.004), '77');
+    expect(formatKg(77.5), '77,5');
+    expect(formatKg(1.25), '1,25');
+    expect(formatKg(80), '80');
+  });
+
+  test('numbers pasted with non-breaking spaces still parse', () {
+    expect(parseNum('62\u00A05'), 625);
+    expect(parseNum(' 62,5\u00A0'), 62.5);
+    expect(parseNum('1\u202F025'), 1025);
+    expect(parseNum(''), isNull);
   });
 }

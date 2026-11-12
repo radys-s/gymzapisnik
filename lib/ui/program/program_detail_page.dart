@@ -84,7 +84,7 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final raw = findSplit(widget.programId, state.customPrograms);
       if (raw == null) return const Scaffold();

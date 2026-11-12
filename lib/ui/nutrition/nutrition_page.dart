@@ -131,7 +131,7 @@ Future<void> addFoodFlow(
           ),
           if (state.quickFoods.isNotEmpty)
             ListenableBuilder(
-              listenable: state,
+              listenable: state.on.resting,
               builder: (sheet, _) => GroupedSection(
                 header: 'Oblíbená a nedávná',
                 footer: 'Hvězdičkou jídlo připneš do Rychle přidat.',
@@ -185,17 +185,24 @@ class NutritionPage extends StatefulWidget {
 }
 
 class _NutritionPageState extends State<NutritionPage> {
-  late DateTime day = () {
-    final d = widget.initialDay ?? DateTime.now();
-    return DateTime(d.year, d.month, d.day);
-  }();
+  late DateTime day = _dateOf(widget.initialDay ?? DateTime.now());
+
+  /// Zobrazený den je dnešek: po půlnoci se posune na nový den, aby se
+  /// jídlo nezapsalo ke včerejšku.
+  late bool _followsToday = _isToday;
 
   AppState get state => widget.state;
 
+  static DateTime _dateOf(DateTime d) => DateTime(d.year, d.month, d.day);
+
   bool get _isToday => dayKey(day) == dayKey(DateTime.now());
 
-  void _shift(int days) =>
-      setState(() => day = DateTime(day.year, day.month, day.day + days));
+  void _show(DateTime next) => setState(() {
+    day = _dateOf(next);
+    _followsToday = _isToday;
+  });
+
+  void _shift(int days) => _show(DateTime(day.year, day.month, day.day + days));
 
   Future<void> _pick() async {
     final now = DateTime.now();
@@ -205,7 +212,7 @@ class _NutritionPageState extends State<NutritionPage> {
       firstDate: DateTime(2020),
       lastDate: now,
     );
-    if (picked != null) setState(() => day = picked);
+    if (picked != null) _show(picked);
   }
 
   Future<void> _delete(FoodEntry e) async {
@@ -240,43 +247,14 @@ class _NutritionPageState extends State<NutritionPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// Stejné jídlo ve stejném množství jedním klepnutím, s možností vrátit.
-  Future<void> _quickAdd(FoodEntry f, String key) async {
-    final messenger = ScaffoldMessenger.of(context);
-    // Jiný den: stejná část dne jako původní jídlo.
-    final at = loggedAtFor(key, DateTime.now(), timeOf: f.loggedAt.toLocal());
-    final entry = FoodEntry(
-      id: newId(),
-      day: key,
-      loggedAt: at,
-      name: f.name,
-      brand: f.brand,
-      barcode: f.barcode,
-      basis: f.basis,
-      unit: f.unit,
-      amount: f.amount,
-      values: f.values,
-    );
-    final error = await state.saveFood(entry);
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(error ?? 'Přidáno: ${f.name}, ${amountLabel(f)}'),
-          action: error != null
-              ? null
-              : SnackBarAction(
-                  label: 'Vrátit',
-                  onPressed: () => state.removeFood(entry.id),
-                ),
-        ),
-      );
-  }
+  Future<void> _quickAdd(FoodEntry f, String key) =>
+      quickAddFood(context, state, f, key);
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
+      if (_followsToday && !_isToday) day = _dateOf(DateTime.now());
       final key = dayKey(day);
       final entries = state.foodsOn(key);
       final totals = totalsOf(entries);
@@ -333,32 +311,12 @@ class _NutritionPageState extends State<NutritionPage> {
           const SizedBox(height: Space.m),
           _Summary(state, totals: totals, empty: entries.isEmpty),
           const SizedBox(height: Space.m),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _EntryTile(
-                    icon: Icons.qr_code_2,
-                    title: 'Čárový kód',
-                    subtitle: 'Najdi jídlo v databázi',
-                    onTap: () => barcodeFlow(context, state, key),
-                  ),
-                ),
-                const SizedBox(width: Space.m),
-                Expanded(
-                  child: _EntryTile(
-                    icon: Icons.kitchen_outlined,
-                    title: 'Lednička',
-                    subtitle: 'Vyfoť a nech si navrhnout jídlo',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => FridgePage(state)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          // Zápis jídla nahoře, nápady (AI lednička) až pod jídly dne.
+          _EntryTile(
+            icon: Icons.qr_code_2,
+            title: 'Čárový kód',
+            subtitle: 'Najdi jídlo v databázi',
+            onTap: () => barcodeFlow(context, state, key),
           ),
           if (anyMissing)
             Padding(
@@ -454,6 +412,20 @@ class _NutritionPageState extends State<NutritionPage> {
                   ),
                 ],
               ),
+          GroupedSection(
+            header: 'Nápady',
+            children: [
+              GroupedRow(
+                icon: Icons.kitchen_outlined,
+                title: 'Lednička',
+                subtitle: 'Vyfoť ji a nech si navrhnout jídlo',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FridgePage(state)),
+                ),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.l),
             child: Text(
@@ -476,7 +448,7 @@ class _NutritionPageState extends State<NutritionPage> {
   }
 }
 
-/// Jeden ze dvou rovnocenných vstupů nahoře: čárový kód a lednička.
+/// Vstup nahoře: čárový kód.
 class _EntryTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -879,4 +851,43 @@ class _FavoriteButton extends StatelessWidget {
       },
     );
   }
+}
+
+/// Stejné jídlo ve stejném množství jedním klepnutím, s možností vrátit.
+/// Sdílí Strava i blok jídla na Domů.
+Future<void> quickAddFood(
+  BuildContext context,
+  AppState state,
+  FoodEntry f,
+  String key,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  // Jiný den: stejná část dne jako původní jídlo.
+  final at = loggedAtFor(key, DateTime.now(), timeOf: f.loggedAt.toLocal());
+  final entry = FoodEntry(
+    id: newId(),
+    day: key,
+    loggedAt: at,
+    name: f.name,
+    brand: f.brand,
+    barcode: f.barcode,
+    basis: f.basis,
+    unit: f.unit,
+    amount: f.amount,
+    values: f.values,
+  );
+  final error = await state.saveFood(entry);
+  messenger
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Přidáno: ${f.name}, ${amountLabel(f)}'),
+        action: error != null
+            ? null
+            : SnackBarAction(
+                label: 'Vrátit',
+                onPressed: () => state.removeFood(entry.id),
+              ),
+      ),
+    );
 }

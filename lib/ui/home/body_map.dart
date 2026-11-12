@@ -199,3 +199,96 @@ class _BodyPainter extends CustomPainter {
       old.body != body ||
       !identical(old.parts, parts);
 }
+
+/// Partie, které jsou vidět jen zezadu.
+const _backOnly = {'back', 'triceps', 'glutes'};
+
+/// Výřez postavy kolem jedné partie: partie svítí podle [lit] (0–1),
+/// zbytek těla je tlumený. Pro dlaždice výběru partií.
+class MuscleSilhouette extends StatelessWidget {
+  final String focusId;
+
+  /// 0 = nevybráno (šedá), 1 = vybráno (barva motivu).
+  final double lit;
+  const MuscleSilhouette({super.key, required this.focusId, this.lit = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final back = _backOnly.contains(focusId);
+    final shapes = (back ? _back : _front)[focusId] ?? const <_Shape>[];
+    return ExcludeSemantics(
+      child: CustomPaint(
+        painter: _FocusPainter(
+          shapes: shapes,
+          body: p.fill,
+          off: p.tertiaryLabel.withValues(alpha: 0.45),
+          on: p.accent,
+          lit: lit.clamp(0.0, 1.0),
+        ),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
+class _FocusPainter extends CustomPainter {
+  final List<_Shape> shapes;
+  final Color body, off, on;
+  final double lit;
+  _FocusPainter({
+    required this.shapes,
+    required this.body,
+    required this.off,
+    required this.on,
+    required this.lit,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (shapes.isEmpty || size.isEmpty) return;
+    // Výřez kolem partie s kusem okolního těla.
+    var focus = shapes.first.rect;
+    for (final s in shapes.skip(1)) {
+      focus = focus.expandToInclude(s.rect);
+    }
+    final side = (focus.longestSide + 36).clamp(56.0, 140.0);
+    final scale = size.shortestSide / side;
+    canvas
+      ..save()
+      ..clipRect(Offset.zero & size)
+      ..translate(size.width / 2, size.height / 2)
+      ..scale(scale)
+      ..translate(-focus.center.dx, -focus.center.dy);
+    final base = Paint()..color = body;
+    for (final s in _body) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(s.rect, Radius.circular(s.radius)),
+        base,
+      );
+    }
+    final paint = Paint()..color = Color.lerp(off, on, lit)!;
+    for (final s in shapes) {
+      final r = RRect.fromRectAndRadius(s.rect, Radius.circular(s.radius));
+      // Jemná záře kolem vybrané partie.
+      if (lit > 0.01) {
+        canvas.drawRRect(
+          r.inflate(2.5 * lit),
+          Paint()
+            ..color = on.withValues(alpha: 0.28 * lit)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * lit),
+        );
+      }
+      canvas.drawRRect(r, paint);
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_FocusPainter old) =>
+      old.lit != lit ||
+      old.body != body ||
+      old.on != on ||
+      old.off != off ||
+      !identical(old.shapes, shapes);
+}

@@ -4,7 +4,7 @@ import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../home/recovery_card.dart';
-import '../program/plan_quiz.dart';
+import '../onboarding/onboarding_page.dart' show PlanSetupPage;
 import '../program/program_page.dart';
 import '../widgets/labels.dart';
 import '../workout/launcher.dart';
@@ -29,7 +29,7 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.any,
     builder: (context, _) {
       final p = context.palette;
       final split = state.split;
@@ -71,7 +71,7 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
                   iconColor: p.accent,
                   title: 'Sestavit plán na míru',
                   subtitle: 'Pár otázek a rutiny jsou hotové',
-                  onTap: () => _push(PlanQuizPage(state)),
+                  onTap: () => _push(PlanSetupPage(state)),
                 ),
               ],
             )
@@ -114,7 +114,7 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
                 iconColor: p.accent,
                 title: 'Plán podle dotazníku',
                 subtitle: 'Cíl, čas a vybavení',
-                onTap: () => _push(PlanQuizPage(state)),
+                onTap: () => _push(PlanSetupPage(state)),
               ),
             ],
           ),

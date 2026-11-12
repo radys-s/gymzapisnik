@@ -81,6 +81,34 @@ void main() {
     expect(find.byType(WorkoutPage), findsOneWidget);
   });
 
+  testWidgets('bar counts down the rest on other tabs', (tester) async {
+    final state = await _app(tester);
+    await tester.runAsync(() async {
+      final entry = await state.addExercise('bench_press');
+      final set = entry.sets.first
+        ..weight = 60
+        ..reps = 8;
+      expect(await state.toggleDone(set), isNull);
+    });
+    await tester.pump();
+    await _tapReal(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Strava'),
+      ),
+    );
+    expect(find.textContaining('Pauza · '), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Běžící trénink .*, pauza \d:\d\d,')),
+      findsOneWidget,
+    );
+
+    await tester.runAsync(state.skipRest);
+    await tester.pump();
+    expect(find.textContaining('Pauza · '), findsNothing);
+  });
+
   testWidgets('no bar without a running workout', (tester) async {
     await _app(tester);
     expect(find.bySemanticsLabel(RegExp('^Běžící trénink')), findsNothing);

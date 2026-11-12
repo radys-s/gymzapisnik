@@ -80,6 +80,55 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('fresh summary reveals step by step and a tap skips it', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(390, 3000)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    late Workout today;
+    await tester.runAsync(() async {
+      await state.load();
+      await state.startWorkout(now: DateTime(2026, 10, 1, 17));
+      (await state.addExercise('bench_press')).sets = [
+        SetEntry(weight: 50, reps: 8, done: true),
+      ];
+      await state.finishActive(now: DateTime(2026, 10, 1, 18));
+      await state.startWorkout(now: DateTime(2026, 10, 3, 17));
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 60, reps: 8, done: true)];
+      today = (await state.finishActive(now: DateTime(2026, 10, 3, 18)))
+          .workout!;
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(),
+        home: SummaryPage(state, today, justFinished: true),
+      ),
+    );
+    double opacityOf(String text) => tester
+        .widget<Opacity>(
+          find
+              .ancestor(
+                of: find.textContaining(text).first,
+                matching: find.byType(Opacity),
+              )
+              .first,
+        )
+        .opacity;
+    await tester.pump(const Duration(milliseconds: 100));
+    // Rekordy přijdou až po čase a objemu.
+    expect(opacityOf('Nové osobní rekordy'), 0);
+    await tester.tapAt(const Offset(200, 600));
+    await tester.pump();
+    expect(opacityOf('Nové osobní rekordy'), 1);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('from history: delete asks first and closes the page', (
     tester,
   ) async {

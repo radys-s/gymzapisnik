@@ -7,7 +7,6 @@ import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
 import '../../core/format.dart';
-import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
@@ -18,20 +17,31 @@ import '../design/tokens.dart';
 import '../exercises/exercise_detail_page.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
-import '../program/plan_quiz.dart';
+import '../onboarding/onboarding_page.dart' show PlanSetupPage;
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
 import '../settings/settings_button.dart';
 import '../widgets/labels.dart';
 import '../workout/launcher.dart';
+import '../settings/file_io.dart';
+import 'coverage_card.dart';
 import 'dashboard.dart';
+import 'food_block.dart';
 
 /// Záložka Domů: pozdrav, jedna hlavní akce, týden, rekordy a poslední
 /// tréninky. Rutiny a regenerace jsou v záložce Trénink, statistiky v Profilu.
 class HomePage extends StatefulWidget {
   final AppState state;
   final DateTime Function() now;
-  const HomePage(this.state, {super.key, this.now = DateTime.now});
+
+  /// Uložení zálohy z připomínky (v testech náhrada).
+  final FileIo files;
+  const HomePage(
+    this.state, {
+    super.key,
+    this.now = DateTime.now,
+    this.files = const PickerFileIo(),
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -51,9 +61,50 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
   void _push(Widget page) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => page));
 
+  bool _savingBackup = false;
+
+  /// Záloha jedním klepnutím z připomínky na Domů.
+  Future<void> _backup() async {
+    if (_savingBackup) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final d = widget.now();
+    final name =
+        'gymzapisnik-zaloha-${d.year}-${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}.json';
+    setState(() => _savingBackup = true);
+    String? message;
+    try {
+      final bool saved;
+      try {
+        saved = await widget.files.saveText(
+          name,
+          state.exportBackup(),
+          'application/json',
+        );
+      } catch (_) {
+        message = 'Zálohu se nepodařilo uložit. Zkus to znovu.';
+        return;
+      }
+      if (!saved) return;
+      message = 'Uloženo: $name';
+      try {
+        await state.markBackedUp();
+      } catch (_) {
+        message = 'Soubor $name je uložený, připomínka ale zůstane.';
+      }
+    } finally {
+      if (mounted) setState(() => _savingBackup = false);
+      if (message != null) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(message)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final now = widget.now();
       final recent = state.workouts.take(3).toList();
@@ -76,6 +127,44 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
                   ?.copyWith(color: context.palette.secondaryLabel),
             ),
           ),
+          if (state.backupDue)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Space.m),
+              child: Panel(
+                onTap: _savingBackup ? null : _backup,
+                child: Row(
+                  children: [
+                    IconTile(
+                      Icons.save_alt_rounded,
+                      color: context.palette.accent,
+                    ),
+                    const SizedBox(width: Space.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ulož si zálohu',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text(
+                            'Data jsou jen v tomto zařízení. Jedno klepnutí '
+                            'uloží všechno do souboru.',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: context.palette.secondaryLabel,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // Pořadí: jídlo, dnešní trénink, partie, poslední tréninky.
+          HomeFoodBlock(state: state, now: now),
+          const SizedBox(height: Space.m),
           _TodayCard(
             state: state,
             now: now,
@@ -85,14 +174,11 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
             onPickDay: state.pickSplitDay,
             onProgram: () => _push(ProgramPage(state)),
             onOther: otherWorkout,
-            onQuiz: () => _push(PlanQuizPage(state)),
+            onQuiz: () => _push(PlanSetupPage(state)),
             onUsePlan: usePlan,
           ),
-          const SectionHeader('Tento týden'),
-          WeekFocusCard(state: state, now: now),
           const SizedBox(height: Space.m),
-          _WeekPanel(state: state, now: now),
-          _RecordsBoard(state),
+          CoverageCard(state: state, now: now),
           if (recent.isNotEmpty) ...[
             SectionHeader(
               'Historie',
@@ -105,8 +191,13 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
                   WorkoutRow(state: state, workout: w, now: widget.now),
               ],
             ),
-          ] else
-            const SizedBox(height: Space.xxl),
+          ],
+          const SectionHeader('Tento týden'),
+          WeekFocusCard(state: state, now: now),
+          const SizedBox(height: Space.m),
+          _WeekPanel(state: state, now: now),
+          _RecordsBoard(state),
+          const SizedBox(height: Space.xxl),
         ],
       );
     },
@@ -144,7 +235,11 @@ class _TodayCard extends StatelessWidget {
     vivid: true,
     // Závod: číslo jezdce = pořadí dnešního tréninku.
     watermark: '${state.workouts.where((w) => w.finished).length + 1}',
-    child: Builder(builder: _content),
+    // Rozepsaný trénink se mění při každé sérii: překreslí se jen karta.
+    child: ListenableBuilder(
+      listenable: state.on.active,
+      builder: (context, _) => _content(context),
+    ),
   );
 
   Widget _content(BuildContext context) {
@@ -463,7 +558,7 @@ class _RecordsBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final records = recentRecords(state.workouts, state.typeOf);
+    final records = state.recentRecordList();
     if (records.isEmpty) return const SizedBox.shrink();
     final p = context.palette;
     final text = Theme.of(context).textTheme;
@@ -549,15 +644,11 @@ class _WeekPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final week = weekSummary(state.workouts, now, state.typeOf);
+    final week = state.weekSummaryAt(now);
     final goal = state.weekGoal;
     final streak = state.has(ProFeature.mission) ? state.streak(now) : null;
     final lines = state.has(ProFeature.recap) && state.workouts.isNotEmpty
-        ? recapLines(
-            week,
-            previousWeekSummary(state.workouts, now, state.typeOf),
-            weekRecordCount(state.workouts, now, state.typeOf),
-          )
+        ? recapLines(week, state.previousWeekAt(now), state.weekRecordsAt(now))
         : const <String>[];
     return Panel(
       child: Column(

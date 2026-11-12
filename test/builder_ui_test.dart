@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/ui/widgets/muscle_tile_grid.dart';
 
 import 'support/finders.dart';
 
@@ -59,7 +60,12 @@ void main() {
     expect(find.text('Vyber aspoň jednu partii'), findsOneWidget);
     expect(find.text('Začít trénink'), findsNothing);
 
-    await tester.tap(find.widgetWithText(FilterChip, 'Ramena'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MuscleTileGrid),
+        matching: find.text('Ramena'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Doporučeno: 5 (na 60 min, začínám)'), findsOneWidget);
     expect(find.text('Vrátit'), findsNothing);

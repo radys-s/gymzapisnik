@@ -76,7 +76,7 @@ class _TrainerPageState extends State<TrainerPage> {
     if (scroll.hasClients) {
       scroll.animateTo(
         scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
+        duration: Motion.of(context, Motion.quick),
         curve: Curves.easeOut,
       );
     }

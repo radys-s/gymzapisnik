@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design/motion.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 
@@ -53,7 +54,7 @@ class _HoldToWipeState extends State<_HoldToWipe>
 
   void _release() {
     if (!_progress.isCompleted) {
-      _progress.animateBack(0, duration: const Duration(milliseconds: 250));
+      _progress.animateBack(0, duration: Motion.of(context, Motion.quick));
     }
   }
 

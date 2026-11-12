@@ -5,7 +5,24 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.7
+## Co je nového v beta.12
+
+**Úvod po jedné otázce**: cíl, dny, zkušenost a čas, každá otázka zvlášť s vysvětlením „Proč se ptám“.
+Stejné otázky otevřeš z Domova, Tréninku i Programu.
+**Moje posilovna** (Nastavení): typ posilovny a stroje, které tam nejsou; plán je pak nenabízí.
+**Kontrola rutiny** v editoru programu: ukáže chybějící hlavu svalu nebo partii a navržený cvik přidá.
+**Domov**: nahoře jídlo dne (kalorie, bílkoviny, nedávná jídla jedním klepnutím), pod ním dnešní
+trénink, partie tento týden a poslední tréninky. Když je čas na zálohu, Domov ji připomene.
+**Zápis série** je klidnější: fajfka se dokreslí, rekord jen tichý pohár, oslava až v souhrnu.
+**Souhrn** se odhaluje postupně; klepnutím ukážeš vše hned.
+**Diagnostika** (Nastavení): posledních 20 chyb; při hlášení problému je zkopíruj a pošli.
+Opravy: aplikace otevřená přes půlnoc ráno ukáže nový den (Strava už nezapíše jídlo ke včerejšku),
+váha se nikdy neukáže s visící čárkou („363,“) a číslo vložené s nezlomitelnou mezerou se přijme.
+
+**Na co se zaměřit**: projdi úvod, odcvič celý trénink a napiš nám nejvýš tři chvíle, kdy jsi
+nevěděl, co dál, nebo kdy tě aplikace zdržela.
+
+## Co bylo nového v beta.7
 
 **Plán na míru**: po uvítání odpovíš na čtyři otázky (cíl, dny v týdnu, zkušenost, čas)
 a aplikace doporučí program i počet cviků. Bez programu ho hlavní karta nabídne jedním klepnutím;
@@ -51,7 +68,10 @@ Při spuštění uvidíš krátkou radu nebo motivační větu; klepnutím ji p�
 
 ## Android (APK)
 
-1. Stáhni soubor `gymzapisnik.apk`, který ti poslal autor aplikace.
+1. Stáhni soubor `gymzapisnik-<verze>-release.apk`, který ti poslal autor aplikace.
+   (Sestaví ho GitHub Actions workflow **Tester build**. Od beta.12 jsou všechny APK
+   podepsané stejným testovacím klíčem, takže další verze se nainstaluje přes předchozí.
+   APK z dřívějška, podepsané jinak, je potřeba jednou odinstalovat: nejdřív ulož zálohu.)
 2. Otevři ho. Telefon se zeptá, jestli povolit instalaci z tohoto zdroje: povol.
 3. Nainstaluj a otevři. Při zapnutí připomínek (Nastavení → Připomínky) povol oznámení.
 

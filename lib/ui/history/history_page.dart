@@ -37,7 +37,7 @@ class HistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final groups = <String, List<Workout>>{};
       for (final w in state.workouts) {

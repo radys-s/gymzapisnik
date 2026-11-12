@@ -298,6 +298,8 @@ ThemeData buildTheme() {
       labelStyle: text.titleSmall?.copyWith(color: p.label),
       secondaryLabelStyle: text.titleSmall?.copyWith(color: p.accent),
       checkmarkColor: p.accent,
+      // Bez fajfky: vybraný chip se nerozšíří a řádek se nepřeskládá.
+      showCheckmark: false,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
     ),
     switchTheme: SwitchThemeData(

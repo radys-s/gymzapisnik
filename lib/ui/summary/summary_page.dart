@@ -49,6 +49,15 @@ class _SummaryPageState extends State<SummaryPage> {
   // Verdikt a cíle se počítají jednou; rebuildy (sync) je nepřepočítávají.
   (String, List<String>)? _coach;
 
+  /// Čerstvý souhrn se odhaluje postupně; první dotek ukáže všechno.
+  final _skip = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _skip.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -147,7 +156,15 @@ class _SummaryPageState extends State<SummaryPage> {
     navigator.pop();
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Trénink smazán.')));
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Trénink smazán.'),
+          action: SnackBarAction(
+            label: 'Vrátit',
+            onPressed: () => state.restoreWorkout(workout),
+          ),
+        ),
+      );
   }
 
   Widget _page(BuildContext context, Workout workout) {
@@ -179,7 +196,7 @@ class _SummaryPageState extends State<SummaryPage> {
       workout.date,
       state.typeOf,
     );
-    return LargeTitlePage(
+    final page = LargeTitlePage(
       title: finished ? 'Trénink hotový' : workout.name,
       implyLeading: !finished,
       actions: [
@@ -238,6 +255,13 @@ class _SummaryPageState extends State<SummaryPage> {
       children: [
         for (final (i, block) in [
           _hero(workout, finished, number, week, duration, sets, kg),
+          // Po tréninku: čas a objem → rekordy → odznaky → kouč → hodnocení.
+          if (finished && records.isNotEmpty)
+            _RecordsPanel(state: state, records: records),
+          if (finished)
+            if (state.badgesFrom(workout.id) case final badges
+                when badges.isNotEmpty)
+              _BadgesPanel(state: state, badges: badges, fresh: true),
           if (finished)
             switch (_coach ??= (
               _verdict(workout, number, records),
@@ -266,10 +290,12 @@ class _SummaryPageState extends State<SummaryPage> {
                 ),
               ),
             ),
-          if (records.isNotEmpty) _RecordsPanel(state: state, records: records),
-          if (state.badgesFrom(workout.id) case final badges
-              when badges.isNotEmpty)
-            _BadgesPanel(state: state, badges: badges, fresh: finished),
+          if (!finished && records.isNotEmpty)
+            _RecordsPanel(state: state, records: records),
+          if (!finished)
+            if (state.badgesFrom(workout.id) case final badges
+                when badges.isNotEmpty)
+              _BadgesPanel(state: state, badges: badges, fresh: false),
           if (finished && state.split != null) _NextPanel(state: state),
           SecondaryButton(
             _routineSaved ? 'Uloženo jako rutina' : 'Uložit jako rutinu',
@@ -285,7 +311,12 @@ class _SummaryPageState extends State<SummaryPage> {
             // Klíč podle typu bloku: pozdě přidaný blok nepřebere stav cizímu.
             key: ValueKey(block.runtimeType),
             padding: EdgeInsets.only(top: i == 0 ? 0 : Space.m),
-            child: Reveal(index: i, child: block),
+            child: Reveal(
+              index: i,
+              step: finished ? Motion.stage : null,
+              skip: _skip,
+              child: block,
+            ),
           ),
         const SizedBox(height: Space.xl),
         SectionHeader('Cviky (${workout.exercises.length})'),
@@ -299,6 +330,15 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
           ),
       ],
+    );
+    // Dotek nebo posun přeskočí postupné odhalení (nic se nezablokuje).
+    // Listener vždy, ať se strom při změně režimu nepřestaví.
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        if (finished) _skip.value = true;
+      },
+      child: page,
     );
   }
 

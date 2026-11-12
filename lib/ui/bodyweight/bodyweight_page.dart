@@ -85,7 +85,7 @@ class BodyweightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      ListenableBuilder(listenable: state, builder: _card);
+      ListenableBuilder(listenable: state.on.resting, builder: _card);
 
   Widget _card(BuildContext context, Widget? _) {
     final scheme = Theme.of(context).colorScheme;
@@ -127,9 +127,25 @@ class BodyweightPage extends StatelessWidget {
   final AppState state;
   const BodyweightPage(this.state, {super.key});
 
+  Future<void> _remove(BuildContext context, BodyWeight entry) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await state.removeBodyweight(entry.id);
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Smazáno: ${formatKg(entry.kg)} kg'),
+          action: SnackBarAction(
+            label: 'Vrátit',
+            onPressed: () => state.restoreBodyweight(entry),
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state,
+    listenable: state.on.resting,
     builder: (context, _) {
       final list = state.bodyweights;
       return LargeTitlePage(
@@ -186,7 +202,7 @@ class BodyweightPage extends StatelessWidget {
                     trailing: IconButton(
                       tooltip: 'Smazat záznam',
                       icon: const Icon(Icons.delete_outline),
-                      onPressed: () => state.removeBodyweight(b.id),
+                      onPressed: () => _remove(context, b),
                     ),
                   ),
               ],
