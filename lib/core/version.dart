@@ -1,5 +1,5 @@
 /// Verze aplikace; musí odpovídat `version` v `pubspec.yaml` (hlídá test).
-const appVersion = '1.0.0-beta.11+20';
+const appVersion = '1.0.0-beta.12+21';
 
 /// Kam testeři píšou zpětnou vazbu. Doplní se buildem
 /// (`--dart-define=FEEDBACK_EMAIL=…`), v repozitáři žádná adresa není.
