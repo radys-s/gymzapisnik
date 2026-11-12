@@ -3,7 +3,7 @@ name: Tester build (Android APK + web)
 # Run by hand: Actions → Tester build → Run workflow, or
 #   gh workflow run tester-build.yml --ref <branch>
 # Android signing: add repository secrets ANDROID_KEYSTORE_BASE64 (base64 of the
-# release .jks), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+# release keystore, JKS or PKCS12), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
 # They must be the same key as earlier APKs, otherwise testers cannot update over
 # the installed app. Without them the APK is debug-signed and only fit for a fresh install.
 
@@ -22,6 +22,8 @@ concurrency:
 
 env:
   AI_URL: https://gymzapisnik-ai.gymzapisnik-ai.workers.dev
+  # Optional repository variable: shows "Napsat zpětnou vazbu" in Settings.
+  FEEDBACK_EMAIL: ${{ vars.FEEDBACK_EMAIL }}
 
 jobs:
   android:
@@ -57,9 +59,9 @@ jobs:
             echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: APK is debug-signed and cannot update an app signed with the release key."
             exit 0
           fi
-          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           {
-            echo "storeFile=$RUNNER_TEMP/release.jks"
+            echo "storeFile=$RUNNER_TEMP/release.keystore"
             echo "storePassword=$KEYSTORE_PASSWORD"
             echo "keyAlias=$KEY_ALIAS"
             echo "keyPassword=$KEY_PASSWORD"
@@ -71,16 +73,19 @@ jobs:
           set -euo pipefail
           version=$(sed -n 's/^version: *//p' pubspec.yaml)
           label=${version%%+*}
-          flutter build apk --release --no-pub --dart-define=AI_URL="$AI_URL"
+          flutter build apk --release --no-pub --dart-define=AI_URL="$AI_URL" --dart-define=FEEDBACK_EMAIL="$FEEDBACK_EMAIL"
           mkdir -p dist/android
           apk="dist/android/gymzapisnik-${label}-${SIGNING}.apk"
           cp build/app/outputs/flutter-apk/app-release.apk "$apk"
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          cert=$("$apksigner" verify --print-certs "$apk" | sed -n 's/.*SHA-256 digest: //p' | head -1)
+          [ -n "$cert" ] || { echo "APK signature did not verify"; exit 1; }
           (cd dist/android && sha256sum ./*.apk > SHA256.txt)
           printf '%s\n' "$GITHUB_SHA" > dist/android/SOURCE_COMMIT.txt
           rm -f android/key.properties
           {
             echo "### Android APK"
-            echo "- version: \`$version\`, signing: **$SIGNING**"
+            echo "- version: \`$version\`, signing: **$SIGNING**, certificate SHA-256: \`$cert\`"
             echo "- \`$(cat dist/android/SHA256.txt)\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.7.1
@@ -107,7 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           flutter pub get --enforce-lockfile
-          flutter build web --release --no-pub --dart-define=AI_URL="$AI_URL"
+          flutter build web --release --no-pub --dart-define=AI_URL="$AI_URL" --dart-define=FEEDBACK_EMAIL="$FEEDBACK_EMAIL"
           python3 scripts/stamp_web_build.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.7.1
         with:

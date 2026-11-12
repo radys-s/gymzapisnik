@@ -237,6 +237,18 @@ void main() {
     expect((await reload()).workouts, isEmpty);
   });
 
+  test(
+    'undo after delete brings the workout back, also after reload',
+    () async {
+      final w = await logBench([(80, 8)], DateTime(2026, 10, 1));
+      await state.deleteWorkout(w);
+      await state.restoreWorkout(w);
+      await state.restoreWorkout(w);
+      expect(state.workouts.map((x) => x.id), [w.id]);
+      expect((await reload()).workouts.map((x) => x.id), [w.id]);
+    },
+  );
+
   test('split day: plan, rotation and progression across workouts', () async {
     await state.setSplit('ppl');
     expect((await reload()).split?.id, 'ppl');

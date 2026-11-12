@@ -156,7 +156,15 @@ class _SummaryPageState extends State<SummaryPage> {
     navigator.pop();
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Trénink smazán.')));
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Trénink smazán.'),
+          action: SnackBarAction(
+            label: 'Vrátit',
+            onPressed: () => state.restoreWorkout(workout),
+          ),
+        ),
+      );
   }
 
   Widget _page(BuildContext context, Workout workout) {

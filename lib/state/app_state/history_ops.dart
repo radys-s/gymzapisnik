@@ -36,6 +36,15 @@ extension HistoryOps on AppState {
     unawaited(syncReminders());
   }
 
+  /// Vrátí smazaný dokončený trénink („Vrátit“ po smazání).
+  Future<void> restoreWorkout(Workout workout) async {
+    if (workouts.any((w) => w.id == workout.id)) return;
+    await _enqueue(() => store.put(Kinds.workout, workout.toJson()));
+    workouts = [workout, ...workouts]..sort((a, b) => b.date.compareTo(a.date));
+    _changed();
+    unawaited(syncReminders());
+  }
+
   /// Uloží rozepsaná data před aktualizací webové verze.
   Future<void> saveBeforeUpdate() async {
     final finishing = _finishing;

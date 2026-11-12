@@ -69,8 +69,9 @@ Při spuštění uvidíš krátkou radu nebo motivační větu; klepnutím ji p�
 ## Android (APK)
 
 1. Stáhni soubor `gymzapisnik-<verze>-release.apk`, který ti poslal autor aplikace.
-   (Autor ho sestaví v GitHub Actions workflow **Tester build**; soubor s `debug` v názvu
-   jde nainstalovat jen načisto, ne přes starší verzi.)
+   (Sestaví ho GitHub Actions workflow **Tester build**. Od beta.12 jsou všechny APK
+   podepsané stejným testovacím klíčem, takže další verze se nainstaluje přes předchozí.
+   APK z dřívějška, podepsané jinak, je potřeba jednou odinstalovat: nejdřív ulož zálohu.)
 2. Otevři ho. Telefon se zeptá, jestli povolit instalaci z tohoto zdroje: povol.
 3. Nainstaluj a otevři. Při zapnutí připomínek (Nastavení → Připomínky) povol oznámení.
 
