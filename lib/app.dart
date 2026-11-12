@@ -60,12 +60,13 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   late int tab = widget.state.profile.lastTab;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Po aktualizaci jednou ukáže novinky (nové instalace je mají za sebou).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) showWhatsNewOnce(context, widget.state);
@@ -79,7 +80,20 @@ class _AppShellState extends State<AppShell> {
     GlobalKey<NavigatorState>(debugLabel: 'Profil'),
   ];
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Telefon nechá aplikaci otevřenou přes noc: ráno má ukázat nový den.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) widget.state.checkNewDay();
+  }
+
   void _select(int i) {
+    widget.state.checkNewDay();
     if (i == tab) {
       // Druhé klepnutí na záložku vrátí na její začátek (jako v iOS).
       _navigators[i].currentState?.popUntil((r) => r.isFirst);

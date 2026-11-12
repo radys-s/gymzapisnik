@@ -243,6 +243,19 @@ class AppState extends ChangeNotifier {
   /// Pro rozšíření v částech knihovny (`notifyListeners` je chráněné).
   void _changed() => notifyListeners();
 
+  /// Kalendářní den, pro který jsou obrazovky vykreslené.
+  (int, int, int) _today = _day(DateTime.now());
+
+  /// Po půlnoci (aplikace zůstala otevřená nebo se vrátila z pozadí)
+  /// překreslí obrazovky pro nový den. Vrací, jestli se den změnil.
+  bool checkNewDay({DateTime? now}) {
+    final today = _day(now ?? DateTime.now());
+    if (today == _today) return false;
+    _today = today;
+    _changed();
+    return true;
+  }
+
   // Aktivní trénink: stav pro app_state/active_workout.dart
   /// Zápisy se řadí za sebe, aby rychlé klikání nepřepsalo novější stav
   /// starším a dokončení počkalo na rozepsané uložení.
@@ -369,7 +382,7 @@ class StateSlices {
         (s) => (s.workouts, s.customExercises, s.bodyweights),
       ),
       food = StateSlice._(s, (s) => s.foods),
-      profile = StateSlice._(s, (s) => (s.profile, s._dayPick)),
+      profile = StateSlice._(s, (s) => (s.profile, s._dayPick, s._today)),
       consent = StateSlice._(s, (s) => s.profile.hasValidConsent);
 
   /// Všechno kromě rozepsaného tréninku (obrazovky mimo trénink).

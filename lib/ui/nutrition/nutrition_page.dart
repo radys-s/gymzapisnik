@@ -185,17 +185,24 @@ class NutritionPage extends StatefulWidget {
 }
 
 class _NutritionPageState extends State<NutritionPage> {
-  late DateTime day = () {
-    final d = widget.initialDay ?? DateTime.now();
-    return DateTime(d.year, d.month, d.day);
-  }();
+  late DateTime day = _dateOf(widget.initialDay ?? DateTime.now());
+
+  /// Zobrazený den je dnešek: po půlnoci se posune na nový den, aby se
+  /// jídlo nezapsalo ke včerejšku.
+  late bool _followsToday = _isToday;
 
   AppState get state => widget.state;
 
+  static DateTime _dateOf(DateTime d) => DateTime(d.year, d.month, d.day);
+
   bool get _isToday => dayKey(day) == dayKey(DateTime.now());
 
-  void _shift(int days) =>
-      setState(() => day = DateTime(day.year, day.month, day.day + days));
+  void _show(DateTime next) => setState(() {
+    day = _dateOf(next);
+    _followsToday = _isToday;
+  });
+
+  void _shift(int days) => _show(DateTime(day.year, day.month, day.day + days));
 
   Future<void> _pick() async {
     final now = DateTime.now();
@@ -205,7 +212,7 @@ class _NutritionPageState extends State<NutritionPage> {
       firstDate: DateTime(2020),
       lastDate: now,
     );
-    if (picked != null) setState(() => day = picked);
+    if (picked != null) _show(picked);
   }
 
   Future<void> _delete(FoodEntry e) async {
@@ -247,6 +254,7 @@ class _NutritionPageState extends State<NutritionPage> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state.on.resting,
     builder: (context, _) {
+      if (_followsToday && !_isToday) day = _dateOf(DateTime.now());
       final key = dayKey(day);
       final entries = state.foodsOn(key);
       final totals = totalsOf(entries);

@@ -73,4 +73,20 @@ void main() {
     expect(identical(week, state.weekSummaryAt(now)), isFalse);
     expect(state.weekSummaryAt(now), isNot(same(week)));
   });
+
+  test('a new calendar day redraws resting screens once', () async {
+    final state = await _state();
+    var calls = 0;
+    state.on.resting.addListener(() => calls++);
+    final now = DateTime.now();
+
+    expect(state.checkNewDay(now: now), isFalse);
+    expect(calls, 0);
+
+    final tomorrow = DateTime(now.year, now.month, now.day + 1, 0, 5);
+    expect(state.checkNewDay(now: tomorrow), isTrue);
+    expect(calls, 1);
+    expect(state.checkNewDay(now: tomorrow), isFalse);
+    expect(calls, 1);
+  });
 }
