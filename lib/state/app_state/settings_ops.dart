@@ -53,6 +53,15 @@ extension SettingsOps on AppState {
     _changed();
   }
 
+  /// Vrátí smazaný záznam váhy („Vrátit“ po smazání).
+  Future<void> restoreBodyweight(BodyWeight entry) async {
+    if (bodyweights.any((b) => b.id == entry.id)) return;
+    await _enqueue(() => store.put(Kinds.bodyweight, entry.toJson()));
+    bodyweights = [entry, ...bodyweights]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    _changed();
+  }
+
   /// Záznamy deníku z jednoho dne, nejnovější první.
   List<FoodEntry> foodsOn(String day) => [
     for (final f in foods)

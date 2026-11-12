@@ -127,6 +127,22 @@ class BodyweightPage extends StatelessWidget {
   final AppState state;
   const BodyweightPage(this.state, {super.key});
 
+  Future<void> _remove(BuildContext context, BodyWeight entry) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await state.removeBodyweight(entry.id);
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Smazáno: ${formatKg(entry.kg)} kg'),
+          action: SnackBarAction(
+            label: 'Vrátit',
+            onPressed: () => state.restoreBodyweight(entry),
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state.on.resting,
@@ -186,7 +202,7 @@ class BodyweightPage extends StatelessWidget {
                     trailing: IconButton(
                       tooltip: 'Smazat záznam',
                       icon: const Icon(Icons.delete_outline),
-                      onPressed: () => state.removeBodyweight(b.id),
+                      onPressed: () => _remove(context, b),
                     ),
                   ),
               ],

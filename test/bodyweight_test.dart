@@ -80,6 +80,24 @@ void main() {
     expect(state.bodyweights, isEmpty);
   });
 
+  test('undo after delete brings the weight back', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    await state.load();
+    await state.addBodyweight(80, now: DateTime(2026, 10, 1));
+    final entry = state.bodyweights.single;
+
+    await state.removeBodyweight(entry.id);
+    await state.restoreBodyweight(entry);
+    await state.restoreBodyweight(entry);
+    expect(state.bodyweights.map((b) => b.id), [entry.id]);
+
+    final again = AppState(LocalStore(db));
+    await again.load();
+    expect(again.bodyweights.map((b) => b.kg), [80.0]);
+  });
+
   testWidgets('card adds a weight and shows it', (tester) async {
     final state = newState();
     await tester.runAsync(state.load);
