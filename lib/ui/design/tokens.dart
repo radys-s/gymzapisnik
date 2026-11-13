@@ -82,6 +82,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const training = [green, Color(0xFFB0D400), yellow];
   static const food = [green, Color(0xFF3FC9A0), cyan];
 
+  /// Barvy supersérií A, B, C, D (dál se opakují).
+  static const superset = [cyan, yellow, Color(0xFFFF9F43), Color(0xFFC08BFF)];
+
   /// Staré názvy, které ještě používají grafy.
 
   /// Žlutá pro rekordy a odznaky.

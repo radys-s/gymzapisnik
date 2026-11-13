@@ -9,7 +9,9 @@ import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/last_delta.dart';
 import '../../domain/models.dart';
+import '../../domain/rpe.dart';
 import '../../domain/set_match.dart';
+import '../../domain/superset.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/haptics.dart';
@@ -314,6 +316,33 @@ class _WorkoutPageState extends State<WorkoutPage> {
         if (note == null) return;
         entry.note = note.trim();
         await _save();
+      case 'pin':
+        final pinned = await _editText(
+          title: 'Připnutá poznámka',
+          initial: state.profile.exerciseNote(entry.exerciseId) ?? '',
+          hint: 'ukáže se v každém tréninku, např. sedačka 4',
+          maxLines: 3,
+        );
+        if (pinned == null) return;
+        try {
+          await state.setExerciseNote(entry.exerciseId, pinned);
+        } catch (_) {
+          _snack('Poznámku se nepodařilo uložit. Zkus to znovu.');
+        }
+      case 'superset':
+        try {
+          if (!await state.linkSuperset(entry)) {
+            _snack('Pod tímto cvikem už žádný další není.');
+          }
+        } catch (_) {
+          _snack('Supersérii se nepodařilo uložit. Zkus to znovu.');
+        }
+      case 'unsuperset':
+        try {
+          await state.unlinkSuperset(entry);
+        } catch (_) {
+          _snack('Supersérii se nepodařilo zrušit. Zkus to znovu.');
+        }
       case 'replace':
         if (hasDone &&
             !await confirmAction(
@@ -395,6 +424,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
       final p = context.palette;
       final text = Theme.of(context).textTheme;
       final exercises = workout.exercises;
+      final slots = supersetSlots(exercises);
       return PopScope(
         canPop: !_busy,
         child: AbsorbPointer(
@@ -492,6 +522,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   ),
                 for (var i = 0; i < exercises.length; i++)
                   _ExerciseCard(
+                    superset: slots[i],
                     key: ObjectKey(exercises[i]),
                     state: state,
                     entry: exercises[i],

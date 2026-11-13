@@ -46,6 +46,24 @@ void main() {
     expect(s.reason, contains('přidej 2,5 kg'));
   });
 
+  test('RPE 10 on top sets holds weight instead of adding', () {
+    final last = session(1, [(60, 12), (60, 12), (60, 12)]);
+    last.entry.sets.last.extra['rpe'] = 10;
+    final s = suggest(plan, ExerciseType.weighted, [last]);
+    expect(s.kind, SuggestionKind.hold);
+    expect(s.weight, 60.0);
+  });
+
+  test('all sets at RPE 7 one rep short still add weight', () {
+    final last = session(1, [(60, 11), (60, 11), (60, 11)]);
+    for (final set in last.entry.sets) {
+      set.extra['rpe'] = 7;
+    }
+    final s = suggest(plan, ExerciseType.weighted, [last]);
+    expect(s.kind, SuggestionKind.increase);
+    expect(s.weight, 62.5);
+  });
+
   test('missing reps holds weight and adds one rep', () {
     final s = suggest(plan, ExerciseType.weighted, [
       session(1, [(60, 12), (60, 10), (60, 9)]),

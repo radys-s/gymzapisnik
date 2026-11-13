@@ -113,6 +113,14 @@ class Profile {
     return v is num && v.isFinite ? v.toInt().clamp(15, 600) : null;
   }
 
+  /// Připnutá poznámka ke cviku (nastavení stroje, úchop); ukazuje se
+  /// v každém tréninku. `null` = žádná.
+  String? exerciseNote(String exerciseId) {
+    final map = extra[ProfileKey.exerciseNotes];
+    final v = map is Map ? map[exerciseId] : null;
+    return v is String && v.trim().isNotEmpty ? v : null;
+  }
+
   /// Krok tlačítek +/− u váhy v kg.
   double get weightStep {
     final v = extra[ProfileKey.weightStep];
