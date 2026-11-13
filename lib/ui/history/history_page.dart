@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/text.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
@@ -30,17 +31,47 @@ String monthLabel(DateTime d) {
   return '${_months[local.month - 1]} ${local.year}';
 }
 
+/// Hledá v názvu tréninku, poznámkách a názvech cviků, bez diakritiky.
+/// Víc slov musí sedět všechna („dřep nohy“).
+bool matchesWorkout(
+  Workout w,
+  String query,
+  String Function(String exerciseId) exerciseName,
+) {
+  final words = fold(query).split(RegExp(r'\s+')).where((t) => t.isNotEmpty);
+  if (words.isEmpty) return true;
+  final haystack = fold(
+    [
+      w.name,
+      w.note,
+      for (final e in w.exercises) ...[exerciseName(e.exerciseId), e.note],
+    ].join(' '),
+  );
+  return words.every(haystack.contains);
+}
+
 /// Dokončené tréninky po měsících, od nejnovějšího.
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   final AppState state;
   const HistoryPage(this.state, {super.key});
 
   @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  String query = '';
+
+  @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state.on.resting,
+    listenable: widget.state.on.resting,
     builder: (context, _) {
+      final state = widget.state;
       final groups = <String, List<Workout>>{};
       for (final w in state.workouts) {
+        if (!matchesWorkout(w, query, (id) => state.exercise(id).name)) {
+          continue;
+        }
         groups.putIfAbsent(monthLabel(w.date), () => []).add(w);
       }
       return LargeTitlePage(
@@ -51,7 +82,24 @@ class HistoryPage extends StatelessWidget {
               icon: Icons.history,
               title: 'Zatím žádný trénink',
               message: 'Dokončené tréninky se tu objeví po měsících.',
+            )
+          else ...[
+            TextField(
+              decoration: const InputDecoration(
+                hintText: 'Hledat trénink nebo cvik',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
+              textInputAction: TextInputAction.search,
+              onChanged: (v) => setState(() => query = v),
             ),
+            const SizedBox(height: Space.m),
+            if (groups.isEmpty)
+              const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Nic nenalezeno',
+                message: 'Zkus jiný název cviku nebo tréninku.',
+              ),
+          ],
           for (final MapEntry(key: month, value: list) in groups.entries)
             GroupedSection(
               header: month,

@@ -2,6 +2,14 @@ part of '../workout_page.dart';
 
 // Řádek jedné série.
 
+/// Hodnoty z minula: „80×8“, s náročností „80×8 @9“.
+String _prevLabel(SetEntry? prev) {
+  if (prev == null) return '–';
+  final value = '${formatKg(prev.weight)}×${prev.reps}';
+  final rpe = prev.rpe;
+  return rpe == null ? value : '$value @${formatRpe(rpe)}';
+}
+
 class _SetRow extends StatefulWidget {
   final AppState state;
   final SetEntry set;
@@ -129,8 +137,16 @@ class _SetRowState extends State<_SetRow> {
           return false;
         }
       },
+      rpe: widget.set.warmup ? null : widget.set.rpe,
+      onRpe: widget.set.warmup
+          ? null
+          : (v) => widget.state.setRpe(widget.set, v),
     );
   }
+
+  /// Klepnutí na „Minule“ opíše minulé hodnoty do nepotvrzené série.
+  Future<void> _copyPrevious(SetEntry prev) =>
+      _persist(() => widget.state.copyPrevious(widget.set, prev));
 
   void _typeMenu(String action) => switch (action) {
     'working' => _persist(() => widget.state.setWarmup(widget.set, false)),
@@ -146,6 +162,7 @@ class _SetRowState extends State<_SetRow> {
     TextEditingController c, {
     required String label,
     bool decimal = false,
+    String? suffix,
   }) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 3),
     child: ListenableBuilder(
@@ -170,10 +187,17 @@ class _SetRowState extends State<_SetRow> {
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodyLarge
             ?.copyWith(fontFeatures: tabular),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: '0',
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 12,
+          ),
+          // Náročnost série (RPE) drobně za opakováními.
+          suffixText: suffix,
+          suffixStyle: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: context.palette.secondaryLabel),
         ),
         onTap: () => _openSheet(focusReps: !decimal),
       ),
@@ -188,6 +212,12 @@ class _SetRowState extends State<_SetRow> {
     final prev = widget.previous;
     final kgLabel = widget.bodyweight ? 'Přidaná váha v kg' : 'Váha v kg';
     final record = set.done && widget.state.liveRecords(set).isNotEmpty;
+    final rpe = set.warmup ? null : set.rpe;
+    final canCopy =
+        prev != null &&
+        !set.done &&
+        prev.reps > 0 &&
+        (prev.weight != set.weight || prev.reps != set.reps);
     return Dismissible(
       key: ObjectKey(set),
       direction: DismissDirection.endToStart,
@@ -275,19 +305,34 @@ class _SetRowState extends State<_SetRow> {
             ),
             Expanded(
               flex: 3,
-              // Celé číslo i na úzkém displeji: radši menší než useknuté.
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  prev == null ? '–' : '${formatKg(prev.weight)}×${prev.reps}',
-                  semanticsLabel: prev == null
-                      ? 'Minule nic'
-                      : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
-                  maxLines: 1,
-                  style: text.bodyMedium?.copyWith(
-                    color: p.secondaryLabel,
-                    fontFeatures: tabular,
+              // Klepnutí opíše minulé hodnoty.
+              child: Semantics(
+                container: true,
+                button: canCopy,
+                hint: canCopy ? 'Opíše hodnoty z minula' : null,
+                onTap: canCopy ? () => _copyPrevious(prev) : null,
+                child: InkWell(
+                  onTap: canCopy ? () => _copyPrevious(prev) : null,
+                  borderRadius: BorderRadius.circular(p.controlRadius),
+                  child: SizedBox(
+                    height: minTap,
+                    // Celé číslo i na úzkém displeji: radši menší než
+                    // useknuté.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _prevLabel(prev),
+                        semanticsLabel: prev == null
+                            ? 'Minule nic'
+                            : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
+                        maxLines: 1,
+                        style: text.bodyMedium?.copyWith(
+                          color: p.secondaryLabel,
+                          fontFeatures: tabular,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -296,7 +341,16 @@ class _SetRowState extends State<_SetRow> {
               flex: 3,
               child: _field(weight, label: '$kgLabel, $_name', decimal: true),
             ),
-            Expanded(flex: 3, child: _field(reps, label: 'Opakování, $_name')),
+            Expanded(
+              flex: 3,
+              child: _field(
+                reps,
+                label: rpe == null
+                    ? 'Opakování, $_name'
+                    : 'Opakování, $_name, RPE ${formatRpe(rpe)}',
+                suffix: rpe == null ? null : '@${formatRpe(rpe)}',
+              ),
+            ),
             Container(
               width: _doneWidth,
               height: 48,

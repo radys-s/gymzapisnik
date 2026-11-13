@@ -36,6 +36,8 @@ import '../domain/profile.dart';
 import '../domain/profile_keys.dart';
 import '../domain/set_match.dart';
 import '../domain/stats.dart';
+import '../domain/strength.dart';
+import '../domain/superset.dart';
 import '../coach/nutrition_target.dart';
 import '../coach/reminders.dart';
 import '../notify/notifier.dart';

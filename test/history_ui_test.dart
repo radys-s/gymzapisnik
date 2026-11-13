@@ -10,6 +10,20 @@ import 'package:gymzapisnik/ui/history/history_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
+  test('workout search folds diacritics and needs every word', () {
+    final w = Workout(
+      id: 'w',
+      name: 'Nohy',
+      startedAt: DateTime(2026, 10, 1),
+      note: 'Těžký den',
+    )..exercises.add(WorkoutExercise(id: 'e', exerciseId: 'squat'));
+    String name(String _) => 'Dřep s činkou';
+    expect(matchesWorkout(w, '', name), isTrue);
+    expect(matchesWorkout(w, 'drep', name), isTrue);
+    expect(matchesWorkout(w, 'tezky nohy', name), isTrue);
+    expect(matchesWorkout(w, 'drep bench', name), isFalse);
+  });
+
   testWidgets('history lists months and exercise detail shows chart', (
     tester,
   ) async {
@@ -36,6 +50,14 @@ void main() {
     expect(find.text('Září 2026'), findsOneWidget);
     expect(find.text('Rekord'), findsNWidgets(2));
 
+    // Hledání bez diakritiky: „bench“ najde všechny, nesmysl nic.
+    await tester.enterText(find.byType(TextField), 'xyz');
+    await tester.pump();
+    expect(find.text('Nic nenalezeno'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
+    expect(find.text('Září 2026'), findsOneWidget);
+
     tester.view
       ..physicalSize = const Size(390, 3600)
       ..devicePixelRatio = 1;
@@ -45,6 +67,9 @@ void main() {
     // Rekord a v kalkulačce 1RM zase 82,5 kg na 8 opakování (82,5 × 8).
     expect(find.text('82,5 kg'), findsNWidgets(2));
     expect(find.text('Kalkulačka 1RM'), findsOneWidget);
+    // Úroveň síly čeká na tělesnou váhu.
+    expect(find.text('Úroveň síly'), findsOneWidget);
+    expect(find.textContaining('Zapiš si tělesnou váhu'), findsOneWidget);
     // 82,5 × (1 + 8/30) = 104,5; na 3 opakování 104,5 / 1,1 = 95.
     expect(find.text('95 kg'), findsOneWidget);
     expect(find.text('Odhad 1RM v čase'), findsOneWidget);

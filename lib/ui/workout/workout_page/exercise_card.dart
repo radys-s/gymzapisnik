@@ -24,6 +24,9 @@ class _ExerciseCard extends StatelessWidget {
   final WorkoutExercise entry;
   final bool canMoveUp;
   final bool canMoveDown;
+
+  /// Místo v supersérii, `null` = samostatný cvik.
+  final SupersetSlot? superset;
   final ValueChanged<String> onMenu;
   final ValueChanged<SetEntry> onRemoveSet;
   final ValueChanged<String> onError;
@@ -34,6 +37,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.entry,
     required this.canMoveUp,
     required this.canMoveDown,
+    this.superset,
     required this.onMenu,
     required this.onRemoveSet,
     required this.onError,
@@ -48,9 +52,12 @@ class _ExerciseCard extends StatelessWidget {
     final last = state.lastSetsOf(entry.exerciseId);
     final previous = previousSets(entry.sets, last);
     final bodyweight = exercise.type == ExerciseType.bodyweight;
+    final pinned = state.profile.exerciseNote(exercise.id);
+    final slot = superset;
+    final linked = slot != null && !slot.isLast;
     var workingIndex = 0;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Space.m),
+    return _SupersetFrame(
+      slot: slot,
       child: Panel(
         padding: const EdgeInsets.fromLTRB(
           Space.m,
@@ -61,6 +68,7 @@ class _ExerciseCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (slot != null) _SupersetLabel(slot),
             Row(
               children: [
                 Expanded(
@@ -117,6 +125,14 @@ class _ExerciseCard extends StatelessWidget {
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'note', child: Text('Poznámka')),
                     PopupMenuItem(
+                      value: 'pin',
+                      child: Text(
+                        pinned == null
+                            ? 'Připnout poznámku'
+                            : 'Upravit připnutou poznámku',
+                      ),
+                    ),
+                    PopupMenuItem(
                       value: 'rest',
                       child: Text(
                         'Pauza: ${restLabel(state.restFor(exercise.id))}',
@@ -148,6 +164,16 @@ class _ExerciseCard extends StatelessWidget {
                         value: 'reorder',
                         child: Text('Seřadit cviky'),
                       ),
+                    if (canMoveDown && !linked)
+                      const PopupMenuItem(
+                        value: 'superset',
+                        child: Text('Supersérie s dalším cvikem'),
+                      ),
+                    if (slot != null)
+                      const PopupMenuItem(
+                        value: 'unsuperset',
+                        child: Text('Zrušit supersérii'),
+                      ),
                     PopupMenuItem(
                       value: 'remove',
                       child: Text(
@@ -177,6 +203,28 @@ class _ExerciseCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Expanded(child: Text(reason, style: text.bodySmall)),
+                  ],
+                ),
+              ),
+            if (pinned != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.xs,
+                  0,
+                  Space.s,
+                  Space.s,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.push_pin_rounded,
+                      size: 16,
+                      color: p.secondaryLabel,
+                      semanticLabel: 'Připnutá poznámka',
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(pinned, style: text.bodySmall)),
                   ],
                 ),
               ),
@@ -248,6 +296,70 @@ class _ExerciseCard extends StatelessWidget {
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Série'),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Barva supersérie podle písmene skupiny.
+Color _supersetColor(SupersetSlot slot) =>
+    AppPalette.superset[slot.group % AppPalette.superset.length];
+
+/// Odsazení karty a pruh vlevo, který spojí cviky supersérie.
+class _SupersetFrame extends StatelessWidget {
+  final SupersetSlot? slot;
+  final Widget child;
+
+  const _SupersetFrame({required this.slot, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = slot;
+    if (s == null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: Space.m),
+        child: child,
+      );
+    }
+    return Container(
+      // Cviky jedné skupiny drží u sebe, za poslední je běžná mezera.
+      margin: EdgeInsets.only(bottom: s.isLast ? Space.m : Space.xs),
+      padding: const EdgeInsets.only(left: Space.s),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: _supersetColor(s), width: 3)),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// „Supersérie A · 1/2“ nad názvem cviku.
+class _SupersetLabel extends StatelessWidget {
+  final SupersetSlot slot;
+  const _SupersetLabel(this.slot);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _supersetColor(slot);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.xs, Space.xs, 0, 0),
+      child: Semantics(
+        container: true,
+        label:
+            'Supersérie ${slot.letter}, cvik ${slot.position + 1} '
+            'z ${slot.size}, střídej bez pauzy',
+        excludeSemantics: true,
+        child: Row(
+          children: [
+            Icon(Icons.link_rounded, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(
+              'Supersérie ${slot.letter} · ${slot.position + 1}/${slot.size}',
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: color),
             ),
           ],
         ),

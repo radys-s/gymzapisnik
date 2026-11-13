@@ -53,11 +53,16 @@ extension ActiveWorkoutOps on AppState {
     if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
     final workout = await startWorkout(name: past.name);
     final ids = <String>[];
+    final groups = <String, String>{};
     for (final e in past.exercises) {
-      if (!ids.contains(e.exerciseId)) ids.add(e.exerciseId);
-    }
-    for (final id in ids) {
-      workout.exercises.add(_prefilled(id));
+      if (ids.contains(e.exerciseId)) continue;
+      ids.add(e.exerciseId);
+      final entry = _prefilled(e.exerciseId);
+      // Supersérie zůstane spojená i v opakovaném tréninku.
+      if (supersetId(e) case final group?) {
+        entry.extra[supersetKey] = groups.putIfAbsent(group, newId);
+      }
+      workout.exercises.add(entry);
     }
     await saveActive();
     return workout;
@@ -224,6 +229,48 @@ extension ActiveWorkoutOps on AppState {
     return plan.length;
   }
 
+  /// Spojí cvik s tím pod ním do supersérie (střídají se bez pauzy).
+  Future<bool> linkSuperset(WorkoutExercise entry) async {
+    final list = active?.exercises;
+    if (list == null || !linkWithNext(list, entry, newId: newId())) {
+      return false;
+    }
+    await saveActive();
+    return true;
+  }
+
+  /// Vyjme cvik ze supersérie.
+  Future<void> unlinkSuperset(WorkoutExercise entry) {
+    final list = active?.exercises;
+    if (list == null) return Future.value();
+    unlink(list, entry, newId: newId());
+    return saveActive();
+  }
+
+  /// Náročnost série (RPE 1–10); `null` ji smaže.
+  Future<void> setRpe(SetEntry set, double? rpe) {
+    if (rpe == null || !rpe.isFinite || rpe < 1 || rpe > 10) {
+      if (set.extra.remove('rpe') == null) return Future.value();
+    } else {
+      if (set.rpe == rpe) return Future.value();
+      set.extra['rpe'] = rpe;
+    }
+    return saveActive();
+  }
+
+  /// Opíše do nepotvrzené série váhu a opakování z minula.
+  Future<bool> copyPrevious(SetEntry set, SetEntry previous) async {
+    if (set.done || previous.reps <= 0) return false;
+    if (set.weight == previous.weight && set.reps == previous.reps) {
+      return false;
+    }
+    set
+      ..weight = previous.weight
+      ..reps = previous.reps;
+    await saveActive();
+    return true;
+  }
+
   Future<void> removeExercise(WorkoutExercise entry) {
     active?.exercises.remove(entry);
     return saveActive();
@@ -352,11 +399,15 @@ extension ActiveWorkoutOps on AppState {
     }
     set.done = !set.done;
     if (set.done) {
-      final id = active?.exercises
-          .where((e) => e.sets.contains(set))
-          .firstOrNull
-          ?.exerciseId;
-      _setRestEnd((now ?? DateTime.now()).add(Duration(seconds: restFor(id))));
+      final list = active?.exercises ?? const <WorkoutExercise>[];
+      final entry = list.where((e) => e.sets.contains(set)).firstOrNull;
+      // V supersérii se jde rovnou na další cvik; pauza až po kole.
+      if (entry == null || restsAfter(list, entry)) {
+        final seconds = restFor(entry?.exerciseId);
+        _setRestEnd((now ?? DateTime.now()).add(Duration(seconds: seconds)));
+      } else {
+        _setRestEnd(null);
+      }
     }
     await saveActive();
     await syncRest();

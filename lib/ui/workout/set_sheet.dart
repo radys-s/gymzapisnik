@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/format.dart';
 import '../../core/parse.dart';
+import '../../domain/rpe.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 
@@ -13,7 +14,7 @@ const maxStepKg = 999.0;
 
 /// List pro úpravu série: velká čísla, − / + a klávesnice.
 /// Každá platná změna jde hned do [onChanged] (vrací, zda se uložila),
-/// „Hotovo“ jen zavře.
+/// „Hotovo“ jen zavře. S [onRpe] nabídne i volitelnou náročnost (RPE).
 Future<void> showSetSheet(
   BuildContext context, {
   required String title,
@@ -23,6 +24,8 @@ Future<void> showSetSheet(
   required bool bodyweight,
   bool focusReps = false,
   required Future<bool> Function(String weight, String reps) onChanged,
+  double? rpe,
+  Future<void> Function(double? rpe)? onRpe,
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
@@ -36,6 +39,8 @@ Future<void> showSetSheet(
     bodyweight: bodyweight,
     focusReps: focusReps,
     onChanged: onChanged,
+    rpe: rpe,
+    onRpe: onRpe,
   ),
 );
 
@@ -47,6 +52,8 @@ class SetSheet extends StatefulWidget {
   final bool bodyweight;
   final bool focusReps;
   final Future<bool> Function(String weight, String reps) onChanged;
+  final double? rpe;
+  final Future<void> Function(double? rpe)? onRpe;
 
   const SetSheet({
     super.key,
@@ -57,6 +64,8 @@ class SetSheet extends StatefulWidget {
     required this.bodyweight,
     required this.focusReps,
     required this.onChanged,
+    this.rpe,
+    this.onRpe,
   });
 
   @override
@@ -69,6 +78,7 @@ class _SetSheetState extends State<SetSheet> {
   final weightFocus = FocusNode();
   final repsFocus = FocusNode();
   String? error;
+  late double? rpe = widget.rpe;
 
   @override
   void dispose() {
@@ -98,6 +108,21 @@ class _SetSheetState extends State<SetSheet> {
     setState(
       () => error = saved ? null : 'Změnu se nepodařilo uložit. Zkus to znovu; aplikaci zatím nezavírej.',
     );
+  }
+
+  /// Druhé klepnutí na stejnou hodnotu ji zruší.
+  Future<void> _pickRpe(double value) async {
+    final next = rpe == value ? null : value;
+    setState(() => rpe = next);
+    try {
+      await widget.onRpe?.call(next);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error = 'Náročnost se nepodařilo uložit. Zkus to znovu.',
+        );
+      }
+    }
   }
 
   void _select(TextEditingController c) =>
@@ -202,6 +227,10 @@ class _SetSheetState extends State<SetSheet> {
                 ),
               ),
             ),
+          if (widget.onRpe != null) ...[
+            const SizedBox(height: Space.l),
+            _RpePicker(value: rpe, onPick: _pickRpe),
+          ],
           const SizedBox(height: Space.l),
           PrimaryButton('Hotovo', onPressed: () => Navigator.maybePop(context)),
         ],
@@ -333,6 +362,55 @@ class _ValueState extends State<_Value> {
             const SizedBox(width: Space.s),
             button(Icons.add_rounded, widget.plus, widget.onPlus),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Volitelná náročnost série: RPE 6–10 a co znamená.
+class _RpePicker extends StatelessWidget {
+  final double? value;
+  final ValueChanged<double> onPick;
+
+  const _RpePicker({required this.value, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final current = value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Náročnost (RPE), nepovinné',
+          textAlign: TextAlign.center,
+          style: text.labelMedium?.copyWith(color: p.secondaryLabel),
+        ),
+        const SizedBox(height: Space.xs),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: Space.xs,
+          runSpacing: Space.xs,
+          children: [
+            for (final v in rpeChoices)
+              ChoiceChip(
+                label: Text(formatRpe(v)),
+                selected: current == v,
+                showCheckmark: false,
+                tooltip: 'RPE ${formatRpe(v)}: ${rpeHint(v)}',
+                onSelected: (_) => onPick(v),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.xs),
+        Text(
+          current == null
+              ? 'Kolik opakování ti zbylo? Kouč podle toho volí váhu.'
+              : rpeHint(current),
+          textAlign: TextAlign.center,
+          style: text.bodySmall?.copyWith(color: p.secondaryLabel),
         ),
       ],
     );

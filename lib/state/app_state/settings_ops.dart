@@ -23,6 +23,28 @@ extension SettingsOps on AppState {
     return p.withExtra({ProfileKey.restByExercise: map.isEmpty ? null : map});
   });
 
+  /// Připnutá poznámka ke cviku; prázdný text ji smaže.
+  Future<void> setExerciseNote(
+    String exerciseId,
+    String note,
+  ) => _updateProfile((p) {
+    final map = {
+      ...?(p.extra[ProfileKey.exerciseNotes] as Map?)?.cast<String, dynamic>(),
+    };
+    final text = note.trim();
+    if (text.isEmpty) {
+      map.remove(exerciseId);
+    } else {
+      map[exerciseId] = text.length > 500 ? text.substring(0, 500) : text;
+    }
+    return p.withExtra({ProfileKey.exerciseNotes: map.isEmpty ? null : map});
+  });
+
+  /// Tabulka pro úroveň síly (muži / ženy).
+  Future<void> setStrengthStandard(StrengthStandard standard) => _updateProfile(
+    (p) => p.withExtra({ProfileKey.strengthStandard: standard.name}),
+  );
+
   Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
       _updateProfile(
         (p) => p.withExtra({

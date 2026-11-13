@@ -5,7 +5,8 @@
 ///    uživatel zvolí sám; cíl je spodní hranice rozsahu.
 /// 2. Dvakrát po sobě bez posunu (nejlepší série) → odlehčení o 10 %.
 /// 3. Všechny plánované série na horní hranici → přidat váhu, zpět na spodní.
-///    Hodnocení „lehký“ stačí o opakování méně, „na hraně“ váhu podrží;
+///    Hodnocení „lehký“ (nebo RPE do 7) stačí o opakování méně, „na hraně“
+///    (nebo RPE 9,5 a víc) váhu podrží;
 ///    s málem bílkovin je krok poloviční.
 /// 4. Jinak držet váhu a přidat opakování.
 library;
@@ -165,13 +166,19 @@ Suggestion suggest(
   }
 
   final rating = ratingOf(last.workout);
+  // Zapsaná náročnost sérií (RPE) upřesní hodnocení celého tréninku:
+  // série na 9,5–10 je na hraně, všechny do 7 jsou lehké.
+  final rpes = [for (final s in atTop) ?s.rpe];
+  final hardest = rpes.fold<double>(0, math.max);
+  final easySets =
+      rpes.isNotEmpty && rpes.length == atTop.length && hardest <= 7;
+  final limit = rating == WorkoutRating.limit || hardest >= 9.5;
+  final easy = !limit && (rating == WorkoutRating.easy || easySets);
   final allAtTop = atTop.length >= plan.sets && minReps >= plan.repMax;
   // Lehký trénink s rezervou: stačí být opakování pod horní hranicí.
   final easyNearTop =
-      rating == WorkoutRating.easy &&
-      atTop.length >= plan.sets &&
-      minReps >= plan.repMax - 1;
-  if ((allAtTop || easyNearTop) && rating == WorkoutRating.limit) {
+      easy && atTop.length >= plan.sets && minReps >= plan.repMax - 1;
+  if ((allAtTop || easyNearTop) && limit) {
     return Suggestion(
       kind: SuggestionKind.hold,
       weight: topWeight,

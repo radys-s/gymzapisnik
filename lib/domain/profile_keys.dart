@@ -23,6 +23,8 @@ abstract final class ProfileKey {
   static const restAlerts = 'restAlerts';
   static const weightStep = 'weightStep';
   static const reminder = 'reminder';
+  static const exerciseNotes = 'exerciseNotes';
+  static const strengthStandard = 'strengthStandard';
 
   // Výživa a AI kouč
   static const proteinTarget = 'proteinTarget';
@@ -62,6 +64,8 @@ abstract final class ProfileKey {
     restAlerts,
     weightStep,
     reminder,
+    exerciseNotes,
+    strengthStandard,
     proteinTarget,
     kcalTarget,
     favoriteFoods,
