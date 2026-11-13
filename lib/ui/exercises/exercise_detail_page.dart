@@ -6,6 +6,7 @@ import '../../domain/anatomy.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
+import '../../domain/strength.dart';
 import '../../domain/technique.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -97,6 +98,11 @@ class ExerciseDetailPage extends StatelessWidget {
                 ],
               ),
             ),
+          if (records[RecordKind.bestE1rm] case final best?
+              when hasStrengthStandard(exerciseId)) ...[
+            const SectionHeader('Úroveň síly'),
+            _StrengthCard(state, exerciseId, best.value),
+          ],
           if (records[RecordKind.bestE1rm] case final best?) ...[
             const SectionHeader('Kalkulačka 1RM'),
             _RepTable(best.value),
@@ -366,6 +372,88 @@ class _ProgressChart extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Úroveň síly: nejlepší odhad 1RM proti tělesné váze.
+class _StrengthCard extends StatelessWidget {
+  final AppState state;
+  final String exerciseId;
+  final double oneRm;
+  const _StrengthCard(this.state, this.exerciseId, this.oneRm);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final standard = state.profile.strengthStandard;
+    final bodyweight = state.bodyweights.firstOrNull?.kg;
+    final level = standard == null || bodyweight == null
+        ? null
+        : strengthLevel(exerciseId, oneRm, bodyweight, standard);
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (bodyweight == null)
+            Text(
+              'Zapiš si tělesnou váhu a uvidíš svou úroveň síly '
+              'vůči vlastní váze.',
+              style: text.bodyMedium,
+            )
+          else if (level == null)
+            Text(
+              'Vyber tabulku, se kterou se porovnáš.',
+              style: text.bodyMedium,
+            )
+          else ...[
+            Text(level.label, style: text.titleLarge),
+            const SizedBox(height: 2),
+            Text(
+              '1RM ${formatKg(oneRm.roundToDouble())} kg = '
+              '${level.ratio.toStringAsFixed(2).replaceAll('.', ',')}× '
+              'tělesné váhy',
+              style: text.bodySmall?.copyWith(
+                color: p.secondaryLabel,
+                fontFeatures: tabular,
+              ),
+            ),
+            const SizedBox(height: Space.m),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: level.progress,
+                minHeight: 8,
+                semanticsLabel: 'Postup k další úrovni',
+              ),
+            ),
+            const SizedBox(height: Space.s),
+            Text(
+              level.toNext == null
+                  ? 'Nejvyšší úroveň. Klobouk dolů.'
+                  : 'Do úrovně ${level.nextLabel} chybí '
+                        '${formatKg(level.toNext!.ceilToDouble())} kg na 1RM.',
+              style: text.bodySmall,
+            ),
+          ],
+          if (bodyweight != null) ...[
+            const SizedBox(height: Space.m),
+            SegmentedButton<StrengthStandard>(
+              segments: [
+                for (final s in StrengthStandard.values)
+                  ButtonSegment(value: s, label: Text(s.label)),
+              ],
+              selected: {?standard},
+              emptySelectionAllowed: true,
+              showSelectedIcon: false,
+              onSelectionChanged: (v) {
+                if (v.isNotEmpty) state.setStrengthStandard(v.first);
+              },
+            ),
+          ],
+        ],
       ),
     );
   }

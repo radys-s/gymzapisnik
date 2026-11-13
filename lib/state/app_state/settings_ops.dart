@@ -40,6 +40,11 @@ extension SettingsOps on AppState {
     return p.withExtra({ProfileKey.exerciseNotes: map.isEmpty ? null : map});
   });
 
+  /// Tabulka pro úroveň síly (muži / ženy).
+  Future<void> setStrengthStandard(StrengthStandard standard) => _updateProfile(
+    (p) => p.withExtra({ProfileKey.strengthStandard: standard.name}),
+  );
+
   Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
       _updateProfile(
         (p) => p.withExtra({

@@ -1,4 +1,5 @@
 import 'profile_keys.dart';
+import 'strength.dart';
 
 /// Aktuální verze podmínek. Zvýšení vynutí nový souhlas.
 const currentConsentVersion = 1;
@@ -120,6 +121,10 @@ class Profile {
     final v = map is Map ? map[exerciseId] : null;
     return v is String && v.trim().isNotEmpty ? v : null;
   }
+
+  /// Tabulka pro úroveň síly; `null` = uživatel ještě nevybral.
+  StrengthStandard? get strengthStandard =>
+      StrengthStandard.parse(extra[ProfileKey.strengthStandard]);
 
   /// Krok tlačítek +/− u váhy v kg.
   double get weightStep {
