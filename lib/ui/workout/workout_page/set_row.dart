@@ -196,9 +196,8 @@ class _SetRowState extends State<_SetRow> {
           ),
           // Náročnost série (RPE) drobně za opakováními.
           suffixText: suffix,
-          suffixStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: context.palette.secondaryLabel,
-          ),
+          suffixStyle: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: context.palette.secondaryLabel),
         ),
         onTap: () => _openSheet(focusReps: !decimal),
       ),
@@ -311,9 +310,9 @@ class _SetRowState extends State<_SetRow> {
                 container: true,
                 button: canCopy,
                 hint: canCopy ? 'Opíše hodnoty z minula' : null,
-                onTap: canCopy ? () => _copyPrevious(prev!) : null,
+                onTap: canCopy ? () => _copyPrevious(prev) : null,
                 child: InkWell(
-                  onTap: canCopy ? () => _copyPrevious(prev!) : null,
+                  onTap: canCopy ? () => _copyPrevious(prev) : null,
                   borderRadius: BorderRadius.circular(p.controlRadius),
                   child: SizedBox(
                     height: minTap,

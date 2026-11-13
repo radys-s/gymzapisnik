@@ -30,7 +30,7 @@ jobs:
       - name: Restore locked dependencies
         run: flutter pub get --enforce-lockfile
       - name: Format
-        run: dart format lib test && git diff
+        run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze
         run: flutter analyze --no-pub
       - name: Test

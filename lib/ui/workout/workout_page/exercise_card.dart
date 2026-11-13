@@ -358,9 +358,8 @@ class _SupersetLabel extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               'Supersérie ${slot.letter} · ${slot.position + 1}/${slot.size}',
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: color),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: color),
             ),
           ],
         ),
