@@ -6,16 +6,17 @@ import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  test('one dark gym look: black, green action, beveled cards', () {
+  test('one dark gym look: soft green palette and rounded surfaces', () {
     final theme = buildTheme();
     final p = theme.extension<AppPalette>()!;
     expect(theme.brightness, Brightness.dark);
     expect(theme.colorScheme.primary, p.accent);
-    expect(theme.scaffoldBackgroundColor, Colors.black);
+    expect(theme.scaffoldBackgroundColor, const Color(0xFF0C1110));
     expect(p.cta, AppPalette.green);
-    expect(p.label, AppPalette.gymGrey);
+    expect(p.label, const Color(0xFFF1F5F2));
     expect(p.gradient, AppPalette.training);
-    expect(p.cardShape(), isA<BeveledRectangleBorder>());
+    expect(p.cardShape(), isA<RoundedRectangleBorder>());
+    expect(p.controlRadius, 14.0);
     expect(appFrame(home: const SizedBox()).themeMode, ThemeMode.dark);
   });
 
@@ -27,21 +28,33 @@ void main() {
     expect(p.welcomeSeen, isFalse);
     expect(p.lastTab, 0);
     final next = p.withExtra({'lastTab': 1, 'welcomeSeen': true});
-    // Dvě záložky ze starší verze: 1 byla Strava, teď 2.
+    // Legacy tabs map to the current section order.
     expect(next.lastTab, 2);
-    expect(p.withExtra({'tab': 1}).lastTab, 3); // starý Pokrok je teď Profil
+    expect(p.withExtra({'tab': 1}).lastTab, 3); // legacy tab now shows Pokrok
     expect(p.withExtra({'tab4': 1, 'tab': 2}).lastTab, 1);
     expect(p.withExtra({'tab': 2, 'lastTab': 1}).lastTab, 2);
     expect(next.welcomeSeen, isTrue);
   });
 
-  test('skew border is a parallelogram inside its rect', () {
-    const r = Rect.fromLTWH(0, 0, 200, 50);
-    final path = const SkewBorder().getOuterPath(r);
-    expect(path.getBounds(), r);
-    expect(path.contains(const Offset(2, 2)), isFalse);
-    expect(path.contains(const Offset(100, 25)), isTrue);
-    expect(path.contains(const Offset(198, 48)), isFalse);
+  testWidgets('large-title pages stay centered on wide screens', (tester) async {
+    tester.view
+      ..physicalSize = const Size(1440, 1000)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(),
+        home: const LargeTitlePage(
+          title: 'Home',
+          children: [SizedBox(height: 200)],
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final page = tester.getRect(find.byType(CustomScrollView));
+    expect(page.width, Space.contentMax);
+    expect(page.center.dx, 720);
   });
 
   testWidgets('start shows one green segment per exercise, lit at once '

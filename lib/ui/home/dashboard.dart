@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../../coach/missions.dart';
 import '../../core/format.dart';
+import '../../domain/models.dart';
 import '../../domain/history.dart';
 import '../../domain/stats.dart';
-import '../../domain/models.dart';
+import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/motion.dart';
@@ -100,6 +101,78 @@ class RecentRecordsCard extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Weekly training totals, streak status, and a short comparison with last week.
+class WeekSummaryCard extends StatelessWidget {
+  final AppState state;
+  final DateTime now;
+  const WeekSummaryCard({super.key, required this.state, required this.now});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final week = state.weekSummaryAt(now);
+    final goal = state.weekGoal;
+    final streak = state.has(ProFeature.mission) ? state.streak(now) : null;
+    final lines = state.has(ProFeature.recap) && state.workouts.isNotEmpty
+        ? recapLines(week, state.previousWeekAt(now), state.weekRecordsAt(now))
+        : const <String>[];
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Semantics(
+                container: true,
+                label: 'Tento týden ${week.workouts} z $goal tréninků',
+                excludeSemantics: true,
+                child: ProgressRing(
+                  value: goal == 0 ? 0 : week.workouts / goal,
+                  size: 76,
+                  stroke: 9,
+                  child: Text(
+                    '${week.workouts}/$goal',
+                    style: text.titleMedium?.copyWith(fontFeatures: tabular),
+                  ),
+                ),
+              ),
+              const SizedBox(width: Space.xl),
+              Expanded(
+                child: Wrap(
+                  spacing: Space.xl,
+                  runSpacing: Space.m,
+                  children: [
+                    StatTile('${week.sets}', setsNoun(week.sets)),
+                    StatTile('${formatVolume(week.volumeKg)} kg', 'objem'),
+                    if (streak != null && streak.weeks > 0)
+                      Tooltip(
+                        message: streak.jokerReady
+                            ? 'Žolík je připravený: zachrání jeden zmeškaný týden.'
+                            : 'Žolík se po použití obnoví za pár týdnů.',
+                        child: StatTile(weeksLabel(streak.weeks), 'v řadě'),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (streak?.jokerJustUsed ?? false) ...[
+            const SizedBox(height: Space.m),
+            Text(
+              'Žolík ti minulý týden zachránil streak.',
+              style: text.bodySmall?.copyWith(color: context.palette.accent),
+            ),
+          ],
+          if (lines.isNotEmpty) ...[
+            const SizedBox(height: Space.m),
+            for (final line in lines) Text(line, style: text.bodySmall),
           ],
         ],
       ),

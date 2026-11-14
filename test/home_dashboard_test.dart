@@ -9,7 +9,7 @@ import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  testWidgets('home shows week ring, recent history and the records row', (
+  testWidgets('home keeps daily content focused and links to recent history', (
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
@@ -36,12 +36,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tento týden'), findsOneWidget);
-    expect(find.text('0/3'), findsOneWidget); // tréninky vůči cíli
-    expect(find.text('0'), findsOneWidget); // série
     expect(find.text('Historie'), findsOneWidget);
     expect(find.text('Vše'), findsOneWidget);
-    // Statistiky a cviky patří do záložky Pokrok, ne na domov.
+    // Weekly analytics and history detail live in the Progress tab.
+    expect(find.text('Partie tento týden'), findsNothing);
+    expect(find.text('0/3'), findsNothing);
     expect(find.text('Program'), findsNothing);
     expect(find.text('Tělesná váha'), findsNothing);
 

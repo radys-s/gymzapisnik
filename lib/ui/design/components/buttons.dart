@@ -1,9 +1,8 @@
 part of '../components.dart';
 
-// Tlačítka.
+// Shared action buttons.
 
-/// Hlavní akce obrazovky. Aurora ve dne: přechod barev motivu.
-/// Ve tmě a ve Studiu plná bílá / černá, na výrazné kartě kontrastní.
+/// Primary screen action with a high contrast fill and clear direction icon.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? icon;
@@ -23,7 +22,9 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    const shape = SkewBorder();
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(p.controlRadius),
+    );
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -52,7 +53,7 @@ class PrimaryButton extends StatelessWidget {
                           color: p.secondaryLabel,
                         ),
                       )
-                    // Popisek vlevo úzkým písmem, šipka vpravo.
+                    // Keep the action label and direction easy to scan.
                     : Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Row(
@@ -63,10 +64,8 @@ class PrimaryButton extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: fg,
-                                  fontFamily: condensedFont,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 17,
-                                  letterSpacing: 0.8,
                                 ),
                               ),
                             ),

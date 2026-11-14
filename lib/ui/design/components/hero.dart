@@ -2,10 +2,9 @@ part of '../components.dart';
 
 // Hlavní karta, startovní světla a živý štítek.
 
-/// Výrazná karta pro to nejdůležitější na obrazovce.
+/// Emphasized card for the most important action on a screen.
 ///
-/// `vivid` = datový displej: jemná mřížka, zelená rohová značka a velké
-/// číslo v pozadí. Jinak obyčejná karta se zkoseným rohem.
+/// `vivid` adds a soft green gradient and a subtle grid.
 class HeroCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
@@ -25,7 +24,11 @@ class HeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     if (vivid) {
-      return _TensorHero(padding: padding, watermark: watermark, child: child);
+      return _WorkoutHero(
+        padding: padding,
+        watermark: watermark,
+        child: child,
+      );
     }
     return Material(
       color: p.grouped,
@@ -36,14 +39,12 @@ class HeroCard extends StatelessWidget {
   }
 }
 
-/// Hlavní karta Tensoru jako datový displej: černá s jemnou mřížkou,
-/// tenká linka, zkosený roh a zelená značka vlevo nahoře. Velké číslo
-/// v pozadí je plné a skoro splývá s podkladem.
-class _TensorHero extends StatelessWidget {
+/// Main workout card with a soft green glow and subtle data grid.
+class _WorkoutHero extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
   final String? watermark;
-  const _TensorHero({
+  const _WorkoutHero({
     required this.child,
     required this.padding,
     this.watermark,
@@ -57,50 +58,62 @@ class _TensorHero extends StatelessWidget {
       color: p.grouped,
       shape: p.cardShape(),
       clipBehavior: Clip.antiAlias,
-      child: CustomPaint(
-        painter: const _GridPainter(Color(0xFF141414)),
-        child: Stack(
-          children: [
-            // Zelená rohová značka: tady se rozhoduje.
-            Positioned(
-              left: 0,
-              top: 0,
-              child: Container(width: 28, height: 3, color: p.accent),
-            ),
-            if (watermark != null)
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color.lerp(p.grouped, p.accent, 0.14)!,
+              p.grouped,
+              Color.lerp(p.grouped, p.elevated, 0.7)!,
+            ],
+          ),
+        ),
+        child: CustomPaint(
+          painter: _GridPainter(Color.lerp(p.grouped, p.label, 0.035)!),
+          child: Stack(
+            children: [
               Positioned(
-                right: 44,
+                left: 0,
                 top: 0,
-                child: ExcludeSemantics(
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: still ? 0 : 1, end: 0),
-                    duration: Motion.slow,
-                    curve: Motion.curve,
-                    builder: (context, t, child) => Opacity(
-                      opacity: 1 - t,
-                      child: Transform.translate(
-                        offset: Offset(0, 24 * t),
-                        child: child,
+                child: Container(width: 28, height: 3, color: p.accent),
+              ),
+              if (watermark != null)
+                Positioned(
+                  right: 44,
+                  top: 0,
+                  child: ExcludeSemantics(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: still ? 0 : 1, end: 0),
+                      duration: Motion.slow,
+                      curve: Motion.curve,
+                      builder: (context, t, child) => Opacity(
+                        opacity: 1 - t,
+                        child: Transform.translate(
+                          offset: Offset(0, 24 * t),
+                          child: child,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      watermark!,
-                      textScaler: TextScaler.noScaling,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: const TextStyle(
-                        fontFamily: condensedFont,
-                        fontSize: 132,
-                        height: 1,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF181818),
+                      child: Text(
+                        watermark!,
+                        textScaler: TextScaler.noScaling,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontFamily: condensedFont,
+                          fontSize: 132,
+                          height: 1,
+                          fontWeight: FontWeight.w800,
+                          color: p.elevated,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            Padding(padding: padding, child: child),
-          ],
+              Padding(padding: padding, child: child),
+            ],
+          ),
         ),
       ),
     );

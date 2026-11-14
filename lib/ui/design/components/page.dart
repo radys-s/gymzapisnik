@@ -56,59 +56,64 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
     return Scaffold(
       bottomNavigationBar: widget.bottom,
       floatingActionButton: widget.floatingActionButton,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: CustomScrollView(
-          controller: widget.controller,
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              automaticallyImplyLeading: widget.implyLeading,
-              backgroundColor: p.background,
-              surfaceTintColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              centerTitle: true,
-              title: AnimatedOpacity(
-                opacity: collapsed ? 1 : 0,
-                duration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 150),
-                child: ExcludeSemantics(
-                  excluding: !collapsed,
-                  child: Text(widget.title),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Space.contentMax),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: _onScroll,
+            child: CustomScrollView(
+              controller: widget.controller,
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  automaticallyImplyLeading: widget.implyLeading,
+                  backgroundColor: p.background,
+                  surfaceTintColor: Colors.transparent,
+                  scrolledUnderElevation: 0,
+                  centerTitle: true,
+                  title: AnimatedOpacity(
+                    opacity: collapsed ? 1 : 0,
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 150),
+                    child: ExcludeSemantics(
+                      excluding: !collapsed,
+                      child: Text(widget.title),
+                    ),
+                  ),
+                  actions: [
+                    ...widget.actions,
+                    const SizedBox(width: Space.xs),
+                  ],
+                  shape: Border(
+                    bottom: BorderSide(
+                      color: collapsed ? p.separator : Colors.transparent,
+                      width: 0.5,
+                    ),
+                  ),
                 ),
-              ),
-              actions: [
-                ...widget.actions,
-                const SizedBox(width: Space.xs),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Space.page + Space.xs,
+                      0,
+                      Space.page,
+                      Space.xs,
+                    ),
+                    child: Semantics(
+                      container: true,
+                      header: true,
+                      child: Text(widget.title, style: text.headlineLarge),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: widget.padding,
+                  sliver: SliverList.list(children: widget.children),
+                ),
               ],
-              shape: Border(
-                bottom: BorderSide(
-                  color: collapsed ? p.separator : Colors.transparent,
-                  width: 0.5,
-                ),
-              ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Space.page + Space.xs,
-                  0,
-                  Space.page,
-                  Space.xs,
-                ),
-                child: Semantics(
-                  container: true,
-                  header: true,
-                  child: Text(widget.title, style: text.headlineLarge),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: widget.padding,
-              sliver: SliverList.list(children: widget.children),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -131,14 +136,11 @@ class SectionHeader extends StatelessWidget {
           child: Semantics(
             container: true,
             header: true,
-            // Štítek datové tabule, ne velký nadpis.
+            // Keep section labels distinct from the larger page title.
             child: Text(
               title,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontFamily: condensedFont,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                letterSpacing: 0.8,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
                 color: context.palette.secondaryLabel,
               ),
             ),

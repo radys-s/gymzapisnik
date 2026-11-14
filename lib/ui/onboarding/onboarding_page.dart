@@ -483,7 +483,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       title: 'Kde cvičíš?',
       why:
           'Do plánu dám jen cviky na vybavení, které tam opravdu je. '
-          'Chybějící stroje odškrtneš později v Profilu.',
+          'Chybějící stroje odškrtneš později v Nastavení.',
       child: StaggerColumn(
         gap: Space.s,
         children: [

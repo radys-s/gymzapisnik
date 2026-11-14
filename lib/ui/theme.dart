@@ -5,9 +5,8 @@ import 'design/tokens.dart';
 
 export 'design/tokens.dart';
 
-/// Celý vzhled aplikace z jednoho místa: jeden tmavý vzhled, úzké písmo
-/// na nadpisy a čísla, systémové písmo na text. Žádná obrazovka nemá
-/// spadnout do výchozího vzhledu Materialu.
+/// One dark visual system for the whole app, with a clear type hierarchy
+/// and shared surfaces, controls, and colors.
 ThemeData buildTheme() {
   const p = AppPalette.gym;
   const brightness = Brightness.dark;
@@ -48,7 +47,7 @@ ThemeData buildTheme() {
   );
 
   final base = ThemeData(
-    // Stejná hustota i ve webu na počítači: aplikace je dělaná pro telefon.
+    // Keep comfortable touch targets while allowing centered desktop layouts.
     visualDensity: VisualDensity.standard,
     useMaterial3: true,
     brightness: brightness,
@@ -63,19 +62,18 @@ ThemeData buildTheme() {
         color: p.label,
         height: 1.25,
       );
-  // Nadpisy a čísla úzkým tučným písmem jako na datové tabuli.
-  TextStyle race(TextStyle style) => style.copyWith(
-    fontFamily: condensedFont,
-    fontWeight: FontWeight.w800,
-    letterSpacing: 0.2,
-    height: 1.05,
+  // Use the same clear, rounded type hierarchy across every screen.
+  TextStyle heading(TextStyle style) => style.copyWith(
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+    height: 1.12,
   );
   final text = t.copyWith(
-    displaySmall: race(s(t.displaySmall, 40, FontWeight.w700, -0.8)),
-    headlineLarge: race(s(t.headlineLarge, 34, FontWeight.w800, -1.0)),
-    headlineMedium: race(s(t.headlineMedium, 28, FontWeight.w700, -0.4)),
-    headlineSmall: race(s(t.headlineSmall, 24, FontWeight.w800, -0.6)),
-    titleLarge: race(s(t.titleLarge, 20, FontWeight.w700, -0.4)),
+    displaySmall: heading(s(t.displaySmall, 40, FontWeight.w700, -0.8)),
+    headlineLarge: heading(s(t.headlineLarge, 34, FontWeight.w800, -1.0)),
+    headlineMedium: heading(s(t.headlineMedium, 28, FontWeight.w700, -0.4)),
+    headlineSmall: heading(s(t.headlineSmall, 24, FontWeight.w800, -0.6)),
+    titleLarge: heading(s(t.titleLarge, 20, FontWeight.w700, -0.4)),
     titleMedium: s(t.titleMedium, 17, FontWeight.w600, -0.2),
     titleSmall: s(t.titleSmall, 15, FontWeight.w600),
     bodyLarge: s(t.bodyLarge, 17, FontWeight.w400, -0.2),
@@ -123,11 +121,11 @@ ThemeData buildTheme() {
       actionsIconTheme: IconThemeData(color: p.accent),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.black,
+      backgroundColor: p.grouped,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: Colors.transparent,
+      indicatorColor: p.accent.withValues(alpha: 0.14),
       elevation: 0,
-      height: 60,
+      height: 72,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       iconTheme: WidgetStateProperty.resolveWith(
         (st) => IconThemeData(
@@ -139,7 +137,7 @@ ThemeData buildTheme() {
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (st) => TextStyle(
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
           color: st.contains(WidgetState.selected)
               ? p.accent
@@ -213,8 +211,7 @@ ThemeData buildTheme() {
         disabledForegroundColor: p.tertiaryLabel,
         minimumSize: buttonSize,
         textStyle: buttonText,
-        // Hlavní akce: rovnoběžník jako závodní grafika.
-        shape: const SkewBorder(),
+        shape: control,
         padding: const EdgeInsets.symmetric(horizontal: 24),
         elevation: 0,
       ),
@@ -258,8 +255,8 @@ ThemeData buildTheme() {
       backgroundColor: p.accent,
       foregroundColor: scheme.onPrimary,
       elevation: 0,
-      shape: const BeveledRectangleBorder(
-        borderRadius: BorderRadius.only(topRight: Radius.circular(10)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(p.controlRadius),
       ),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(

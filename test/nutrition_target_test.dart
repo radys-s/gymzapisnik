@@ -57,6 +57,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Zapsat váhu'), findsOneWidget);
+    expect(find.text('kcal'), findsOneWidget);
+    expect(find.text('bílkoviny'), findsOneWidget);
+    expect(find.text('sacharidy'), findsOneWidget);
+    expect(find.text('tuky'), findsOneWidget);
   });
 
   testWidgets('bodyweight gives a suggested target that can be accepted', (
@@ -66,6 +70,10 @@ void main() {
     await tester.runAsync(() => state.addBodyweight(80));
     await _show(tester, state);
     expect(find.text('Doporučeno z tvé váhy 80 kg.'), findsOneWidget);
+    expect(find.text('kcal'), findsNothing);
+    expect(find.text('bílkoviny'), findsNothing);
+    expect(find.text('sacharidy'), findsOneWidget);
+    expect(find.text('tuky'), findsOneWidget);
     expect(find.textContaining('/ 160 g', findRichText: true), findsOneWidget);
     expect(
       find.textContaining('/ 2900 kcal', findRichText: true),

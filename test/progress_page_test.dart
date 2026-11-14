@@ -94,6 +94,9 @@ void main() {
     });
     await _show(tester, ProgressPage(state));
     expect(find.text('Pokrok začne prvním tréninkem'), findsNothing);
+    expect(find.text('Trénink tento týden'), findsOneWidget);
+    expect(find.text('Objem podle partií'), findsOneWidget);
+    expect(find.text('Partie tento týden'), findsOneWidget);
     expect(find.text('Bench press (osa)'), findsWidgets); // křivka i rekordy
     expect(find.textContaining('Odhad 1RM'), findsOneWidget);
     expect(

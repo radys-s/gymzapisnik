@@ -49,7 +49,7 @@ MaterialApp appFrame({required Widget home}) => MaterialApp(
   home: home,
 );
 
-/// Hlavní navigace: Domů / Trénink / Strava / Profil. Každá záložka má vlastní
+/// Hlavní navigace: Domů / Trénink / Strava / Pokrok. Každá záložka má vlastní
 /// navigaci, takže přepnutí neztratí rozpracovanou stránku, hledání ani posun.
 /// Nad lištou visí běžící trénink, ať je odkudkoli na jedno klepnutí.
 class AppShell extends StatefulWidget {
@@ -77,7 +77,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     GlobalKey<NavigatorState>(debugLabel: 'Domů'),
     GlobalKey<NavigatorState>(debugLabel: 'Trénink'),
     GlobalKey<NavigatorState>(debugLabel: 'Strava'),
-    GlobalKey<NavigatorState>(debugLabel: 'Profil'),
+    GlobalKey<NavigatorState>(debugLabel: 'Pokrok'),
   ];
 
   @override
@@ -136,47 +136,55 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             _tab(3, ProgressPage(widget.state)),
           ],
         ),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ActiveWorkoutBar(widget.state),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: p.separator, width: 0.5)),
-              ),
-              child: NavigationBar(
-                selectedIndex: tab,
-                onDestinationSelected: _select,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded),
-                    label: 'Domů',
-                    // Popisek je vidět pořád; tooltip na webu visel.
-                    tooltip: '',
+        bottomNavigationBar: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Space.contentMax),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ActiveWorkoutBar(widget.state),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: p.separator, width: 0.5),
+                    ),
                   ),
-                  NavigationDestination(
-                    icon: Icon(Icons.fitness_center_outlined),
-                    selectedIcon: Icon(Icons.fitness_center),
-                    label: 'Trénink',
-                    tooltip: '',
+                  child: NavigationBar(
+                    selectedIndex: tab,
+                    onDestinationSelected: _select,
+                    destinations: const [
+                      NavigationDestination(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home_rounded),
+                        label: 'Domů',
+                        // Popisek je vidět pořád; tooltip na webu visel.
+                        tooltip: '',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.fitness_center_outlined),
+                        selectedIcon: Icon(Icons.fitness_center),
+                        label: 'Trénink',
+                        tooltip: '',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.restaurant_outlined),
+                        selectedIcon: Icon(Icons.restaurant),
+                        label: 'Strava',
+                        tooltip: '',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.insights_outlined),
+                        selectedIcon: Icon(Icons.insights_rounded),
+                        label: 'Pokrok',
+                        tooltip: '',
+                      ),
+                    ],
                   ),
-                  NavigationDestination(
-                    icon: Icon(Icons.restaurant_outlined),
-                    selectedIcon: Icon(Icons.restaurant),
-                    label: 'Strava',
-                    tooltip: '',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person_outline_rounded),
-                    selectedIcon: Icon(Icons.person_rounded),
-                    label: 'Profil',
-                    tooltip: '',
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

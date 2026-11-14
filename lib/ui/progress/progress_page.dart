@@ -13,6 +13,7 @@ import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../exercises/exercises_page.dart';
 import '../history/history_page.dart';
+import '../home/coverage_card.dart';
 import '../home/dashboard.dart';
 import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
@@ -21,7 +22,7 @@ import '../settings/settings_page.dart';
 import '../stats/stats_page.dart';
 import '../widgets/labels.dart';
 
-/// Záložka Profil: souhrn, křivka síly, rekordy a cesty ke statistikám,
+/// Záložka Pokrok: souhrn, křivka síly, rekordy a cesty ke statistikám,
 /// cvikům, odznakům, váze a nastavení.
 class ProgressPage extends StatelessWidget {
   final AppState state;
@@ -32,6 +33,7 @@ class ProgressPage extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state.on.resting,
     builder: (context, _) {
+      final current = now();
       final finished = state.workouts.where((w) => w.finished).toList();
       // Spočte se jednou a předá kartám (záložka je pořád v IndexedStack).
       final top = state.mostTrained();
@@ -89,7 +91,7 @@ class ProgressPage extends StatelessWidget {
         ],
       ];
       return LargeTitlePage(
-        title: 'Profil',
+        title: 'Pokrok',
         actions: [SettingsButton(state)],
         children: [
           for (final (i, b) in blocks.indexed)
@@ -98,6 +100,12 @@ class ProgressPage extends StatelessWidget {
               padding: EdgeInsets.only(top: i == 0 ? 0 : Space.m),
               child: Reveal(index: i, child: b),
             ),
+          if (finished.isNotEmpty) ...[
+            const SectionHeader('Trénink tento týden'),
+            WeekSummaryCard(state: state, now: current),
+            const SectionHeader('Objem podle partií'),
+            CoverageCard(state: state, now: current),
+          ],
           const SectionHeader('Přehled'),
           GroupedSection(
             dividerIndent: 58,
