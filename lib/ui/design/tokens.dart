@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Shared dark colors and surfaces, available through `context.palette`.
 ///
-/// Green marks key actions, with separate gradients for workouts and food.
+/// Green marks key actions; each section adds its own accent and gradient.
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   final Color background;
@@ -47,16 +47,16 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.negative,
   });
 
-  /// Jediná paleta aplikace.
+  /// Jediná paleta aplikace: tmavý inkoust s barevnými akcenty.
   static const gym = AppPalette(
-    background: Color(0xFF0C1110),
-    grouped: Color(0xFF141C19),
-    elevated: Color(0xFF1B2521),
-    separator: Color(0xFF293832),
-    label: Color(0xFFF1F5F2),
-    secondaryLabel: Color(0xFFB0BDB6),
-    tertiaryLabel: Color(0xFF7E8D84),
-    fill: Color(0xFF202B26),
+    background: Color(0xFF0B0C14),
+    grouped: Color(0xFF141624),
+    elevated: Color(0xFF1C1F31),
+    separator: Color(0xFF2A2E45),
+    label: Color(0xFFF4F5FA),
+    secondaryLabel: Color(0xFFB6BBCE),
+    tertiaryLabel: Color(0xFF8188A0),
+    fill: Color(0xFF212438),
     accent: green,
     onAccent: Colors.black,
     gradient: training,
@@ -72,20 +72,27 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
   /// Hlavní zelená: akce, hotovo, vybraná záložka.
   static const green = Color(0xFF9BE15D);
-  static const yellow = Color(0xFFD5EBA4);
-  static const cyan = Color(0xFF71D7C2);
+  static const lime = Color(0xFFB9F56A);
+  static const teal = Color(0xFF4FE0C0);
+  static const cyan = Color(0xFF4FD8E8);
+  static const blue = Color(0xFF5AA9FF);
+  static const violet = Color(0xFF8B7CFF);
+  static const pink = Color(0xFFFF6FA5);
+  static const orange = Color(0xFFFF8A5B);
+  static const amber = Color(0xFFFFC857);
+  static const yellow = Color(0xFFFFE08A);
 
-  /// Workout and food progress gradients.
-  static const training = [green, Color(0xFFB7E780), yellow];
-  static const food = [green, Color(0xFF7FD4A9), cyan];
+  /// Workout, food, progress, and coach gradients.
+  static const training = [lime, Color(0xFF8BEA7A), teal];
+  static const food = [amber, orange, pink];
+  static const progress = [violet, blue, cyan];
+  static const coach = [pink, Color(0xFFC07CFF), violet];
 
   /// Superset colors A, B, C, D (then repeat).
-  static const superset = [cyan, yellow, Color(0xFFFF9F43), Color(0xFFC08BFF)];
+  static const superset = [cyan, amber, orange, violet];
 
-  /// Staré názvy, které ještě používají grafy.
-
-  /// Žlutá pro rekordy a odznaky.
-  Color get gold => yellow;
+  /// Zlatá pro rekordy a odznaky.
+  Color get gold => amber;
 
   /// Card corner radius.
   BorderRadius cardRadius() => BorderRadius.circular(20);
@@ -105,11 +112,49 @@ class AppPalette extends ThemeExtension<AppPalette> {
     end: Alignment.bottomRight,
   );
 
+  /// Soft drop shadow that lifts a card off the page.
+  List<BoxShadow> get cardShadow => const [
+    BoxShadow(
+      color: Color(0x59000000),
+      blurRadius: 24,
+      spreadRadius: -10,
+      offset: Offset(0, 12),
+    ),
+  ];
+
+  /// Colored glow under a raised or selected element; [t] fades it in.
+  List<BoxShadow> glow(Color color, [double t = 1]) => [
+    BoxShadow(
+      color: color.withValues(alpha: 0.34 * t),
+      blurRadius: 24,
+      spreadRadius: -8,
+      offset: Offset(0, 10 * t),
+    ),
+  ];
+
   @override
   AppPalette copyWith() => this;
 
   @override
   AppPalette lerp(AppPalette? other, double t) => this;
+}
+
+/// Color family of an app section, so each area has its own accent.
+enum Tone {
+  training(AppPalette.green, AppPalette.training),
+  food(AppPalette.orange, AppPalette.food),
+  progress(AppPalette.violet, AppPalette.progress),
+  coach(AppPalette.pink, AppPalette.coach);
+
+  final Color color;
+  final List<Color> colors;
+  const Tone(this.color, this.colors);
+
+  LinearGradient get gradient => LinearGradient(
+    colors: colors,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }
 
 /// Mezery a zaoblení – jinde se nepoužívají jiné hodnoty.

@@ -6,14 +6,15 @@ import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  test('one dark gym look: soft green palette and rounded surfaces', () {
+  test('one dark gym look: ink palette with color accents and rounded '
+      'surfaces', () {
     final theme = buildTheme();
     final p = theme.extension<AppPalette>()!;
     expect(theme.brightness, Brightness.dark);
     expect(theme.colorScheme.primary, p.accent);
-    expect(theme.scaffoldBackgroundColor, const Color(0xFF0C1110));
+    expect(theme.scaffoldBackgroundColor, const Color(0xFF0B0C14));
     expect(p.cta, AppPalette.green);
-    expect(p.label, const Color(0xFFF1F5F2));
+    expect(p.label, const Color(0xFFF4F5FA));
     expect(p.gradient, AppPalette.training);
     expect(p.cardShape(), isA<RoundedRectangleBorder>());
     expect(p.controlRadius, 14.0);
