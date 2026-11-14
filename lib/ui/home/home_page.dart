@@ -267,8 +267,15 @@ class _TodayCard extends StatelessWidget {
     } else if (split != null) {
       final day = split.day(dayIndex);
       final plan = state.plan(day);
+      final mission = state.mission(now);
+      final nextUp = switch (mission.kind) {
+        MissionKind.plannedRest ||
+        MissionKind.doneToday ||
+        MissionKind.weekDone => true,
+        _ => false,
+      };
       // Volno podle plánu: karta ukazuje příští tréninkový den, ne „dnes“.
-      final next = state.mission(now).kind == MissionKind.plannedRest
+      final next = nextUp
           ? _nextTrainingDay(state.profile.trainingDays, now)
           : null;
       final scope =
@@ -337,7 +344,9 @@ class _TodayCard extends StatelessWidget {
         StartLights(count: plan.length, caption: scope),
         const SizedBox(height: Space.m),
         PrimaryButton(
-          next == null ? 'Začít ${day.name}' : 'Začít i dnes',
+          nextUp
+              ? 'Bonusový trénink'
+              : 'Začít ${day.name}',
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
