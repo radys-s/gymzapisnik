@@ -12,6 +12,7 @@ import '../../state/app_state.dart';
 import '../coach/push_widgets.dart';
 import '../coach/trainer_page.dart';
 import '../design/components.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
