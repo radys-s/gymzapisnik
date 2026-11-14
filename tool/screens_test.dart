@@ -16,6 +16,7 @@ import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/program/program_editor_page.dart';
 import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 
 const _phone = Size(390, 844);
@@ -72,6 +73,28 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.pumpAndSettle();
 }
 
+/// A tap that writes to the database, which needs real time to finish.
+Future<void> _save(WidgetTester tester, Finder f) async {
+  if (f.evaluate().isEmpty) {
+    debugPrint('MISS $f');
+    return;
+  }
+  await tester.runAsync(() async {
+    await tester.tap(f.first, warnIfMissed: false);
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+  });
+  await tester.pumpAndSettle();
+  await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+  await tester.pumpAndSettle();
+}
+
+/// A single-answer card: it highlights, then moves on by itself.
+Future<void> _pick(WidgetTester tester, Finder f) async {
+  await _tap(tester, f);
+  await tester.pump(const Duration(milliseconds: 350));
+  await tester.pumpAndSettle();
+}
+
 Future<AppState> _state(WidgetTester tester) async {
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
@@ -80,12 +103,17 @@ Future<AppState> _state(WidgetTester tester) async {
   return state;
 }
 
-Future<void> _pump(WidgetTester tester, AppState state) async {
+Future<void> _pump(WidgetTester tester, AppState state, {Widget? home}) async {
   tester.view
     ..physicalSize = _phone * 2
     ..devicePixelRatio = 2;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(RepaintBoundary(key: _root, child: GymApp(state)));
+  await tester.pumpWidget(
+    RepaintBoundary(
+      key: _root,
+      child: home == null ? GymApp(state) : appFrame(home: home),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -117,18 +145,34 @@ void main() {
     await _tap(tester, find.text('Souhlasím s podmínkami používání'));
     await _tap(tester, find.text('Je mi 18 let nebo víc'));
     await _shot(tester, 'consent-filled');
-    await _tap(tester, find.text('Pokračovat'));
+    await _save(tester, find.text('Pokračovat'));
     await _shot(tester, 'goal');
-    await _tap(tester, find.text('Svaly'));
+    await _pick(tester, find.text('Svaly'));
     await _shot(tester, 'experience');
-    await _tap(tester, find.text('Půl roku'));
+    await _pick(tester, find.text('Půl roku'));
+    await _tap(tester, find.text('4×'));
     await _shot(tester, 'schedule');
     await _tap(tester, find.text('Pokračovat'));
     await _shot(tester, 'gym');
-    await _tap(tester, find.text('Velké fitko'));
+    await _pick(tester, find.text('Velké fitko'));
+    await _tap(tester, find.text('Kolena'));
     await _shot(tester, 'pain');
-    await _tap(tester, find.text('Nic mě nebolí'));
+    await _save(tester, find.text('Pokračovat'));
     await _shot(tester, 'plan');
+  });
+
+  _screens('own program', (tester) async {
+    final state = await _state(tester);
+    await tester.runAsync(() => state.applyPlan(const PlanAnswers()));
+    await _pump(tester, state, home: ProgramEditorPage(state));
+    await _shot(tester, 'editor-empty');
+    await _tap(tester, find.text('Přidat den'));
+    await _shot(tester, 'add-day');
+    await _tap(tester, find.byKey(const ValueKey('muscle-chest')));
+    await _tap(tester, find.byKey(const ValueKey('muscle-triceps')));
+    await _shot(tester, 'add-day-picked');
+    await _tap(tester, find.text('Vyberu sám'));
+    await _shot(tester, 'add-day-own');
   });
 
   _screens('tabs', (tester) async {
