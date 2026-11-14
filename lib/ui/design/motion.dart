@@ -201,8 +201,9 @@ class StaggerColumn extends StatelessWidget {
   );
 }
 
-/// Při stisku se obsah lehce zmenší (0,97) – hmatový pocit tlačítka bez
-/// vibrace. Gesta neodchytává, jen poslouchá ukazatel.
+/// Při stisku se obsah lehce zmenší (0,97) a nakloní dozadu, jako
+/// skutečné tlačítko – hmatový pocit bez vibrace. Gesta neodchytává, jen
+/// poslouchá ukazatel.
 class PressScale extends StatefulWidget {
   final Widget child;
   final bool enabled;
@@ -232,14 +233,67 @@ class _PressScaleState extends State<PressScale> {
       onPointerDown: (_) => _set(true),
       onPointerUp: (_) => _set(false),
       onPointerCancel: (_) => _set(false),
-      child: AnimatedScale(
-        scale: _down ? widget.scale : 1,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: _down ? 1 : 0),
         duration: _down ? Motion.instant : Motion.quick,
         curve: Motion.curve,
         child: widget.child,
+        builder: (context, t, child) {
+          final s = 1 - (1 - widget.scale) * t;
+          return Transform(
+            alignment: Alignment.center,
+            // Perspektiva: horní hrana při stisku ustoupí dozadu.
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0014)
+              ..rotateX(0.07 * t)
+              ..multiply(Matrix4.diagonal3Values(s, s, 1)),
+            child: child,
+          );
+        },
       ),
     );
   }
+}
+
+/// Zvedne vybraný prvek nad plochu: o kousek blíž k oku a s barevnou
+/// září pod sebou. Jen kreslení, rozměry v layoutu se nemění.
+class Raised extends StatelessWidget {
+  /// 0 = leží na ploše, 1 = zvednutý.
+  final double t;
+  final Color color;
+  final BorderRadius borderRadius;
+  final Widget child;
+  const Raised({
+    super.key,
+    required this.t,
+    required this.color,
+    required this.borderRadius,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => Transform.translate(
+    offset: Offset(0, -2 * t),
+    child: Transform.scale(
+      scale: 1 + 0.012 * t,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          boxShadow: t <= 0
+              ? null
+              : [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.30 * t),
+                    blurRadius: 22,
+                    spreadRadius: -6,
+                    offset: Offset(0, 10 * t),
+                  ),
+                ],
+        ),
+        child: child,
+      ),
+    ),
+  );
 }
 
 /// Krátké „poskočení“ (1 → 1,06 → 1), když se [selected] zapne.
