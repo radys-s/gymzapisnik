@@ -22,20 +22,17 @@ class HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     if (vivid) {
       return _WorkoutHero(padding: padding, watermark: watermark, child: child);
     }
-    return Material(
-      color: p.grouped,
-      shape: p.cardShape(),
-      clipBehavior: Clip.antiAlias,
+    return CardSurface(
       child: Padding(padding: padding, child: child),
     );
   }
 }
 
-/// Main workout card with a soft green glow and subtle data grid.
+/// Main workout card: violet-to-teal light, a subtle data grid, and a
+/// gradient edge that slowly travels around it.
 class _WorkoutHero extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
@@ -49,6 +46,21 @@ class _WorkoutHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final radius = p.cardRadius();
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [...p.cardShadow, ...p.glow(AppPalette.violet, 0.7)],
+      ),
+      child: AuraEdge(
+        borderRadius: radius,
+        colors: const [AppPalette.violet, AppPalette.cyan, AppPalette.lime],
+        child: _heroBody(context, p),
+      ),
+    );
+  }
+
+  Widget _heroBody(BuildContext context, AppPalette p) {
     final still = MediaQuery.disableAnimationsOf(context);
     return Material(
       color: p.grouped,
@@ -60,21 +72,18 @@ class _WorkoutHero extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color.lerp(p.grouped, p.accent, 0.14)!,
+              Color.lerp(p.grouped, AppPalette.violet, 0.34)!,
+              Color.lerp(p.grouped, AppPalette.blue, 0.10)!,
               p.grouped,
-              Color.lerp(p.grouped, p.elevated, 0.7)!,
+              Color.lerp(p.grouped, AppPalette.teal, 0.18)!,
             ],
+            stops: const [0, 0.38, 0.7, 1],
           ),
         ),
         child: CustomPaint(
           painter: _GridPainter(Color.lerp(p.grouped, p.label, 0.035)!),
           child: Stack(
             children: [
-              Positioned(
-                left: 0,
-                top: 0,
-                child: Container(width: 28, height: 3, color: p.accent),
-              ),
               if (watermark != null)
                 Positioned(
                   right: 44,
@@ -101,7 +110,7 @@ class _WorkoutHero extends StatelessWidget {
                           fontSize: 132,
                           height: 1,
                           fontWeight: FontWeight.w800,
-                          color: p.elevated,
+                          color: p.label.withValues(alpha: 0.06),
                         ),
                       ),
                     ),
@@ -147,7 +156,10 @@ class StartLights extends StatefulWidget {
 
   /// Popisek pod světly, např. „5 cviků · ~55 min“.
   final String? caption;
-  const StartLights({super.key, this.count = 5, this.caption});
+
+  /// Malá akce na řádku popisku vpravo (např. „Jiný trénink“).
+  final Widget? trailing;
+  const StartLights({super.key, this.count = 5, this.caption, this.trailing});
 
   @override
   State<StartLights> createState() => _StartLightsState();
@@ -201,16 +213,17 @@ class _StartLightsState extends State<StartLights>
 }
 
 extension on _StartLightsState {
-  /// Jeden dílek na cvik, dílky se postupně rozsvítí zeleně.
+  /// Jeden dílek na cvik, dílky se postupně rozsvítí v barvách tréninku.
   Widget _segments(BuildContext context, String? caption) {
     final p = context.palette;
-    return Semantics(
-      label: caption,
-      excludeSemantics: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AnimatedBuilder(
+    final trailing = widget.trailing;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: caption,
+          excludeSemantics: true,
+          child: AnimatedBuilder(
             animation: _c,
             builder: (context, _) {
               final at = _c.value * _total;
@@ -224,6 +237,8 @@ extension on _StartLightsState {
                             at >=
                             _StartLightsState._delay +
                                 i * _StartLightsState._step,
+                        // Barva dílku podle místa v řadě: limetka až tyrkys.
+                        color: _sample(p.gradient, _n < 2 ? 0 : i / (_n - 1)),
                       ),
                     ),
                   ],
@@ -231,42 +246,60 @@ extension on _StartLightsState {
               );
             },
           ),
-          if (caption != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              caption,
-              style: TextStyle(
-                fontFamily: condensedFont,
-                color: p.secondaryLabel,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
+        ),
+        if (caption != null || trailing != null) ...[
+          if (trailing == null) const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: caption == null
+                    ? const SizedBox.shrink()
+                    : ExcludeSemantics(
+                        child: Text(
+                          caption,
+                          style: TextStyle(
+                            fontFamily: condensedFont,
+                            color: p.secondaryLabel,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
               ),
-            ),
-          ],
+              ?trailing,
+            ],
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
+/// Barva v místě [t] (0–1) vícebarevného přechodu.
+Color _sample(List<Color> colors, double t) {
+  if (colors.length == 1) return colors.first;
+  final at = t.clamp(0.0, 1.0) * (colors.length - 1);
+  final i = at.floor().clamp(0, colors.length - 2);
+  return Color.lerp(colors[i], colors[i + 1], at - i)!;
+}
+
 class _Segment extends StatelessWidget {
   final bool on;
-  const _Segment({required this.on});
+  final Color color;
+  const _Segment({required this.on, required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    final a = context.palette.accent;
-    return Container(
-      height: 10,
-      decoration: BoxDecoration(
-        color: on ? a : const Color(0xFF1A1A1A),
-        boxShadow: on
-            ? [BoxShadow(color: a.withValues(alpha: 0.5), blurRadius: 8)]
-            : null,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    height: 10,
+    decoration: BoxDecoration(
+      color: on ? color : context.palette.fill,
+      borderRadius: BorderRadius.circular(2),
+      boxShadow: on
+          ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8)]
+          : null,
+    ),
+  );
 }
 
 /// Štítek „ŽIVĚ" s tečkou, která třikrát blikne a pak svítí.

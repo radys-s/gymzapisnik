@@ -168,10 +168,11 @@ class WeekFocusCard extends StatelessWidget {
     final progress = state.weekFocusProgress(now);
     if (focus == null || progress == null) {
       return Panel(
+        tone: Tone.progress,
         onTap: () => showWeekFocusSheet(context, state, now: now),
         child: Row(
           children: [
-            IconTile(Icons.flag_outlined, color: p.accent),
+            const IconTile(Icons.flag_rounded, color: AppPalette.violet),
             const SizedBox(width: Space.m),
             Expanded(
               child: Column(
@@ -198,6 +199,7 @@ class WeekFocusCard extends StatelessWidget {
         ? v.toStringAsFixed(1).replaceAll('.', ',')
         : '${v.round()}';
     return Panel(
+      tone: Tone.progress,
       onTap: () => showWeekFocusSheet(context, state, now: now),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -247,7 +249,11 @@ class _GradientBar extends StatelessWidget {
     return ExcludeSemantics(
       child: Container(
         height: 8,
-        color: p.fill,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: p.fill,
+          borderRadius: BorderRadius.circular(4),
+        ),
         alignment: Alignment.centerLeft,
         child: TweenAnimationBuilder<double>(
           tween: Tween(end: value),
@@ -255,7 +261,9 @@ class _GradientBar extends StatelessWidget {
           curve: Motion.curve,
           builder: (_, v, _) => FractionallySizedBox(
             widthFactor: v.clamp(0, 1),
-            child: DecoratedBox(decoration: BoxDecoration(gradient: p.linear)),
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: Tone.progress.gradient),
+            ),
           ),
         ),
       ),

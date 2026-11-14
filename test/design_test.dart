@@ -74,9 +74,10 @@ void main() {
     final lit = tester
         .widgetList<Container>(find.byType(Container))
         .where(
+          // Lit segments glow; each takes its color from the gradient.
           (c) =>
               c.decoration is BoxDecoration &&
-              (c.decoration! as BoxDecoration).color == AppPalette.green,
+              (c.decoration! as BoxDecoration).boxShadow != null,
         );
     expect(lit.length, 4);
     expect(find.text('4 cviky · ~40 min'), findsOneWidget);

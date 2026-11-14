@@ -2,36 +2,65 @@ part of '../components.dart';
 
 // Panely, kruh postupu, štítky, statistiky a prázdný stav.
 
+/// Card body shared by panels, grouped lists, and hero cards: rounded
+/// outline, a faint light from the top-left corner, and a soft shadow.
+class CardSurface extends StatelessWidget {
+  final Widget child;
+
+  /// Tints the lit corner with the section color.
+  final Tone? tone;
+  const CardSurface({super.key, required this.child, this.tone});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: p.cardRadius(),
+        boxShadow: p.cardShadow,
+      ),
+      child: Material(
+        color: p.grouped,
+        shape: p.cardShape(),
+        clipBehavior: Clip.antiAlias,
+        // Ink paints on the card itself, so tap ripples stay visible.
+        child: Ink(
+          decoration: BoxDecoration(gradient: p.surface(tone)),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// Obyčejná seskupená karta.
 class Panel extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
   final VoidCallback? onTap;
+
+  /// Barva sekce v rohu karty.
+  final Tone? tone;
   const Panel({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(Space.l),
     this.onTap,
+    this.tone,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final content = InkWell(
-      onTap: onTap,
-      child: Padding(padding: padding, child: child),
-    );
-    return PressScale(
-      enabled: onTap != null,
-      scale: 0.985,
-      child: Material(
-        color: p.grouped,
-        shape: p.cardShape(),
-        clipBehavior: Clip.antiAlias,
-        child: content,
+  Widget build(BuildContext context) => PressScale(
+    enabled: onTap != null,
+    scale: 0.985,
+    child: CardSurface(
+      tone: tone,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(padding: padding, child: child),
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// Kruh postupu s přechodem barev motivu.

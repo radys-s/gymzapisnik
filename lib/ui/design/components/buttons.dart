@@ -9,12 +9,16 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool busy;
 
+  /// Section gradient instead of the default green one.
+  final Tone? tone;
+
   const PrimaryButton(
     this.label, {
     super.key,
     this.onPressed,
     this.icon,
     this.busy = false,
+    this.tone,
   });
 
   @override
@@ -22,9 +26,9 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(p.controlRadius),
-    );
+    final radius = BorderRadius.circular(p.controlRadius);
+    final shape = RoundedRectangleBorder(borderRadius: radius);
+    final glow = tone?.color ?? p.cta;
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -32,13 +36,14 @@ class PrimaryButton extends StatelessWidget {
       enabled: enabled,
       child: PressScale(
         enabled: enabled,
-        child: Material(
-          type: MaterialType.transparency,
+        child: _CtaBody(
+          radius: radius,
+          glow: enabled ? glow : null,
           child: Ink(
             height: 52,
             decoration: ShapeDecoration(
               color: enabled ? null : p.fill,
-              gradient: enabled ? p.linear : null,
+              gradient: enabled ? (tone?.gradient ?? p.linear) : null,
               shape: shape,
             ),
             child: InkWell(
@@ -85,6 +90,31 @@ class PrimaryButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Glow under an enabled main action and the sheen that passes over it.
+class _CtaBody extends StatelessWidget {
+  final BorderRadius radius;
+  final Color? glow;
+  final Widget child;
+  const _CtaBody({
+    required this.radius,
+    required this.glow,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      borderRadius: radius,
+      boxShadow: glow == null ? null : context.palette.glow(glow!),
+    ),
+    child: Sheen(
+      enabled: glow != null,
+      borderRadius: radius,
+      child: Material(type: MaterialType.transparency, child: child),
+    ),
+  );
 }
 
 /// Vedlejší akce stejné velikosti jako hlavní (šedé pozadí, barevný text).

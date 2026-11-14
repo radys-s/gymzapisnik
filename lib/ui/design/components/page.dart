@@ -16,6 +16,12 @@ class LargeTitlePage extends StatefulWidget {
   /// Šipka zpět; vypnutá např. u souhrnu hned po tréninku.
   final bool implyLeading;
 
+  /// Barva sekce: tónuje pozadí stránky.
+  final Tone tone;
+
+  /// Prvek vedle velkého nadpisu (značka aplikace na Domů).
+  final Widget? titleLeading;
+
   const LargeTitlePage({
     super.key,
     required this.title,
@@ -31,6 +37,8 @@ class LargeTitlePage extends StatefulWidget {
     ),
     this.controller,
     this.implyLeading = true,
+    this.tone = Tone.training,
+    this.titleLeading,
   });
 
   @override
@@ -56,65 +64,97 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
     return Scaffold(
       bottomNavigationBar: widget.bottom,
       floatingActionButton: widget.floatingActionButton,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: Space.contentMax),
-          child: NotificationListener<ScrollNotification>(
-            onNotification: _onScroll,
-            child: CustomScrollView(
-              controller: widget.controller,
-              slivers: [
-                SliverAppBar(
-                  pinned: true,
-                  automaticallyImplyLeading: widget.implyLeading,
-                  backgroundColor: p.background,
-                  surfaceTintColor: Colors.transparent,
-                  scrolledUnderElevation: 0,
-                  centerTitle: true,
-                  title: AnimatedOpacity(
-                    opacity: collapsed ? 1 : 0,
-                    duration: MediaQuery.disableAnimationsOf(context)
-                        ? Duration.zero
-                        : const Duration(milliseconds: 150),
-                    child: ExcludeSemantics(
-                      excluding: !collapsed,
-                      child: Text(widget.title),
-                    ),
-                  ),
-                  actions: [
-                    ...widget.actions,
-                    const SizedBox(width: Space.xs),
-                  ],
-                  shape: Border(
-                    bottom: BorderSide(
-                      color: collapsed ? p.separator : Colors.transparent,
-                      width: 0.5,
-                    ),
+      body: AuroraBackground(
+        tone: widget.tone,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Space.contentMax),
+            child: _scroll(context, p, text),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _scroll(BuildContext context, AppPalette p, TextTheme text) {
+    final fade = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 150);
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: CustomScrollView(
+        controller: widget.controller,
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            automaticallyImplyLeading: widget.implyLeading,
+            // Průhledná lišta nechá vidět pozadí stránky; po posunu
+            // pod ní obsah mizí v matném skle.
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            flexibleSpace: AnimatedOpacity(
+              opacity: collapsed ? 1 : 0,
+              duration: fade,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: ColoredBox(
+                    color: p.background.withValues(alpha: 0.72),
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Space.page + Space.xs,
-                      0,
-                      Space.page,
-                      Space.xs,
-                    ),
+              ),
+            ),
+            title: AnimatedOpacity(
+              opacity: collapsed ? 1 : 0,
+              duration: fade,
+              child: ExcludeSemantics(
+                excluding: !collapsed,
+                child: Text(widget.title),
+              ),
+            ),
+            actions: [
+              ...widget.actions,
+              const SizedBox(width: Space.xs),
+            ],
+            shape: Border(
+              bottom: BorderSide(
+                color: collapsed ? p.separator : Colors.transparent,
+                width: 0.5,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.page + Space.xs,
+                0,
+                Space.page,
+                Space.xs,
+              ),
+              child: Row(
+                children: [
+                  if (widget.titleLeading case final leading?) ...[
+                    leading,
+                    const SizedBox(width: Space.m),
+                  ],
+                  Expanded(
                     child: Semantics(
                       container: true,
                       header: true,
                       child: Text(widget.title, style: text.headlineLarge),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: widget.padding,
-                  sliver: SliverList.list(children: widget.children),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+          SliverPadding(
+            padding: widget.padding,
+            sliver: SliverList.list(children: widget.children),
+          ),
+        ],
       ),
     );
   }
@@ -179,7 +219,6 @@ class GroupedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final text = Theme.of(context).textTheme;
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
@@ -200,10 +239,7 @@ class GroupedSection extends StatelessWidget {
                 child: Text(header!, style: text.bodySmall),
               ),
             ),
-          Material(
-            color: p.grouped,
-            shape: p.cardShape(),
-            clipBehavior: Clip.antiAlias,
+          CardSurface(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: rows,
@@ -340,6 +376,12 @@ class IconTile extends StatelessWidget {
     height: size,
     decoration: BoxDecoration(
       color: color,
+      // Light from the top-left corner gives the tile some volume.
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color.lerp(color, Colors.white, 0.28)!, color],
+      ),
       borderRadius: BorderRadius.circular(size * 0.26),
     ),
     // Na světlé dlaždici (Studio v tmavém režimu) tmavá ikona.

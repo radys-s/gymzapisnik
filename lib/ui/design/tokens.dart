@@ -112,6 +112,21 @@ class AppPalette extends ThemeExtension<AppPalette> {
     end: Alignment.bottomRight,
   );
 
+  /// Card fill: a faint light from the top-left corner. A [tone] tints
+  /// that corner with the section color.
+  LinearGradient surface([Tone? tone]) => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      tone == null
+          ? Color.lerp(grouped, label, 0.045)!
+          : Color.lerp(grouped, tone.color, 0.17)!,
+      grouped,
+      Color.lerp(grouped, background, 0.35)!,
+    ],
+    stops: const [0, 0.55, 1],
+  );
+
   /// Soft drop shadow that lifts a card off the page.
   List<BoxShadow> get cardShadow => const [
     BoxShadow(
