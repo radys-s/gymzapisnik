@@ -175,47 +175,54 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: p.secondaryLabel,
+      fontFeatures: tabular,
+    );
     return Semantics(
       container: true,
       label: step ?? 'Postup ${(value * 100).round()} %',
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Space.s),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: SizedBox(
-                  height: 6,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ColoredBox(color: p.fill),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(end: value.clamp(0.0, 1.0)),
-                        duration: Motion.of(context, Motion.base),
-                        curve: Motion.curve,
-                        builder: (_, v, _) => FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: v,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(gradient: p.linear),
-                          ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: SizedBox(
+                height: 6,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(color: p.fill),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(end: value.clamp(0.0, 1.0)),
+                      duration: Motion.of(context, Motion.base),
+                      curve: Motion.curve,
+                      builder: (_, v, _) => FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: v,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(gradient: p.linear),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
             if (progressLabel != null) ...[
-              const SizedBox(width: Space.xs),
-              Text(
-                progressLabel!,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: p.secondaryLabel,
-                  fontFeatures: tabular,
+              const SizedBox(height: Space.xs),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    progressLabel!,
+                    style: labelStyle,
+                  ),
                 ),
               ),
             ],
