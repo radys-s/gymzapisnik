@@ -24,11 +24,7 @@ class HeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     if (vivid) {
-      return _WorkoutHero(
-        padding: padding,
-        watermark: watermark,
-        child: child,
-      );
+      return _WorkoutHero(padding: padding, watermark: watermark, child: child);
     }
     return Material(
       color: p.grouped,

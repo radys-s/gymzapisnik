@@ -36,7 +36,7 @@ void main() {
     expect(next.welcomeSeen, isTrue);
   });
 
-  testWidgets('large-title pages stay centered on wide screens', (tester) async {
+  testWidgets('wide pages center content', (tester) async {
     tester.view
       ..physicalSize = const Size(1440, 1000)
       ..devicePixelRatio = 1;
