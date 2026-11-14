@@ -160,22 +160,24 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
               ),
             ),
           // Put the next clear action before food and progress details.
-          _TodayCard(
-            state: state,
-            now: now,
-            busy: starting,
-            dayIndex: state.todaySplitDay,
-            onStart: runWorkout,
-            onPickDay: state.pickSplitDay,
-            onProgram: () => _push(ProgramPage(state)),
-            onOther: otherWorkout,
-            onQuiz: () => _push(PlanSetupPage(state)),
-            onUsePlan: usePlan,
+          Reveal(
+            child: _TodayCard(
+              state: state,
+              now: now,
+              busy: starting,
+              dayIndex: state.todaySplitDay,
+              onStart: runWorkout,
+              onPickDay: state.pickSplitDay,
+              onProgram: () => _push(ProgramPage(state)),
+              onOther: otherWorkout,
+              onQuiz: () => _push(PlanSetupPage(state)),
+              onUsePlan: usePlan,
+            ),
           ),
           const SizedBox(height: Space.m),
-          HomeFoodBlock(state: state, now: now),
+          Reveal(index: 1, child: HomeFoodBlock(state: state, now: now)),
           const SizedBox(height: Space.m),
-          WeekFocusCard(state: state, now: now),
+          Reveal(index: 2, child: WeekFocusCard(state: state, now: now)),
           const SizedBox(height: Space.m),
           if (recent.isNotEmpty) ...[
             SectionHeader(

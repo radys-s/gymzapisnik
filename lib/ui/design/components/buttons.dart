@@ -37,7 +37,8 @@ class PrimaryButton extends StatelessWidget {
           child: Ink(
             height: 52,
             decoration: ShapeDecoration(
-              color: enabled ? p.cta : p.fill,
+                color: enabled ? null : p.fill,
+                gradient: enabled ? p.linear : null,
               shape: shape,
             ),
             child: InkWell(
