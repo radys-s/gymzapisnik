@@ -12,4 +12,5 @@
 ## 2026-11-14 — Screenshot tour selector
 
 - Updated the web screenshot tour to use the renamed Progress tab. The first visual run revealed its old `Profil` selector was capturing Strava while naming the screenshots `profile`.
-- Next: rerun the remote screenshot tour and confirm the Progress screenshots show the intended page.
+- Removed an unused Home import caught by full CI after the moved records card no longer needed it.
+- Next: rerun full CI and the remote screenshot tour; confirm Progress screenshots show the intended page.

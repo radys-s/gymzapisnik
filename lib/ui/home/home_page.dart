@@ -6,7 +6,6 @@ import '../../coach/missions.dart';
 import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
-import '../../core/format.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
