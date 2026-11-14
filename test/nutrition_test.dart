@@ -397,7 +397,8 @@ void main() {
       final state = await pump(tester);
       expect(find.text('Tento den nic nezapsáno.'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Přidat jídlo'));
+      await tester.ensureVisible(find.text('Přidat ke snídani'));
+      await tester.tap(find.text('Přidat ke snídani'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Zadat ručně'));
       await tester.pumpAndSettle();
@@ -449,7 +450,8 @@ void main() {
 
     testWidgets('validation message instead of saving', (tester) async {
       final state = await pump(tester);
-      await tester.tap(find.byTooltip('Přidat jídlo'));
+      await tester.ensureVisible(find.text('Přidat ke snídani'));
+      await tester.tap(find.text('Přidat ke snídani'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Zadat ručně'));
       await tester.pumpAndSettle();
@@ -469,7 +471,8 @@ void main() {
         ),
       );
       final state = await pump(tester, lookup: lookup);
-      await tester.tap(find.byTooltip('Přidat jídlo'));
+      await tester.ensureVisible(find.text('Přidat ke snídani'));
+      await tester.tap(find.text('Přidat ke snídani'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Najít podle čárového kódu'));
       await tester.pumpAndSettle();
@@ -494,7 +497,8 @@ void main() {
     testWidgets('not found and outage offer manual entry', (tester) async {
       final lookup = FakeLookup(const LookupNotFound());
       final state = await pump(tester, lookup: lookup);
-      await tester.tap(find.byTooltip('Přidat jídlo'));
+      await tester.ensureVisible(find.text('Přidat ke snídani'));
+      await tester.tap(find.text('Přidat ke snídani'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Najít podle čárového kódu'));
       await tester.pumpAndSettle();
@@ -530,7 +534,8 @@ void main() {
     ) async {
       final lookup = FakeLookup(const LookupNotFound());
       await pump(tester, lookup: lookup);
-      await tester.tap(find.byTooltip('Přidat jídlo'));
+      await tester.ensureVisible(find.text('Přidat ke snídani'));
+      await tester.tap(find.text('Přidat ke snídani'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Najít podle čárového kódu'));
       await tester.pumpAndSettle();
