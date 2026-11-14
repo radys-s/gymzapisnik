@@ -94,17 +94,28 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
             surfaceTintColor: Colors.transparent,
             scrolledUnderElevation: 0,
             centerTitle: true,
-            flexibleSpace: AnimatedOpacity(
-              opacity: collapsed ? 1 : 0,
+            // The frost fades by its own strength: a backdrop filter
+            // inside an opacity layer has nothing behind it to blur.
+            flexibleSpace: TweenAnimationBuilder<double>(
+              tween: Tween(end: collapsed ? 1 : 0),
               duration: fade,
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                  child: ColoredBox(
-                    color: p.background.withValues(alpha: 0.72),
-                  ),
-                ),
-              ),
+              builder: (context, t, _) => t == 0
+                  ? const SizedBox.expand()
+                  : ClipRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: 18 * t,
+                          sigmaY: 18 * t,
+                        ),
+                        // Without a child the box would shrink to nothing
+                        // under the bar's loose constraints.
+                        child: SizedBox.expand(
+                          child: ColoredBox(
+                            color: p.background.withValues(alpha: 0.82 * t),
+                          ),
+                        ),
+                      ),
+                    ),
             ),
             title: AnimatedOpacity(
               opacity: collapsed ? 1 : 0,
