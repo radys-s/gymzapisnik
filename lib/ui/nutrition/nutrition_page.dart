@@ -275,10 +275,10 @@ class _NutritionPageState extends State<NutritionPage> {
       return LargeTitlePage(
         title: widget.root ? 'Strava' : 'Výživa',
         actions: [if (widget.root) SettingsButton(state)],
-        floatingActionButton: FloatingActionButton.extended(
+        floatingActionButton: FloatingActionButton(
+          tooltip: 'Přidat jídlo',
           onPressed: () => addFoodFlow(context, state, key),
-          icon: const Icon(Icons.add),
-          label: const Text('Přidat jídlo'),
+          child: const Icon(Icons.add),
         ),
         padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
         children: [

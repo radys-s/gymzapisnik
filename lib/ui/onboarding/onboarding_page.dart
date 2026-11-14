@@ -399,6 +399,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return QuestionScaffold(
       progress: i / _asked.length,
       step: 'Otázka $i ze ${_asked.length}',
+      progressLabel: '$i / ${_asked.length}',
       title: title,
       why: why,
       action: action,
