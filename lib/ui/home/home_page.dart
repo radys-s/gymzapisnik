@@ -278,6 +278,14 @@ class _TodayCard extends StatelessWidget {
       final next = nextUp
           ? _nextTrainingDay(state.profile.trainingDays, now)
           : null;
+      final String when;
+      if (!nextUp) {
+        when = 'Dnes';
+      } else if (next == null) {
+        when = 'Příště';
+      } else {
+        when = 'Příště · ${weekdayLong[next - 1]}';
+      }
       final scope =
           '${exercisesLabel(plan.length)} · '
           '~${workoutMinutes(plan.fold(0, (n, e) => n + e.$1.sets))} min';
@@ -290,8 +298,7 @@ class _TodayCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Eyebrow(
-                    '${!nextUp ? 'Dnes' : next == null ? 'Příště' : 'Příště · ${weekdayLong[next - 1]}'}'
-                    ' · ${split.name} · den '
+                    '$when · ${split.name} · den '
                     '${dayIndex % split.days.length + 1}/${split.days.length}',
                   ),
                   Text(day.name, style: text.displaySmall),
