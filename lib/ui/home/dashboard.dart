@@ -219,6 +219,8 @@ class QuickProgressCard extends StatelessWidget {
         ? 'Odhad 1RM'
         : 'Max opakování';
     final color = delta < 0 ? p.negative : p.accent;
+    // Rostoucí křivka nese barvy sekce, klesající zůstává varovná.
+    final line = delta < 0 ? [color, color] : ToneScope.of(context).colors;
     return Panel(
       onTap: () => Navigator.push(
         context,
@@ -269,7 +271,7 @@ class QuickProgressCard extends StatelessWidget {
                       ],
                       isCurved: true,
                       preventCurveOverShooting: true,
-                      color: color,
+                      gradient: LinearGradient(colors: line),
                       barWidth: 3,
                       dotData: FlDotData(
                         checkToShowDot: (spot, _) =>
@@ -277,7 +279,14 @@ class QuickProgressCard extends StatelessWidget {
                       ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: color.withValues(alpha: 0.14),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            line.last.withValues(alpha: 0.22),
+                            line.first.withValues(alpha: 0),
+                          ],
+                        ),
                       ),
                     ),
                   ],

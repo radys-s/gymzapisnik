@@ -70,7 +70,7 @@ class ProgressRing extends StatelessWidget {
   final double stroke;
   final Widget? child;
 
-  /// Barvy oblouku; bez nich přechod z palety.
+  /// Barvy oblouku; bez nich barvy sekce.
   final List<Color>? colors;
 
   const ProgressRing({
@@ -97,7 +97,12 @@ class ProgressRing extends StatelessWidget {
         duration: Motion.of(context, Motion.slow),
         curve: Motion.curve,
         builder: (context, v, _) => CustomPaint(
-          painter: _RingPainter(v, stroke, p.fill, colors ?? p.gradient),
+          painter: _RingPainter(
+            v,
+            stroke,
+            p.fill,
+            colors ?? ToneScope.of(context).colors,
+          ),
           child: Center(child: child),
         ),
       ),

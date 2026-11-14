@@ -66,10 +66,13 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
       floatingActionButton: widget.floatingActionButton,
       body: AuroraBackground(
         tone: widget.tone,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: Space.contentMax),
-            child: _scroll(context, p, text),
+        child: ToneScope(
+          tone: widget.tone,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: Space.contentMax),
+              child: _scroll(context, p, text),
+            ),
           ),
         ),
       ),
@@ -321,7 +324,10 @@ class GroupedRow extends StatelessWidget {
                 leading!,
                 const SizedBox(width: Space.m),
               ] else if (icon != null) ...[
-                IconTile(icon!, color: iconColor ?? p.accent),
+                IconTile(
+                  icon!,
+                  color: iconColor ?? ToneScope.of(context).color,
+                ),
                 const SizedBox(width: Space.m),
               ],
               Expanded(

@@ -172,6 +172,22 @@ enum Tone {
   );
 }
 
+/// The section a subtree belongs to. Pages set it once; icons, rings and
+/// charts below read it, so a section keeps one color family without
+/// every widget being told.
+class ToneScope extends InheritedWidget {
+  final Tone tone;
+  const ToneScope({super.key, required this.tone, required super.child});
+
+  /// The section tone here; training (the brand green) outside any page.
+  static Tone of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ToneScope>()?.tone ??
+      Tone.training;
+
+  @override
+  bool updateShouldNotify(ToneScope old) => old.tone != tone;
+}
+
 /// Mezery a zaoblení – jinde se nepoužívají jiné hodnoty.
 abstract final class Space {
   static const xs = 4.0;

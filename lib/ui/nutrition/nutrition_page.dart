@@ -274,6 +274,7 @@ class _NutritionPageState extends State<NutritionPage> {
       String lower(bool missing) => missing && entries.isNotEmpty ? '≥ ' : '';
       return LargeTitlePage(
         title: widget.root ? 'Strava' : 'Výživa',
+        tone: Tone.food,
         actions: [if (widget.root) SettingsButton(state)],
         padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
         children: [
@@ -470,7 +471,7 @@ class _EntryTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconTile(icon, color: p.accent),
+            IconTile(icon, color: ToneScope.of(context).color),
             const SizedBox(height: Space.s),
             Text(title, style: text.titleMedium),
             Text(
@@ -597,9 +598,9 @@ class _RingStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final rows = [
-      if (kcal case (final v, final t)) ('Energie', v, t, 'kcal', p.gradient),
+      if (kcal case (final v, final t))
+        ('Energie', v, t, 'kcal', AppPalette.food),
       if (protein case (final v, final t))
         ('Bílkoviny', v, t, 'g', const [AppPalette.cyan, Color(0xFF7BE4FF)]),
     ];
