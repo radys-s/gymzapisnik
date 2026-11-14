@@ -76,7 +76,7 @@ void main() {
 
     // Bez uvítání: rovnou první otázka, s počtem otázek včetně zaměření.
     expect(find.text('Co chceš hlavně?'), findsOneWidget);
-    expect(find.bySemanticsLabel('Otázka 1 ze 8'), findsOneWidget);
+    expect(find.bySemanticsLabel('Otázka 1 ze 7'), findsOneWidget);
     expect(find.text('Přeskočit'), findsNothing);
 
     await _pick(tester, find.text(PlanGoal.strength.label));
@@ -102,9 +102,9 @@ void main() {
     await tester.pump();
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
 
-    expect(find.text('Jak chceš začít?'), findsOneWidget);
-    await _tapAndSave(tester, find.text('Vyber za mě'));
+    // Poslední otázka plán uloží a ukáže, i s cestou k vlastnímu.
     expect(find.text('Plán je hotový'), findsOneWidget);
+    expect(find.text('Složím si vlastní'), findsOneWidget);
     expect(state.planAnswers?.goal, PlanGoal.strength);
     expect(state.planAnswers?.focus, {focus});
     expect(state.planAnswers?.favorites, {favorite});

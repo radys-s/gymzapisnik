@@ -187,11 +187,14 @@ class AppState extends ChangeNotifier {
   }
 
   /// Souhlas; s [welcomeVersion] zároveň uzavře uvítání jedním zápisem,
-  /// aby po pádu nezůstalo „uvítání hotové, souhlas chybí".
+  /// aby po pádu nezůstalo „uvítání hotové, souhlas chybí". S
+  /// [onboardingStep] úvod naopak pokračuje tímto krokem: stejným
+  /// zápisem, ať se mezi souhlasem a krokem neotevře aplikace.
   Future<void> acceptConsent({
     required bool adult,
     required bool guardianConsent,
     String? welcomeVersion,
+    int? onboardingStep,
     bool aiNotice = false,
   }) => _updateProfile((current) {
     final next = current.acceptConsent(
@@ -204,7 +207,8 @@ class AppState extends ChangeNotifier {
         ProfileKey.welcomeSeen: true,
         ProfileKey.seenVersion: welcomeVersion,
         ProfileKey.onboardingStep: null,
-      },
+      } else
+        ProfileKey.onboardingStep: ?onboardingStep,
       // Upozornění na AI bylo součástí souhlasu: trenér se už neptá znovu.
       if (aiNotice) ProfileKey.aiNotice: true,
     });
@@ -374,7 +378,7 @@ class StateSlices {
   /// Profil: nastavení, plán, cíle.
   final StateSlice profile;
 
-  /// Jen platnost souhlasu (rozhoduje mezi úvodem a aplikací).
+  /// Jen souhlas a dokončený úvod (rozhoduje mezi úvodem a aplikací).
   final StateSlice consent;
 
   StateSlices._(AppState s)
@@ -385,7 +389,7 @@ class StateSlices {
       ),
       food = StateSlice._(s, (s) => s.foods),
       profile = StateSlice._(s, (s) => (s.profile, s._dayPick, s._today)),
-      consent = StateSlice._(s, (s) => s.profile.hasValidConsent);
+      consent = StateSlice._(s, (s) => s.profile.ready);
 
   /// Všechno kromě rozepsaného tréninku (obrazovky mimo trénink).
   late final Listenable resting = Listenable.merge([history, food, profile]);
