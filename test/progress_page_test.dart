@@ -134,7 +134,7 @@ void main() {
     // Sobota 31. 10. 2026: v plánu volno, další trénink v pondělí.
     await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 31, 15)));
     expect(find.textContaining('Příště · pondělí'), findsOneWidget);
-    expect(find.text('Začít i dnes'), findsOneWidget);
+    expect(find.text('Bonusový trénink'), findsOneWidget);
     expect(find.text('Dnes volno podle plánu'), findsOneWidget);
     // Ve středu se trénuje: zase „Dnes“.
     await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 28, 15)));

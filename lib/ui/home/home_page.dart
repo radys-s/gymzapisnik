@@ -290,7 +290,7 @@ class _TodayCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Eyebrow(
-                    '${next == null ? 'Dnes' : 'Příště · ${weekdayLong[next - 1]}'}'
+                    '${!nextUp ? 'Dnes' : next == null ? 'Příště' : 'Příště · ${weekdayLong[next - 1]}'}'
                     ' · ${split.name} · den '
                     '${dayIndex % split.days.length + 1}/${split.days.length}',
                   ),
