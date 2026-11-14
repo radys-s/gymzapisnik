@@ -13,4 +13,5 @@
 
 - Updated the web screenshot tour to use the renamed Progress tab. The first visual run revealed its old `Profil` selector was capturing Strava while naming the screenshots `profile`.
 - Removed an unused Home import caught by full CI after the moved records card no longer needed it.
+- Updated mission widget tests that still expected the removed weekly progress ring on Home; the mission summary remains there, and the detailed ring is in Progress.
 - Next: rerun full CI and the remote screenshot tour; confirm Progress screenshots show the intended page.
