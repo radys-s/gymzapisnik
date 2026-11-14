@@ -142,8 +142,13 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
     await scrollShots('home-after', 3);
   });
 
+  await section('progress-after-workout', async () => {
+    await tap(/Pokrok/, 'tab');
+    await scrollShots('progress-after-workout', 3);
+  });
+
   await section('settings', async () => {
-    if (!(await tap(/^Nastavení/))) { await tap(/Profil/, 'tab'); await tap(/Nastavení/); }
+    if (!(await tap(/^Nastavení/))) { await tap(/Pokrok/, 'tab'); await tap(/Nastavení/); }
     await scrollShots('settings', 5);
   });
 

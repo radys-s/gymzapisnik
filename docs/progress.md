@@ -16,4 +16,5 @@
 - Updated mission widget tests that still expected the removed weekly progress ring on Home; the mission summary remains there, and the detailed ring is in Progress.
 - Moved the remaining stale streak-chip assertion out of the Home mission test; streak analytics now belong to Progress.
 - Kept the assertion comment on its own line to satisfy the repository Dart formatter.
-- Next: rerun full CI and the remote screenshot tour; confirm Progress screenshots show the intended page.
+- Updated the screenshot tour selector; inspection confirms the first Progress shots land on the correct empty state. Added a second visit after the sample workout to capture populated weekly analytics, and removed its last obsolete `Profil` fallback.
+- Next: rerun the tour and inspect the populated Progress captures.
