@@ -107,7 +107,9 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
       final now = widget.now();
       final recent = state.workouts.take(3).toList();
       return LargeTitlePage(
-        title: 'Domů',
+        // The tab bar already says "Domů"; the title greets instead.
+        title: greeting(now),
+        titleLeading: const AppMark(size: 36),
         actions: [
           IconButton(
             tooltip: 'Trenér',
@@ -117,14 +119,6 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           SettingsButton(state),
         ],
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: Space.s),
-            child: Text(
-              greeting(now),
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(color: context.palette.secondaryLabel),
-            ),
-          ),
           if (state.backupDue)
             Padding(
               padding: const EdgeInsets.only(bottom: Space.m),
@@ -235,6 +229,7 @@ class _TodayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => HeroCard(
     vivid: true,
+    padding: const EdgeInsets.fromLTRB(Space.xl, Space.l, Space.xl, Space.l),
     // Závod: číslo jezdce = pořadí dnešního tréninku.
     watermark: '${state.workouts.where((w) => w.finished).length + 1}',
     // Rozepsaný trénink se mění při každé sérii: překreslí se jen karta.
@@ -327,10 +322,10 @@ class _TodayCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Space.m),
+        const SizedBox(height: Space.s),
         for (final (pe, s) in plan.take(5))
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: [
                 Expanded(
@@ -355,22 +350,28 @@ class _TodayCard extends StatelessWidget {
           ),
         if (plan.length > 5)
           Text('a další ${plan.length - 5}', style: text.bodySmall),
-        const SizedBox(height: Space.m),
-        // Jeden dílek na cvik a rozsah tréninku.
-        StartLights(count: plan.length, caption: scope),
-        const SizedBox(height: Space.m),
+        const SizedBox(height: Space.s),
+        // Jeden dílek na cvik, rozsah tréninku a vedlejší volba na jednom
+        // řádku: karta je nižší a jídlo se vejde na první obrazovku.
+        StartLights(
+          count: plan.length,
+          caption: scope,
+          trailing: TextButton(
+            onPressed: busy ? null : onOther,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: Space.s),
+              minimumSize: const Size(0, minTap),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              textStyle: text.titleSmall,
+            ),
+            child: const Text('Jiný trénink'),
+          ),
+        ),
         PrimaryButton(
           nextUp ? 'Bonusový trénink' : 'Začít ${day.name}',
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
-        ),
-        const SizedBox(height: Space.xs),
-        Center(
-          child: TextButton(
-            onPressed: busy ? null : onOther,
-            child: const Text('Jiný trénink'),
-          ),
         ),
       ]);
     } else {
@@ -489,10 +490,14 @@ class _MissionLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: Space.m),
       child: Container(
-        padding: const EdgeInsets.all(Space.m),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.m,
+          vertical: Space.s + 2,
+        ),
         decoration: BoxDecoration(
-          color: p.fill,
+          color: p.background.withValues(alpha: 0.42),
           borderRadius: BorderRadius.circular(context.palette.controlRadius),
+          border: Border.all(color: p.label.withValues(alpha: 0.06)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +505,7 @@ class _MissionLine extends StatelessWidget {
             Icon(
               MissionCopy.icon(mission.kind),
               size: 20,
-              color: urgent ? const Color(0xFFFF9F0A) : p.accent,
+              color: urgent ? AppPalette.orange : AppPalette.cyan,
             ),
             const SizedBox(width: Space.m),
             Expanded(
