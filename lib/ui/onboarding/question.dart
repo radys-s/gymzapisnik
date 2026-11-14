@@ -175,10 +175,8 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-      color: p.secondaryLabel,
-      fontFeatures: tabular,
-    );
+    final labelStyle = Theme.of(context).textTheme.labelSmall
+        ?.copyWith(color: p.secondaryLabel, fontFeatures: tabular);
     return Semantics(
       container: true,
       label: step ?? 'Postup ${(value * 100).round()} %',
@@ -219,10 +217,7 @@ class _ProgressBar extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(
-                    progressLabel!,
-                    style: labelStyle,
-                  ),
+                  child: Text(progressLabel!, style: labelStyle),
                 ),
               ),
             ],
