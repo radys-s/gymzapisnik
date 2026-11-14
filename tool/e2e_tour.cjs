@@ -85,7 +85,7 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
     const skip = /^(Zpět|Přeskočit|Back)$/;
     for (let step = 0; step < 30; step++) {
       const t = await txt();
-      if (/Domů/.test(t) && /Strava/.test(t) && /Profil/.test(t)) break;
+      if (/Domů/.test(t) && /Strava/.test(t) && /Pokrok/.test(t)) break;
       await shot(`onboarding-${step}`);
       if (/Než začneš|Souhlasím/.test(t)) {
         await tap(/Souhlasím/, 'checkbox');
@@ -109,7 +109,7 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
   await section('home', async () => { await scrollShots('home', 4); });
   await section('training-tab', async () => { await tap(/Trénink/, 'tab'); await scrollShots('training', 3); });
   await section('strava-tab', async () => { await tap(/Strava/, 'tab'); await scrollShots('strava', 3); });
-  await section('profile-tab', async () => { await tap(/Profil/, 'tab'); await scrollShots('profile', 3); });
+  await section('progress-tab', async () => { await tap(/Pokrok/, 'tab'); await scrollShots('progress', 3); });
 
   await section('workout', async () => {
     await tap(/Domů/, 'tab');
