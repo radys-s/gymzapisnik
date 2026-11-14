@@ -39,16 +39,21 @@ class QuestionScaffold extends StatelessWidget {
     this.secondary,
   });
 
+  Widget _progressIndicator() {
+    final value = progress;
+    if (value == null) {
+      return const SizedBox.shrink();
+    }
+    return _ProgressBar(
+      value: value,
+      step: step,
+      progressLabel: progressLabel,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final progressIndicator = progress == null
-        ? const SizedBox.shrink()
-        : _ProgressBar(
-            value: progress!,
-            step: step,
-            progressLabel: progressLabel,
-        );
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -73,7 +78,7 @@ class QuestionScaffold extends StatelessWidget {
                       )
                     else
                       const SizedBox(width: minTap),
-                    Expanded(child: progressIndicator),
+                    Expanded(child: _progressIndicator()),
                     if (onSkip != null)
                       TextButton(
                         onPressed: busy ? null : onSkip,
