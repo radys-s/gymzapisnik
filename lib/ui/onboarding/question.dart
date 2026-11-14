@@ -66,21 +66,14 @@ class QuestionScaffold extends StatelessWidget {
                       )
                     else
                       const SizedBox(width: minTap),
-                    Expanded(
-                      child: progress == null
-                          ? const SizedBox.shrink()
-                          : _ProgressBar(value: progress!, step: step),
-                    ),
-                    if (progressLabel != null) ...[
-                      const SizedBox(width: Space.xs),
-                      Text(
-                        progressLabel!,
-                        style: text.labelSmall?.copyWith(
-                          color: context.palette.secondaryLabel,
-                          fontFeatures: tabular,
+                    if (progress != null)
+                      Expanded(
+                        child: _ProgressBar(
+                          value: progress!,
+                          step: step,
+                          progressLabel: progressLabel,
                         ),
                       ),
-                    ],
                     if (onSkip != null)
                       TextButton(
                         onPressed: busy ? null : onSkip,
@@ -176,7 +169,8 @@ class WhyLine extends StatelessWidget {
 class _ProgressBar extends StatelessWidget {
   final double value;
   final String? step;
-  const _ProgressBar({required this.value, this.step});
+  final String? progressLabel;
+  const _ProgressBar({required this.value, this.step, this.progressLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -187,29 +181,45 @@ class _ProgressBar extends StatelessWidget {
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Space.s),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: SizedBox(
-            height: 6,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ColoredBox(color: p.fill),
-                TweenAnimationBuilder<double>(
-                  tween: Tween(end: value.clamp(0.0, 1.0)),
-                  duration: Motion.of(context, Motion.base),
-                  curve: Motion.curve,
-                  builder: (_, v, _) => FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: v,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(gradient: p.linear),
-                    ),
+        child: Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: SizedBox(
+                  height: 6,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ColoredBox(color: p.fill),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(end: value.clamp(0.0, 1.0)),
+                        duration: Motion.of(context, Motion.base),
+                        curve: Motion.curve,
+                        builder: (_, v, _) => FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: v,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(gradient: p.linear),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+            if (progressLabel != null) ...[
+              const SizedBox(width: Space.xs),
+              Text(
+                progressLabel!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: p.secondaryLabel,
+                  fontFeatures: tabular,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
