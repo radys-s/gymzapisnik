@@ -39,18 +39,6 @@ class QuestionScaffold extends StatelessWidget {
     this.secondary,
   });
 
-  Widget _progressIndicator() {
-    final value = progress;
-    if (value == null) {
-      return const SizedBox.shrink();
-    }
-    return _ProgressBar(
-      value: value,
-      step: step,
-      progressLabel: progressLabel,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -78,7 +66,21 @@ class QuestionScaffold extends StatelessWidget {
                       )
                     else
                       const SizedBox(width: minTap),
-                    Expanded(child: _progressIndicator()),
+                    Expanded(
+                      child: progress == null
+                          ? const SizedBox.shrink()
+                          : _ProgressBar(value: progress!, step: step),
+                    ),
+                    if (progressLabel != null) ...[
+                      const SizedBox(width: Space.xs),
+                      Text(
+                        progressLabel!,
+                        style: text.labelSmall?.copyWith(
+                          color: context.palette.secondaryLabel,
+                          fontFeatures: tabular,
+                        ),
+                      ),
+                    ],
                     if (onSkip != null)
                       TextButton(
                         onPressed: busy ? null : onSkip,
@@ -174,8 +176,7 @@ class WhyLine extends StatelessWidget {
 class _ProgressBar extends StatelessWidget {
   final double value;
   final String? step;
-  final String? progressLabel;
-  const _ProgressBar({required this.value, this.step, this.progressLabel});
+  const _ProgressBar({required this.value, this.step});
 
   @override
   Widget build(BuildContext context) {
@@ -186,45 +187,29 @@ class _ProgressBar extends StatelessWidget {
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Space.s),
-        child: Row(
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: SizedBox(
-                  height: 6,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ColoredBox(color: p.fill),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(end: value.clamp(0.0, 1.0)),
-                        duration: Motion.of(context, Motion.base),
-                        curve: Motion.curve,
-                        builder: (_, v, _) => FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: v,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(gradient: p.linear),
-                          ),
-                        ),
-                      ),
-                    ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: SizedBox(
+            height: 6,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ColoredBox(color: p.fill),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(end: value.clamp(0.0, 1.0)),
+                  duration: Motion.of(context, Motion.base),
+                  curve: Motion.curve,
+                  builder: (_, v, _) => FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: v,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(gradient: p.linear),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-            if (progressLabel case final label?) ...[
-              const SizedBox(width: Space.s),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: p.secondaryLabel,
-                  fontFeatures: tabular,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );
