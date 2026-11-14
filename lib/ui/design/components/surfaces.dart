@@ -256,54 +256,32 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Logo aplikace: zaoblený čtverec v barvách motivu se značkou.
+/// Logo aplikace: tmavá dlaždice s kruhem postupu a činkou.
 class AppMark extends StatelessWidget {
   final double size;
-  const AppMark({super.key, this.size = 88});
+
+  /// Barevná záře pod dlaždicí (uvítání); malé značky jsou bez ní.
+  final bool glow;
+  const AppMark({super.key, this.size = 88, this.glow = false});
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      width: size,
-      height: size,
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: size,
+    child: DecoratedBox(
       decoration: BoxDecoration(
-        gradient: p.linear,
-        borderRadius: BorderRadius.circular(size * 0.23),
+        borderRadius: BorderRadius.circular(size * 0.225),
+        boxShadow: glow
+            ? [
+                BoxShadow(
+                  color: AppPalette.violet.withValues(alpha: 0.38),
+                  blurRadius: size * 0.42,
+                  spreadRadius: -size * 0.1,
+                  offset: Offset(0, size * 0.14),
+                ),
+              ]
+            : null,
       ),
-      child: CustomPaint(painter: _MarkPainter(p.onGradient)),
-    );
-  }
-}
-
-/// Značka: osa činky se dvěma kotouči.
-class _MarkPainter extends CustomPainter {
-  final Color color;
-  _MarkPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final u = size.width / 100;
-    final paint = Paint()..color = color;
-    // Průhlednost na celou vrstvu, aby překryvy osy a kotoučů neztmavly.
-    canvas.saveLayer(
-      Offset.zero & size,
-      Paint()..color = color.withValues(alpha: 0.85),
-    );
-    RRect r(double x, double y, double w, double h, double rad) =>
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x * u, y * u, w * u, h * u),
-          Radius.circular(rad * u),
-        );
-    canvas
-      ..drawRRect(r(28, 46, 44, 8, 4), paint)
-      ..drawRRect(r(24, 30, 10, 40, 5), paint)
-      ..drawRRect(r(66, 30, 10, 40, 5), paint)
-      ..drawRRect(r(14, 38, 8, 24, 4), paint)
-      ..drawRRect(r(78, 38, 8, 24, 4), paint)
-      ..restore();
-  }
-
-  @override
-  bool shouldRepaint(_MarkPainter old) => old.color != color;
+      child: const CustomPaint(painter: BrandPainter()),
+    ),
+  );
 }
