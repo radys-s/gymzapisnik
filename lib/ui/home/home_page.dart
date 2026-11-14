@@ -175,9 +175,15 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
             ),
           ),
           const SizedBox(height: Space.m),
-          Reveal(index: 1, child: HomeFoodBlock(state: state, now: now)),
+          Reveal(
+            index: 1,
+            child: HomeFoodBlock(state: state, now: now),
+          ),
           const SizedBox(height: Space.m),
-          Reveal(index: 2, child: WeekFocusCard(state: state, now: now)),
+          Reveal(
+            index: 2,
+            child: WeekFocusCard(state: state, now: now),
+          ),
           const SizedBox(height: Space.m),
           if (recent.isNotEmpty) ...[
             SectionHeader(
