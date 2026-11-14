@@ -58,7 +58,7 @@ void main() {
     await show(tester, state);
     expect(find.text('Týdenní cíl splněn'), findsOneWidget);
     expect(find.text('1/1'), findsNothing);
-    expect(find.text('1 týden'), findsOneWidget); // streak chip
+    expect(find.text('1 týden'), findsNothing); // streak summary moved to Progress
 
     await tester.runAsync(() => state.setWeekGoal(null));
     await tester.pumpAndSettle();
