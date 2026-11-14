@@ -49,7 +49,9 @@ void main() {
     final state = await newState(tester);
     await tester.runAsync(() async {
       await state.setSplit('full_body_3');
-      await state.startWorkout(now: monday.subtract(const Duration(minutes: 30)));
+      await state.startWorkout(
+        now: monday.subtract(const Duration(minutes: 30)),
+      );
       final e = await state.addExercise('bench_press');
       e.sets = [SetEntry(weight: 80, reps: 8, done: true)];
       await state.finishActive(now: monday);

@@ -344,9 +344,7 @@ class _TodayCard extends StatelessWidget {
         StartLights(count: plan.length, caption: scope),
         const SizedBox(height: Space.m),
         PrimaryButton(
-          nextUp
-              ? 'Bonusový trénink'
-              : 'Začít ${day.name}',
+          nextUp ? 'Bonusový trénink' : 'Začít ${day.name}',
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
