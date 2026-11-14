@@ -15,4 +15,5 @@
 - Removed an unused Home import caught by full CI after the moved records card no longer needed it.
 - Updated mission widget tests that still expected the removed weekly progress ring on Home; the mission summary remains there, and the detailed ring is in Progress.
 - Moved the remaining stale streak-chip assertion out of the Home mission test; streak analytics now belong to Progress.
+- Kept the assertion comment on its own line to satisfy the repository Dart formatter.
 - Next: rerun full CI and the remote screenshot tour; confirm Progress screenshots show the intended page.

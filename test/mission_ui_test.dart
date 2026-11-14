@@ -58,7 +58,8 @@ void main() {
     await show(tester, state);
     expect(find.text('Týdenní cíl splněn'), findsOneWidget);
     expect(find.text('1/1'), findsNothing);
-    expect(find.text('1 týden'), findsNothing); // streak summary moved to Progress
+    // Streak summary moved to Progress.
+    expect(find.text('1 týden'), findsNothing);
 
     await tester.runAsync(() => state.setWeekGoal(null));
     await tester.pumpAndSettle();
