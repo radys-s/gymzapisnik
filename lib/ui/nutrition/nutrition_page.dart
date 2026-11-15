@@ -467,17 +467,24 @@ class _EntryTile extends StatelessWidget {
       excludeSemantics: true,
       child: Panel(
         onTap: onTap,
-        padding: const EdgeInsets.all(Space.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        // Same row shape as the meal rows below: icon, text, chevron.
+        child: Row(
           children: [
             IconTile(icon, color: ToneScope.of(context).color),
-            const SizedBox(height: Space.s),
-            Text(title, style: text.titleMedium),
-            Text(
-              subtitle,
-              style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: text.titleMedium),
+                  Text(
+                    subtitle,
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ],
+              ),
             ),
+            Icon(Icons.chevron_right_rounded, color: p.tertiaryLabel),
           ],
         ),
       ),
