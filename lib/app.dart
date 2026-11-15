@@ -101,6 +101,31 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     widget.state.setLastTab(i);
   }
 
+  /// Section color of each tab, in tab order.
+  static const _tones = [
+    Tone.training,
+    Tone.training,
+    Tone.food,
+    Tone.progress,
+  ];
+
+  /// The selected tab wears its section color.
+  NavigationBarThemeData _barTheme(BuildContext context, Color color) {
+    final p = context.palette;
+    Color of(Set<WidgetState> states) =>
+        states.contains(WidgetState.selected) ? color : p.secondaryLabel;
+    return NavigationBarTheme.of(context).copyWith(
+      indicatorColor: color.withValues(alpha: 0.16),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (st) => IconThemeData(size: 26, color: of(st)),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (st) =>
+            TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: of(st)),
+      ),
+    );
+  }
+
   Widget _tab(int i, Widget root) => Navigator(
     key: _navigators[i],
     onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => root),
@@ -148,36 +173,39 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       top: BorderSide(color: p.separator, width: 0.5),
                     ),
                   ),
-                  child: NavigationBar(
-                    selectedIndex: tab,
-                    onDestinationSelected: _select,
-                    destinations: const [
-                      NavigationDestination(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home_rounded),
-                        label: 'Domů',
-                        // Popisek je vidět pořád; tooltip na webu visel.
-                        tooltip: '',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.fitness_center_outlined),
-                        selectedIcon: Icon(Icons.fitness_center),
-                        label: 'Trénink',
-                        tooltip: '',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.restaurant_outlined),
-                        selectedIcon: Icon(Icons.restaurant),
-                        label: 'Strava',
-                        tooltip: '',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.insights_outlined),
-                        selectedIcon: Icon(Icons.insights_rounded),
-                        label: 'Pokrok',
-                        tooltip: '',
-                      ),
-                    ],
+                  child: NavigationBarTheme(
+                    data: _barTheme(context, _tones[tab].color),
+                    child: NavigationBar(
+                      selectedIndex: tab,
+                      onDestinationSelected: _select,
+                      destinations: const [
+                        NavigationDestination(
+                          icon: Icon(Icons.home_outlined),
+                          selectedIcon: Icon(Icons.home_rounded),
+                          label: 'Domů',
+                          // Popisek je vidět pořád; tooltip na webu visel.
+                          tooltip: '',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.fitness_center_outlined),
+                          selectedIcon: Icon(Icons.fitness_center),
+                          label: 'Trénink',
+                          tooltip: '',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.restaurant_outlined),
+                          selectedIcon: Icon(Icons.restaurant),
+                          label: 'Strava',
+                          tooltip: '',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.insights_outlined),
+                          selectedIcon: Icon(Icons.insights_rounded),
+                          label: 'Pokrok',
+                          tooltip: '',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
