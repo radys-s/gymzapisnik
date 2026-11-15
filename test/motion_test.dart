@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymzapisnik/ui/design/ambient.dart';
 import 'package:gymzapisnik/ui/design/motion.dart';
 
 Widget _app(Widget child, {bool reduce = false}) => MaterialApp(
@@ -82,5 +83,44 @@ void main() {
     await t.pumpAndSettle();
     expect(t.widget<Opacity>(find.byType(Opacity).first).opacity, 1);
     expect(find.text('Domů', skipOffstage: false), findsOneWidget);
+  });
+
+  testWidgets('sheen passes over its child, then rests until the next pass', (
+    t,
+  ) async {
+    Ambient.enabled = true;
+    addTearDown(() => Ambient.enabled = false);
+    await t.pumpWidget(
+      _app(
+        const Sheen(
+          borderRadius: BorderRadius.zero,
+          delay: 0,
+          child: SizedBox(width: 120, height: 40),
+        ),
+      ),
+    );
+    CustomPaint paint() => t.widget<CustomPaint>(
+      find.descendant(
+        of: find.byType(Sheen),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    await t.pump(const Duration(milliseconds: 400));
+    expect(paint().foregroundPainter, isNotNull);
+    await t.pump(const Duration(seconds: 2));
+    expect(paint().foregroundPainter, isNull);
+    // Leaving the screen stops the shared clock; a timer left running
+    // would fail this test.
+    await t.pumpWidget(_app(const SizedBox()));
+  });
+
+  testWidgets('ambient effects stay still with reduced motion', (t) async {
+    Ambient.enabled = true;
+    addTearDown(() => Ambient.enabled = false);
+    await t.pumpWidget(
+      _app(const AuroraBackground(child: SizedBox.expand()), reduce: true),
+    );
+    await t.pump(const Duration(seconds: 1));
+    expect(t.binding.hasScheduledFrame, isFalse);
   });
 }
