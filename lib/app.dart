@@ -29,9 +29,7 @@ class GymApp extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state.on.consent,
     builder: (context, _) => appFrame(
-      home: state.profile.ready
-          ? AppShell(state)
-          : OnboardingPage(state),
+      home: state.profile.ready ? AppShell(state) : OnboardingPage(state),
     ),
   );
 }
