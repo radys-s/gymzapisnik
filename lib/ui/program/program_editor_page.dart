@@ -168,7 +168,9 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
       builder: (_) => _AddDaySheet(state: state, number: _days.length + 1),
     );
     if (day == null || !mounted) return;
-    _addDraft(day);
+    final draft = _addDraft(day);
+    // Den bez návrhu: rovnou seznam cviků, ať nezůstane prázdný.
+    if (day.exercises.isEmpty) await _addExercises(draft);
   }
 
   Future<void> _addExercises(_DayDraft day) async {
@@ -369,9 +371,8 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
                     const SizedBox(width: Space.m),
                     Expanded(
                       child: Text(
-                        'Přidej první den. Vyber partie, třeba ramena a '
-                        'triceps, a cviky se doplní samy. Pak je můžeš '
-                        'upravit.',
+                        'Přidej první den. Cviky ti navrhnu podle partií, '
+                        'nebo si je vybereš sám ze seznamu.',
                         style: text.bodyMedium?.copyWith(
                           color: p.secondaryLabel,
                         ),
@@ -588,7 +589,11 @@ class _ExerciseRow extends StatelessWidget {
   }
 }
 
-/// Nový den: vybrané partie složí název i cviky, nebo prázdný den.
+/// Jak nový den vznikne.
+enum _DayMode { suggest, own }
+
+/// Nový den. Nahoře volba: nechat si cviky navrhnout podle partií
+/// (a případně některé vyřadit), nebo si je vybrat ze seznamu.
 class _AddDaySheet extends StatefulWidget {
   final AppState state;
   final int number;
@@ -599,7 +604,18 @@ class _AddDaySheet extends StatefulWidget {
 }
 
 class _AddDaySheetState extends State<_AddDaySheet> {
+  _DayMode _mode = _DayMode.suggest;
   final Set<String> _picked = {};
+
+  /// Navržené cviky, které uživatel vyřadil.
+  final Set<String> _dropped = {};
+
+  String _count(int n) =>
+      '$n ${n == 1
+          ? 'cvik'
+          : n < 5
+          ? 'cviky'
+          : 'cviků'}';
 
   @override
   Widget build(BuildContext context) {
@@ -608,86 +624,301 @@ class _AddDaySheetState extends State<_AddDaySheet> {
     // Návrh dne bere jen cviky, na které má posilovna vybavení.
     final answers = widget.state.planAnswers;
     final raw = dayFromFocuses(_picked);
-    final day = answers == null || raw.exercises.isEmpty
-        ? raw
-        : SplitDay(raw.name, personalizeDay(raw, answers).exercises);
+    final offered = answers == null || raw.exercises.isEmpty
+        ? raw.exercises
+        : personalizeDay(raw, answers).exercises;
+    final kept = [
+      for (final e in offered)
+        if (!_dropped.contains(e.exerciseId)) e,
+    ];
+    final own = _mode == _DayMode.own;
     // Pevná výška: list neroste s náhledem, takže dlaždice nahoře stojí.
+    // Tlačítko je pod posuvnou částí, takže je vidět pořád.
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.85,
       child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(Space.xxl, 0, Space.xxl, Space.xl),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Space.xxl, 0, Space.xxl, Space.l),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Den ${widget.number}', style: text.headlineSmall),
-              const SizedBox(height: Space.xs),
-              Text(
-                'Co ten den procvičíš? Klidně víc partií najednou.',
-                style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+              const SizedBox(height: Space.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ModeCard(
+                      icon: Icons.auto_awesome_rounded,
+                      color: p.accent,
+                      label: 'Navrhnout cviky',
+                      hint: 'Vybereš partie',
+                      selected: !own,
+                      onTap: () => setState(() => _mode = _DayMode.suggest),
+                    ),
+                  ),
+                  const SizedBox(width: Space.s),
+                  Expanded(
+                    child: _ModeCard(
+                      icon: Icons.checklist_rounded,
+                      color: AppPalette.violet,
+                      label: 'Vyberu sám',
+                      hint: 'Celý seznam cviků',
+                      selected: own,
+                      onTap: () => setState(() => _mode = _DayMode.own),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: Space.l),
-              MuscleTileGrid(
-                selected: _picked,
-                onToggle: (id) => setState(
-                  () => _picked.contains(id)
-                      ? _picked.remove(id)
-                      : _picked.add(id),
+              const SizedBox(height: Space.m),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(
+                    top: Space.xs,
+                    bottom: Space.m,
+                  ),
+                  child: own
+                      ? Text(
+                          'Otevřu seznam všech cviků. Vybereš jich, kolik '
+                          'chceš, a den pak pojmenuješ.',
+                          style: text.bodyMedium?.copyWith(
+                            color: p.secondaryLabel,
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Co ten den procvičíš? Klidně víc partií '
+                              'najednou.',
+                              style: text.bodyMedium?.copyWith(
+                                color: p.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: Space.m),
+                            MuscleTileGrid(
+                              selected: _picked,
+                              onToggle: (id) => setState(
+                                () => _picked.contains(id)
+                                    ? _picked.remove(id)
+                                    : _picked.add(id),
+                              ),
+                            ),
+                            const SizedBox(height: Space.l),
+                            AnimatedSize(
+                              duration: Motion.of(context, Motion.instant),
+                              alignment: Alignment.topCenter,
+                              child: offered.isEmpty
+                                  ? const SizedBox(width: double.infinity)
+                                  : _suggestions(context, raw.name, offered),
+                            ),
+                          ],
+                        ),
                 ),
               ),
-              const SizedBox(height: Space.l),
-              AnimatedSize(
-                duration: Motion.of(context, Motion.instant),
-                alignment: Alignment.topCenter,
-                child: day.exercises.isEmpty
-                    ? const SizedBox(width: double.infinity)
-                    : Panel(
-                        child: Semantics(
-                          container: true,
-                          liveRegion: true,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(day.name, style: text.titleMedium),
-                              const SizedBox(height: Space.xs),
-                              for (final e in day.exercises)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 2,
-                                  ),
-                                  child: Text(
-                                    '${widget.state.exercise(e.exerciseId).name}'
-                                    ' · ${planLabel(e)}',
-                                    style: text.bodyMedium?.copyWith(
-                                      color: p.secondaryLabel,
-                                    ),
-                                  ),
-                                ),
-                            ],
+              if (own)
+                PrimaryButton(
+                  'Vybrat cviky',
+                  onPressed: () => popOnce(
+                    context,
+                    SplitDay('Den ${widget.number}', const []),
+                  ),
+                )
+              else
+                PrimaryButton(
+                  _picked.isEmpty
+                      ? 'Vyber partie'
+                      : kept.isEmpty
+                      ? 'Nech aspoň jeden cvik'
+                      : 'Přidat den · ${_count(kept.length)}',
+                  onPressed: kept.isEmpty
+                      ? null
+                      : () => popOnce(context, SplitDay(raw.name, kept)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Navržené cviky; každý jde klepnutím vyřadit.
+  Widget _suggestions(
+    BuildContext context,
+    String name,
+    List<PlannedExercise> offered,
+  ) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Panel(
+      padding: const EdgeInsets.fromLTRB(Space.l, Space.m, Space.s, Space.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            container: true,
+            liveRegion: true,
+            child: Text(name, style: text.titleMedium),
+          ),
+          Text(
+            'Co nechceš, klepnutím vyřaď.',
+            style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+          ),
+          const SizedBox(height: Space.xs),
+          for (final e in offered)
+            _SuggestedRow(
+              name: widget.state.exercise(e.exerciseId).name,
+              plan: planLabel(e),
+              kept: !_dropped.contains(e.exerciseId),
+              onTap: () => setState(() {
+                if (!_dropped.remove(e.exerciseId)) _dropped.add(e.exerciseId);
+              }),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Jedna ze dvou cest k novému dni; vybraná se zvedne a rozsvítí.
+class _ModeCard extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String hint;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ModeCard({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.hint,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final radius = BorderRadius.circular(p.controlRadius + 4);
+    return Semantics(
+      button: true,
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      label: '$label, $hint',
+      excludeSemantics: true,
+      child: PopSelect(
+        selected: selected,
+        child: PressScale(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: selected ? 1 : 0),
+            duration: Motion.of(context, Motion.quick),
+            curve: Motion.curve,
+            builder: (context, t, _) => Raised(
+              t: t,
+              color: color,
+              borderRadius: radius,
+              child: Material(
+                color: Color.lerp(
+                  p.grouped,
+                  Color.lerp(p.grouped, color, 0.18),
+                  t,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: radius,
+                  side: BorderSide(
+                    color: Color.lerp(p.separator, color, t)!,
+                    width: 1 + t,
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.all(Space.m),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          icon,
+                          color: Color.lerp(p.secondaryLabel, color, t),
+                        ),
+                        const SizedBox(height: Space.s),
+                        Text(label, style: text.titleSmall),
+                        Text(
+                          hint,
+                          style: text.bodySmall?.copyWith(
+                            color: p.secondaryLabel,
                           ),
                         ),
-                      ),
-              ),
-              const SizedBox(height: Space.l),
-              PrimaryButton(
-                _picked.isEmpty
-                    ? 'Vyber partie'
-                    : 'Přidat den · ${day.exercises.length} '
-                          '${day.exercises.length == 1
-                              ? 'cvik'
-                              : day.exercises.length < 5
-                              ? 'cviky'
-                              : 'cviků'}',
-                onPressed: _picked.isEmpty ? null : () => popOnce(context, day),
-              ),
-              const SizedBox(height: Space.s),
-              TextButton(
-                onPressed: () => popOnce(
-                  context,
-                  SplitDay('Den ${widget.number}', const []),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Text('Prázdný den, cviky vyberu sám'),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Navržený cvik; klepnutí ho z nového dne vyřadí nebo vrátí.
+class _SuggestedRow extends StatelessWidget {
+  final String name;
+  final String plan;
+  final bool kept;
+  final VoidCallback onTap;
+  const _SuggestedRow({
+    required this.name,
+    required this.plan,
+    required this.kept,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      container: true,
+      checked: kept,
+      label: '$name, $plan',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(p.controlRadius),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: minTap),
+          child: Row(
+            children: [
+              Icon(
+                kept
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 22,
+                color: kept ? p.accent : p.tertiaryLabel,
+              ),
+              const SizedBox(width: Space.m),
+              Expanded(
+                child: Text(
+                  name,
+                  style: text.bodyMedium?.copyWith(
+                    color: kept ? p.label : p.tertiaryLabel,
+                  ),
+                ),
+              ),
+              const SizedBox(width: Space.s),
+              Text(
+                plan,
+                style: text.bodySmall?.copyWith(
+                  color: kept ? p.secondaryLabel : p.tertiaryLabel,
+                  fontFeatures: tabular,
+                ),
+              ),
+              const SizedBox(width: Space.s),
             ],
           ),
         ),

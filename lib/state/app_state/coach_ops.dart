@@ -81,6 +81,8 @@ extension CoachOps on AppState {
     (p) => p.withExtra({
       ProfileKey.welcomeSeen: true,
       ProfileKey.seenVersion: version,
+      ProfileKey.onboardingStep: null,
+      ProfileKey.planDraft: null,
     }),
   );
 

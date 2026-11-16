@@ -274,12 +274,8 @@ class _NutritionPageState extends State<NutritionPage> {
       String lower(bool missing) => missing && entries.isNotEmpty ? '≥ ' : '';
       return LargeTitlePage(
         title: widget.root ? 'Strava' : 'Výživa',
+        tone: Tone.food,
         actions: [if (widget.root) SettingsButton(state)],
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => addFoodFlow(context, state, key),
-          icon: const Icon(Icons.add),
-          label: const Text('Přidat jídlo'),
-        ),
         padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
         children: [
           Panel(
@@ -471,17 +467,24 @@ class _EntryTile extends StatelessWidget {
       excludeSemantics: true,
       child: Panel(
         onTap: onTap,
-        padding: const EdgeInsets.all(Space.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        // Same row shape as the meal rows below: icon, text, chevron.
+        child: Row(
           children: [
-            IconTile(icon, color: p.accent),
-            const SizedBox(height: Space.s),
-            Text(title, style: text.titleMedium),
-            Text(
-              subtitle,
-              style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+            IconTile(icon, color: ToneScope.of(context).color),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: text.titleMedium),
+                  Text(
+                    subtitle,
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ],
+              ),
             ),
+            Icon(Icons.chevron_right_rounded, color: p.tertiaryLabel),
           ],
         ),
       ),
@@ -518,72 +521,12 @@ class _Summary extends StatelessWidget {
     final proteinTarget = own.proteinTarget ?? suggested?.protein;
     final kcalTarget = own.kcalTarget ?? suggested?.kcal;
     String lower(bool missing) => missing && !empty ? '≥ ' : '';
-    Widget ring(String label, double value, double target, String unit) {
-      final left = target - value;
-      return Expanded(
-        child: Semantics(
-          label:
-              '$label ${_n(value)} z ${_n(target)} $unit'
-              '${left > 0 ? ', zbývá ${_n(left)}' : ', cíl splněn'}',
-          child: ExcludeSemantics(
-            child: Column(
-              children: [
-                ProgressRing(
-                  value: value / target,
-                  size: 104,
-                  stroke: 10,
-                  child: Padding(
-                    padding: const EdgeInsets.all(Space.m),
-                    child: FittedBox(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _n(value),
-                            style: text.titleLarge?.copyWith(
-                              fontFeatures: tabular,
-                            ),
-                          ),
-                          Text(
-                            'z ${_n(target)} $unit',
-                            style: text.labelSmall?.copyWith(
-                              color: p.secondaryLabel,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: Space.s),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(label, style: text.labelLarge, maxLines: 1),
-                ),
-                Text(
-                  left > 0 ? 'zbývá ${_n(left)} $unit' : 'cíl splněn',
-                  textAlign: TextAlign.center,
-                  style: text.bodySmall?.copyWith(
-                    color: left > 0 ? p.secondaryLabel : p.positive,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    final rings = [
-      if (proteinTarget case final t?)
-        ring('Bílkoviny', totals.protein, t, 'g'),
-      if (kcalTarget case final t?) ring('Energie', totals.kcal, t, 'kcal'),
-    ];
+    final hasTargets = proteinTarget != null || kcalTarget != null;
     return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (rings.isNotEmpty) ...[
+          if (hasTargets) ...[
             _RingStack(
               kcal: kcalTarget == null ? null : (totals.kcal, kcalTarget),
               protein: proteinTarget == null
@@ -595,11 +538,13 @@ class _Summary extends StatelessWidget {
           Row(
             children: [
               for (final (value, label) in [
-                ('${lower(totals.kcalMissing)}${_n(totals.kcal)}', 'kcal'),
-                (
-                  '${lower(totals.proteinMissing)}${_g(totals.protein)}',
-                  'bílkoviny',
-                ),
+                if (kcalTarget == null)
+                  ('${lower(totals.kcalMissing)}${_n(totals.kcal)}', 'kcal'),
+                if (proteinTarget == null)
+                  (
+                    '${lower(totals.proteinMissing)}${_g(totals.protein)}',
+                    'bílkoviny',
+                  ),
                 (
                   '${lower(totals.carbsMissing)}${_g(totals.carbs)}',
                   'sacharidy',
@@ -626,7 +571,7 @@ class _Summary extends StatelessWidget {
                 ),
               ],
             ),
-          ] else if (rings.isEmpty) ...[
+          ] else if (!hasTargets) ...[
             const SizedBox(height: Space.s),
             _NoteWithAction(
               children: [
@@ -652,8 +597,7 @@ class _Summary extends StatelessWidget {
   }
 }
 
-/// Tensor: soustředné kruhy jako u hodinek, energie venku, bílkoviny
-/// uvnitř. Vedle legenda s čísly, ať je vidět, kolik zbývá.
+/// Target rings with a compact legend for energy and protein remaining.
 class _RingStack extends StatelessWidget {
   final (double, double)? kcal;
   final (double, double)? protein;
@@ -661,9 +605,9 @@ class _RingStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final rows = [
-      if (kcal case (final v, final t)) ('Energie', v, t, 'kcal', p.gradient),
+      if (kcal case (final v, final t))
+        ('Energie', v, t, 'kcal', AppPalette.food),
       if (protein case (final v, final t))
         ('Bílkoviny', v, t, 'g', const [AppPalette.cyan, Color(0xFF7BE4FF)]),
     ];

@@ -26,8 +26,14 @@ void main() {
     }
     check('onAccent', p.onAccent, p.accent, 4.5);
     check('onCta', p.onCta, p.cta, 4.5);
-    for (final g in [...AppPalette.training, ...AppPalette.food]) {
-      check('onGradient', p.onGradient, g, 4.5);
+    for (final tone in Tone.values) {
+      for (final g in tone.colors) {
+        check('onGradient ${tone.name}', p.onGradient, g, 4.5);
+      }
+      // Section accents double as text and icon colors on dark surfaces.
+      for (final g in [p.background, p.grouped, p.elevated]) {
+        check('tone ${tone.name}', tone.color, g, 3);
+      }
     }
     expect(fails, isEmpty);
   });

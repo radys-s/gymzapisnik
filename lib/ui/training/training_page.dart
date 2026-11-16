@@ -68,7 +68,7 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
               children: [
                 GroupedRow(
                   icon: Icons.auto_awesome_rounded,
-                  iconColor: p.accent,
+                  iconColor: AppPalette.pink,
                   title: 'Sestavit plán na míru',
                   subtitle: 'Pár otázek a rutiny jsou hotové',
                   onTap: () => _push(PlanSetupPage(state)),
@@ -104,14 +104,14 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
             children: [
               GroupedRow(
                 icon: Icons.view_list_rounded,
-                iconColor: p.accent,
+                iconColor: AppPalette.violet,
                 title: 'Hotové programy',
                 subtitle: split == null ? null : 'Teď: ${split.name}',
                 onTap: () => _push(ProgramPage(state)),
               ),
               GroupedRow(
                 icon: Icons.quiz_outlined,
-                iconColor: p.accent,
+                iconColor: AppPalette.cyan,
                 title: 'Plán podle dotazníku',
                 subtitle: 'Cíl, čas a vybavení',
                 onTap: () => _push(PlanSetupPage(state)),

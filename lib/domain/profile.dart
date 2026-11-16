@@ -36,6 +36,14 @@ class Profile {
       consentAt != null &&
       (adult || guardianConsent);
 
+  /// Úvod ještě běží: souhlas už je (dává se na začátku), ale dotazník
+  /// není dokončený. Kdo úvod nikdy neviděl, krok uložený nemá.
+  bool get onboarding =>
+      !welcomeSeen && extra[ProfileKey.onboardingStep] != null;
+
+  /// Může do aplikace: platný souhlas a dokončený úvod.
+  bool get ready => hasValidConsent && !onboarding;
+
   /// Zvolený split (ID šablony z `coach/splits.dart`), `null` = volné tréninky.
   String? get splitId => extra[ProfileKey.split] as String?;
 

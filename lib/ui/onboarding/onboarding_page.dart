@@ -21,17 +21,17 @@ import 'question.dart';
 
 part 'onboarding_page/steps.dart';
 
-/// První spuštění: co aplikace umí, sedm krátkých otázek (každá na
-/// vlastní obrazovce a s vysvětlením proč), volba „vyber za mě“ nebo
-/// „složím si sám“, připomínka a souhlas. Krok se ukládá, takže po
-/// zavření aplikace úvod pokračuje, kde skončil. Když uvítání už
-/// proběhlo (nové podmínky), ukáže jen souhlas.
+/// První spuštění: co aplikace umí, souhlas, pět krátkých otázek (každá
+/// na vlastní obrazovce a s vysvětlením proč), hotový plán s možností
+/// složit si vlastní a připomínka. Krok se ukládá, takže po zavření
+/// aplikace úvod pokračuje, kde skončil. Když uvítání už proběhlo (nové
+/// podmínky), ukáže jen souhlas.
 class OnboardingPage extends StatefulWidget {
   final AppState state;
 
   /// Nastavení plánu později (z Domova, Tréninku nebo Programu): stejné
-  /// otázky jako v úvodu a navíc zaměření, bez uvítání, připomínky
-  /// a souhlasu. Na konci se obrazovka zavře.
+  /// otázky jako v úvodu a navíc tělo a zaměření, bez uvítání, souhlasu
+  /// a připomínky. Na konci se obrazovka zavře.
   final bool setup;
   const OnboardingPage(this.state, {super.key, this.setup = false});
 
@@ -45,10 +45,11 @@ class PlanSetupPage extends OnboardingPage {
   const PlanSetupPage(super.state, {super.key}) : super(setup: true);
 }
 
-/// Kroky úvodu. Pořadí v úvodu se ukládá jako číslo kroku, takže se
-/// nesmí měnit (jen přidávat za konec).
+/// Kroky úvodu a nastavení plánu. Ukládá se pořadí kroku v daném běhu
+/// (`steps`), ne pořadí v tomto výčtu.
 enum _S {
   value,
+  consent,
   goal,
   experience,
   schedule,
@@ -56,13 +57,12 @@ enum _S {
   pain,
   body,
   focus,
-  path,
   reveal,
   reminder,
-  consent,
 }
 
-/// Kroky s lištou postupu.
+/// Otázky dotazníku: mají lištu postupu a jejich odpovědi se průběžně
+/// ukládají.
 const _questions = {
   _S.goal,
   _S.experience,
@@ -71,23 +71,28 @@ const _questions = {
   _S.pain,
   _S.body,
   _S.focus,
-  _S.path,
 };
+
+/// „z 5“, ale „ze 7“.
+String _outOf(int n) => const {4, 6, 7}.contains(n) ? 'ze $n' : 'z $n';
 
 class _OnboardingPageState extends State<OnboardingPage> {
   AppState get state => widget.state;
   bool get setup => widget.setup;
 
-  /// Uvítání jen pro nové uživatele; stávající (nové podmínky) vidí
-  /// rovnou souhlas.
+  /// Uvítání jen pro nové uživatele (i po návratu doprostřed úvodu);
+  /// stávající (nové podmínky) vidí rovnou souhlas.
   late final bool welcome =
-      setup || (!state.profile.welcomeSeen && state.profile.consentAt == null);
+      setup ||
+      state.profile.onboarding ||
+      (!state.profile.welcomeSeen && state.profile.consentAt == null);
 
   /// Připomínky jdou jen tam, kde umí aplikace poslat oznámení.
   late final bool reminders = !setup && state.notifier.supported;
 
-  /// Kroky v tomto běhu. Úvod je bez zaměření (to se doladí později),
-  /// nastavení plánu bez uvítání, připomínky a souhlasu.
+  /// Kroky v tomto běhu. Úvod se ptá jen na to, z čeho se skládá plán;
+  /// tělo a zaměření se doladí později v nastavení plánu, které je
+  /// zase bez uvítání, souhlasu a připomínky.
   late final List<_S> steps = setup
       ? const [
           _S.goal,
@@ -97,21 +102,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
           _S.pain,
           _S.body,
           _S.focus,
-          _S.path,
           _S.reveal,
         ]
       : [
           _S.value,
+          _S.consent,
           _S.goal,
           _S.experience,
           _S.schedule,
           _S.gym,
           _S.pain,
-          _S.body,
-          _S.path,
           _S.reveal,
           if (reminders) _S.reminder,
-          _S.consent,
         ];
 
   late final List<_S> _asked = [
@@ -119,9 +121,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
       if (_questions.contains(s)) s,
   ];
 
-  late final int _first = setup
-      ? 0
-      : state.onboardingStep.clamp(0, steps.length - 1);
+  late final int _first = setup ? 0 : _resume();
+
+  /// Krok, kde úvod skončil. Bez souhlasu nejdál na souhlas (i když
+  /// starší verze uložila pozdější krok), se souhlasem až za něj.
+  int _resume() {
+    final consent = steps.indexOf(_S.consent);
+    final saved = state.onboardingStep;
+    return state.profile.hasValidConsent
+        ? saved.clamp(consent + 1, steps.length - 1)
+        : saved.clamp(0, consent);
+  }
+
   late final _pages = PageController(initialPage: _first);
   late int page = _first;
   _S get step => steps[page];
@@ -148,18 +159,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
   );
   bool busy = false;
 
-  /// Dotazník přeskočen: zpět z dalšího kroku vede na dotazník, ne na
+  /// Dotazník přeskočen: zpět z připomínky vede na dotazník, ne na
   /// odhalení plánu, který se neuložil.
   bool skipped = false;
 
-  /// Program si skládá sám: zpět vede na volbu cesty, ne na odhalení.
-  bool own = false;
-
   /// Odložený posun po výběru jedné odpovědi (krátké zvýraznění).
   Timer? _advance;
-
-  /// Krok po odhalení plánu: připomínka nebo souhlas.
-  _S get _after => reminders ? _S.reminder : _S.consent;
 
   void _go(_S to) {
     _advance?.cancel();
@@ -173,9 +178,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (setup) return;
     // Uložení kroku nesmí zastavit úvod. Rozpracované odpovědi se
     // ukládají s ním.
-    final draft = to.index > _S.value.index && to.index <= _S.path.index
-        ? plan
-        : null;
+    final draft = _questions.contains(to) ? plan : null;
     unawaited(
       state
           .setOnboardingStep(index, draft: draft)
@@ -189,12 +192,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
   /// Další krok po [from] v tomto běhu.
   _S _next(_S from) => steps[steps.indexOf(from) + 1];
 
+  /// Dál z otázky [from]. Za poslední otázkou se plán nejdřív uloží.
+  void _forward(_S from) {
+    final to = _next(from);
+    if (to == _S.reveal) {
+      unawaited(_toReveal());
+    } else {
+      _go(to);
+    }
+  }
+
   /// Jedna odpověď: zvýraznit, chvilku nechat vidět a jet dál.
   void _pick(PlanAnswers a, _S from) {
     _changePlan(a);
     _advance?.cancel();
     _advance = Timer(const Duration(milliseconds: 300), () {
-      if (mounted && step == from) _go(_next(from));
+      if (mounted && step == from) _forward(from);
     });
   }
 
@@ -232,27 +245,43 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
-  Future<void> _chooseForMe() async {
+  /// Uloží plán z odpovědí a ukáže ho.
+  Future<void> _toReveal() async {
     if (busy) return;
-    own = false;
     if (await _save() && mounted) _go(_S.reveal);
   }
 
-  /// Vlastní program: uloží odpovědi (posilovna, klouby) a otevře
-  /// editor. Plán z odpovědí zůstane, dokud si neuloží vlastní.
+  /// Vlastní program místo navrženého: otevře editor. Návrh platí dál,
+  /// dokud si vlastní neuloží, takže návrat bez uložení nic nezmění.
   Future<void> _buildOwn() async {
     if (busy) return;
-    own = true;
-    if (!await _save() || !mounted) return;
-    await Navigator.of(
+    final saved = await Navigator.of(
       context,
     ).push<String>(MaterialPageRoute(builder: (_) => ProgramEditorPage(state)));
-    if (mounted) _finish();
+    if (saved != null && mounted) _afterReveal();
   }
 
-  /// Konec dotazníku: v úvodu další krok, v nastavení plánu zavřít.
-  void _finish() {
-    if (!setup) return _go(_after);
+  /// Dál z hotového plánu: připomínka, jinak konec.
+  void _afterReveal() {
+    if (reminders) return _go(_S.reminder);
+    unawaited(_finish());
+  }
+
+  /// Konec: úvod pustí do aplikace, nastavení plánu se zavře.
+  Future<void> _finish() async {
+    if (!setup) {
+      if (busy) return;
+      setState(() => busy = true);
+      try {
+        // Po uložení aplikace úvod sama vymění za hlavní obrazovku.
+        await state.finishWelcome(whatsNewRelease);
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => busy = false);
+        showToast(context, 'Uložení se nezdařilo. Zkus to znovu.');
+      }
+      return;
+    }
     final name = state.split?.name;
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
@@ -285,14 +314,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   /// Krok, kam vede zpět z kroku [from]; `null` = zavřít obrazovku.
   _S? _back(_S from) {
-    if (from == _after && !setup) {
-      return skipped
-          ? _S.goal
-          : own
-          ? _S.path
-          : _S.reveal;
-    }
-    if (from == _S.reveal) return _S.path;
+    if (from == _S.reminder) return skipped ? _S.goal : _S.reveal;
+    // Souhlas je uložený; zpět před první otázku už nejde.
+    if (from == _S.goal) return null;
     final i = steps.indexOf(from);
     return i > 0 ? steps[i - 1] : null;
   }
@@ -369,7 +393,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     } finally {
       if (mounted) {
         setState(() => busy = false);
-        _go(_S.consent);
+        unawaited(_finish());
       }
     }
   }
@@ -394,28 +418,39 @@ class _OnboardingPageState extends State<OnboardingPage> {
     VoidCallback? onNext,
     VoidCallback? onSkip,
     String skipLabel = 'Přeskočit',
+    Tone tone = Tone.training,
   }) {
     final i = _asked.indexOf(s) + 1;
     return QuestionScaffold(
+      tone: tone,
       progress: i / _asked.length,
-      step: 'Otázka $i ze ${_asked.length}',
+      step: 'Otázka $i ${_outOf(_asked.length)}',
+      progressLabel: '$i/${_asked.length}',
       title: title,
       why: why,
       action: action,
       onNext: onNext,
       busy: busy,
-      onBack: () => _goBack(s),
+      // V úvodu před první otázkou nic není (souhlas je uložený).
+      onBack: !setup && _back(s) == null ? null : () => _goBack(s),
       onSkip: onSkip,
       skipLabel: skipLabel,
       child: child,
     );
   }
 
-  Widget _page(_S s, Widget consent) => switch (s) {
+  Widget _page(_S s) => switch (s) {
     _S.value => QuestionScaffold(
-      action: 'Sestavit můj plán',
-      onNext: () => _go(_S.goal),
+      tone: Tone.progress,
+      action: 'Začít',
+      onNext: () => _go(_S.consent),
       child: const _Value(),
+    ),
+    _S.consent => ConsentPage(
+      state,
+      resumeAt: steps.indexOf(_S.goal),
+      onAccepted: () => _go(_S.goal),
+      onBack: () => _go(_S.value),
     ),
     _S.goal => _question(
       s: s,
@@ -427,7 +462,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ? null
           : () {
               skipped = true;
-              _go(_after);
+              _afterReveal();
             },
       child: StaggerColumn(
         gap: Space.s,
@@ -435,6 +470,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           for (final g in PlanGoal.values)
             ChoiceCard(
               icon: _goalIcon(g),
+              color: _goalColor(g),
               label: g.label,
               hint: g.hint,
               selected: g == plan.goal,
@@ -449,12 +485,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
       why:
           'Začátečník roste i z menšího objemu. Po letech je potřeba '
           'víc sérií a pomalejší postup ve vahách.',
+      tone: Tone.progress,
       child: StaggerColumn(
         gap: Space.s,
         children: [
           for (final (i, e) in Experience.values.indexed)
             ChoiceCard(
-              leading: LevelBars(level: i + 1, selected: e == plan.experience),
+              color: AppPalette.blue,
+              leading: LevelBars(
+                level: i + 1,
+                selected: e == plan.experience,
+                color: AppPalette.blue,
+              ),
               label: e.label,
               hint: e.hint,
               selected: e == plan.experience,
@@ -470,7 +512,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Počet dní určí rozdělení (celé tělo, horní a dolní, push '
           'pull legs), minuty to, kolik cviků se do tréninku vejde.',
       action: 'Pokračovat',
-      onNext: () => _go(_next(s)),
+      onNext: () => _forward(s),
+      tone: Tone.coach,
       child: _Schedule(
         answers: plan,
         days: days,
@@ -483,13 +526,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
       title: 'Kde cvičíš?',
       why:
           'Do plánu dám jen cviky na vybavení, které tam opravdu je. '
-          'Chybějící stroje odškrtneš později v Profilu.',
+          'Chybějící stroje odškrtneš později v Nastavení.',
+      tone: Tone.food,
       child: StaggerColumn(
         gap: Space.s,
         children: [
           for (final g in TrainingPlace.values)
             ChoiceCard(
               icon: placeIcon(g),
+              color: _placeColor(g),
               label: g.label,
               hint: g.hint,
               selected: g == plan.place,
@@ -505,13 +550,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Cviky, které bolavý kloub zatěžují, vyměním za šetrnější '
           'na stejný sval. Vybrat můžeš víc.',
       action: plan.avoid.isEmpty ? 'Nic mě nebolí' : 'Pokračovat',
-      onNext: () => _go(_next(s)),
+      onNext: () => _forward(s),
+      tone: Tone.progress,
       child: StaggerColumn(
         gap: Space.s,
         children: [
           for (final j in Joint.values)
             ChoiceCard(
               icon: _jointIcon(j),
+              color: _jointColor(j),
               label: j.label,
               hint: _jointHint(j),
               multi: true,
@@ -539,10 +586,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
           );
           return;
         }
-        _go(_next(s));
+        _forward(s);
       },
       onSkip: _skipBody,
       skipLabel: 'Doplním později',
+      tone: Tone.food,
       child: _Body(
         answers: plan,
         kg: _kg,
@@ -559,72 +607,44 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Vybrané partie dostanou v plánu sérii navíc. Oblíbený cvik '
           'nahradí jiný cvik na stejný sval. Obojí je nepovinné.',
       action: 'Pokračovat',
-      onNext: () => _go(_next(s)),
+      onNext: () => _forward(s),
+      tone: Tone.coach,
       child: _Focus(answers: plan, state: state, onChanged: _changePlan),
     ),
-    _S.path => _question(
-      s: s,
-      title: 'Jak chceš začít?',
-      why:
-          'Oboje jde kdykoli změnit v Programu. Vlastní rutinu ti '
-          'zkontroluju, ať žádné hlavě svalu nechybí cvik.',
-      child: StaggerColumn(
-        gap: Space.m,
-        children: [
-          _PathCard(
-            icon: Icons.auto_awesome_rounded,
-            title: 'Vyber za mě',
-            body:
-                'Sestavím program podle tvých odpovědí. Váhy navrhnu '
-                'při prvním tréninku.',
-            busy: busy && !own,
-            onTap: _chooseForMe,
-          ),
-          _PathCard(
-            icon: Icons.edit_note_rounded,
-            title: 'Složím si sám',
-            body:
-                'Vybereš cviky, které chceš dělat. Řeknu ti, když '
-                'třeba na biceps chybí cvik na krátkou hlavu.',
-            busy: busy && own,
-            onTap: _buildOwn,
-          ),
-        ],
-      ),
-    ),
     _S.reveal => QuestionScaffold(
-      action: setup ? 'Hotovo' : 'Pokračovat',
-      onBack: () => _go(_S.path),
-      onNext: _finish,
+      action: setup ? 'Hotovo' : 'Beru tenhle plán',
+      busy: busy,
+      onBack: () => _goBack(s),
+      onNext: _afterReveal,
+      // Návrh a vlastní program vedle sebe: jedno klepnutí na každý.
+      secondary: TextButton(
+        onPressed: busy ? null : _buildOwn,
+        child: const Text('Složím si vlastní'),
+      ),
       child: _PlanReveal(state, answers: plan),
     ),
     _S.reminder => _ReminderStep(
       busy: busy,
-      onBack: () => _goBack(_S.reminder),
+      onBack: () => _goBack(s),
       onEnable: _enableReminder,
-      onSkip: () => _go(_S.consent),
+      onSkip: _finish,
     ),
-    _S.consent => consent,
   };
 
   @override
   Widget build(BuildContext context) {
-    final consent = ConsentPage(
-      state,
-      welcomeVersion: welcome ? whatsNewRelease : null,
-    );
-    if (!welcome) return consent;
+    if (!welcome) return ConsentPage(state);
     return PopScope(
-      canPop: page == 0,
+      canPop: _back(step) == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && page > 0 && !busy) _goBack(step);
+        if (!didPop && !busy) _goBack(step);
       },
       child: PageView(
         controller: _pages,
         // Kroky na sobě závisí (plán až po dotazníku): jen tlačítky.
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (i) => setState(() => page = i),
-        children: [for (final s in steps) _page(s, consent)],
+        children: [for (final s in steps) _page(s)],
       ),
     );
   }

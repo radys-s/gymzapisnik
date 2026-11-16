@@ -13,6 +13,7 @@ import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../exercises/exercises_page.dart';
 import '../history/history_page.dart';
+import '../home/coverage_card.dart';
 import '../home/dashboard.dart';
 import '../premium/pro_gate.dart';
 import '../program/program_page.dart';
@@ -21,7 +22,7 @@ import '../settings/settings_page.dart';
 import '../stats/stats_page.dart';
 import '../widgets/labels.dart';
 
-/// Záložka Profil: souhrn, křivka síly, rekordy a cesty ke statistikám,
+/// Záložka Pokrok: souhrn, křivka síly, rekordy a cesty ke statistikám,
 /// cvikům, odznakům, váze a nastavení.
 class ProgressPage extends StatelessWidget {
   final AppState state;
@@ -32,6 +33,7 @@ class ProgressPage extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state.on.resting,
     builder: (context, _) {
+      final current = now();
       final finished = state.workouts.where((w) => w.finished).toList();
       // Spočte se jednou a předá kartám (záložka je pořád v IndexedStack).
       final top = state.mostTrained();
@@ -89,7 +91,8 @@ class ProgressPage extends StatelessWidget {
         ],
       ];
       return LargeTitlePage(
-        title: 'Profil',
+        title: 'Pokrok',
+        tone: Tone.progress,
         actions: [SettingsButton(state)],
         children: [
           for (final (i, b) in blocks.indexed)
@@ -98,6 +101,12 @@ class ProgressPage extends StatelessWidget {
               padding: EdgeInsets.only(top: i == 0 ? 0 : Space.m),
               child: Reveal(index: i, child: b),
             ),
+          if (finished.isNotEmpty) ...[
+            const SectionHeader('Trénink tento týden'),
+            WeekSummaryCard(state: state, now: current),
+            const SectionHeader('Objem podle partií'),
+            CoverageCard(state: state, now: current),
+          ],
           const SectionHeader('Přehled'),
           GroupedSection(
             dividerIndent: 58,
@@ -110,20 +119,19 @@ class ProgressPage extends StatelessWidget {
   );
 
   List<Widget> _rows(BuildContext context, int count, PersonalRecord? record) {
-    final accent = context.palette.accent;
     void push(Widget page) =>
         Navigator.push(context, MaterialPageRoute(builder: (_) => page));
     return [
       GroupedRow(
         icon: Icons.insights_rounded,
-        iconColor: accent,
+        iconColor: AppPalette.violet,
         title: 'Statistiky',
         subtitle: 'Kalendář, grafy, měsíc proti minulému',
         onTap: () => push(StatsPage(state, now: now)),
       ),
       GroupedRow(
         icon: Icons.fitness_center_rounded,
-        iconColor: accent,
+        iconColor: AppPalette.green,
         title: 'Cviky a rekordy',
         subtitle: record == null
             ? null
@@ -133,14 +141,14 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.history_rounded,
-        iconColor: accent,
+        iconColor: AppPalette.blue,
         title: 'Historie',
         value: '$count',
         onTap: () => push(HistoryPage(state)),
       ),
       GroupedRow(
         icon: Icons.military_tech_rounded,
-        iconColor: accent,
+        iconColor: AppPalette.amber,
         title: 'Odznaky',
         value:
             '${state.badgeStates.where((b) => b.unlocked).length}'
@@ -149,7 +157,7 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.monitor_weight_outlined,
-        iconColor: accent,
+        iconColor: AppPalette.cyan,
         title: 'Tělesná váha',
         value: state.bodyweights.isEmpty
             ? null
@@ -158,14 +166,14 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.calendar_view_week_rounded,
-        iconColor: accent,
+        iconColor: AppPalette.pink,
         title: 'Program',
         value: state.split?.name ?? 'Volně',
         onTap: () => push(ProgramPage(state)),
       ),
       GroupedRow(
         icon: Icons.lightbulb_outline_rounded,
-        iconColor: accent,
+        iconColor: AppPalette.orange,
         title: 'Rady pro růst svalů',
         subtitle: 'Objem, technika, jídlo, spánek',
         onTap: () => push(GrowthPage(state, now: now)),
@@ -196,7 +204,10 @@ class _Empty extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconTile(Icons.show_chart_rounded, color: p.accent),
+          IconTile(
+            Icons.show_chart_rounded,
+            color: ToneScope.of(context).color,
+          ),
           const SizedBox(width: Space.m),
           Expanded(
             child: Column(

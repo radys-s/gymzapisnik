@@ -2,19 +2,33 @@ import 'package:flutter/material.dart';
 
 import '../../state/app_state.dart';
 import '../design/components.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../settings/legal_page.dart';
+import 'question.dart';
 
 enum AgeChoice { adult, minor }
 
-/// Souhlas s podmínkami a potvrzení věku (poslední krok prvního spuštění).
+/// Souhlas s podmínkami a potvrzení věku. V úvodu je hned za uvítáním,
+/// takže se na věk ptá aplikace jen jednou a dřív než na cokoli jiného.
 class ConsentPage extends StatefulWidget {
   final AppState state;
 
-  /// Co uložit těsně před souhlasem (např. že uvítání proběhlo).
-  /// Při prvním spuštění uzavře souhlas i uvítání (verze novinek).
-  final String? welcomeVersion;
-  const ConsentPage(this.state, {super.key, this.welcomeVersion});
+  /// Krok úvodu, kterým se po souhlasu pokračuje. Bez něj souhlas
+  /// rovnou pustí do aplikace (nové podmínky u stávajícího uživatele).
+  final int? resumeAt;
+
+  /// Zavolá se po uložení souhlasu.
+  final VoidCallback? onAccepted;
+  final VoidCallback? onBack;
+
+  const ConsentPage(
+    this.state, {
+    super.key,
+    this.resumeAt,
+    this.onAccepted,
+    this.onBack,
+  });
 
   @override
   State<ConsentPage> createState() => _ConsentPageState();
@@ -36,9 +50,12 @@ class _ConsentPageState extends State<ConsentPage> {
       await widget.state.acceptConsent(
         adult: age == AgeChoice.adult,
         guardianConsent: guardianConsent,
-        welcomeVersion: widget.welcomeVersion,
+        onboardingStep: widget.resumeAt,
         aiNotice: true,
       );
+      if (!mounted) return;
+      setState(() => saving = false);
+      widget.onAccepted?.call();
     } catch (error) {
       if (!mounted) return;
       setState(() => saving = false);
@@ -51,110 +68,89 @@ class _ConsentPageState extends State<ConsentPage> {
     MaterialPageRoute(builder: (_) => const LegalPage()),
   );
 
+  void _setAge(AgeChoice v) => setState(() {
+    age = v;
+    if (v != AgeChoice.minor) guardianConsent = false;
+  });
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            Space.page,
-            Space.xxxl,
-            Space.page,
-            Space.xxl,
+    final minor = age == AgeChoice.minor;
+    return QuestionScaffold(
+      tone: Tone.progress,
+      title: 'Než začneš',
+      action: 'Pokračovat',
+      busy: saving,
+      onBack: widget.onBack,
+      onNext: canContinue ? _continue : null,
+      child: StaggerColumn(
+        children: [
+          Text(
+            'Gym zápisník slouží k zápisu tréninků a jídla a ke '
+            'sledování pokroku. Není to lékařská ani výživová rada. '
+            'Při bolesti nebo zdravotních potížích přestaň cvičit '
+            'a poraď se s lékařem.',
+            style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
           ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Space.xs),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    container: true,
-                    header: true,
-                    child: Text('Než začneš', style: text.headlineLarge),
-                  ),
-                  const SizedBox(height: Space.m),
-                  Text(
-                    'Gym zápisník slouží k zápisu tréninků a jídla a ke '
-                    'sledování pokroku. Není to lékařská ani výživová rada. '
-                    'Při bolesti nebo zdravotních potížích přestaň cvičit '
-                    'a poraď se s lékařem.',
-                    style: text.bodyLarge?.copyWith(color: p.secondaryLabel),
-                  ),
-                  const SizedBox(height: Space.s),
-                  Text(
-                    'Otázky trenérovi a fotky jdou do Cloudflare Workers AI '
-                    'bez jména a poznámek. AI se může splést.',
-                    style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: _openTerms,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, minTap),
-                      ),
-                      child: const Text('Přečíst podmínky a soukromí'),
-                    ),
-                  ),
-                  const SizedBox(height: Space.m),
-                ],
+          const SizedBox(height: Space.s),
+          Text(
+            'Otázky trenérovi a fotky jdou do Cloudflare Workers AI '
+            'bez jména a poznámek. AI se může splést.',
+            style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: _openTerms,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, minTap),
               ),
+              child: const Text('Přečíst podmínky a soukromí'),
             ),
-            GroupedSection(
-              children: [
-                CheckboxListTile(
-                  value: termsAccepted,
-                  onChanged: (v) => setState(() => termsAccepted = v == true),
-                  title: const Text('Souhlasím s podmínkami používání'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ],
-            ),
-            RadioGroup<AgeChoice>(
-              groupValue: age,
-              onChanged: (v) => setState(() {
-                age = v;
-                if (v != AgeChoice.minor) guardianConsent = false;
-              }),
-              child: GroupedSection(
-                header: 'Kolik ti je let?',
-                footer: age == AgeChoice.minor
-                    ? 'Mladším 18 let aplikace nenabízí cíle hubnutí '
-                          'ani omezování jídla.'
-                    : null,
-                children: [
-                  const RadioListTile(
-                    value: AgeChoice.adult,
-                    title: Text('Je mi 18 let nebo víc'),
-                  ),
-                  const RadioListTile(
-                    value: AgeChoice.minor,
-                    title: Text('Je mi méně než 18 let'),
-                  ),
-                  if (age == AgeChoice.minor)
-                    CheckboxListTile(
-                      value: guardianConsent,
-                      onChanged: (v) =>
-                          setState(() => guardianConsent = v == true),
-                      title: const Text(
-                        'Mám souhlas rodiče nebo zákonného zástupce',
-                      ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                ],
-              ),
-            ),
-            PrimaryButton(
-              'Pokračovat',
-              busy: saving,
-              onPressed: canContinue ? _continue : null,
+          ),
+          const SizedBox(height: Space.xs),
+          ChoiceCard(
+            icon: Icons.description_outlined,
+            color: AppPalette.violet,
+            label: 'Souhlasím s podmínkami používání',
+            multi: true,
+            selected: termsAccepted,
+            onTap: () => setState(() => termsAccepted = !termsAccepted),
+          ),
+          const SizedBox(height: Space.xl),
+          Text('Kolik ti je let?', style: text.titleMedium),
+          const SizedBox(height: Space.s),
+          ChoiceCard(
+            icon: Icons.verified_user_outlined,
+            color: AppPalette.cyan,
+            label: 'Je mi 18 let nebo víc',
+            selected: age == AgeChoice.adult,
+            onTap: () => _setAge(AgeChoice.adult),
+          ),
+          const SizedBox(height: Space.s),
+          ChoiceCard(
+            icon: Icons.school_outlined,
+            color: AppPalette.amber,
+            label: 'Je mi méně než 18 let',
+            hint: minor ? 'Bez cílů hubnutí a omezování jídla' : null,
+            selected: minor,
+            onTap: () => _setAge(AgeChoice.minor),
+          ),
+          if (minor) ...[
+            const SizedBox(height: Space.s),
+            ChoiceCard(
+              icon: Icons.family_restroom_rounded,
+              color: AppPalette.amber,
+              label: 'Mám souhlas rodiče nebo zákonného zástupce',
+              multi: true,
+              selected: guardianConsent,
+              onTap: () => setState(() => guardianConsent = !guardianConsent),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -40,7 +40,28 @@ void main() {
     await show(tester, state);
     expect(state.weekGoal, 3);
     expect(find.text('Tento týden 0 z 3'), findsOneWidget);
-    expect(find.text('0/3'), findsOneWidget); // kruh týdne
+    expect(find.text('0/3'), findsNothing); // weekly ring moved to Progress
+  });
+
+  testWidgets('after training, the next split day is marked as optional', (
+    tester,
+  ) async {
+    final state = await newState(tester);
+    await tester.runAsync(() async {
+      await state.setSplit('full_body_3');
+      await state.startWorkout(
+        now: monday.subtract(const Duration(minutes: 30)),
+      );
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 80, reps: 8, done: true)];
+      await state.finishActive(now: monday);
+    });
+    await show(tester, state);
+
+    expect(find.text('Dnes máš hotovo'), findsOneWidget);
+    expect(find.textContaining('Příště ·'), findsOneWidget);
+    expect(find.text('Bonusový trénink'), findsOneWidget);
+    expect(find.textContaining('Dnes · Full body'), findsNothing);
   });
 
   testWidgets('trained today: mission done, weekly goal follows settings', (
@@ -57,13 +78,14 @@ void main() {
     });
     await show(tester, state);
     expect(find.text('Týdenní cíl splněn'), findsOneWidget);
-    expect(find.text('1/1'), findsOneWidget);
-    expect(find.text('1 týden'), findsOneWidget); // streak chip
+    expect(find.text('1/1'), findsNothing);
+    // Streak summary moved to Progress.
+    expect(find.text('1 týden'), findsNothing);
 
     await tester.runAsync(() => state.setWeekGoal(null));
     await tester.pumpAndSettle();
     expect(find.text('Dnes máš hotovo'), findsOneWidget);
-    expect(find.text('1/3'), findsOneWidget);
+    expect(find.text('1/3'), findsNothing);
   });
 
   test('week goal follows split until set manually', () async {

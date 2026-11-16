@@ -103,7 +103,7 @@ void main() {
     final (state, _) = await home(tester);
     final today = dayKey(DateTime.now());
     expect(find.text('Jídlo dnes'), findsOneWidget);
-    expect(find.text('Partie tento týden'), findsOneWidget);
+    expect(find.text('Partie tento týden'), findsNothing);
     expect(state.foodsOn(today), isEmpty);
     await tester.runAsync(() async {
       await tester.tap(find.text('Skyr'));

@@ -6,39 +6,39 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.6';
+const whatsNewRelease = '1.7';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
   (
+    Icons.palette_outlined,
+    'Nový vzhled',
+    'Tmavý podklad s barvami: trénink zelený, strava oranžová, pokrok '
+        'fialový. Pozadí se pomalu hýbe a hlavní tlačítko se občas zaleskne.',
+  ),
+  (
+    Icons.auto_awesome_outlined,
+    'Nové logo',
+    'Kruh postupu s činkou. Stejná značka je na ikoně, při spuštění '
+        'i v aplikaci.',
+  ),
+  (
     Icons.home_outlined,
-    'Nový Domov',
-    'Nahoře jídlo dne s rychlým přidáním, pod ním dnešní trénink '
-        'a kolik sérií má která partie tento týden.',
+    'Domov na jednu obrazovku',
+    'Dnešní trénink, jídlo dne a cíl týdne se vejdou pod sebe bez '
+        'posouvání.',
   ),
   (
-    Icons.fact_check_outlined,
-    'Kontrola rutiny',
-    'Editor programu ukáže, co v rutině chybí, a navržený cvik '
-        'přidá jedním klepnutím.',
+    Icons.rule_rounded,
+    'Den programu po svém',
+    'Při přidání dne si rovnou vybereš: nechat si cviky navrhnout podle '
+        'partií, nebo je vybrat sám z celého seznamu.',
   ),
   (
-    Icons.store_outlined,
-    'Moje posilovna',
-    'Odškrtni stroje, které tvoje posilovna nemá, a plán je nebude '
-        'nabízet.',
-  ),
-  (
-    Icons.check_circle_outline,
-    'Klidnější zápis',
-    'Potvrzení série bez rušení uprostřed tréninku. Rekordy oslavíš '
-        'v souhrnu, který se odhaluje postupně.',
-  ),
-  (
-    Icons.save_outlined,
-    'Bezpečnější data',
-    'Připomínka zálohy na Domově a v Nastavení Diagnostika chyb '
-        'pro hlášení problémů.',
+    Icons.bolt_outlined,
+    'Kratší úvod',
+    'Podmínky a věk hned na začátku, pak pět otázek. Rok narození už '
+        'nezadáváš.',
   ),
 ];
 

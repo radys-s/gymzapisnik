@@ -8,6 +8,25 @@ IconData _goalIcon(PlanGoal g) => switch (g) {
   PlanGoal.fitness => Icons.favorite_rounded,
 };
 
+Color _goalColor(PlanGoal g) => switch (g) {
+  PlanGoal.muscle => AppPalette.green,
+  PlanGoal.strength => AppPalette.orange,
+  PlanGoal.fitness => AppPalette.pink,
+};
+
+Color _placeColor(TrainingPlace p) => switch (p) {
+  TrainingPlace.gym => AppPalette.violet,
+  TrainingPlace.smallGym => AppPalette.blue,
+  TrainingPlace.home => AppPalette.teal,
+  TrainingPlace.bodyweight => AppPalette.amber,
+};
+
+Color _jointColor(Joint j) => switch (j) {
+  Joint.knees => AppPalette.cyan,
+  Joint.lowerBack => AppPalette.orange,
+  Joint.shoulders => AppPalette.violet,
+};
+
 IconData placeIcon(TrainingPlace p) => switch (p) {
   TrainingPlace.gym => Icons.apartment_rounded,
   TrainingPlace.smallGym => Icons.storefront_rounded,
@@ -189,72 +208,6 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// Velká karta volby cesty na konci dotazníku.
-class _PathCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String body;
-  final bool busy;
-  final VoidCallback onTap;
-  const _PathCard({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.busy,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final text = Theme.of(context).textTheme;
-    return Semantics(
-      button: true,
-      label: '$title. $body',
-      excludeSemantics: true,
-      child: Panel(
-        onTap: busy ? null : onTap,
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: p.linear,
-                borderRadius: BorderRadius.circular(p.controlRadius + 2),
-              ),
-              child: busy
-                  ? Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: p.onGradient,
-                      ),
-                    )
-                  : Icon(icon, color: p.onGradient, size: 28),
-            ),
-            const SizedBox(width: Space.l),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: text.titleLarge),
-                  const SizedBox(height: 2),
-                  Text(
-                    body,
-                    style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: p.tertiaryLabel),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Připomínka tréninku: výchozí čas je předvybraný, stačí jedno klepnutí.
 class _ReminderStep extends StatefulWidget {
   final bool busy;
@@ -278,9 +231,9 @@ class _ReminderStepState extends State<_ReminderStep> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final text = Theme.of(context).textTheme;
     return QuestionScaffold(
+      tone: Tone.coach,
       title: 'Připomenu ti trénink?',
       why:
           'Jen v tréninkové dny a jen když ještě nemáš hotovo. Vypneš to '
@@ -298,7 +251,7 @@ class _ReminderStepState extends State<_ReminderStep> {
           Center(
             child: IconTile(
               Icons.notifications_active_rounded,
-              color: p.accent,
+              color: AppPalette.pink,
               size: 72,
             ),
           ),
@@ -328,14 +281,21 @@ class _Value extends StatelessWidget {
   const _Value();
 
   static const _points = [
-    (Icons.today_rounded, 'Každý den víš, co cvičit', 'Plán podle tvého času'),
+    (
+      Icons.today_rounded,
+      AppPalette.green,
+      'Každý den víš, co cvičit',
+      'Plán podle tvého času',
+    ),
     (
       Icons.trending_up_rounded,
+      AppPalette.violet,
       'Váhy se předvyplní samy',
       'Potvrdíš sérii a vidíš, jak sílíš',
     ),
     (
       Icons.lock_outline_rounded,
+      AppPalette.amber,
       'Bez účtu a bez reklam',
       'Tréninky zůstávají v telefonu',
     ),
@@ -372,14 +332,14 @@ class _Value extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Space.xxl),
-        for (final (i, (icon, title, body)) in _points.indexed)
+        for (final (i, (icon, color, title, body)) in _points.indexed)
           Reveal(
             index: 3 + i,
             child: Padding(
               padding: const EdgeInsets.only(bottom: Space.l),
               child: Row(
                 children: [
-                  IconTile(icon, color: p.accent),
+                  IconTile(icon, color: color, size: 40),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Column(

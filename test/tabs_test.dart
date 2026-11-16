@@ -35,15 +35,15 @@ Future<void> _tapReal(WidgetTester tester, Finder f) async {
 }
 
 void main() {
-  testWidgets('four tabs: Domů, Trénink, Strava, Profil', (tester) async {
+  testWidgets('four tabs: Domů, Trénink, Strava, Pokrok', (tester) async {
     await _app(tester);
-    for (final t in ['Domů', 'Trénink', 'Strava', 'Profil']) {
+    for (final t in ['Domů', 'Trénink', 'Strava', 'Pokrok']) {
       expect(
         find.descendant(of: find.byType(NavigationBar), matching: find.text(t)),
         findsOneWidget,
       );
     }
-    await _tapReal(tester, find.text('Profil'));
+    await _tapReal(tester, find.text('Pokrok'));
     expect(find.text('Nastavení'), findsWidgets);
     expect(find.text('Cviky a rekordy'), findsOneWidget);
   });

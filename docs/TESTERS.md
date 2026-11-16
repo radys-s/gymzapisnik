@@ -5,7 +5,21 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.12
+## Co je nového v beta.13
+
+**Nový vzhled**: tmavý podklad s barvami podle části aplikace (trénink zelený, strava oranžová,
+pokrok fialový), karty se stínem, jemně se hýbající pozadí a odlesk na hlavním tlačítku.
+Při „omezit pohyb“ v systému je všechno v klidu.
+**Nové logo**: kruh postupu s činkou, stejné na ikoně, při spuštění i v aplikaci.
+**Domov**: dnešní trénink, jídlo dne a cíl týdne na jedné obrazovce.
+**Úvod je kratší**: podmínky a věk hned po uvítání, pak pět otázek a hotový plán, který buď
+vezmeš, nebo si složíš vlastní. Rok narození se už nezadává.
+**Přidání dne v programu**: nahoře volba „Navrhnout cviky“ (vybereš partie, cviky se doplní
+a nechtěné vyřadíš klepnutím) nebo „Vyberu sám“ (celý seznam cviků).
+
+**Na co se zaměřit**: projdi úvod a Domov a napiš, co je hůř čitelné nebo kde ti pohyb vadí.
+
+## Co bylo nového v beta.12
 
 **Úvod po jedné otázce**: cíl, dny, zkušenost a čas, každá otázka zvlášť s vysvětlením „Proč se ptám“.
 Stejné otázky otevřeš z Domova, Tréninku i Programu.

@@ -41,9 +41,9 @@ void main() {
     await tester.pumpWidget(GymApp(state));
     await tester.pumpAndSettle();
 
-    // Podstránka v záložce Profil: zpět ji zavře, lišta zůstává.
+    // A nested page in the progress tab closes on back, keeping the tab bar.
     await tester.runAsync(() async {
-      await tester.tap(find.text('Profil'));
+      await tester.tap(find.text('Pokrok'));
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await tester.pumpAndSettle();

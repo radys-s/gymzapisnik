@@ -6,15 +6,14 @@ import '../../coach/missions.dart';
 import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
-import '../../core/format.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
 import '../coach/push_widgets.dart';
 import '../coach/trainer_page.dart';
 import '../design/components.dart';
+import '../design/motion.dart';
 import '../design/tokens.dart';
-import '../exercises/exercise_detail_page.dart';
 import '../history/history_page.dart';
 import '../premium/pro_gate.dart';
 import '../onboarding/onboarding_page.dart' show PlanSetupPage;
@@ -24,12 +23,11 @@ import '../settings/settings_button.dart';
 import '../widgets/labels.dart';
 import '../workout/launcher.dart';
 import '../settings/file_io.dart';
-import 'coverage_card.dart';
 import 'dashboard.dart';
 import 'food_block.dart';
 
-/// Záložka Domů: pozdrav, jedna hlavní akce, týden, rekordy a poslední
-/// tréninky. Rutiny a regenerace jsou v záložce Trénink, statistiky v Profilu.
+/// Home shows today's action, food, this week's focus, and recent workouts.
+/// Routines live in Training, while deeper metrics live in Progress.
 class HomePage extends StatefulWidget {
   final AppState state;
   final DateTime Function() now;
@@ -109,7 +107,9 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
       final now = widget.now();
       final recent = state.workouts.take(3).toList();
       return LargeTitlePage(
-        title: 'Domů',
+        // The tab bar already says "Domů"; the title greets instead.
+        title: greeting(now),
+        titleLeading: const AppMark(size: 36),
         actions: [
           IconButton(
             tooltip: 'Trenér',
@@ -119,14 +119,6 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           SettingsButton(state),
         ],
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: Space.s),
-            child: Text(
-              greeting(now),
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(color: context.palette.secondaryLabel),
-            ),
-          ),
           if (state.backupDue)
             Padding(
               padding: const EdgeInsets.only(bottom: Space.m),
@@ -162,23 +154,32 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
                 ),
               ),
             ),
-          // Pořadí: jídlo, dnešní trénink, partie, poslední tréninky.
-          HomeFoodBlock(state: state, now: now),
-          const SizedBox(height: Space.m),
-          _TodayCard(
-            state: state,
-            now: now,
-            busy: starting,
-            dayIndex: state.todaySplitDay,
-            onStart: runWorkout,
-            onPickDay: state.pickSplitDay,
-            onProgram: () => _push(ProgramPage(state)),
-            onOther: otherWorkout,
-            onQuiz: () => _push(PlanSetupPage(state)),
-            onUsePlan: usePlan,
+          // Put the next clear action before food and progress details.
+          Reveal(
+            child: _TodayCard(
+              state: state,
+              now: now,
+              busy: starting,
+              dayIndex: state.todaySplitDay,
+              onStart: runWorkout,
+              onPickDay: state.pickSplitDay,
+              onProgram: () => _push(ProgramPage(state)),
+              onOther: otherWorkout,
+              onQuiz: () => _push(PlanSetupPage(state)),
+              onUsePlan: usePlan,
+            ),
           ),
           const SizedBox(height: Space.m),
-          CoverageCard(state: state, now: now),
+          Reveal(
+            index: 1,
+            child: HomeFoodBlock(state: state, now: now),
+          ),
+          const SizedBox(height: Space.m),
+          Reveal(
+            index: 2,
+            child: WeekFocusCard(state: state, now: now),
+          ),
+          const SizedBox(height: Space.m),
           if (recent.isNotEmpty) ...[
             SectionHeader(
               'Historie',
@@ -192,11 +193,6 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
               ],
             ),
           ],
-          const SectionHeader('Tento týden'),
-          WeekFocusCard(state: state, now: now),
-          const SizedBox(height: Space.m),
-          _WeekPanel(state: state, now: now),
-          _RecordsBoard(state),
           const SizedBox(height: Space.xxl),
         ],
       );
@@ -233,6 +229,7 @@ class _TodayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => HeroCard(
     vivid: true,
+    padding: const EdgeInsets.fromLTRB(Space.xl, Space.l, Space.xl, Space.l),
     // Závod: číslo jezdce = pořadí dnešního tréninku.
     watermark: '${state.workouts.where((w) => w.finished).length + 1}',
     // Rozepsaný trénink se mění při každé sérii: překreslí se jen karta.
@@ -274,10 +271,25 @@ class _TodayCard extends StatelessWidget {
     } else if (split != null) {
       final day = split.day(dayIndex);
       final plan = state.plan(day);
+      final mission = state.mission(now);
+      final nextUp = switch (mission.kind) {
+        MissionKind.plannedRest ||
+        MissionKind.doneToday ||
+        MissionKind.weekDone => true,
+        _ => false,
+      };
       // Volno podle plánu: karta ukazuje příští tréninkový den, ne „dnes“.
-      final next = state.mission(now).kind == MissionKind.plannedRest
+      final next = nextUp
           ? _nextTrainingDay(state.profile.trainingDays, now)
           : null;
+      final String when;
+      if (!nextUp) {
+        when = 'Dnes';
+      } else if (next == null) {
+        when = 'Příště';
+      } else {
+        when = 'Příště · ${weekdayLong[next - 1]}';
+      }
       final scope =
           '${exercisesLabel(plan.length)} · '
           '~${workoutMinutes(plan.fold(0, (n, e) => n + e.$1.sets))} min';
@@ -290,8 +302,7 @@ class _TodayCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Eyebrow(
-                    '${next == null ? 'Dnes' : 'Příště · ${weekdayLong[next - 1]}'}'
-                    ' · ${split.name} · den '
+                    '$when · ${split.name} · den '
                     '${dayIndex % split.days.length + 1}/${split.days.length}',
                   ),
                   Text(day.name, style: text.displaySmall),
@@ -311,10 +322,10 @@ class _TodayCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Space.m),
+        const SizedBox(height: Space.s),
         for (final (pe, s) in plan.take(5))
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: [
                 Expanded(
@@ -339,22 +350,28 @@ class _TodayCard extends StatelessWidget {
           ),
         if (plan.length > 5)
           Text('a další ${plan.length - 5}', style: text.bodySmall),
-        const SizedBox(height: Space.m),
-        // Jeden dílek na cvik a rozsah tréninku.
-        StartLights(count: plan.length, caption: scope),
-        const SizedBox(height: Space.m),
+        const SizedBox(height: Space.s),
+        // Jeden dílek na cvik, rozsah tréninku a vedlejší volba na jednom
+        // řádku: karta je nižší a jídlo se vejde na první obrazovku.
+        StartLights(
+          count: plan.length,
+          caption: scope,
+          trailing: TextButton(
+            onPressed: busy ? null : onOther,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: Space.s),
+              minimumSize: const Size(0, minTap),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              textStyle: text.titleSmall,
+            ),
+            child: const Text('Jiný trénink'),
+          ),
+        ),
         PrimaryButton(
-          next == null ? 'Začít ${day.name}' : 'Začít i dnes',
+          nextUp ? 'Bonusový trénink' : 'Začít ${day.name}',
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
-        ),
-        const SizedBox(height: Space.xs),
-        Center(
-          child: TextButton(
-            onPressed: busy ? null : onOther,
-            child: const Text('Jiný trénink'),
-          ),
         ),
       ]);
     } else {
@@ -473,10 +490,14 @@ class _MissionLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: Space.m),
       child: Container(
-        padding: const EdgeInsets.all(Space.m),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.m,
+          vertical: Space.s + 2,
+        ),
         decoration: BoxDecoration(
-          color: p.fill,
+          color: p.background.withValues(alpha: 0.42),
           borderRadius: BorderRadius.circular(context.palette.controlRadius),
+          border: Border.all(color: p.label.withValues(alpha: 0.06)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,7 +505,7 @@ class _MissionLine extends StatelessWidget {
             Icon(
               MissionCopy.icon(mission.kind),
               size: 20,
-              color: urgent ? const Color(0xFFFF9F0A) : p.accent,
+              color: urgent ? AppPalette.orange : AppPalette.cyan,
             ),
             const SizedBox(width: Space.m),
             Expanded(
@@ -543,168 +564,6 @@ class _ElapsedState extends State<_Elapsed> {
       fontFeatures: tabular,
     ),
   );
-}
-
-/// Závod: nedávné rekordy jako pořadí jezdců (P1–P3) s barvou týmu.
-class _RecordsBoard extends StatelessWidget {
-  final AppState state;
-  const _RecordsBoard(this.state);
-
-  static const _teams = [
-    AppPalette.yellow,
-    Color(0xFFFF8000),
-    Color(0xFF00D2BE),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final records = state.recentRecordList();
-    if (records.isEmpty) return const SizedBox.shrink();
-    final p = context.palette;
-    final text = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SectionHeader('Pořadí rekordů'),
-        Panel(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Space.l,
-            vertical: Space.xs,
-          ),
-          child: Column(
-            children: [
-              for (var i = 0; i < records.length; i++) ...[
-                if (i > 0) Divider(color: p.separator),
-                InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ExerciseDetailPage(state, records[i].exerciseId),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 34,
-                          child: Text('P${i + 1}', style: text.titleLarge),
-                        ),
-                        Container(
-                          width: 4,
-                          height: 26,
-                          color: _teams[i % _teams.length],
-                        ),
-                        const SizedBox(width: Space.m),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                state.exercise(records[i].exerciseId).name,
-                                style: text.titleSmall,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                '${records[i].kind.label} · '
-                                '${formatDate(records[i].date)}',
-                                style: text.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          recordLabel(records[i].kind, records[i].value),
-                          style: text.titleSmall?.copyWith(
-                            color: p.positive,
-                            fontFeatures: tabular,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Týden: kruh tréninků vůči cíli, série, objem a streak.
-class _WeekPanel extends StatelessWidget {
-  final AppState state;
-  final DateTime now;
-  const _WeekPanel({required this.state, required this.now});
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final week = state.weekSummaryAt(now);
-    final goal = state.weekGoal;
-    final streak = state.has(ProFeature.mission) ? state.streak(now) : null;
-    final lines = state.has(ProFeature.recap) && state.workouts.isNotEmpty
-        ? recapLines(week, state.previousWeekAt(now), state.weekRecordsAt(now))
-        : const <String>[];
-    return Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Semantics(
-                container: true,
-                label: 'Tento týden ${week.workouts} z $goal tréninků',
-                excludeSemantics: true,
-                child: ProgressRing(
-                  value: goal == 0 ? 0 : week.workouts / goal,
-                  size: 76,
-                  stroke: 9,
-                  child: Text(
-                    '${week.workouts}/$goal',
-                    style: text.titleMedium?.copyWith(fontFeatures: tabular),
-                  ),
-                ),
-              ),
-              const SizedBox(width: Space.xl),
-              Expanded(
-                child: Wrap(
-                  spacing: Space.xl,
-                  runSpacing: Space.m,
-                  children: [
-                    StatTile('${week.sets}', setsNoun(week.sets)),
-                    StatTile('${formatVolume(week.volumeKg)} kg', 'objem'),
-                    if (streak != null && streak.weeks > 0)
-                      Tooltip(
-                        message: streak.jokerReady
-                            ? 'Žolík je připravený: zachrání jeden zmeškaný týden.'
-                            : 'Žolík se po použití obnoví za pár týdnů.',
-                        child: StatTile(weeksLabel(streak.weeks), 'v řadě'),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (streak?.jokerJustUsed ?? false) ...[
-            const SizedBox(height: Space.m),
-            Text(
-              'Žolík ti minulý týden zachránil streak.',
-              style: text.bodySmall?.copyWith(color: context.palette.accent),
-            ),
-          ],
-          if (lines.isNotEmpty) ...[
-            const SizedBox(height: Space.m),
-            for (final line in lines) Text(line, style: text.bodySmall),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 /// Nejbližší tréninkový den po dnešku (1 = pondělí); `null` bez dnů.

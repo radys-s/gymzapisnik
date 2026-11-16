@@ -26,7 +26,13 @@ class HomeFoodBlock extends StatelessWidget {
     final kcalTarget = own.kcalTarget ?? suggested?.kcal;
     final proteinTarget = own.proteinTarget ?? suggested?.protein;
     final quick = state.quickFoods.take(4).toList();
-    Widget ring(String label, double value, double? target, String unit) {
+    Widget ring(
+      String label,
+      double value,
+      double? target,
+      String unit,
+      List<Color> colors,
+    ) {
       final shown =
           '${value.round()}${target == null ? '' : ' / ${target.round()}'} $unit';
       return Expanded(
@@ -39,6 +45,7 @@ class HomeFoodBlock extends StatelessWidget {
                 value: target == null || target <= 0 ? 0 : value / target,
                 size: 44,
                 stroke: 6,
+                colors: colors,
               ),
               const SizedBox(width: Space.s),
               Expanded(
@@ -70,19 +77,28 @@ class HomeFoodBlock extends StatelessWidget {
     }
 
     return Panel(
+      tone: Tone.food,
+      padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.xs, Space.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              const IconTile(
+                Icons.restaurant_rounded,
+                color: AppPalette.orange,
+              ),
+              const SizedBox(width: Space.m),
               Expanded(child: Text('Jídlo dnes', style: text.titleMedium)),
               IconButton(
                 tooltip: 'Čárový kód',
+                color: AppPalette.amber,
                 icon: const Icon(Icons.qr_code_2),
                 onPressed: () => barcodeFlow(context, state, key),
               ),
               IconButton(
                 tooltip: 'Deník jídla',
+                color: p.secondaryLabel,
                 icon: const Icon(Icons.chevron_right_rounded),
                 onPressed: () => Navigator.push(
                   context,
@@ -94,9 +110,15 @@ class HomeFoodBlock extends StatelessWidget {
           const SizedBox(height: Space.s),
           Row(
             children: [
-              ring('Kalorie', totals.kcal, kcalTarget, 'kcal'),
+              ring('Kalorie', totals.kcal, kcalTarget, 'kcal', AppPalette.food),
               const SizedBox(width: Space.m),
-              ring('Bílkoviny', totals.protein, proteinTarget, 'g'),
+              ring(
+                'Bílkoviny',
+                totals.protein,
+                proteinTarget,
+                'g',
+                AppPalette.progress,
+              ),
             ],
           ),
           if (quick.isNotEmpty) ...[

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Barvy aplikace: jeden vzhled, vždy tmavý. Dostupné přes
-/// `context.palette`.
+/// Shared dark colors and surfaces, available through `context.palette`.
 ///
-/// Šedá nese text a čísla (nejlepší kontrast s černou), zelená znamená
-/// akci a hotovo, přechody odliší trénink (zelená → žlutá) od jídla
-/// (zelená → azurová).
+/// Green marks key actions; each section adds its own accent and gradient.
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   final Color background;
@@ -50,16 +47,16 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.negative,
   });
 
-  /// Jediná paleta aplikace.
+  /// Jediná paleta aplikace: tmavý inkoust s barevnými akcenty.
   static const gym = AppPalette(
-    background: Colors.black,
-    grouped: Color(0xFF121214),
-    elevated: Color(0xFF1A1A1D),
-    separator: Color(0xFF26262A),
-    label: gymGrey,
-    secondaryLabel: Color(0xFF9A9AA2),
-    tertiaryLabel: Color(0xFF80808A),
-    fill: Color(0xFF1C1C1F),
+    background: Color(0xFF0B0C14),
+    grouped: Color(0xFF141624),
+    elevated: Color(0xFF1C1F31),
+    separator: Color(0xFF2A2E45),
+    label: Color(0xFFF4F5FA),
+    secondaryLabel: Color(0xFFB6BBCE),
+    tertiaryLabel: Color(0xFF8188A0),
+    fill: Color(0xFF212438),
     accent: green,
     onAccent: Colors.black,
     gradient: training,
@@ -70,43 +67,85 @@ class AppPalette extends ThemeExtension<AppPalette> {
     negative: Color(0xFFFF5A4E),
   );
 
-  /// Světle šedá: text, čísla sérií, vedlejší tlačítka.
+  /// Light neutral surface used by inverse Material components.
   static const gymGrey = Color(0xFFE4E4E7);
 
-  /// Hlavní zelená (NVIDIA): akce, hotovo, vybraná záložka.
-  static const green = Color(0xFF76B900);
-  static const yellow = Color(0xFFE6E600);
-  static const cyan = Color(0xFF2AD1FF);
+  /// Hlavní zelená: akce, hotovo, vybraná záložka.
+  static const green = Color(0xFF9BE15D);
+  static const lime = Color(0xFFB9F56A);
+  static const teal = Color(0xFF4FE0C0);
+  static const cyan = Color(0xFF4FD8E8);
+  static const blue = Color(0xFF5AA9FF);
+  static const violet = Color(0xFF8B7CFF);
+  static const pink = Color(0xFFFF6FA5);
+  static const orange = Color(0xFFFF8A5B);
+  static const amber = Color(0xFFFFC857);
+  static const yellow = Color(0xFFFFE08A);
 
-  /// Přechod tréninku a přechod jídla (kruhy ve Stravě).
-  static const training = [green, Color(0xFFB0D400), yellow];
-  static const food = [green, Color(0xFF3FC9A0), cyan];
+  /// Workout, food, progress, and coach gradients.
+  static const training = [lime, Color(0xFF8BEA7A), teal];
+  static const food = [amber, orange, pink];
+  static const progress = [violet, blue, cyan];
+  static const coach = [pink, Color(0xFFC07CFF), violet];
 
-  /// Barvy supersérií A, B, C, D (dál se opakují).
-  static const superset = [cyan, yellow, Color(0xFFFF9F43), Color(0xFFC08BFF)];
+  /// Superset colors A, B, C, D (then repeat).
+  static const superset = [cyan, amber, orange, violet];
 
-  /// Staré názvy, které ještě používají grafy.
+  /// Zlatá pro rekordy a odznaky.
+  Color get gold => amber;
 
-  /// Žlutá pro rekordy a odznaky.
-  Color get gold => yellow;
+  /// Card corner radius.
+  BorderRadius cardRadius() => BorderRadius.circular(20);
 
-  /// Zaoblení karty: skoro ostré rohy.
-  BorderRadius cardRadius() => BorderRadius.circular(2);
-
-  /// Tvar karty: zkosený pravý horní roh a tenká linka.
-  ShapeBorder cardShape() => BeveledRectangleBorder(
-    borderRadius: const BorderRadius.only(topRight: Radius.circular(12)),
+  /// Rounded card with a subtle outline.
+  ShapeBorder cardShape() => RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(20),
     side: BorderSide(color: separator),
   );
 
   /// Zaoblení tlačítek a polí.
-  double get controlRadius => 2;
+  double get controlRadius => 14;
 
   LinearGradient get linear => LinearGradient(
     colors: gradient,
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  /// Card fill: a faint light from the top-left corner. A [tone] tints
+  /// that corner with the section color.
+  LinearGradient surface([Tone? tone]) => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      tone == null
+          ? Color.lerp(grouped, label, 0.045)!
+          : Color.lerp(grouped, tone.color, 0.17)!,
+      grouped,
+      Color.lerp(grouped, background, 0.35)!,
+    ],
+    stops: const [0, 0.55, 1],
+  );
+
+  /// Soft drop shadow that lifts a card off the page.
+  List<BoxShadow> get cardShadow => const [
+    BoxShadow(
+      color: Color(0x59000000),
+      blurRadius: 24,
+      spreadRadius: -10,
+      offset: Offset(0, 12),
+    ),
+  ];
+
+  /// Colored glow under a raised or selected element; [t] fades it in.
+  List<BoxShadow> glow(Color color, [double t = 1]) => [
+    BoxShadow(
+      color: color.withValues(alpha: 0.34 * t),
+      blurRadius: 24,
+      spreadRadius: -8,
+      offset: Offset(0, 10 * t),
+    ),
+  ];
 
   @override
   AppPalette copyWith() => this;
@@ -115,48 +154,38 @@ class AppPalette extends ThemeExtension<AppPalette> {
   AppPalette lerp(AppPalette? other, double t) => this;
 }
 
-/// Rovnoběžník se sklonem jako závodní grafika: hlavní tlačítka.
-/// Hrany jsou skloněné o [slant] výšky (asi 12°).
-class SkewBorder extends OutlinedBorder {
-  final double slant;
-  const SkewBorder({super.side, this.slant = 0.21});
+/// Color family of an app section, so each area has its own accent.
+enum Tone {
+  training(AppPalette.green, AppPalette.training),
+  food(AppPalette.orange, AppPalette.food),
+  progress(AppPalette.violet, AppPalette.progress),
+  coach(AppPalette.pink, AppPalette.coach);
 
-  Path _path(Rect r) {
-    final dx = r.height * slant;
-    return Path()
-      ..moveTo(r.left + dx, r.top)
-      ..lineTo(r.right, r.top)
-      ..lineTo(r.right - dx, r.bottom)
-      ..lineTo(r.left, r.bottom)
-      ..close();
-  }
+  final Color color;
+  final List<Color> colors;
+  const Tone(this.color, this.colors);
 
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) => _path(rect);
+  LinearGradient get gradient => LinearGradient(
+    colors: colors,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+}
 
-  @override
-  Path getInnerPath(Rect rect, {TextDirection? textDirection}) =>
-      _path(rect.deflate(side.strokeInset));
+/// The section a subtree belongs to. Pages set it once; icons, rings and
+/// charts below read it, so a section keeps one color family without
+/// every widget being told.
+class ToneScope extends InheritedWidget {
+  final Tone tone;
+  const ToneScope({super.key, required this.tone, required super.child});
 
-  @override
-  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
-    if (side.style == BorderStyle.none || side.width == 0) return;
-    canvas.drawPath(_path(rect), side.toPaint());
-  }
-
-  @override
-  SkewBorder scale(double t) => SkewBorder(side: side.scale(t), slant: slant);
+  /// The section tone here; training (the brand green) outside any page.
+  static Tone of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ToneScope>()?.tone ??
+      Tone.training;
 
   @override
-  SkewBorder copyWith({BorderSide? side}) =>
-      SkewBorder(side: side ?? this.side, slant: slant);
-
-  @override
-  bool operator ==(Object other) =>
-      other is SkewBorder && other.side == side && other.slant == slant;
-
-  @override
-  int get hashCode => Object.hash(side, slant);
+  bool updateShouldNotify(ToneScope old) => old.tone != tone;
 }
 
 /// Mezery a zaoblení – jinde se nepoužívají jiné hodnoty.
@@ -171,6 +200,9 @@ abstract final class Space {
 
   /// Okraj obsahu od kraje obrazovky.
   static const page = 16.0;
+
+  /// Keep mobile-first pages readable when the web app has a wide viewport.
+  static const contentMax = 760.0;
 }
 
 abstract final class Radii {
@@ -183,7 +215,7 @@ abstract final class Radii {
 /// Nejmenší dotyková plocha (Apple HIG).
 const minTap = 44.0;
 
-/// Úzké tučné písmo Tensoru pro nadpisy, štítky a čísla.
+/// Condensed type reserved for decorative figures and compact labels.
 const condensedFont = 'Barlow Condensed';
 
 /// Čísla se stejnou šířkou číslic, aby hodnoty neposkakovaly.

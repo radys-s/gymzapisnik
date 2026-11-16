@@ -8,9 +8,12 @@ import 'data/update_safety.dart';
 import 'notify/android_notifier.dart';
 import 'notify/notifier.dart';
 import 'state/app_state.dart';
+import 'ui/design/ambient.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Drifting background and sheen run only in the real app, never in tests.
+  Ambient.enabled = true;
   // Nezachycené chyby nesmí tiše zmizet: jdou do Nastavení → Diagnostika.
   final flutterError = FlutterError.onError;
   FlutterError.onError = (details) {

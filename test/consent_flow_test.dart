@@ -47,26 +47,52 @@ Future<void> _pick(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
+/// Stav uprostřed úvodu: souhlas je daný a úvod pokračuje krokem [step]
+/// (0 uvítání, 1 souhlas, 2 cíl, 3 zkušenost, 4 čas, 5 posilovna,
+/// 6 bolest, 7 hotový plán).
+Future<void> _midway(AppState state, int step) => state.acceptConsent(
+  adult: true,
+  guardianConsent: false,
+  onboardingStep: step,
+);
+
+Future<void> _open(WidgetTester tester, AppState state) async {
+  tester.view.physicalSize = const Size(400, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(GymApp(state));
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('welcome, quiz, plan reveal and consent run once', (
+  testWidgets('welcome, consent, quiz and plan reveal run once', (
     tester,
   ) async {
     final state = await _fresh(tester);
-    tester.view.physicalSize = const Size(400, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(GymApp(state));
-    await tester.pumpAndSettle();
+    await _open(tester, state);
 
     // Jeden slide s hodnotou, žádné brožurkové stránky ani výběr barvy.
     expect(find.text('Gym zápisník'), findsOneWidget);
     expect(find.text('Každý den víš, co cvičit'), findsOneWidget);
-    await _tapAndSave(tester, find.text('Sestavit můj plán'));
+    await _tapAndSave(tester, find.text('Začít'));
     expect(find.text('Vyber si vzhled'), findsNothing);
+
+    // Podmínky a věk hned na začátku, a jen jednou.
+    expect(find.text('Než začneš'), findsOneWidget);
+    await tester.tap(find.text('Souhlasím s podmínkami používání'));
+    await tester.tap(find.text('Je mi 18 let nebo víc'));
+    await tester.pump();
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
+    // Souhlas je uložený, ale do aplikace pustí až dokončený úvod.
+    expect(state.profile.hasValidConsent, isTrue);
+    expect(state.profile.ready, isFalse);
 
     // Jedna otázka na obrazovku, u každé vysvětlení proč.
     expect(find.text('Co chceš hlavně?'), findsOneWidget);
     expect(find.byType(WhyLine), findsOneWidget);
+    expect(find.bySemanticsLabel('Otázka 1 z 5'), findsOneWidget);
+    // Před první otázkou už nic není.
+    expect(find.byTooltip('Zpět'), findsNothing);
     // Jedna volba jede sama dál.
     await _pick(tester, find.text('Svaly'));
     expect(find.text('Jak dlouho cvičíš?'), findsOneWidget);
@@ -84,19 +110,11 @@ void main() {
     expect(find.text('Kde cvičíš?'), findsOneWidget);
     await _pick(tester, find.text('Doma s činkami'));
 
+    // Poslední otázka plán rovnou uloží a ukáže.
     expect(find.text('Bolí tě něco?'), findsOneWidget);
     await tester.tap(find.text('Kolena'));
     await tester.pump();
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
-
-    expect(find.text('Něco o tobě'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).at(0), '80');
-    await tester.enterText(find.byType(TextField).at(1), '180');
-    await tester.pump();
-    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
-
-    expect(find.text('Jak chceš začít?'), findsOneWidget);
-    await _tapAndSave(tester, find.text('Vyber za mě'));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 200)),
     );
@@ -106,34 +124,30 @@ void main() {
     expect(state.profile.trainingDays, [1, 2, 4, 5]);
     expect(state.planAnswers?.days, 4);
     expect(state.planAnswers?.experience, Experience.year);
-    expect(state.bodyweights.first.kg, 80);
     expect(state.planAnswers?.place, TrainingPlace.home);
     expect(state.planAnswers?.avoid, {Joint.knees});
-    expect(state.planAnswers?.heightCm, 180);
     for (final d in state.split!.days) {
       for (final e in d.exercises) {
         expect(e.exerciseId, isNot(contains('squat')), reason: d.name);
       }
     }
 
-    // Odhalení plánu ukazuje uložený program a první trénink.
+    // Úvod se neptá na tělo ani na rok narození; to jde doplnit později.
+    expect(find.text('Něco o tobě'), findsNothing);
+    // Hotový plán: uložený program, první trénink a obě cesty dál.
     expect(find.text('Plán je hotový'), findsOneWidget);
     expect(find.text('Upper / Lower'), findsOneWidget);
     expect(find.textContaining('První trénink · '), findsOneWidget);
-    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
-
+    expect(find.text('Složím si vlastní'), findsOneWidget);
     // Na webu/testu (bez oznámení) krok připomínky odpadá.
-    expect(find.text('Než začneš'), findsOneWidget);
-    await tester.tap(find.text('Souhlasím s podmínkami používání'));
-    await tester.tap(find.text('Je mi 18 let nebo víc'));
-    await tester.pump();
-    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
+    await _tapAndSave(tester, find.text('Beru tenhle plán'));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 300)),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Trénink'), findsWidgets);
+    expect(state.profile.ready, isTrue);
     expect(state.profile.welcomeSeen, isTrue);
     expect(state.onboardingStep, 0);
     // Nová instalace nemá dostat okno s novinkami hned po uvítání.
@@ -141,31 +155,25 @@ void main() {
     expect(find.text('Co je nového'), findsNothing);
   });
 
-  testWidgets('body data can be skipped and own routine opens the editor', (
+  testWidgets('own program opens from the plan and the plan stays', (
     tester,
   ) async {
     final state = await _fresh(tester);
     await tester.runAsync(() async {
       await state.applyPlan(const PlanAnswers(days: 3));
-      await state.setOnboardingStep(6);
+      await _midway(state, 7);
     });
-    tester.view.physicalSize = const Size(400, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(GymApp(state));
-    await tester.pumpAndSettle();
-    expect(find.text('Něco o tobě'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).at(1), '175');
-    await tester.pump();
-    await _tapAndSave(tester, find.text('Doplním později'));
-    expect(find.text('Jak chceš začít?'), findsOneWidget);
-    expect(state.planAnswers?.heightCm, isNull);
-    await _tapAndSave(tester, find.text('Složím si sám'));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 200)),
-    );
-    await tester.pumpAndSettle();
+    await _open(tester, state);
+    expect(find.text('Plán je hotový'), findsOneWidget);
+    await _tapAndSave(tester, find.text('Složím si vlastní'));
     expect(find.text('Nový program'), findsWidgets);
+
+    // Návrat bez uložení: návrh platí dál a úvod čeká na rozhodnutí.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Plán je hotový'), findsOneWidget);
+    expect(state.profile.splitId, 'full_body_3');
+    expect(state.profile.ready, isFalse);
   });
 
   testWidgets('onboarding resumes on the saved step with saved answers', (
@@ -176,13 +184,9 @@ void main() {
       await state.applyPlan(
         const PlanAnswers(days: 5, experience: Experience.two),
       );
-      await state.setOnboardingStep(3);
+      await _midway(state, 4);
     });
-    tester.view.physicalSize = const Size(400, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(GymApp(state));
-    await tester.pumpAndSettle();
+    await _open(tester, state);
     // Rovnou rozpracovaná otázka, s dřívějšími odpověďmi místo výchozích.
     expect(find.text('Kolik času máš?'), findsOneWidget);
     expect(
@@ -192,7 +196,17 @@ void main() {
     // Zpět jde šipkou na předchozí otázku.
     await _tapAndSave(tester, find.byTooltip('Zpět'));
     expect(find.text('Jak dlouho cvičíš?'), findsOneWidget);
-    expect(state.onboardingStep, 2);
+    expect(state.onboardingStep, 3);
+  });
+
+  testWidgets('a step saved before consent resumes on the consent', (
+    tester,
+  ) async {
+    final state = await _fresh(tester);
+    // Starší verze se na souhlas ptala až na konci.
+    await tester.runAsync(() => state.setOnboardingStep(5));
+    await _open(tester, state);
+    expect(find.text('Než začneš'), findsOneWidget);
   });
 
   testWidgets('days removed in the quiz do not stay saved', (tester) async {
@@ -200,13 +214,9 @@ void main() {
     await tester.runAsync(() async {
       await state.applyPlan(const PlanAnswers(days: 3));
       await state.setFrequency(days: [1, 3, 5]);
-      await state.setOnboardingStep(3);
+      await _midway(state, 4);
     });
-    tester.view.physicalSize = const Size(400, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(GymApp(state));
-    await tester.pumpAndSettle();
+    await _open(tester, state);
     for (final d in ['Po', 'St', 'Pá']) {
       await tester.tap(find.widgetWithText(DayToggle, d));
       await tester.pump();
@@ -214,8 +224,6 @@ void main() {
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _pick(tester, find.text('Velké fitko'));
     await _tapAndSave(tester, find.text('Nic mě nebolí'));
-    await _tapAndSave(tester, find.text('Doplním později'));
-    await _tapAndSave(tester, find.text('Vyber za mě'));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 200)),
     );

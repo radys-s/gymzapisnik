@@ -8,6 +8,7 @@ import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/program/program_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
+import 'package:gymzapisnik/ui/workout/exercise_picker.dart';
 
 Future<AppState> _state(WidgetTester tester) async {
   final db = AppDatabase(NativeDatabase.memory());
@@ -88,6 +89,49 @@ void main() {
     expect(program.days.single.exercises.first.sets, 4);
     expect(find.text('Moje ruce'), findsWidgets);
     expect(find.text('Na řadě: Ramena a triceps'), findsOneWidget);
+  });
+
+  testWidgets('a new day takes suggestions or the full exercise list', (
+    tester,
+  ) async {
+    final state = await _state(tester);
+    await _pump(tester, state);
+    await tester.tap(find.text('Vytvořit vlastní program').first);
+    await tester.pumpAndSettle();
+
+    // Návrh podle partií; co nechci, vyřadím klepnutím.
+    await tester.tap(find.text('Přidat den'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MuscleTileGrid),
+        matching: find.text('Biceps'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final offered = dayFromFocuses(['biceps']).exercises;
+    final dropped = state.exercise(offered.first.exerciseId).name;
+    await tester.tap(find.text(dropped));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.textContaining('Přidat den · ${offered.length - 1} '),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(dropped), findsNothing);
+    expect(
+      find.text(state.exercise(offered.last.exerciseId).name),
+      findsOneWidget,
+    );
+
+    // Vlastní výběr vede rovnou do seznamu všech cviků.
+    await tester.tap(find.text('Přidat den'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vyberu sám'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MuscleTileGrid), findsNothing);
+    await tester.tap(find.text('Vybrat cviky'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ExercisePickerPage), findsOneWidget);
   });
 
   testWidgets('leaving the editor with changes asks first', (tester) async {

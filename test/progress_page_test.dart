@@ -94,6 +94,9 @@ void main() {
     });
     await _show(tester, ProgressPage(state));
     expect(find.text('Pokrok začne prvním tréninkem'), findsNothing);
+    expect(find.text('Trénink tento týden'), findsOneWidget);
+    expect(find.text('Objem podle partií'), findsOneWidget);
+    expect(find.text('Partie tento týden'), findsOneWidget);
     expect(find.text('Bench press (osa)'), findsWidgets); // křivka i rekordy
     expect(find.textContaining('Odhad 1RM'), findsOneWidget);
     expect(
@@ -131,7 +134,7 @@ void main() {
     // Sobota 31. 10. 2026: v plánu volno, další trénink v pondělí.
     await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 31, 15)));
     expect(find.textContaining('Příště · pondělí'), findsOneWidget);
-    expect(find.text('Začít i dnes'), findsOneWidget);
+    expect(find.text('Bonusový trénink'), findsOneWidget);
     expect(find.text('Dnes volno podle plánu'), findsOneWidget);
     // Ve středu se trénuje: zase „Dnes“.
     await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 28, 15)));

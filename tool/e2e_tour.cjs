@@ -80,16 +80,17 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
   await sem();
 
   await section('onboarding', async () => {
-    const prefer = [/^Sestavit můj plán/, /^Pokračovat/, /^Vyber za mě/, /^Nic mě nebolí/,
+    const prefer = [/^Začít$/, /^Pokračovat/, /^Beru tenhle plán/, /^Nic mě nebolí/,
       /^Doplním později/, /^Teď ne/, /^Hotovo/, /^Začít/];
     const skip = /^(Zpět|Přeskočit|Back)$/;
     for (let step = 0; step < 30; step++) {
       const t = await txt();
-      if (/Domů/.test(t) && /Strava/.test(t) && /Profil/.test(t)) break;
+      if (/Domů/.test(t) && /Strava/.test(t) && /Pokrok/.test(t)) break;
       await shot(`onboarding-${step}`);
+      // Terms and age come right after the welcome, as two choice cards.
       if (/Než začneš|Souhlasím/.test(t)) {
-        await tap(/Souhlasím/, 'checkbox');
-        await tap(/18 let nebo/, 'radio');
+        await tap(/Souhlasím/);
+        await tap(/18 let nebo/);
         await tap(/^Pokračovat/);
         continue;
       }
@@ -109,7 +110,7 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
   await section('home', async () => { await scrollShots('home', 4); });
   await section('training-tab', async () => { await tap(/Trénink/, 'tab'); await scrollShots('training', 3); });
   await section('strava-tab', async () => { await tap(/Strava/, 'tab'); await scrollShots('strava', 3); });
-  await section('profile-tab', async () => { await tap(/Profil/, 'tab'); await scrollShots('profile', 3); });
+  await section('progress-tab', async () => { await tap(/Pokrok/, 'tab'); await scrollShots('progress', 3); });
 
   await section('workout', async () => {
     await tap(/Domů/, 'tab');
@@ -142,8 +143,13 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
     await scrollShots('home-after', 3);
   });
 
+  await section('progress-after-workout', async () => {
+    await tap(/Pokrok/, 'tab');
+    await scrollShots('progress-after-workout', 3);
+  });
+
   await section('settings', async () => {
-    if (!(await tap(/^Nastavení/))) { await tap(/Profil/, 'tab'); await tap(/Nastavení/); }
+    if (!(await tap(/^Nastavení/))) { await tap(/Pokrok/, 'tab'); await tap(/Nastavení/); }
     await scrollShots('settings', 5);
   });
 

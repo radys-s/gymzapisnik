@@ -1,14 +1,16 @@
 part of '../components.dart';
 
-// Tlačítka.
+// Shared action buttons.
 
-/// Hlavní akce obrazovky. Aurora ve dne: přechod barev motivu.
-/// Ve tmě a ve Studiu plná bílá / černá, na výrazné kartě kontrastní.
+/// Primary screen action with a high contrast fill and clear direction icon.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool busy;
+
+  /// Section gradient instead of the default green one.
+  final Tone? tone;
 
   const PrimaryButton(
     this.label, {
@@ -16,6 +18,7 @@ class PrimaryButton extends StatelessWidget {
     this.onPressed,
     this.icon,
     this.busy = false,
+    this.tone,
   });
 
   @override
@@ -23,7 +26,9 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    const shape = SkewBorder();
+    final radius = BorderRadius.circular(p.controlRadius);
+    final shape = RoundedRectangleBorder(borderRadius: radius);
+    final glow = tone?.color ?? p.cta;
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -31,12 +36,14 @@ class PrimaryButton extends StatelessWidget {
       enabled: enabled,
       child: PressScale(
         enabled: enabled,
-        child: Material(
-          type: MaterialType.transparency,
+        child: _CtaBody(
+          radius: radius,
+          glow: enabled ? glow : null,
           child: Ink(
             height: 52,
             decoration: ShapeDecoration(
-              color: enabled ? p.cta : p.fill,
+              color: enabled ? null : p.fill,
+              gradient: enabled ? (tone?.gradient ?? p.linear) : null,
               shape: shape,
             ),
             child: InkWell(
@@ -52,7 +59,7 @@ class PrimaryButton extends StatelessWidget {
                           color: p.secondaryLabel,
                         ),
                       )
-                    // Popisek vlevo úzkým písmem, šipka vpravo.
+                    // Keep the action label and direction easy to scan.
                     : Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Row(
@@ -63,10 +70,8 @@ class PrimaryButton extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: fg,
-                                  fontFamily: condensedFont,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 17,
-                                  letterSpacing: 0.8,
                                 ),
                               ),
                             ),
@@ -85,6 +90,31 @@ class PrimaryButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Glow under an enabled main action and the sheen that passes over it.
+class _CtaBody extends StatelessWidget {
+  final BorderRadius radius;
+  final Color? glow;
+  final Widget child;
+  const _CtaBody({
+    required this.radius,
+    required this.glow,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      borderRadius: radius,
+      boxShadow: glow == null ? null : context.palette.glow(glow!),
+    ),
+    child: Sheen(
+      enabled: glow != null,
+      borderRadius: radius,
+      child: Material(type: MaterialType.transparency, child: child),
+    ),
+  );
 }
 
 /// Vedlejší akce stejné velikosti jako hlavní (šedé pozadí, barevný text).
