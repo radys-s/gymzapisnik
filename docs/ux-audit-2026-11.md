@@ -28,7 +28,7 @@ Screenshots of the state before this pass: [`docs/screenshots/ux-2026-11/`](scre
 | Start today's workout from Home | 1 | "Začít Push" |
 | Log a prefilled set | 1 | ✓ starts the rest timer |
 | Log a set with a changed weight | 4 | weight field, +, Hotovo, ✓ |
-| Log the first set of a never-done exercise | 5 + typing | ✓ (error toast "Zadej počet opakování."), kg field, type, Hotovo, ✓ |
+| Log the first set of a never-done exercise | 4 + typing | ✓ (error toast "Zadej počet opakování."), kg field, type both values, Hotovo, ✓ |
 | Finish workout with unconfirmed sets | 2 | Dokončit, Dokončit |
 | Fix a wrong set right after finishing | 6 + scroll | Hotovo, Pokrok, scroll, Historie, workout, ⋯, Upravit, then edit and Uložit |
 | Open history (and its search) | 2 + scroll | Pokrok, scroll (row is below the fold at 780 px), Historie |
