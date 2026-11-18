@@ -15,6 +15,9 @@ const maxStepKg = 999.0;
 /// List pro úpravu série: velká čísla, − / + a klávesnice.
 /// Každá platná změna jde hned do [onChanged] (vrací, zda se uložila),
 /// „Hotovo“ jen zavře. S [onRpe] nabídne i volitelnou náročnost (RPE).
+/// S [onConfirm] (nepotvrzená série) je hlavní tlačítko „Potvrdit sérii“:
+/// vrací chybu, se kterou list zůstane otevřený, jinak se zavře.
+/// [error] ukáže důvod hned po otevření (např. chybějící opakování).
 Future<void> showSetSheet(
   BuildContext context, {
   required String title,
@@ -26,6 +29,8 @@ Future<void> showSetSheet(
   required Future<bool> Function(String weight, String reps) onChanged,
   double? rpe,
   Future<void> Function(double? rpe)? onRpe,
+  Future<String?> Function()? onConfirm,
+  String? error,
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
@@ -41,6 +46,8 @@ Future<void> showSetSheet(
     onChanged: onChanged,
     rpe: rpe,
     onRpe: onRpe,
+    onConfirm: onConfirm,
+    error: error,
   ),
 );
 
@@ -54,6 +61,8 @@ class SetSheet extends StatefulWidget {
   final Future<bool> Function(String weight, String reps) onChanged;
   final double? rpe;
   final Future<void> Function(double? rpe)? onRpe;
+  final Future<String?> Function()? onConfirm;
+  final String? error;
 
   const SetSheet({
     super.key,
@@ -66,6 +75,8 @@ class SetSheet extends StatefulWidget {
     required this.onChanged,
     this.rpe,
     this.onRpe,
+    this.onConfirm,
+    this.error,
   });
 
   @override
@@ -77,8 +88,9 @@ class _SetSheetState extends State<SetSheet> {
   late final reps = TextEditingController(text: widget.reps);
   final weightFocus = FocusNode();
   final repsFocus = FocusNode();
-  String? error;
+  late String? error = widget.error;
   late double? rpe = widget.rpe;
+  bool _confirming = false;
 
   @override
   void dispose() {
@@ -122,6 +134,28 @@ class _SetSheetState extends State<SetSheet> {
           () => error = 'Náročnost se nepodařilo uložit. Zkus to znovu.',
         );
       }
+    }
+  }
+
+  /// Potvrdí sérii; s chybou (chybí opakování…) list zůstane otevřený.
+  Future<void> _confirm() async {
+    final confirm = widget.onConfirm;
+    if (confirm == null || _confirming) return;
+    setState(() => _confirming = true);
+    String? problem;
+    try {
+      problem = await confirm();
+    } catch (_) {
+      problem = 'Sérii se nepodařilo uložit. Zkus to znovu.';
+    }
+    if (!mounted) return;
+    if (problem == null) {
+      Navigator.maybePop(context);
+    } else {
+      setState(() {
+        error = problem;
+        _confirming = false;
+      });
     }
   }
 
@@ -232,7 +266,28 @@ class _SetSheetState extends State<SetSheet> {
             _RpePicker(value: rpe, onPick: _pickRpe),
           ],
           const SizedBox(height: Space.l),
-          PrimaryButton('Hotovo', onPressed: () => Navigator.maybePop(context)),
+          if (widget.onConfirm == null)
+            PrimaryButton(
+              'Hotovo',
+              onPressed: () => Navigator.maybePop(context),
+            )
+          else ...[
+            // Úprava a potvrzení jedním klepnutím, bez hledání ✓ v řádku.
+            PrimaryButton(
+              'Potvrdit sérii',
+              icon: Icons.check_rounded,
+              busy: _confirming,
+              onPressed: _confirm,
+            ),
+            const SizedBox(height: Space.xs),
+            TextButton(
+              onPressed: () => Navigator.maybePop(context),
+              style: TextButton.styleFrom(
+                minimumSize: const Size.fromHeight(minTap),
+              ),
+              child: const Text('Jen uložit'),
+            ),
+          ],
         ],
       ),
     );
