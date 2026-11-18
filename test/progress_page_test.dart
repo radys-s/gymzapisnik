@@ -6,6 +6,7 @@ import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/history/history_page.dart';
 import 'package:gymzapisnik/ui/home/dashboard.dart';
 import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/progress/progress_page.dart';
@@ -106,6 +107,27 @@ void main() {
     // Souhrn: 3 tréninky a 3 série, v přehledu historie taky 3.
     expect(find.text('tréninky'), findsOneWidget);
     expect(find.text('3'), findsNWidgets(3));
+  });
+
+  testWidgets('progress tab: history is one tap away, not below the fold', (
+    tester,
+  ) async {
+    final state = await _state(tester);
+    await _show(tester, ProgressPage(state));
+    // Prázdná historie tlačítko nepotřebuje.
+    expect(find.byTooltip('Historie'), findsNothing);
+
+    await tester.runAsync(() async {
+      final at = DateTime.now().subtract(const Duration(days: 1));
+      await state.startWorkout(now: at);
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 80, reps: 8, done: true)];
+      await state.finishActive(now: at.add(const Duration(hours: 1)));
+    });
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Historie'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HistoryPage), findsOneWidget);
   });
 
   testWidgets('home: one "Jiný trénink" button opens both options', (

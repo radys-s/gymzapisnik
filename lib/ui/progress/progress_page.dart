@@ -93,7 +93,19 @@ class ProgressPage extends StatelessWidget {
       return LargeTitlePage(
         title: 'Pokrok',
         tone: Tone.progress,
-        actions: [SettingsButton(state)],
+        actions: [
+          // Historie a její hledání bez rolování pod grafy.
+          if (finished.isNotEmpty)
+            IconButton(
+              tooltip: 'Historie',
+              icon: const Icon(Icons.history_rounded),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HistoryPage(state)),
+              ),
+            ),
+          SettingsButton(state),
+        ],
         children: [
           for (final (i, b) in blocks.indexed)
             Padding(
