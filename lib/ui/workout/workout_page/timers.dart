@@ -147,8 +147,13 @@ class _RestBarState extends State<_RestBar> {
                     color: finished ? p.onGradient : fg,
                   ),
                   const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
+                  // Čas jen tak široký, jak potřebuje: zbytek patří
+                  // tlačítkům, která se mačkají mezi každou sérií. Při
+                  // velkém písmu nejvýš polovina řádku, pak se zalomí.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.sizeOf(context).width / 2,
+                    ),
                     child: Text(
                       text,
                       semanticsLabel: finished ? text : 'Pauza $text',
@@ -159,9 +164,9 @@ class _RestBarState extends State<_RestBar> {
                           ),
                     ),
                   ),
-                  // Úzký displej nebo velké písmo: tlačítka se zmenší.
-                  Flexible(
-                    flex: 3,
+                  const SizedBox(width: Space.xs),
+                  // Zmenší se až při velkém písmu, ne na běžném telefonu.
+                  Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
