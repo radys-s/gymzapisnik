@@ -86,11 +86,11 @@ class _SetRowState extends State<_SetRow> {
     }
     _toggleCooldown = Timer(const Duration(milliseconds: 300), () {});
     setState(() => _saving = true);
+    String? missing;
     try {
       // Uprostřed tréninku bez oslav a vibrací: rekord ukáže jen tichý
       // pohár u série, oslava patří do souhrnu. Vibrace až na konci pauzy.
-      final error = await widget.state.toggleDone(widget.set);
-      if (error != null && mounted) widget.onError(error);
+      missing = await widget.state.toggleDone(widget.set);
     } catch (_) {
       if (mounted) {
         widget.onError(
@@ -100,10 +100,19 @@ class _SetRowState extends State<_SetRow> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+    // Chybí opakování nebo váha: rovnou list, kde je doplní a sérii
+    // potvrdí, místo hlášky a hledání pole.
+    if (missing != null && mounted) {
+      // Kurzor tam, co chybí; když chybí obojí, zleva od váhy. Bez váhy
+      // se obejde vlastní váha i rozcvička.
+      final set = widget.set;
+      final weightOk = set.weight > 0 || widget.bodyweight || set.warmup;
+      await _openSheet(focusReps: set.reps <= 0 && weightOk, error: missing);
+    }
   }
 
   /// List s velkými čísly a − / +. Změny se ukládají hned jako psaní.
-  Future<void> _openSheet({bool focusReps = false}) {
+  Future<void> _openSheet({bool focusReps = false, String? error}) {
     // Které série jdou s touto: určí se jednou při otevření, ne po každém
     // napsaném znaku (jinak by mezistav „2“ chytil ručně zadanou dvojku).
     final followers = widget.state.followersOf(widget.set);
@@ -141,7 +150,20 @@ class _SetRowState extends State<_SetRow> {
       onRpe: widget.set.warmup
           ? null
           : (v) => widget.state.setRpe(widget.set, v),
+      onConfirm: widget.set.done ? null : _confirmFromSheet,
+      error: error,
     );
+  }
+
+  /// Potvrzení z listu. Už potvrzenou sérii (třeba po nepovedeném uložení
+  /// a novém pokusu) jen uloží, nikdy ji nepřepne zpět na nepotvrzenou.
+  Future<String?> _confirmFromSheet() async {
+    final set = widget.set;
+    if (set.done) {
+      await widget.state.saveActive();
+      return null;
+    }
+    return widget.state.toggleDone(set);
   }
 
   /// Klepnutí na „Minule“ opíše minulé hodnoty do nepotvrzené série.
