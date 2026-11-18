@@ -140,62 +140,62 @@ class _RestBarState extends State<_RestBar> {
             decoration: BoxDecoration(gradient: finished ? p.linear : null),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    color: finished ? p.onGradient : fg,
-                  ),
-                  const SizedBox(width: 10),
-                  // Čas jen tak široký, jak potřebuje: zbytek patří
-                  // tlačítkům, která se mačkají mezi každou sérií. Při
-                  // velkém písmu nejvýš polovina řádku, pak se zalomí.
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.sizeOf(context).width / 2,
+              child: LayoutBuilder(
+                builder: (context, bar) => Row(
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      color: finished ? p.onGradient : fg,
                     ),
-                    child: Text(
-                      text,
-                      semanticsLabel: finished ? text : 'Pauza $text',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: finished ? p.onGradient : fg,
-                            fontFeatures: tabular,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(width: Space.xs),
-                  // Zmenší se až při velkém písmu, ne na běžném telefonu.
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!finished) ...[
-                            chip(
-                              '−15',
-                              () => widget.state.adjustRest(
-                                const Duration(seconds: -15),
-                              ),
+                    const SizedBox(width: 10),
+                    // Čas jen tak široký, jak potřebuje: zbytek patří
+                    // tlačítkům, která se mačkají mezi každou sérií. Při
+                    // velkém písmu nejvýš polovina řádku, pak se zalomí.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: bar.maxWidth / 2),
+                      child: Text(
+                        text,
+                        semanticsLabel: finished ? text : 'Pauza $text',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: finished ? p.onGradient : fg,
+                              fontFeatures: tabular,
                             ),
-                            chip(
-                              '+15',
-                              () => widget.state.adjustRest(
-                                const Duration(seconds: 15),
-                              ),
-                            ),
-                          ],
-                          chip(
-                            finished ? 'Zavřít' : 'Přeskočit',
-                            widget.state.skipRest,
-                          ),
-                        ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: Space.xs),
+                    // Zmenší se až při velkém písmu, ne na běžném telefonu.
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!finished) ...[
+                              chip(
+                                '−15',
+                                () => widget.state.adjustRest(
+                                  const Duration(seconds: -15),
+                                ),
+                              ),
+                              chip(
+                                '+15',
+                                () => widget.state.adjustRest(
+                                  const Duration(seconds: 15),
+                                ),
+                              ),
+                            ],
+                            chip(
+                              finished ? 'Zavřít' : 'Přeskočit',
+                              widget.state.skipRest,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
