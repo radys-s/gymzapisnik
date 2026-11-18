@@ -80,10 +80,15 @@ class _SummaryPageState extends State<SummaryPage> {
     },
   );
 
-  Future<void> _edit(Workout workout) => Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => EditWorkoutPage(state, workout)),
-  );
+  Future<void> _edit(Workout workout) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditWorkoutPage(state, workout)),
+    );
+    // Verdikt a cíle kouče se po opravě spočítají znovu (jinak by třeba
+    // chválily rekord z překlepu).
+    if (mounted) setState(() => _coach = null);
+  }
 
   /// Uloží trénink jako rutinu do „Moje rutiny“ na záložce Trénink.
   Future<void> _saveRoutine(Workout workout) async {
