@@ -242,4 +242,80 @@ void main() {
     expect(find.byIcon(Icons.arrow_upward_rounded), findsNWidgets(3));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('a mistake is fixed straight from the fresh summary', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(390, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    late Workout done;
+    await tester.runAsync(() async {
+      await state.load();
+      Future<Workout> log(DateTime at, double kg) async {
+        await state.startWorkout(now: at);
+        final e = await state.addExercise('bench_press');
+        e.sets = [SetEntry(weight: kg, reps: 8, done: true)];
+        return (await state.finishActive(
+          now: at.add(const Duration(minutes: 50)),
+        )).workout!;
+      }
+
+      await log(DateTime(2026, 10, 1, 17), 60);
+      // Překlep: 600 místo 60.
+      done = await log(DateTime(2026, 10, 3, 17), 600);
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(),
+        home: SummaryPage(state, done, justFinished: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Nové rekordy'), findsWidgets);
+
+    // Jedno klepnutí, žádné menu ani cesta přes historii.
+    await tester.tap(find.byTooltip('Upravit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upravit trénink'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, '600'), '60');
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Uložit'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pumpAndSettle();
+
+    // Souhrn i verdikt kouče počítají s opravou, rekord zmizel.
+    expect(find.text('Trénink hotový'), findsWidgets);
+    expect(find.textContaining('Nové rekordy'), findsNothing);
+    expect(find.textContaining('600 kg'), findsNothing);
+    expect(find.textContaining('Nové osobní rekordy'), findsNothing);
+  });
+
+  testWidgets('history detail shows edit without the menu', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    late Workout done;
+    await tester.runAsync(() async {
+      await state.load();
+      await state.startWorkout(now: DateTime(2026, 10, 1, 17));
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 60, reps: 6, done: true)];
+      done = (await state.finishActive(now: DateTime(2026, 10, 1, 18)))
+          .workout!;
+    });
+    await tester.pumpWidget(
+      MaterialApp(theme: buildTheme(), home: SummaryPage(state, done)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Upravit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upravit trénink'), findsOneWidget);
+  });
 }
