@@ -6,39 +6,35 @@ import '../design/tokens.dart';
 
 /// Vydání, ke kterému patří novinky níže. Při nových novinkách zvyš,
 /// ať se okno ukáže jednou každému, kdo je ještě neviděl.
-const whatsNewRelease = '1.7';
+const whatsNewRelease = '1.8';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
 const whatsNewItems = <(IconData, String, String)>[
   (
-    Icons.palette_outlined,
-    'Nový vzhled',
-    'Tmavý podklad s barvami: trénink zelený, strava oranžová, pokrok '
-        'fialový. Pozadí se pomalu hýbe a hlavní tlačítko se občas zaleskne.',
+    Icons.check_circle_outline_rounded,
+    'Potvrzení přímo v úpravě série',
+    'Po změně váhy nebo opakování stačí „Potvrdit sérii“, fajfku v řádku '
+        'už hledat nemusíš.',
   ),
   (
-    Icons.auto_awesome_outlined,
-    'Nové logo',
-    'Kruh postupu s činkou. Stejná značka je na ikoně, při spuštění '
-        'i v aplikaci.',
+    Icons.edit_note_rounded,
+    'Chybějící číslo doplníš hned',
+    'Fajfka u prázdné série otevře úpravu s kurzorem tam, kde číslo chybí.',
   ),
   (
-    Icons.home_outlined,
-    'Domov na jednu obrazovku',
-    'Dnešní trénink, jídlo dne a cíl týdne se vejdou pod sebe bez '
-        'posouvání.',
+    Icons.edit_outlined,
+    'Oprava hned po tréninku',
+    'Tužka v souhrnu otevře úpravu tréninku, bez cesty přes historii.',
   ),
   (
-    Icons.rule_rounded,
-    'Den programu po svém',
-    'Při přidání dne si rovnou vybereš: nechat si cviky navrhnout podle '
-        'partií, nebo je vybrat sám z celého seznamu.',
+    Icons.timer_outlined,
+    'Větší tlačítka pauzy',
+    '−15, +15 a Přeskočit mají plnou velikost i na úzkém telefonu.',
   ),
   (
-    Icons.bolt_outlined,
-    'Kratší úvod',
-    'Podmínky a věk hned na začátku, pak pět otázek. Rok narození už '
-        'nezadáváš.',
+    Icons.history_rounded,
+    'Historie jedním klepnutím',
+    'V Pokroku je historie s hledáním nahoře vedle nastavení.',
   ),
 ];
 

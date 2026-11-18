@@ -5,7 +5,20 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.13
+## Co je nového v beta.14
+
+**Zápis série**: v úpravě série je hlavní tlačítko „Potvrdit sérii“ (potvrdí a spustí pauzu),
+„Jen uložit“ hodnoty uloží bez potvrzení. Fajfka u série bez opakování nebo váhy rovnou otevře
+úpravu s kurzorem v prázdném poli.
+**Oprava po tréninku**: tužka nahoře v souhrnu otevře úpravu tréninku, hned po dokončení
+i z historie.
+**Pauza**: tlačítka −15, +15 a Přeskočit mají plnou velikost i na úzkém telefonu.
+**Historie**: v Pokroku je ikona historie vedle nastavení.
+
+**Na co se zaměřit**: odcvič jeden trénink a spočítej, kolikrát bylo potřeba hledat fajfku nebo
+historii. Napiš, kdyby se série nepotvrdila, i když to tak vypadalo.
+
+## Co bylo nového v beta.13
 
 **Nový vzhled**: tmavý podklad s barvami podle části aplikace (trénink zelený, strava oranžová,
 pokrok fialový), karty se stínem, jemně se hýbající pozadí a odlesk na hlavním tlačítku.
