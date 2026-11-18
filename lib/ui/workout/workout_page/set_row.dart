@@ -103,9 +103,11 @@ class _SetRowState extends State<_SetRow> {
     // Chybí opakování nebo váha: rovnou list, kde je doplní a sérii
     // potvrdí, místo hlášky a hledání pole.
     if (missing != null && mounted) {
-      // Kurzor tam, co chybí; když chybí obojí, zleva od váhy.
-      final weightKnown = widget.bodyweight || widget.set.weight > 0;
-      await _openSheet(focusReps: weightKnown, error: missing);
+      // Kurzor tam, co chybí; když chybí obojí, zleva od váhy. Bez váhy
+      // se obejde vlastní váha i rozcvička.
+      final set = widget.set;
+      final weightOk = set.weight > 0 || widget.bodyweight || set.warmup;
+      await _openSheet(focusReps: set.reps <= 0 && weightOk, error: missing);
     }
   }
 
@@ -148,11 +150,20 @@ class _SetRowState extends State<_SetRow> {
       onRpe: widget.set.warmup
           ? null
           : (v) => widget.state.setRpe(widget.set, v),
-      onConfirm: widget.set.done
-          ? null
-          : () => widget.state.toggleDone(widget.set),
+      onConfirm: widget.set.done ? null : _confirmFromSheet,
       error: error,
     );
+  }
+
+  /// Potvrzení z listu. Už potvrzenou sérii (třeba po nepovedeném uložení
+  /// a novém pokusu) jen uloží, nikdy ji nepřepne zpět na nepotvrzenou.
+  Future<String?> _confirmFromSheet() async {
+    final set = widget.set;
+    if (set.done) {
+      await widget.state.saveActive();
+      return null;
+    }
+    return widget.state.toggleDone(set);
   }
 
   /// Klepnutí na „Minule“ opíše minulé hodnoty do nepotvrzené série.

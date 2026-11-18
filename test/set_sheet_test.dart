@@ -152,6 +152,7 @@ void main() {
       matching: find.text('Potvrdit sérii'),
     );
     expect(confirm, findsOneWidget);
+    expect(state.restEndsAt, isNull);
     await tester.runAsync(() async {
       await tester.tap(confirm);
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -220,5 +221,59 @@ void main() {
     expect(find.byType(SetSheet), findsNothing);
     final set = curl.sets.single;
     expect((set.weight, set.reps, set.done), (30, 10, true));
+  });
+
+  Finder sheetConfirm() => find.descendant(
+    of: find.byType(SetSheet),
+    matching: find.text('Potvrdit sérii'),
+  );
+
+  testWidgets('confirm with unreadable text keeps the sheet open', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(field('Váha v kg, Série 2'));
+    await tester.pumpAndSettle();
+    await tester.enterText(sheetField(0), '62,5,');
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(sheetConfirm());
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(find.byType(SetSheet), findsOneWidget);
+    expect(find.textContaining('Váha není číslo'), findsOneWidget);
+    expect(bench.sets[1].done, isFalse);
+  });
+
+  testWidgets('keyboard Done on reps confirms the set', (tester) async {
+    await pump(tester);
+    await tester.tap(field('Opakování, Série 2'));
+    await tester.pumpAndSettle();
+    await tester.enterText(sheetField(1), '10');
+    await tester.runAsync(() async {
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(find.byType(SetSheet), findsNothing);
+    expect((bench.sets[1].reps, bench.sets[1].done), (10, true));
+  });
+
+  testWidgets('confirm never flips an already confirmed set back', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(field('Váha v kg, Série 2'));
+    await tester.pumpAndSettle();
+    // Série je mezitím potvrzená (např. první pokus uložil jen v paměti).
+    bench.sets[1].done = true;
+    await tester.runAsync(() async {
+      await tester.tap(sheetConfirm());
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(find.byType(SetSheet), findsNothing);
+    expect(bench.sets[1].done, isTrue);
   });
 }

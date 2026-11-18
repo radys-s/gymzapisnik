@@ -101,16 +101,21 @@ class _SetSheetState extends State<SetSheet> {
     super.dispose();
   }
 
-  /// Neplatné číslo se neuloží (jinak by se zapsala 0), jen se ukáže chyba.
-  Future<void> _changed() async {
+  /// Proč text nejde uložit; `null` = čísla jsou v pořádku.
+  String? _invalid() {
     final w = weight.text.trim();
     final r = reps.text.trim();
     final repsValue = r.isEmpty ? 0 : int.tryParse(r);
-    final problem = w.isNotEmpty && parseNum(w) == null
+    return w.isNotEmpty && parseNum(w) == null
         ? 'Váha není číslo. Oprav ji, jinak se neuloží.'
         : repsValue == null || repsValue > 999
         ? 'Opakování musí být číslo do 999.'
         : null;
+  }
+
+  /// Neplatné číslo se neuloží (jinak by se zapsala 0), jen se ukáže chyba.
+  Future<void> _changed() async {
+    final problem = _invalid();
     if (problem != null) {
       setState(() => error = problem);
       return;
@@ -141,6 +146,11 @@ class _SetSheetState extends State<SetSheet> {
   Future<void> _confirm() async {
     final confirm = widget.onConfirm;
     if (confirm == null || _confirming) return;
+    // Neplatný text v poli: série by se potvrdila se starými hodnotami.
+    if (_invalid() case final problem?) {
+      setState(() => error = problem);
+      return;
+    }
     setState(() => _confirming = true);
     String? problem;
     try {
@@ -243,7 +253,11 @@ class _SetSheetState extends State<SetSheet> {
                   onPlus: () => _stepReps(1),
                   onTap: () => _select(reps),
                   onChanged: _changed,
-                  onSubmitted: () => Navigator.maybePop(context),
+                  // „Hotovo“ na klávesnici potvrdí, když je co potvrdit:
+                  // tlačítko pod klávesnicí na telefonu není vidět.
+                  onSubmitted: widget.onConfirm == null
+                      ? () => Navigator.maybePop(context)
+                      : _confirm,
                 ),
               ),
             ],
@@ -281,7 +295,7 @@ class _SetSheetState extends State<SetSheet> {
             ),
             const SizedBox(height: Space.xs),
             TextButton(
-              onPressed: () => Navigator.maybePop(context),
+              onPressed: _confirming ? null : () => Navigator.maybePop(context),
               style: TextButton.styleFrom(
                 minimumSize: const Size.fromHeight(minTap),
               ),
