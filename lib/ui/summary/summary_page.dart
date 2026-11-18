@@ -200,6 +200,12 @@ class _SummaryPageState extends State<SummaryPage> {
       title: finished ? 'Trénink hotový' : workout.name,
       implyLeading: !finished,
       actions: [
+        // Oprava překlepu hned po dokončení, bez cesty přes historii.
+        IconButton(
+          tooltip: 'Upravit',
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: () => _edit(workout),
+        ),
         IconButton(
           tooltip: 'Sdílet',
           icon: const Icon(Icons.ios_share_rounded),
@@ -216,12 +222,10 @@ class _SummaryPageState extends State<SummaryPage> {
             tooltip: 'Možnosti',
             icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (a) => switch (a) {
-              'edit' => _edit(workout),
               'compare' => compareWithAnother(context, state, workout),
               _ => _delete(workout),
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'edit', child: Text('Upravit')),
               if (state.workouts.any((w) => w.finished && w.id != workout.id))
                 const PopupMenuItem(
                   value: 'compare',

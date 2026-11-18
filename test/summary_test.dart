@@ -242,4 +242,55 @@ void main() {
     expect(find.byIcon(Icons.arrow_upward_rounded), findsNWidgets(3));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('a mistake is fixed straight from the fresh summary', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    late Workout done;
+    await tester.runAsync(() async {
+      await state.load();
+      await state.startWorkout(now: DateTime(2026, 10, 1, 17));
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 60, reps: 6, done: true)];
+      done = (await state.finishActive(now: DateTime(2026, 10, 1, 18)))
+          .workout!;
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(),
+        home: SummaryPage(state, done, justFinished: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Jedno klepnutí, žádné menu ani cesta přes historii.
+    await tester.tap(find.byTooltip('Upravit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upravit trénink'), findsOneWidget);
+  });
+
+  testWidgets('history detail shows edit without the menu', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    late Workout done;
+    await tester.runAsync(() async {
+      await state.load();
+      await state.startWorkout(now: DateTime(2026, 10, 1, 17));
+      final e = await state.addExercise('bench_press');
+      e.sets = [SetEntry(weight: 60, reps: 6, done: true)];
+      done = (await state.finishActive(now: DateTime(2026, 10, 1, 18)))
+          .workout!;
+    });
+    await tester.pumpWidget(
+      MaterialApp(theme: buildTheme(), home: SummaryPage(state, done)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Upravit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upravit trénink'), findsOneWidget);
+  });
 }
