@@ -7,13 +7,13 @@ Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
 ## Co je nového v beta.14
 
-**Zápis série**: v úpravě série je hlavní tlačítko „Potvrdit sérii“ (potvrdí a spustí pauzu),
+**Zápis série**: v úpravě série je hlavní tlačítko „Potvrdit sérii“ (potvrdí sérii stejně jako fajfka),
 „Jen uložit“ hodnoty uloží bez potvrzení. Fajfka u série bez opakování nebo váhy rovnou otevře
 úpravu s kurzorem v prázdném poli.
 **Oprava po tréninku**: tužka nahoře v souhrnu otevře úpravu tréninku, hned po dokončení
 i z historie.
-**Pauza**: tlačítka −15, +15 a Přeskočit mají plnou velikost i na úzkém telefonu.
-**Historie**: v Pokroku je ikona historie vedle nastavení.
+**Pauza**: tlačítka −15, +15 a Přeskočit mají plnou velikost i na menším telefonu (od 360 px).
+**Historie**: v Pokroku je ikona historie vedle nastavení (po prvním dokončeném tréninku).
 
 **Na co se zaměřit**: odcvič jeden trénink a spočítej, kolikrát bylo potřeba hledat fajfku nebo
 historii. Napiš, kdyby se série nepotvrdila, i když to tak vypadalo.

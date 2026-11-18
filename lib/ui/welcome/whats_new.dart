@@ -28,13 +28,14 @@ const whatsNewItems = <(IconData, String, String)>[
   ),
   (
     Icons.timer_outlined,
-    'Větší tlačítka pauzy',
-    '−15, +15 a Přeskočit mají plnou velikost i na úzkém telefonu.',
+    'Tlačítka pauzy se už nezmenšují',
+    '−15, +15 a Přeskočit mají plnou velikost i na menším telefonu.',
   ),
   (
     Icons.history_rounded,
     'Historie jedním klepnutím',
-    'V Pokroku je historie s hledáním nahoře vedle nastavení.',
+    'V Pokroku otevřeš historii i s hledáním ikonou nahoře vedle '
+        'nastavení.',
   ),
 ];
 
