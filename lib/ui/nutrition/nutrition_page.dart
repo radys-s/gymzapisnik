@@ -688,18 +688,17 @@ class _RingLegend extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(width: 10, height: 10, color: color),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontFamily: condensedFont,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    letterSpacing: 0.6,
-                    color: p.secondaryLabel,
-                  ),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],

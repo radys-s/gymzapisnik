@@ -127,8 +127,8 @@ class _RestBarState extends State<_RestBar> {
   late final Timer timer;
   DateTime? _alertedFor;
 
-  /// Jak dlouho po konci zůstane lišta „Pauza hotová“.
-  static const _linger = Duration(seconds: 10);
+  /// Jak dlouho po konci zůstane lišta „Pauza hotová“ a počítá přesčas.
+  static const _linger = Duration(seconds: 90);
 
   @override
   void initState() {
@@ -181,8 +181,11 @@ class _RestBarState extends State<_RestBar> {
     final bg = p.elevated;
     final fg = finished ? AppPalette.ink : p.label;
     final chipFg = fg;
+    final over = -left.inSeconds;
     final text = finished
-        ? 'Pauza hotová'
+        ? over < 1
+              ? 'Pauza hotová'
+              : 'Pauza hotová · +${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')}'
         : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
     Widget chip(String label, VoidCallback onTap) => Padding(
       padding: const EdgeInsets.only(left: 6),

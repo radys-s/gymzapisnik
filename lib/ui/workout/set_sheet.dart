@@ -390,9 +390,9 @@ class _ValueState extends State<_Value> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          widget.label,
+          widget.label.toUpperCase(),
           textAlign: TextAlign.center,
-          style: text.labelMedium?.copyWith(color: p.secondaryLabel),
+          style: text.labelSmall,
         ),
         const SizedBox(height: Space.xs),
         Semantics(
@@ -414,10 +414,17 @@ class _ValueState extends State<_Value> {
                 widget.decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
               ),
             ],
-            style: text.headlineMedium?.copyWith(fontFeatures: tabular),
+            style: TextStyle(
+              fontFamily: condensedFont,
+              fontSize: 44,
+              height: 1.1,
+              fontWeight: FontWeight.w700,
+              color: p.label,
+              fontFeatures: tabular,
+            ),
             decoration: const InputDecoration(
               hintText: '0',
-              contentPadding: EdgeInsets.symmetric(vertical: Space.m),
+              contentPadding: EdgeInsets.symmetric(vertical: Space.s),
             ),
             onTap: widget.onTap,
             onChanged: (_) => widget.onChanged(),
