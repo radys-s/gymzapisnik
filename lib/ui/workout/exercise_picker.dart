@@ -35,11 +35,16 @@ class ExercisePickerPage extends StatefulWidget {
   State<ExercisePickerPage> createState() => _ExercisePickerPageState();
 }
 
-/// Hledá v názvu i aliasech (anglické názvy z Hevy, „pec deck“), bez diakritiky.
-bool matchesExercise(Exercise e, String folded) =>
-    folded.isEmpty ||
-    fold(e.name).contains(folded) ||
-    e.aliases.any((a) => fold(a).contains(folded));
+/// Search by English name, Czech name, aliases, muscle, and equipment.
+bool matchesExercise(Exercise e, String folded) {
+  if (folded.isEmpty) return true;
+  bool has(String s) => fold(s).contains(folded);
+  return has(e.name) ||
+      has(e.nameCs) ||
+      has(e.muscle) ||
+      has(e.equipment.label) ||
+      e.aliases.any(has);
+}
 
 /// Návrat z návrhů podle fotky: založit vlastní cvik s názvem stroje.
 const _customFromPhoto = '\u0000custom';
@@ -50,6 +55,7 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
   /// Filtry nad seznamem (null = vše).
   String? muscle;
   Equipment? equipment;
+  bool gymOnly = false;
 
   /// Vybrané cviky v pořadí klepnutí (v tomto pořadí se přidají).
   final selected = <String>[];
@@ -61,9 +67,14 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       for (final e in w.exercises) {
         if (!ids.contains(e.exerciseId)) ids.add(e.exerciseId);
       }
-      if (ids.length >= 8) break;
     }
-    return [for (final id in ids.take(8)) widget.state.exercise(id)];
+    final found = <Exercise>[];
+    for (final id in ids) {
+      final e = findExercise(id, widget.state.customExercises);
+      if (e != null) found.add(e);
+      if (found.length >= 8) break;
+    }
+    return found;
   }();
 
   /// Běží rozpoznání fotky stroje.
@@ -229,11 +240,12 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final folded = fold(query.trim());
-    final filtered = muscle != null || equipment != null;
+    final filtered = muscle != null || equipment != null || gymOnly;
     bool keep(Exercise e) =>
         matchesExercise(e, folded) &&
         (muscle == null || e.muscle == muscle) &&
-        (equipment == null || e.equipment == equipment);
+        (equipment == null || e.equipment == equipment) &&
+        (!gymOnly || widget.state.gymHas(e.id));
     final matches = widget.state.allExercises.where(keep).toList();
     final sections = <String, List<Exercise>>{};
     if (folded.isEmpty && !filtered && recent.isNotEmpty) {
@@ -284,6 +296,16 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
             selected: equipment,
             name: (q) => q.label,
             onSelected: (q) => setState(() => equipment = q),
+          ),
+          const SizedBox(height: Space.s),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilterChip(
+              selected: gymOnly,
+              showCheckmark: false,
+              label: const Text('Jen moje posilovna'),
+              onSelected: (v) => setState(() => gymOnly = v),
+            ),
           ),
           const SizedBox(height: Space.xl),
           GroupedSection(

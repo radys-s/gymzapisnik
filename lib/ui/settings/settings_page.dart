@@ -434,6 +434,13 @@ class SettingsPage extends StatelessWidget {
                 'trenéra ani lékaře.',
             dividerIndent: _indent,
             children: [
+              GroupedRow(
+                icon: Icons.language_rounded,
+                title: 'Jazyk aplikace',
+                subtitle: 'Názvy cviků zůstávají v angličtině',
+                value: const {'cs': 'Čeština', 'en': 'English', 'sk': 'Slovenčina'}[state.profile.appLanguage] ?? 'Čeština',
+                onTap: () => _pickLanguage(context),
+              ),
               if (feedbackContact.isNotEmpty)
                 GroupedRow(
                   icon: Icons.mail_outline_rounded,
@@ -499,6 +506,45 @@ class SettingsPage extends StatelessWidget {
         _toast(context, 'Nastavení se nepodařilo uložit. Zkus to znovu.');
       }
     }
+  }
+
+  Future<void> _pickLanguage(BuildContext context) async {
+    const options = [
+      ('cs', 'Čeština'),
+      ('en', 'English'),
+      ('sk', 'Slovenčina'),
+    ];
+    final current = state.profile.appLanguage;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(
+                'Jazyk aplikace',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              subtitle: const Text('Exercise names stay in English'),
+            ),
+            for (final opt in options)
+              ListTile(
+                title: Text(opt.$2),
+                trailing: opt.$1 == current
+                    ? Icon(Icons.check_rounded, color: Theme.of(ctx).colorScheme.primary)
+                    : null,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (opt.$1 != current) await state.setAppLanguage(opt.$1);
+                },
+              ),
+            const SizedBox(height: Space.s),
+          ],
+        ),
+      ),
+    );
   }
 }
 

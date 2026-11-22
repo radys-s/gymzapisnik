@@ -124,21 +124,52 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
           decoration: ShapeDecoration(color: p.grouped, shape: p.cardShape()),
           padding: const EdgeInsets.all(Space.m),
           constraints: const BoxConstraints(maxHeight: 280),
-          child: AspectRatio(
-            aspectRatio: 3 / 2,
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: _t,
-                builder: (_, _) => CustomPaint(
-                  painter: FigurePainter(
-                    movement,
-                    widget.exercise.equipment,
-                    _t.value,
-                    FigureColors.of(p),
-                  ),
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: RepaintBoundary(
+                        child: AnimatedBuilder(
+                          animation: _t,
+                          builder: (_, _) => CustomPaint(
+                            painter: FigurePainter(
+                              movement,
+                              widget.exercise.equipment,
+                              _t.value,
+                              FigureColors.of(p),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Icon(
+                        Icons.replay_rounded,
+                        size: 18,
+                        color: p.secondaryLabel,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+              const SizedBox(height: 6),
+              AnimatedBuilder(
+                animation: _t,
+                builder: (_, _) {
+                  final phase = _t.value < 0.5 ? 'Start → squeeze' : 'Control → return';
+                  return Text(
+                    '$phase · tap to replay',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: p.secondaryLabel,
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

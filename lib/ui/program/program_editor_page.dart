@@ -39,7 +39,13 @@ const _presets = [
 class ProgramEditorPage extends StatefulWidget {
   final AppState state;
   final SplitTemplate? initial;
-  const ProgramEditorPage(this.state, {super.key, this.initial});
+  final int? initialDayCount;
+  const ProgramEditorPage(
+    this.state, {
+    super.key,
+    this.initial,
+    this.initialDayCount,
+  });
 
   @override
   State<ProgramEditorPage> createState() => _ProgramEditorPageState();
@@ -70,14 +76,18 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
     _id = initial != null && initial.custom ? initial.id : null;
     _name = TextEditingController(
       text: initial == null
-          ? ''
+          ? (widget.initialDayCount != null ? 'Můj plán' : '')
           : initial.custom
           ? initial.name
           : '${initial.name} (vlastní)',
     )..addListener(_changed);
+    final initialDays = initial?.days;
     _days = [
-      for (final d in initial?.days ?? const <SplitDay>[])
-        _DayDraft(d.name, [...d.exercises]),
+      if (initialDays != null)
+        for (final d in initialDays) _DayDraft(d.name, [...d.exercises])
+      else if (widget.initialDayCount != null)
+        for (var i = 1; i <= widget.initialDayCount!.clamp(1, 7); i++)
+          _DayDraft('Den $i', <PlannedExercise>[]),
     ];
     for (final d in _days) {
       d.name.addListener(_changed);

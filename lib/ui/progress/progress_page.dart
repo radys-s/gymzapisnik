@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
 import '../../domain/history.dart';
+import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
@@ -53,10 +54,17 @@ class ProgressPage extends StatelessWidget {
       );
       final badges = state.badgeStates;
       final unlocked = badges.where((b) => b.unlocked).length;
+      final rank = _trainingRank(
+        finished.length,
+        sets,
+        unlocked,
+        badges.length,
+      );
       final blocks = <Widget>[
         if (finished.isEmpty)
           const _Empty()
         else ...[
+          _RankCard(rank: rank),
           Panel(
             child: Wrap(
               spacing: Space.xl,
@@ -89,6 +97,7 @@ class ProgressPage extends StatelessWidget {
               'Křivka síly se ukáže po druhém tréninku stejného cviku.',
             ),
           if (records.isNotEmpty) RecentRecordsCard(state, records: records),
+          _NextPrCard(state: state),
           ConsistencyCard(state: state, now: current),
           StrengthLevelsCard(state: state),
         ],
@@ -245,4 +254,216 @@ class _Hint extends StatelessWidget {
           ?.copyWith(color: context.palette.secondaryLabel),
     ),
   );
+}
+
+class _Rank {
+  final String name;
+  final String subtitle;
+  final int level;
+  final int nextAt;
+  final int score;
+  final Color color;
+  const _Rank(
+    this.name,
+    this.subtitle,
+    this.level,
+    this.nextAt,
+    this.score,
+    this.color,
+  );
+}
+
+_Rank _trainingRank(int workouts, int sets, int badges, int badgesTotal) {
+  final score = workouts * 10 + sets + badges * 25;
+  const tiers = [
+    (0, 'Starter', 'Buduješ základ. Hlavní je konzistence.'),
+    (120, 'Builder', 'Základ sedí. Přidávej objem a kvalitu sérií.'),
+    (300, 'Grinder', 'Pravidelnost se mění v výkon. Drž progres.'),
+    (600, 'Athlete', 'Silná rutina. Teď hraj o PR a kvalitu.'),
+    (1000, 'Elite', 'Top úroveň konzistence. Sbírej čisté PR.'),
+  ];
+  var idx = 0;
+  for (var i = 0; i < tiers.length; i++) {
+    if (score >= tiers[i].$1) idx = i;
+  }
+  final nextAt = idx < tiers.length - 1 ? tiers[idx + 1].$1 : tiers.last.$1;
+  final color = [
+    AppPalette.blue,
+    AppPalette.green,
+    AppPalette.orange,
+    AppPalette.violet,
+    AppPalette.yellow,
+  ][idx];
+  return _Rank(tiers[idx].$2, tiers[idx].$3, idx + 1, nextAt, score, color);
+}
+
+class _RankCard extends StatelessWidget {
+  final _Rank rank;
+  const _RankCard({required this.rank});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final prev = [0, 120, 300, 600, 1000][(rank.level - 1).clamp(0, 4)];
+    final span = (rank.nextAt - prev).clamp(1, 100000);
+    final progress = rank.level >= 5
+        ? 1.0
+        : ((rank.score - prev) / span).clamp(0.0, 1.0);
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: rank.color.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(Icons.military_tech_rounded, color: rank.color),
+              ),
+              const SizedBox(width: Space.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tvá úroveň',
+                      style: text.labelMedium?.copyWith(
+                        color: p.secondaryLabel,
+                      ),
+                    ),
+                    Text(
+                      '${rank.name} · Lv. ${rank.level}',
+                      style: text.titleLarge,
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${rank.score}',
+                style: text.titleMedium?.copyWith(
+                  color: p.secondaryLabel,
+                  fontFeatures: tabular,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.s),
+          Text(
+            rank.subtitle,
+            style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+          ),
+          const SizedBox(height: Space.m),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: p.fill,
+              valueColor: AlwaysStoppedAnimation(rank.color),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            rank.level >= 5
+                ? 'Max level - drž konzistenci a sbírej další PR.'
+                : 'Do další úrovně: ${rank.nextAt - rank.score} bodů',
+            style: text.bodySmall?.copyWith(color: p.tertiaryLabel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NextPrCard extends StatelessWidget {
+  final AppState state;
+  const _NextPrCard({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final candidates = <({String id, String title, String detail})>[];
+    final seen = <String>{};
+    final workouts = state.workouts.where((w) => w.finished).toList();
+    for (final w in workouts.reversed) {
+      for (final e in w.exercises.reversed) {
+        if (!seen.add(e.exerciseId)) continue;
+        final sessions = state.historyOf(e.exerciseId);
+        final last = sessions.lastOrNull;
+        if (last == null || last.entry.countedSets.isEmpty) continue;
+        final type = state.typeOf(e.exerciseId);
+        final bestSet = last.entry.countedSets.reduce((a, b) {
+          final av = type == ExerciseType.weighted ? e1rm(a.weight, a.reps) : a.reps.toDouble();
+          final bv = type == ExerciseType.weighted ? e1rm(b.weight, b.reps) : b.reps.toDouble();
+          return bv > av ? b : a;
+        });
+        String title;
+        String detail;
+        if (type == ExerciseType.bodyweight) {
+          final current = state.recordsOf(e.exerciseId)[RecordKind.maxReps]?.value.round() ?? bestSet.reps;
+          title = '${current + 1} reps';
+          detail = 'Teď: $current reps. Přidej 1 čisté opakování.';
+        } else {
+          final w0 = bestSet.weight;
+          final r0 = bestSet.reps;
+          if (w0 <= 0 || r0 <= 0) continue;
+          final nextW = ((w0 + (w0 >= 40 ? 2.5 : 1.25)) * 4).round() / 4;
+          title = '${formatKg(nextW)} kg × $r0';
+          detail = 'Nebo ${formatKg(w0)} kg × ${r0 + 1}. Až to půjde lehce.';
+        }
+        candidates.add((id: e.exerciseId, title: title, detail: detail));
+        if (candidates.length >= 3) break;
+      }
+      if (candidates.length >= 3) break;
+    }
+    if (candidates.isEmpty) return const SizedBox.shrink();
+    return Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.track_changes_rounded, color: p.accent),
+              const SizedBox(width: 8),
+              Text('Další PR cíle', style: text.titleMedium),
+            ],
+          ),
+          const SizedBox(height: Space.s),
+          for (final c in candidates) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(state.exercise(c.id).name, style: text.bodyLarge),
+                        Text(c.detail, style: text.bodySmall?.copyWith(color: p.secondaryLabel)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: Space.s),
+                  Text(
+                    c.title,
+                    style: text.titleSmall?.copyWith(
+                      color: p.accent,
+                      fontFeatures: tabular,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

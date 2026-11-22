@@ -48,8 +48,10 @@ class PlanSetupPage extends OnboardingPage {
 /// Kroky úvodu a nastavení plánu. Ukládá se pořadí kroku v daném běhu
 /// (`steps`), ne pořadí v tomto výčtu.
 enum _S {
+  language,
   value,
   consent,
+  path,
   goal,
   experience,
   schedule,
@@ -105,10 +107,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
           _S.reveal,
         ]
       : [
+          _S.language,
           _S.value,
           _S.consent,
           _S.goal,
           _S.experience,
+          _S.path,
           _S.schedule,
           _S.gym,
           _S.pain,
@@ -136,6 +140,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
   late final _pages = PageController(initialPage: _first);
   late int page = _first;
   _S get step => steps[page];
+  String startMode = 'guided';
+  late String selectedLanguage = state.profile.appLanguage;
 
   late PlanAnswers plan =
       (setup ? null : state.planDraft) ??
@@ -248,17 +254,31 @@ class _OnboardingPageState extends State<OnboardingPage> {
   /// Uloží plán z odpovědí a ukáže ho.
   Future<void> _toReveal() async {
     if (busy) return;
-    if (await _save() && mounted) _go(_S.reveal);
+    if (!await _save() || !mounted) return;
+    if (startMode == 'own') {
+      await _buildOwn();
+      return;
+    }
+    _go(_S.reveal);
   }
 
   /// Vlastní program místo navrženého: otevře editor. Návrh platí dál,
   /// dokud si vlastní neuloží, takže návrat bez uložení nic nezmění.
   Future<void> _buildOwn() async {
     if (busy) return;
-    final saved = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => ProgramEditorPage(state)));
-    if (saved != null && mounted) _afterReveal();
+    final saved = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ProgramEditorPage(state, initialDayCount: plan.days.clamp(1, 7)),
+      ),
+    );
+    if (!mounted) return;
+    if (saved != null) {
+      _afterReveal();
+      return;
+    }
+    // User backed out of editor - keep the saved recommended fallback.
+    if (step != _S.reveal) _go(_S.reveal);
   }
 
   /// Dál z hotového plánu: připomínka, jinak konec.
@@ -440,6 +460,64 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _page(_S s) => switch (s) {
+    _S.language => QuestionScaffold(
+      tone: Tone.progress,
+      title: 'Choose your language',
+      why: 'App language can be changed later. Exercise names stay in English for clarity and consistency.',
+      action: 'Continue',
+      onNext: () async {
+        await state.setAppLanguage(selectedLanguage);
+        _go(_S.value);
+      },
+      child: StaggerColumn(
+        gap: Space.s,
+        children: [
+          for (final opt in const [
+            ('cs', 'Čeština', 'Czech interface'),
+            ('en', 'English', 'English interface'),
+            ('sk', 'Slovenčina', 'Slovak interface'),
+          ])
+            ChoiceCard(
+              icon: Icons.language_rounded,
+              label: opt.$2,
+              hint: opt.$3,
+              selected: selectedLanguage == opt.$1,
+              onTap: () => setState(() => selectedLanguage = opt.$1),
+            ),
+        ],
+      ),
+    ),
+    _S.path => QuestionScaffold(
+      tone: Tone.coach,
+      title: 'How do you want to start?',
+      why: plan.experience.months >= 6
+          ? 'You have 6+ months of training. If you already know your routine, set up your own plan and schedule it into days. Otherwise I can recommend one.'
+          : 'If you already have a routine, you can add it right away. If not, I will build a simple plan based on your time and equipment.',
+      action: 'Continue',
+      onNext: () => _forward(s),
+      onBack: () => _goBack(s),
+      child: StaggerColumn(
+        gap: Space.s,
+        children: [
+          ChoiceCard(
+            icon: Icons.edit_calendar_rounded,
+            label: 'I have my own plan',
+            hint: 'Create exercises, days and schedule them your way.',
+            selected: startMode == 'own',
+            onTap: () => setState(() => startMode = 'own'),
+          ),
+          ChoiceCard(
+            icon: Icons.auto_awesome_rounded,
+            label: 'Build a recommended plan',
+            hint: plan.experience.months >= 6
+                ? 'Good if you want a fresh structure or progression.'
+                : 'Best for getting a clear start with the right volume.',
+            selected: startMode == 'guided',
+            onTap: () => setState(() => startMode = 'guided'),
+          ),
+        ],
+      ),
+    ),
     _S.value => QuestionScaffold(
       tone: Tone.progress,
       action: 'Začít',
@@ -494,7 +572,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
               label: e.label,
               hint: e.hint,
               selected: e == plan.experience,
-              onTap: () => _pick(plan.copyWith(experience: e), s),
+              onTap: () {
+                final next = plan.copyWith(experience: e);
+                setState(() {
+                  plan = next;
+                  startMode = e.months >= 6 ? 'own' : 'guided';
+                });
+                _pick(next, s);
+              },
             ),
         ],
       ),

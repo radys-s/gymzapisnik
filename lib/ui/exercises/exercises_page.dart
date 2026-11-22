@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../core/format.dart';
 import '../../core/text.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
-import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../widgets/exercise_media.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
-import '../widgets/labels.dart';
 import 'exercise_detail_page.dart';
 
-/// Cviky podle partií; nahoře nedávné rekordy a cviky s historií.
+/// Exercise library with fast search, muscle/equipment filters, and recent records.
 class ExercisesPage extends StatefulWidget {
   final AppState state;
   const ExercisesPage(this.state, {super.key});
@@ -23,105 +20,222 @@ class ExercisesPage extends StatefulWidget {
 
 class _ExercisesPageState extends State<ExercisesPage> {
   String query = '';
+  String? muscle;
+  Equipment? equipment;
+  bool gymOnly = false;
 
   void _open(String id) => Navigator.push(
     context,
     MaterialPageRoute(builder: (_) => ExerciseDetailPage(widget.state, id)),
   );
 
+  bool _matches(Exercise e, String folded) {
+    if (folded.isEmpty) return true;
+    bool has(String s) => fold(s).contains(folded);
+    if (has(e.name) || has(e.nameCs) || has(e.muscle)) return true;
+    if (has(e.equipment.label)) return true;
+    return e.aliases.any(has);
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: widget.state.on.resting,
     builder: (context, _) {
       final state = widget.state;
-      final p = context.palette;
       final folded = fold(query.trim());
       final trained = <String, int>{};
       for (final w in state.workouts) {
         for (final e in w.exercises) {
           if (e.countedSets.isNotEmpty) {
-            trained.update(e.exerciseId, (v) => v + 1, ifAbsent: () => 1);
+            trained[e.exerciseId] = (trained[e.exerciseId] ?? 0) + 1;
           }
         }
       }
-      final all = state.allExercises
-          .where((e) => folded.isEmpty || fold(e.name).contains(folded))
-          .toList();
-      GroupedRow row(Exercise e) {
-        final count = trained[e.id] ?? 0;
-        return GroupedRow(
-          leading: ExerciseThumb(e.id),
-          title: e.name,
-          subtitle: [
-            e.muscle,
-            if (e.type == ExerciseType.bodyweight) 'vlastní váha',
-            if (e.custom) 'vlastní cvik',
-          ].join(' · '),
-          value: count > 0 ? '$count×' : null,
-          onTap: () => _open(e.id),
+      final all = state.allExercises;
+      final filtered = [
+        for (final e in all)
+          if ((muscle == null || e.muscle == muscle) &&
+              (equipment == null || e.equipment == equipment) &&
+              (!gymOnly || state.gymHas(e.id)) &&
+              _matches(e, folded))
+            e,
+      ];
+      final recent =
+          [
+            for (final e in all)
+              if (state.recordsOf(e.id).isNotEmpty) e,
+          ]..sort((a, b) {
+            final ad = state
+                .recordsOf(a.id)
+                .values
+                .map((r) => r.date)
+                .fold<DateTime?>(
+                  null,
+                  (m, d) => m == null || d.isAfter(m) ? d : m,
+                );
+            final bd = state
+                .recordsOf(b.id)
+                .values
+                .map((r) => r.date)
+                .fold<DateTime?>(
+                  null,
+                  (m, d) => m == null || d.isAfter(m) ? d : m,
+                );
+            return (bd ?? DateTime(0)).compareTo(ad ?? DateTime(0));
+          });
+
+      Widget chip<T>({
+        required String label,
+        required bool selected,
+        required VoidCallback onTap,
+      }) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8, bottom: 8),
+          child: FilterChip(
+            selected: selected,
+            label: Text(label),
+            onSelected: (_) => onTap(),
+            showCheckmark: false,
+          ),
         );
       }
 
-      final records = folded.isEmpty
-          ? state.recentRecordList()
-          : const <PersonalRecord>[];
-      final withHistory = all.where((e) => trained.containsKey(e.id)).toList()
-        ..sort((a, b) => trained[b.id]!.compareTo(trained[a.id]!));
       return LargeTitlePage(
         title: 'Cviky',
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: TextField(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Hledat cvik',
-              ),
-              textInputAction: TextInputAction.search,
-              onChanged: (v) => setState(() => query = v),
+          TextField(
+            decoration: const InputDecoration(
+              hintText: 'Hledat cvik, sval, vybavení, česky/EN…',
+              prefixIcon: Icon(Icons.search_rounded),
             ),
+            textInputAction: TextInputAction.search,
+            onChanged: (v) => setState(() => query = v),
           ),
-          if (records.isNotEmpty)
-            GroupedSection(
-              header: 'Nedávné rekordy',
-              dividerIndent: 58,
+          const SizedBox(height: Space.s),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                for (final r in records)
-                  GroupedRow(
-                    icon: Icons.emoji_events,
-                    iconColor: p.gold,
-                    title: state.exercise(r.exerciseId).name,
-                    subtitle:
-                        '${r.kind.label} ${recordLabel(r.kind, r.value)} · '
-                        '${formatDate(r.date)}',
-                    onTap: () => _open(r.exerciseId),
+                chip(
+                  label: 'Vše',
+                  selected: muscle == null,
+                  onTap: () => setState(() => muscle = null),
+                ),
+                for (final m in muscleGroups)
+                  chip(
+                    label: m,
+                    selected: muscle == m,
+                    onTap: () =>
+                        setState(() => muscle = muscle == m ? null : m),
                   ),
               ],
             ),
-          if (withHistory.isNotEmpty && folded.isEmpty)
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                chip(
+                  label: 'Vše vybavení',
+                  selected: equipment == null,
+                  onTap: () => setState(() => equipment = null),
+                ),
+                for (final e in Equipment.values)
+                  chip(
+                    label: e.label,
+                    selected: equipment == e,
+                    onTap: () =>
+                        setState(() => equipment = equipment == e ? null : e),
+                  ),
+              ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilterChip(
+              selected: gymOnly,
+              showCheckmark: false,
+              label: const Text('Jen moje posilovna'),
+              onSelected: (v) => setState(() => gymOnly = v),
+            ),
+          ),
+          const SizedBox(height: Space.s),
+          if (folded.isEmpty &&
+              muscle == null &&
+              equipment == null &&
+              !gymOnly &&
+              recent.isNotEmpty) ...[
+            const SectionHeader('Nedávné rekordy'),
             GroupedSection(
-              header: 'Cvičené',
-              children: [for (final e in withHistory) row(e)],
+              children: [
+                for (final e in recent.take(6))
+                  _ExerciseRow(
+                    e: e,
+                    trained: trained[e.id] ?? 0,
+                    onTap: () => _open(e.id),
+                  ),
+              ],
             ),
-          if (all.isEmpty)
-            const EmptyState(
-              icon: Icons.search_off,
+          ],
+          SectionHeader(
+            folded.isEmpty && muscle == null && equipment == null && !gymOnly
+                ? 'Knihovna cviků'
+                : 'Výsledky (${filtered.length})',
+          ),
+          if (filtered.isEmpty)
+            EmptyState(
+              icon: Icons.search_off_rounded,
               title: 'Nic nenalezeno',
-              message: 'Zkus jiný název. Vlastní cvik přidáš při tréninku.',
+              message: gymOnly
+                  ? 'V této posilovně nic neodpovídá filtru. Zkus vypnout "Jen moje posilovna" nebo změnit hledání.'
+                  : 'Zkus jiný název, sval nebo vybavení. Hledání rozumí anglickým i českým názvům.',
+            )
+          else
+            GroupedSection(
+              children: [
+                for (final e in filtered)
+                  _ExerciseRow(
+                    e: e,
+                    trained: trained[e.id] ?? 0,
+                    onTap: () => _open(e.id),
+                  ),
+              ],
             ),
-          for (final group in muscleGroups)
-            if (all.any((e) => e.muscle == group))
-              GroupedSection(
-                header: group,
-                children: [
-                  for (final e
-                      in all.where((e) => e.muscle == group).toList()
-                        ..sort((a, b) => a.name.compareTo(b.name)))
-                    row(e),
-                ],
-              ),
         ],
       );
     },
   );
+}
+
+class _ExerciseRow extends StatelessWidget {
+  final Exercise e;
+  final int trained;
+  final VoidCallback onTap;
+  const _ExerciseRow({
+    required this.e,
+    required this.trained,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final subtitle = [
+      if (e.nameCs.isNotEmpty && fold(e.nameCs) != fold(e.name)) e.nameCs,
+      e.muscle,
+      e.equipment.label,
+      if (trained > 0) '$trained× v historii',
+    ].join(' · ');
+    return GroupedRow(
+      leading: ExerciseThumb(e.id),
+      title: e.name,
+      subtitle: subtitle,
+      onTap: onTap,
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: p.tertiaryLabel,
+        size: 20,
+      ),
+    );
+  }
 }
