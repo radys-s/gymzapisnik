@@ -24,6 +24,7 @@ import '../core/diagnostics.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
+import '../domain/measurement.dart';
 import '../data/hevy_import.dart';
 import '../data/off_client.dart';
 import '../data/csv.dart';
@@ -56,6 +57,7 @@ abstract final class Kinds {
   static const workout = 'workout';
   static const exercise = 'exercise';
   static const bodyweight = 'bodyweight';
+  static const measurement = 'measurement';
   static const food = 'food';
 }
 
@@ -114,6 +116,9 @@ class AppState extends ChangeNotifier {
   /// Tělesná váha, nejnovější první.
   List<BodyWeight> bodyweights = [];
 
+  /// Obvody částí těla, nejnovější první.
+  List<Measurement> measurements = [];
+
   /// Výživový deník, nejnovější záznam první.
   List<FoodEntry> foods = [];
 
@@ -157,6 +162,10 @@ class AppState extends ChangeNotifier {
     bodyweights = _parsed(
       await store.all(Kinds.bodyweight),
       BodyWeight.fromJson,
+    )..sort((a, b) => b.date.compareTo(a.date));
+    measurements = _parsed(
+      await store.all(Kinds.measurement),
+      Measurement.fromJson,
     )..sort((a, b) => b.date.compareTo(a.date));
     foods = _parsed(await store.all(Kinds.food), FoodEntry.fromJson)
       ..sort(_newestFood);
@@ -386,7 +395,7 @@ class StateSlices {
     : active = StateSlice._(s, (s) => (s.active, s._activeRev)),
       history = StateSlice._(
         s,
-        (s) => (s.workouts, s.customExercises, s.bodyweights),
+        (s) => (s.workouts, s.customExercises, s.bodyweights, s.measurements),
       ),
       food = StateSlice._(s, (s) => s.foods),
       profile = StateSlice._(s, (s) => (s.profile, s._dayPick, s._today)),

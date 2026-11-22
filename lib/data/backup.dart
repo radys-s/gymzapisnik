@@ -4,6 +4,7 @@ import '../ai/trainer.dart';
 import '../coach/plan_quiz.dart';
 import '../coach/splits.dart';
 import '../domain/bodyweight.dart';
+import '../domain/measurement.dart';
 import '../domain/models.dart';
 import '../domain/nutrition.dart';
 import '../domain/profile.dart';
@@ -39,6 +40,9 @@ class Backup {
   final Map<String, dynamic> settings;
   final List<BodyWeight> bodyweights;
 
+  /// Obvody částí těla (nepovinný klíč; starší zálohy ho nemají).
+  final List<Measurement> measurements;
+
   /// Výživový deník (nepovinný klíč; starší zálohy ho nemají).
   final List<FoodEntry> foods;
 
@@ -48,6 +52,7 @@ class Backup {
     required this.exercises,
     required this.settings,
     this.bodyweights = const [],
+    this.measurements = const [],
     this.foods = const [],
   });
 }
@@ -61,6 +66,7 @@ String encodeBackup(Backup backup) =>
       'exercises': [for (final e in backup.exercises) e.toJson()],
       'workouts': [for (final w in backup.workouts) w.toJson()],
       'bodyweights': [for (final b in backup.bodyweights) b.toJson()],
+      'measurements': [for (final m in backup.measurements) m.toJson()],
       'foods': [for (final f in backup.foods) f.toJson()],
     });
 
@@ -106,6 +112,12 @@ Backup decodeBackup(String source) {
     final bodyweights = [
       for (final b in json['bodyweights'] as List? ?? const [])
         BodyWeight.fromJson(Map<String, dynamic>.from(b as Map)),
+    ];
+    // Neznámá část těla: jeden vadný záznam nesmí zablokovat obnovu.
+    final measurements = [
+      for (final m in json['measurements'] as List? ?? const [])
+        if (BodyPart.parse((m as Map)['part']) != null)
+          Measurement.fromJson(Map<String, dynamic>.from(m)),
     ];
     final foods = [
       for (final f in json['foods'] as List? ?? const [])
@@ -189,6 +201,7 @@ Backup decodeBackup(String source) {
       ...workouts.map((w) => w.id),
       ...exercises.map((e) => e.id),
       ...bodyweights.map((b) => b.id),
+      ...measurements.map((m) => m.id),
       ...foods.map((f) => f.id),
     ]) {
       if (id.trim().isEmpty || id == Profile.id || !ids.add(id)) {
@@ -205,6 +218,7 @@ Backup decodeBackup(String source) {
       workouts: workouts.where((w) => w.finished).toList(),
       exercises: exercises,
       bodyweights: bodyweights,
+      measurements: measurements,
       foods: foods,
       settings: {
         if (rawSettings is Map)

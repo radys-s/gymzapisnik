@@ -77,6 +77,18 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.pumpAndSettle();
 }
 
+/// `tester.pageBack()` only knows the English "Back" tooltip; this app is
+/// Czech, where Material's back button is labelled "Zpět".
+Future<void> _back(WidgetTester tester) async {
+  final back = find.byTooltip('Zpět');
+  if (back.evaluate().isEmpty) {
+    debugPrint('MISS back button');
+    return;
+  }
+  await tester.tap(back.first, warnIfMissed: false);
+  await tester.pumpAndSettle();
+}
+
 /// A tap that writes to the database, which needs real time to finish.
 Future<void> _save(WidgetTester tester, Finder f) async {
   if (f.evaluate().isEmpty) {
@@ -213,6 +225,17 @@ void main() {
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -700));
     await tester.pumpAndSettle();
     await _shot(tester, 'progress-2');
+    final weightRow = find.text('Váha a míry');
+    if (weightRow.evaluate().isNotEmpty) {
+      await tester.ensureVisible(weightRow.first);
+      await tester.pumpAndSettle();
+      await _tap(tester, weightRow);
+      await _shot(tester, 'weight');
+      await _tap(tester, find.text('Přidat míru'));
+      await tester.enterText(find.byType(TextField), '82,5');
+      await _save(tester, find.text('Uložit'));
+      await _shot(tester, 'measurements');
+    }
   });
 
   _screens('workout', (tester) async {
@@ -253,6 +276,34 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
     await tester.pump(const Duration(milliseconds: 600));
     await _shot(tester, 'workout-2');
+    final add = find.text('Přidat cvik');
+    if (add.evaluate().isNotEmpty) {
+      await tester.ensureVisible(add.first);
+      await tester.pumpAndSettle();
+      await tester.tap(add.first, warnIfMissed: false);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await _shot(tester, 'exercise-picker');
+      await _back(tester);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+    final bench = find.text('Bench press (osa)');
+    if (bench.evaluate().isNotEmpty) {
+      await tester.ensureVisible(bench.first);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(bench.first, warnIfMissed: false);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await _shot(tester, 'exercise-detail');
+      await _back(tester);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
     final finish = find.text('Dokončit');
     if (finish.evaluate().isNotEmpty) {
       await tester.tap(finish.first, warnIfMissed: false);
@@ -273,6 +324,14 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         await _shot(tester, 'summary-2');
+        final share = find.byTooltip('Sdílet');
+        if (share.evaluate().isNotEmpty) {
+          await tester.tap(share.first, warnIfMissed: false);
+          for (var i = 0; i < 10; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+          await _shot(tester, 'share-card');
+        }
       }
     }
   });

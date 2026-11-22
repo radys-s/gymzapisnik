@@ -75,7 +75,7 @@ void main() {
     await _show(tester, ProgressPage(state));
     expect(find.text('Pokrok začne prvním tréninkem'), findsOneWidget);
     expect(find.text('Statistiky'), findsOneWidget);
-    expect(find.text('Tělesná váha'), findsOneWidget);
+    expect(find.text('Váha a míry'), findsOneWidget);
     expect(find.text('Rady pro růst svalů'), findsOneWidget);
   });
 

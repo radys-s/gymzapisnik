@@ -168,7 +168,7 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.monitor_weight_outlined,
-        title: 'Tělesná váha',
+        title: 'Váha a míry',
         value: state.bodyweights.isEmpty
             ? null
             : '${formatKg(state.bodyweights.first.kg)} kg',

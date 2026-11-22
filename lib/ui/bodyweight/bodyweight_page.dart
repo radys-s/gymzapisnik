@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../core/parse.dart';
 import '../../domain/bodyweight.dart';
+import '../../domain/measurement.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -66,6 +67,90 @@ class _WeightDialogState extends State<_WeightDialog> {
       autofocus: true,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(labelText: 'Váha (kg)', errorText: error),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Zrušit'),
+      ),
+      FilledButton(onPressed: busy ? null : _save, child: const Text('Uložit')),
+    ],
+  );
+}
+
+/// Dialog „Přidat míru". Vrací `true`, když se míra uložila.
+Future<bool> addMeasurementDialog(BuildContext context, AppState state) async {
+  final saved = await showDialog<bool>(
+    context: context,
+    builder: (_) => _MeasurementDialog(state),
+  );
+  return saved == true;
+}
+
+class _MeasurementDialog extends StatefulWidget {
+  final AppState state;
+  const _MeasurementDialog(this.state);
+
+  @override
+  State<_MeasurementDialog> createState() => _MeasurementDialogState();
+}
+
+class _MeasurementDialogState extends State<_MeasurementDialog> {
+  BodyPart _part = BodyPart.waist;
+  late final controller = TextEditingController();
+  bool busy = false;
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (busy) return;
+    final cm = parseNum(controller.text);
+    setState(() => busy = true);
+    try {
+      if (cm == null || !await widget.state.addMeasurement(_part, cm)) {
+        if (mounted) showToast(context, 'Zadej míru mezi 10 a 250 cm.');
+        return;
+      }
+      if (mounted) popOnce(context, true);
+    } catch (_) {
+      if (mounted) showToast(context, 'Míru se nepodařilo uložit.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Přidat míru'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButton<BodyPart>(
+          value: _part,
+          isExpanded: true,
+          items: [
+            for (final part in BodyPart.values)
+              DropdownMenuItem(value: part, child: Text(part.label)),
+          ],
+          onChanged: busy
+              ? null
+              : (part) {
+                  if (part != null) setState(() => _part = part);
+                },
+        ),
+        TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'Obvod (cm)'),
+          onSubmitted: (_) => _save(),
+        ),
+      ],
     ),
     actions: [
       TextButton(
@@ -143,6 +228,136 @@ class BodyweightPage extends StatelessWidget {
       );
   }
 
+  Future<void> _removeMeasurement(
+    BuildContext context,
+    Measurement entry,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await state.removeMeasurement(entry.id);
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Smazáno: ${formatKg(entry.cm)} cm'),
+          action: SnackBarAction(
+            label: 'Vrátit',
+            onPressed: () => state.restoreMeasurement(entry),
+          ),
+        ),
+      );
+  }
+
+  Widget _measurementRow(
+    BuildContext context,
+    BodyPart part,
+    List<Measurement> entries,
+  ) {
+    final latest = entries.first;
+    final change = measurementChange(entries, part);
+    final sign = change == null
+        ? ''
+        : (change > 0 ? '+' : (change < 0 ? '−' : '±'));
+    return GroupedRow(
+      title: part.label,
+      value: '${formatKg(latest.cm)} cm',
+      subtitle: change == null
+          ? formatDate(latest.date)
+          : '$sign${formatKg(change.abs())} cm za 30 dní',
+      onTap: () => _measurementHistory(context, part),
+    );
+  }
+
+  void _measurementHistory(BuildContext context, BodyPart part) {
+    final state = this.state;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.page,
+            0,
+            Space.page,
+            Space.l,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(part.label, style: Theme.of(sheet).textTheme.titleLarge),
+              const SizedBox(height: Space.s),
+              ListenableBuilder(
+                listenable: state.on.resting,
+                builder: (context, _) {
+                  final entries = [
+                    for (final m in state.measurements)
+                      if (m.part == part) m,
+                  ];
+                  if (entries.isEmpty) {
+                    return Text(
+                      'Zatím žádné záznamy.',
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: context.palette.secondaryLabel),
+                    );
+                  }
+                  return SingleChildScrollView(
+                    child: GroupedSection(
+                      children: [
+                        for (final m in entries)
+                          GroupedRow(
+                            title: formatDate(m.date),
+                            value: '${formatKg(m.cm)} cm',
+                            chevron: false,
+                            trailing: IconButton(
+                              tooltip: 'Smazat záznam',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _removeMeasurement(context, m),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _measurementWidgets(BuildContext context) {
+    final byPart = <BodyPart, List<Measurement>>{};
+    for (final m in state.measurements) {
+      (byPart[m.part] ??= []).add(m);
+    }
+    final parts = [
+      for (final part in BodyPart.values)
+        if (byPart[part] != null) part,
+    ];
+    return [
+      const SectionHeader('Míry'),
+      if (parts.isEmpty)
+        Text(
+          'Měř pas, paže nebo hrudník jednou za 2–4 týdny. Váha neřekne všechno.',
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: context.palette.secondaryLabel),
+        )
+      else
+        GroupedSection(
+          children: [
+            for (final part in parts)
+              _measurementRow(context, part, byPart[part]!),
+          ],
+        ),
+      SecondaryButton(
+        'Přidat míru',
+        icon: Icons.straighten_rounded,
+        onPressed: () => addMeasurementDialog(context, state),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state.on.resting,
@@ -208,6 +423,7 @@ class BodyweightPage extends StatelessWidget {
               ],
             ),
           ],
+          ..._measurementWidgets(context),
         ],
       );
     },
