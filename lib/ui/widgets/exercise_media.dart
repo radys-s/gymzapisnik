@@ -164,7 +164,7 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
                       ? 'Zvednout → zpevnit'
                       : 'Pomalu → zpět';
                   return Text(
-                    '$phase · tap to replay',
+                    '$phase · klepnutím přehraješ znovu',
                     style: Theme.of(context).textTheme.labelSmall
                         ?.copyWith(color: p.secondaryLabel),
                   );

@@ -438,7 +438,13 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.language_rounded,
                 title: 'Jazyk aplikace',
                 subtitle: 'Názvy cviků zůstávají v angličtině',
-                value: const {'cs': 'Čeština', 'en': 'English', 'sk': 'Slovenčina'}[state.profile.appLanguage] ?? 'Čeština',
+                value:
+                    const {
+                      'cs': 'Čeština',
+                      'en': 'English',
+                      'sk': 'Slovenčina',
+                    }[state.profile.appLanguage] ??
+                    'Čeština',
                 onTap: () => _pickLanguage(context),
               ),
               if (feedbackContact.isNotEmpty)
@@ -533,7 +539,10 @@ class SettingsPage extends StatelessWidget {
               ListTile(
                 title: Text(opt.$2),
                 trailing: opt.$1 == current
-                    ? Icon(Icons.check_rounded, color: Theme.of(ctx).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
                     : null,
                 onTap: () async {
                   Navigator.pop(ctx);

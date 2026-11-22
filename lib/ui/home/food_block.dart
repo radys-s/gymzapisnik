@@ -29,11 +29,16 @@ class HomeFoodBlock extends StatelessWidget {
           ? 0.0
           : (value / target).clamp(0.0, 1.0);
       final left = target == null ? null : (target - value).round();
+      final leftText = left == null
+          ? 'bez cíle'
+          : left > 0
+          ? 'zbývá $left $unit'
+          : 'cíl splněn';
       return Expanded(
         child: Semantics(
           label:
               '$label ${value.round()}'
-              '${target == null ? '' : ' z ${target.round()}'} $unit',
+              '${target == null ? '' : ' z ${target.round()}'} $unit, $leftText',
           excludeSemantics: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,11 +90,7 @@ class HomeFoodBlock extends StatelessWidget {
               ),
               const SizedBox(height: Space.xs),
               Text(
-                left == null
-                    ? 'bez cíle'
-                    : left > 0
-                    ? 'zbývá $left $unit'
-                    : 'cíl splněn',
+                leftText,
                 style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ],

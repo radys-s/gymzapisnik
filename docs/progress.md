@@ -56,3 +56,11 @@
 - Audit fixes: used suggested nutrition targets per field when only one custom target is set, restored counted-set guard in exercise history counts, guarded null bestToday in exercise comparison, skipped unknown recent exercises in picker, and added app-language setting in Settings.
 - Verification: `flutter analyze` clean on changed Dart files; focused tests passed (`progress_page_test`, `set_sheet_test`, `catalog_test`, `summary_test`, `measurement_test`, `bodyweight_test`, `backup_test`, `app_state_test`, `state_slices_test`); `flutter build web --release` succeeded; review artifact refreshed at `docs/screenshots/review-2026-11-22/`.
 - Next: collect user feedback from mobile emulator, polish demo quality beyond figurine animation, and continue i18n/dopamine tuning based on review.
+
+## 2026-11-22 — Weekly report, current-set marker and visual cleanup
+
+- What: new Týdenní report (Progress → "Týdenní report" or the "Report" action on the week card): weekly volume with per-day bars, workouts/time/sets/reps with % against last week, the week's records (one row per exercise, best value only), exercise of the week, and sets per muscle; arrows browse back to the first training week. Home shows a "Minulý týden" recap on Monday and Tuesday that opens last week's report. In the workout, the next set to log gets an ember stripe and tint.
+- Cleanup: tab bar labels fell back to the system font (AnimatedDefaultTextStyle replaced the theme style) and now use Inter; the rest bar is one row again after the overflow fix had wrapped its buttons to a second line (skip becomes an icon under 300 px); the Home food block lost its off-brand blue/orange boxes and three-line subtitle; rank names and the demo cue are Czech (Nováček…Elita, no "Lv."), rank uses ember with gold only at the top.
+- Why: competitor research item 19 (Boostcamp-style weekly report) was the last missing top-20 feature; the rest were visible inconsistencies Tomáš called slop.
+- Numbers: 11 new tests (9 domain, 2 widget); focused workout, home and progress suites pass (61 + 13 tests); screenshot tour renders the report.
+- Next: Tomáš's hands-on feedback from the new IPA.

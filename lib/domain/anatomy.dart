@@ -483,17 +483,13 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
   'cable_woodchopper': ExerciseAnatomy(['obliques'], secondary: ['abs']),
   'torso_rotation_machine': ExerciseAnatomy(['obliques']),
   'side_bend': ExerciseAnatomy(['obliques']),
-  'cable_crossover_high': ExerciseAnatomy(
-    ['chest_mid'],
-  ),
+  'cable_crossover_high': ExerciseAnatomy(['chest_mid']),
   'incline_cable_press': ExerciseAnatomy(
     ['chest_upper'],
     secondary: ['delt_front', 'triceps_lateral'],
     compound: _c,
   ),
-  'svend_press': ExerciseAnatomy(
-    ['chest_mid'],
-  ),
+  'svend_press': ExerciseAnatomy(['chest_mid']),
   'floor_press': ExerciseAnatomy(
     ['chest_mid'],
     secondary: ['triceps_lateral', 'delt_front'],
@@ -564,9 +560,7 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     secondary: ['biceps_short'],
     compound: _c,
   ),
-  'cable_shrug': ExerciseAnatomy(
-    ['upper_back'],
-  ),
+  'cable_shrug': ExerciseAnatomy(['upper_back']),
   'leg_press_narrow': ExerciseAnatomy(
     ['quads'],
     secondary: ['glutes'],
@@ -596,14 +590,8 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     secondary: ['lower_back'],
     compound: _c,
   ),
-  'adductor_machine': ExerciseAnatomy(
-    ['adductors'],
-    secondary: ['glutes'],
-  ),
-  'abductor_machine': ExerciseAnatomy(
-    ['glutes_med'],
-    secondary: ['glutes'],
-  ),
+  'adductor_machine': ExerciseAnatomy(['adductors'], secondary: ['glutes']),
+  'abductor_machine': ExerciseAnatomy(['glutes_med'], secondary: ['glutes']),
   'leg_press_calf_raise': ExerciseAnatomy(
     ['calves_gastro'],
     secondary: ['calves_soleus'],
@@ -623,11 +611,7 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     secondary: ['glutes'],
     compound: _c,
   ),
-  'wall_sit': ExerciseAnatomy(
-    ['quads'],
-    secondary: ['glutes'],
-    compound: _c,
-  ),
+  'wall_sit': ExerciseAnatomy(['quads'], secondary: ['glutes'], compound: _c),
   'glute_bridge_bodyweight': ExerciseAnatomy(
     ['glutes', 'hamstrings'],
     secondary: ['lower_back'],
@@ -663,9 +647,7 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     secondary: ['glutes'],
     compound: _c,
   ),
-  'leg_extension_single': ExerciseAnatomy(
-    ['quads'],
-  ),
+  'leg_extension_single': ExerciseAnatomy(['quads']),
   'seated_calf_raise_machine': ExerciseAnatomy(
     ['calves_soleus'],
     secondary: ['calves_gastro'],
@@ -705,47 +687,32 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     ['delt_rear'],
     secondary: ['upper_back'],
   ),
-  'rope_face_pull': ExerciseAnatomy(
-    ['delt_rear'],
-    secondary: ['upper_back'],
-  ),
+  'rope_face_pull': ExerciseAnatomy(['delt_rear'], secondary: ['upper_back']),
   'pike_push_up': ExerciseAnatomy(
     ['delt_front', 'delt_side'],
     secondary: ['triceps_lateral'],
     compound: _c,
   ),
-  'dumbbell_preacher_curl': ExerciseAnatomy(
-    ['biceps_short', 'biceps_long'],
-  ),
-  'cross_body_hammer_curl': ExerciseAnatomy(
-    ['brachialis', 'biceps_long'],
-  ),
-  'cable_biceps_curl_bar': ExerciseAnatomy(
-    ['biceps_long', 'biceps_short'],
-  ),
-  'ez_bar_preacher_curl': ExerciseAnatomy(
-    ['biceps_short', 'biceps_long'],
-  ),
-  'overhead_rope_extension': ExerciseAnatomy(
-    ['triceps_long', 'triceps_lateral'],
-  ),
+  'dumbbell_preacher_curl': ExerciseAnatomy(['biceps_short', 'biceps_long']),
+  'cross_body_hammer_curl': ExerciseAnatomy(['brachialis', 'biceps_long']),
+  'cable_biceps_curl_bar': ExerciseAnatomy(['biceps_long', 'biceps_short']),
+  'ez_bar_preacher_curl': ExerciseAnatomy(['biceps_short', 'biceps_long']),
+  'overhead_rope_extension': ExerciseAnatomy([
+    'triceps_long',
+    'triceps_lateral',
+  ]),
   'assisted_dip': ExerciseAnatomy(
     ['triceps_long', 'triceps_lateral'],
     secondary: ['delt_front'],
     compound: _c,
   ),
-  'seated_dumbbell_triceps_extension': ExerciseAnatomy(
-    ['triceps_long', 'triceps_lateral'],
-  ),
-  'cable_kickback_triceps': ExerciseAnatomy(
-    ['triceps_lateral'],
-  ),
-  'seated_dumbbell_curl': ExerciseAnatomy(
-    ['biceps_long', 'biceps_short'],
-  ),
-  'barbell_wrist_curl_seated': ExerciseAnatomy(
-    ['forearms'],
-  ),
+  'seated_dumbbell_triceps_extension': ExerciseAnatomy([
+    'triceps_long',
+    'triceps_lateral',
+  ]),
+  'cable_kickback_triceps': ExerciseAnatomy(['triceps_lateral']),
+  'seated_dumbbell_curl': ExerciseAnatomy(['biceps_long', 'biceps_short']),
+  'barbell_wrist_curl_seated': ExerciseAnatomy(['forearms']),
   'diamond_push_up': ExerciseAnatomy(
     ['triceps_long', 'triceps_lateral'],
     secondary: ['delt_front'],
@@ -756,21 +723,10 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     secondary: ['delt_front'],
     compound: _c,
   ),
-  'dead_bug': ExerciseAnatomy(
-    ['abs'],
-    secondary: ['obliques'],
-  ),
-  'bird_dog': ExerciseAnatomy(
-    ['abs'],
-    secondary: ['obliques'],
-  ),
-  'mountain_climber': ExerciseAnatomy(
-    ['abs'],
-    secondary: ['obliques'],
-  ),
-  'toe_touch': ExerciseAnatomy(
-    ['abs_lower', 'abs'],
-  ),
+  'dead_bug': ExerciseAnatomy(['abs'], secondary: ['obliques']),
+  'bird_dog': ExerciseAnatomy(['abs'], secondary: ['obliques']),
+  'mountain_climber': ExerciseAnatomy(['abs'], secondary: ['obliques']),
+  'toe_touch': ExerciseAnatomy(['abs_lower', 'abs']),
   'farmer_carry': ExerciseAnatomy(
     ['abs', 'obliques'],
     secondary: ['forearms'],
@@ -781,16 +737,9 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
     secondary: ['forearms'],
     compound: _c,
   ),
-  'cable_pallof_rotation': ExerciseAnatomy(
-    ['obliques', 'abs'],
-  ),
-  'ab_rollout_barbell': ExerciseAnatomy(
-    ['abs'],
-    secondary: ['obliques'],
-  ),
-  'russian_twist_bodyweight': ExerciseAnatomy(
-    ['obliques', 'abs'],
-  ),
+  'cable_pallof_rotation': ExerciseAnatomy(['obliques', 'abs']),
+  'ab_rollout_barbell': ExerciseAnatomy(['abs'], secondary: ['obliques']),
+  'russian_twist_bodyweight': ExerciseAnatomy(['obliques', 'abs']),
 };
 
 ExerciseAnatomy? anatomyOf(String exerciseId) => exerciseAnatomy[exerciseId];

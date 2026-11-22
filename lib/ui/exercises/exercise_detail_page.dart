@@ -249,9 +249,9 @@ class ExerciseDetailPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(Radii.card),
                   ),
                   child: SizedBox(
-                  height: 220,
-                  child: Center(child: ExerciseAnimation(exercise)),
-                ),
+                    height: 220,
+                    child: Center(child: ExerciseAnimation(exercise)),
+                  ),
                 ),
               ),
             ],
@@ -414,8 +414,12 @@ _NextPr? _nextPrTarget(
   final bestSet = last.entry.countedSets.isEmpty
       ? null
       : last.entry.countedSets.reduce((a, b) {
-          final av = type == ExerciseType.weighted ? e1rm(a.weight, a.reps) : a.reps.toDouble();
-          final bv = type == ExerciseType.weighted ? e1rm(b.weight, b.reps) : b.reps.toDouble();
+          final av = type == ExerciseType.weighted
+              ? e1rm(a.weight, a.reps)
+              : a.reps.toDouble();
+          final bv = type == ExerciseType.weighted
+              ? e1rm(b.weight, b.reps)
+              : b.reps.toDouble();
           return bv > av ? b : a;
         });
   if (bestSet == null) return null;

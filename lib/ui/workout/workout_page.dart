@@ -425,6 +425,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
       final text = Theme.of(context).textTheme;
       final exercises = workout.exercises;
       // Série, na které uživatel je: první nepotvrzená v pořadí cviků.
+      // V supersérii se střídá, tam proužek drží první cvik (záměrně jednoduché).
       final current = exercises
           .expand((e) => e.sets)
           .where((s) => !s.done)

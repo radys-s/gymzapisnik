@@ -230,7 +230,10 @@ class _RestBarState extends State<_RestBar> {
               // se čas zmenší a „Přeskočit“ zůstane jen jako ikona.
               child: LayoutBuilder(
                 builder: (context, box) {
-                  final compact = box.maxWidth < 300;
+                  // Velké písmo tlačítka rozšíří; pak taky jen ikona.
+                  final compact =
+                      box.maxWidth < 300 ||
+                      MediaQuery.textScalerOf(context).scale(1) > 1.2;
                   return Row(
                     children: [
                       Icon(

@@ -56,6 +56,7 @@ class _WeekReportPageState extends State<WeekReportPage> {
       state.workouts,
       DateTime(_monday.year, _monday.month, _monday.day - 7),
       state.typeOf,
+      withRecords: false,
     );
     final canBack = _monday.isAfter(first);
     final canForward = _monday.isBefore(thisWeek);
@@ -73,17 +74,17 @@ class _WeekReportPageState extends State<WeekReportPage> {
         if (report.isEmpty)
           EmptyState(
             icon: Icons.event_busy_rounded,
-            title: 'Tenhle týden bez tréninku',
+            title: 'Týden bez tréninku',
             message: _monday == thisWeek
                 ? 'Po prvním tréninku tu uvidíš objem, čas a rekordy týdne.'
-                : 'Žádný dokončený trénink. Šipkou se vrátíš jinam.',
+                : 'Žádný dokončený trénink. Šipkami přejdeš na jiný týden.',
           )
         else ...[
           _VolumeHero(report: report, prev: prev, today: widget.now()),
           const SizedBox(height: Space.m),
           _CompareGrid(report: report, prev: prev, goal: state.weekGoal),
           const SectionHeader('Rekordy týdne'),
-          _Records(state: state, report: report),
+          _Records(state: state, report: report, now: widget.now()),
           if (report.topExerciseId case final id?) ...[
             const SectionHeader('Cvik týdne'),
             _TopExercise(state: state, report: report, exerciseId: id),
@@ -174,7 +175,11 @@ class _Delta extends StatelessWidget {
         ? Icons.arrow_downward_rounded
         : Icons.remove_rounded;
     return Semantics(
-      label: v == 0 ? 'stejně jako minule' : '$v % proti minulému týdnu',
+      label: v == 0
+          ? 'stejně jako minulý týden'
+          : v > 0
+          ? 'o $v % víc než minulý týden'
+          : 'o ${-v} % méně než minulý týden',
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -427,7 +432,12 @@ class _Cell extends StatelessWidget {
 class _Records extends StatelessWidget {
   final AppState state;
   final WeekReport report;
-  const _Records({required this.state, required this.report});
+  final DateTime now;
+  const _Records({
+    required this.state,
+    required this.report,
+    required this.now,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -441,7 +451,7 @@ class _Records extends StatelessWidget {
             const SizedBox(width: Space.m),
             Expanded(
               child: Text(
-                'Tento týden bez nového rekordu. Další série je šance.',
+                'Bez nového rekordu. Další série je šance.',
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
             ),
@@ -455,7 +465,6 @@ class _Records extends StatelessWidget {
     for (final r in report.records) {
       byExercise.putIfAbsent(r.exerciseId, () => []).add(r);
     }
-    final now = DateTime.now();
     return Panel(
       padding: const EdgeInsets.symmetric(
         horizontal: Space.l,
@@ -501,7 +510,7 @@ class _Records extends StatelessWidget {
                               [
                                 main.kind.label,
                                 ...others,
-                                relativeDay(main.date, now),
+                                relativeDay(main.date, now).toLowerCase(),
                               ].join(' · '),
                               style: text.bodySmall?.copyWith(
                                 color: p.secondaryLabel,

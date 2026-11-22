@@ -1175,10 +1175,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
       'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
     ],
-    mistakes: [
-      'Příliš velká váha a zkrácený rozsah.',
-      'Ramena jedou k uším.',
-    ],
+    mistakes: ['Příliš velká váha a zkrácený rozsah.', 'Ramena jedou k uším.'],
   ),
   'svend_press': (
     steps: [
@@ -1186,10 +1183,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
       'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
     ],
-    mistakes: [
-      'Příliš velká váha a zkrácený rozsah.',
-      'Ramena jedou k uším.',
-    ],
+    mistakes: ['Příliš velká váha a zkrácený rozsah.', 'Ramena jedou k uším.'],
   ),
   'floor_press': (
     steps: [
@@ -1197,10 +1191,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
       'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
     ],
-    mistakes: [
-      'Příliš velká váha a zkrácený rozsah.',
-      'Ramena jedou k uším.',
-    ],
+    mistakes: ['Příliš velká váha a zkrácený rozsah.', 'Ramena jedou k uším.'],
   ),
   'dumbbell_floor_press': (
     steps: [
@@ -1208,10 +1199,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
       'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
     ],
-    mistakes: [
-      'Příliš velká váha a zkrácený rozsah.',
-      'Ramena jedou k uším.',
-    ],
+    mistakes: ['Příliš velká váha a zkrácený rozsah.', 'Ramena jedou k uším.'],
   ),
   'incline_push_up': (
     steps: [
@@ -1219,10 +1207,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj hrudník kontrolovaně dolů, lokty pod úhlem cca 45° od těla.',
       'Vytlač se zpět nahoru a drž pevný střed těla.',
     ],
-    mistakes: [
-      'Propadlé boky nebo zvednutý zadek.',
-      'Lokty příliš do stran.',
-    ],
+    mistakes: ['Propadlé boky nebo zvednutý zadek.', 'Lokty příliš do stran.'],
   ),
   'decline_push_up': (
     steps: [
@@ -1230,10 +1215,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj hrudník kontrolovaně dolů, lokty pod úhlem cca 45° od těla.',
       'Vytlač se zpět nahoru a drž pevný střed těla.',
     ],
-    mistakes: [
-      'Propadlé boky nebo zvednutý zadek.',
-      'Lokty příliš do stran.',
-    ],
+    mistakes: ['Propadlé boky nebo zvednutý zadek.', 'Lokty příliš do stran.'],
   ),
   'wide_grip_lat_pulldown': (
     steps: [
@@ -1296,10 +1278,7 @@ const Map<String, Technique> techniques = {
       'Prováděj kontrolovaný pohyb v plném rozsahu.',
       'Vrať se pomalu do výchozí polohy bez trhání.',
     ],
-    mistakes: [
-      'Trhání a ztráta kontroly trupu.',
-      'Příliš velká váha.',
-    ],
+    mistakes: ['Trhání a ztráta kontroly trupu.', 'Příliš velká váha.'],
   ),
   'hammer_strength_row': (
     steps: [
@@ -1318,10 +1297,7 @@ const Map<String, Technique> techniques = {
       'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
       'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
     ],
-    mistakes: [
-      'Příliš velká váha a zkrácený rozsah.',
-      'Ramena jedou k uším.',
-    ],
+    mistakes: ['Příliš velká váha a zkrácený rozsah.', 'Ramena jedou k uším.'],
   ),
   'landmine_row': (
     steps: [
@@ -1406,10 +1382,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej koleno kontrolovaně proti odporu.',
       'Vracej pomalu, závaží nenech dopadnout.',
     ],
-    mistakes: [
-      'Zvedání boků/pánve ze sedáku.',
-      'Trhaný pohyb.',
-    ],
+    mistakes: ['Zvedání boků/pánve ze sedáku.', 'Trhaný pohyb.'],
   ),
   'hip_extension_machine': (
     steps: [
@@ -1428,10 +1401,7 @@ const Map<String, Technique> techniques = {
       'Pohyb prováděj kontrolovaně v bezbolestném rozsahu.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Příliš velký rozsah za komfort.',
-      'Trhání a houpání trupu.',
-    ],
+    mistakes: ['Příliš velký rozsah za komfort.', 'Trhání a houpání trupu.'],
   ),
   'abductor_machine': (
     steps: [
@@ -1439,10 +1409,7 @@ const Map<String, Technique> techniques = {
       'Pohyb prováděj kontrolovaně v bezbolestném rozsahu.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Příliš velký rozsah za komfort.',
-      'Trhání a houpání trupu.',
-    ],
+    mistakes: ['Příliš velký rozsah za komfort.', 'Trhání a houpání trupu.'],
   ),
   'leg_press_calf_raise': (
     steps: [
@@ -1450,10 +1417,7 @@ const Map<String, Technique> techniques = {
       'Zvedni se na špičky a nahoře krátce podrž.',
       'Spouštěj pomalu do protažení.',
     ],
-    mistakes: [
-      'Odrážení a zkrácený rozsah.',
-      'Příliš rychlé tempo.',
-    ],
+    mistakes: ['Odrážení a zkrácený rozsah.', 'Příliš rychlé tempo.'],
   ),
   'split_squat': (
     steps: [
@@ -1582,10 +1546,7 @@ const Map<String, Technique> techniques = {
       'Propni nohy kontrolovaně a nahoře krátce stáhni.',
       'Spouštěj pomalu bez dosednutí závaží.',
     ],
-    mistakes: [
-      'Příliš velká váha a kopání.',
-      'Zvedání sedáku od opěrky.',
-    ],
+    mistakes: ['Příliš velká váha a kopání.', 'Zvedání sedáku od opěrky.'],
   ),
   'seated_calf_raise_machine': (
     steps: [
@@ -1593,10 +1554,7 @@ const Map<String, Technique> techniques = {
       'Zvedni se na špičky a nahoře krátce podrž.',
       'Spouštěj pomalu do protažení.',
     ],
-    mistakes: [
-      'Odrážení a zkrácený rozsah.',
-      'Příliš rychlé tempo.',
-    ],
+    mistakes: ['Odrážení a zkrácený rozsah.', 'Příliš rychlé tempo.'],
   ),
   'seated_dumbbell_press': (
     steps: [
@@ -1604,10 +1562,7 @@ const Map<String, Technique> techniques = {
       'Tlač kontrolovaně nahoru v bezbolestné dráze.',
       'Spouštěj pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Prohnutí v bedrech.',
-      'Příliš velká váha a zkrácený rozsah.',
-    ],
+    mistakes: ['Prohnutí v bedrech.', 'Příliš velká váha a zkrácený rozsah.'],
   ),
   'standing_barbell_press': (
     steps: [
@@ -1615,10 +1570,7 @@ const Map<String, Technique> techniques = {
       'Tlač kontrolovaně nahoru v bezbolestné dráze.',
       'Spouštěj pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Prohnutí v bedrech.',
-      'Příliš velká váha a zkrácený rozsah.',
-    ],
+    mistakes: ['Prohnutí v bedrech.', 'Příliš velká váha a zkrácený rozsah.'],
   ),
   'seated_barbell_press': (
     steps: [
@@ -1626,10 +1578,7 @@ const Map<String, Technique> techniques = {
       'Tlač kontrolovaně nahoru v bezbolestné dráze.',
       'Spouštěj pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Prohnutí v bedrech.',
-      'Příliš velká váha a zkrácený rozsah.',
-    ],
+    mistakes: ['Prohnutí v bedrech.', 'Příliš velká váha a zkrácený rozsah.'],
   ),
   'cable_front_raise': (
     steps: [
@@ -1637,10 +1586,7 @@ const Map<String, Technique> techniques = {
       'Zvedej paže kontrolovaně do výšky ramen (nebo bez bolesti).',
       'Spouštěj pomalu, nehoupej trupem.',
     ],
-    mistakes: [
-      'Houpání tělem.',
-      'Zvedání ramen k uším.',
-    ],
+    mistakes: ['Houpání tělem.', 'Zvedání ramen k uším.'],
   ),
   'dumbbell_front_raise': (
     steps: [
@@ -1648,10 +1594,7 @@ const Map<String, Technique> techniques = {
       'Zvedej paže kontrolovaně do výšky ramen (nebo bez bolesti).',
       'Spouštěj pomalu, nehoupej trupem.',
     ],
-    mistakes: [
-      'Houpání tělem.',
-      'Zvedání ramen k uším.',
-    ],
+    mistakes: ['Houpání tělem.', 'Zvedání ramen k uším.'],
   ),
   'cable_upright_row': (
     steps: [
@@ -1659,10 +1602,7 @@ const Map<String, Technique> techniques = {
       'Prováděj kontrolovaný pohyb cíleného svalu.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Ztráta kontroly ramen.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Ztráta kontroly ramen.'],
   ),
   'single_arm_cable_lateral_raise': (
     steps: [
@@ -1670,10 +1610,7 @@ const Map<String, Technique> techniques = {
       'Zvedej paže kontrolovaně do výšky ramen (nebo bez bolesti).',
       'Spouštěj pomalu, nehoupej trupem.',
     ],
-    mistakes: [
-      'Houpání tělem.',
-      'Zvedání ramen k uším.',
-    ],
+    mistakes: ['Houpání tělem.', 'Zvedání ramen k uším.'],
   ),
   'machine_reverse_fly': (
     steps: [
@@ -1681,10 +1618,7 @@ const Map<String, Technique> techniques = {
       'Prováděj kontrolovaný pohyb cíleného svalu.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Ztráta kontroly ramen.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Ztráta kontroly ramen.'],
   ),
   'rope_face_pull': (
     steps: [
@@ -1692,10 +1626,7 @@ const Map<String, Technique> techniques = {
       'Prováděj kontrolovaný pohyb cíleného svalu.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Ztráta kontroly ramen.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Ztráta kontroly ramen.'],
   ),
   'pike_push_up': (
     steps: [
@@ -1703,10 +1634,7 @@ const Map<String, Technique> techniques = {
       'Tlač kontrolovaně nahoru v bezbolestné dráze.',
       'Spouštěj pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Prohnutí v bedrech.',
-      'Příliš velká váha a zkrácený rozsah.',
-    ],
+    mistakes: ['Prohnutí v bedrech.', 'Příliš velká váha a zkrácený rozsah.'],
   ),
   'dumbbell_preacher_curl': (
     steps: [
@@ -1714,10 +1642,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej lokty kontrolovaně proti odporu.',
       'Spouštěj pomalu do protažení bez houpání.',
     ],
-    mistakes: [
-      'Houpání trupem.',
-      'Zvedání loktů dopředu.',
-    ],
+    mistakes: ['Houpání trupem.', 'Zvedání loktů dopředu.'],
   ),
   'cross_body_hammer_curl': (
     steps: [
@@ -1725,10 +1650,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej lokty kontrolovaně proti odporu.',
       'Spouštěj pomalu do protažení bez houpání.',
     ],
-    mistakes: [
-      'Houpání trupem.',
-      'Zvedání loktů dopředu.',
-    ],
+    mistakes: ['Houpání trupem.', 'Zvedání loktů dopředu.'],
   ),
   'cable_biceps_curl_bar': (
     steps: [
@@ -1736,10 +1658,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej lokty kontrolovaně proti odporu.',
       'Spouštěj pomalu do protažení bez houpání.',
     ],
-    mistakes: [
-      'Houpání trupem.',
-      'Zvedání loktů dopředu.',
-    ],
+    mistakes: ['Houpání trupem.', 'Zvedání loktů dopředu.'],
   ),
   'ez_bar_preacher_curl': (
     steps: [
@@ -1747,10 +1666,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej lokty kontrolovaně proti odporu.',
       'Spouštěj pomalu do protažení bez houpání.',
     ],
-    mistakes: [
-      'Houpání trupem.',
-      'Zvedání loktů dopředu.',
-    ],
+    mistakes: ['Houpání trupem.', 'Zvedání loktů dopředu.'],
   ),
   'overhead_rope_extension': (
     steps: [
@@ -1758,10 +1674,7 @@ const Map<String, Technique> techniques = {
       'Propínej/extenduj paže kontrolovaně.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Pohyb v rameni místo lokte.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Pohyb v rameni místo lokte.'],
   ),
   'assisted_dip': (
     steps: [
@@ -1769,10 +1682,7 @@ const Map<String, Technique> techniques = {
       'Propínej/extenduj paže kontrolovaně.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Pohyb v rameni místo lokte.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Pohyb v rameni místo lokte.'],
   ),
   'seated_dumbbell_triceps_extension': (
     steps: [
@@ -1780,10 +1690,7 @@ const Map<String, Technique> techniques = {
       'Propínej/extenduj paže kontrolovaně.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Pohyb v rameni místo lokte.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Pohyb v rameni místo lokte.'],
   ),
   'cable_kickback_triceps': (
     steps: [
@@ -1791,10 +1698,7 @@ const Map<String, Technique> techniques = {
       'Propínej/extenduj paže kontrolovaně.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Pohyb v rameni místo lokte.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Pohyb v rameni místo lokte.'],
   ),
   'seated_dumbbell_curl': (
     steps: [
@@ -1802,10 +1706,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej lokty kontrolovaně proti odporu.',
       'Spouštěj pomalu do protažení bez houpání.',
     ],
-    mistakes: [
-      'Houpání trupem.',
-      'Zvedání loktů dopředu.',
-    ],
+    mistakes: ['Houpání trupem.', 'Zvedání loktů dopředu.'],
   ),
   'barbell_wrist_curl_seated': (
     steps: [
@@ -1813,10 +1714,7 @@ const Map<String, Technique> techniques = {
       'Ohýbej lokty kontrolovaně proti odporu.',
       'Spouštěj pomalu do protažení bez houpání.',
     ],
-    mistakes: [
-      'Houpání trupem.',
-      'Zvedání loktů dopředu.',
-    ],
+    mistakes: ['Houpání trupem.', 'Zvedání loktů dopředu.'],
   ),
   'diamond_push_up': (
     steps: [
@@ -1824,10 +1722,7 @@ const Map<String, Technique> techniques = {
       'Propínej/extenduj paže kontrolovaně.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Pohyb v rameni místo lokte.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Pohyb v rameni místo lokte.'],
   ),
   'bench_dip': (
     steps: [
@@ -1835,10 +1730,7 @@ const Map<String, Technique> techniques = {
       'Propínej/extenduj paže kontrolovaně.',
       'Vrať pomalu do výchozí polohy.',
     ],
-    mistakes: [
-      'Trhání a příliš velká váha.',
-      'Pohyb v rameni místo lokte.',
-    ],
+    mistakes: ['Trhání a příliš velká váha.', 'Pohyb v rameni místo lokte.'],
   ),
   'dead_bug': (
     steps: [

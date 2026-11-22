@@ -51,12 +51,14 @@ class WeekReport {
       nextWeek(monday).subtract(const Duration(milliseconds: 1));
 }
 
-/// Report týdne, do kterého patří [day].
+/// Report týdne, do kterého patří [day]. Bez [withRecords] zůstanou
+/// rekordy prázdné (levnější, jen na srovnání čísel).
 WeekReport weekReport(
   Iterable<Workout> workouts,
   DateTime day,
-  ExerciseType Function(String exerciseId) typeOf,
-) {
+  ExerciseType Function(String exerciseId) typeOf, {
+  bool withRecords = true,
+}) {
   final monday = weekStart(day);
   final next = nextWeek(monday);
   final all = workouts.toList();
@@ -97,7 +99,8 @@ WeekReport weekReport(
         volumeBy[e.exerciseId] = (volumeBy[e.exerciseId] ?? 0) + v;
       }
     }
-    records.addAll(newRecords(w, all, typeOf));
+    // Rekordy procházejí celou starší historii; srovnání je nepotřebuje.
+    if (withRecords) records.addAll(newRecords(w, all, typeOf));
   }
   // Rekord z úterý, který v pátek padl znovu, se ukáže jen jednou.
   final best = <(String, RecordKind), PersonalRecord>{};
