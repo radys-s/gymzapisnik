@@ -46,22 +46,28 @@ DateTime? _date(Object? v) => v is String ? DateTime.tryParse(v) : null;
 
 class Exercise {
   final String id;
+
+  /// Primary display name (English for built-in exercises).
   final String name;
+
+  /// Localized/common Czech name shown on detail and used in search.
+  final String nameCs;
   final String muscle;
   final ExerciseType type;
   final bool custom;
   final Equipment equipment;
 
-  /// Další názvy pro hledání a import (anglicky jako v Hevy, slang).
+  /// Extra search/import names (slang, abbreviations, translations).
   final List<String> aliases;
 
-  /// Pohybový vzor pro obrázek postavy (`movementPatterns`).
+  /// Movement pattern for the figure demo (`movementPatterns`).
   final String pattern;
   final Map<String, dynamic> extra;
 
   const Exercise({
     required this.id,
     required this.name,
+    this.nameCs = '',
     required this.muscle,
     this.type = ExerciseType.weighted,
     this.custom = false,
@@ -71,15 +77,31 @@ class Exercise {
     this.extra = const {},
   });
 
-  static const _known = {'id', 'name', 'muscle', 'type', 'custom', 'equipment'};
+  static const _known = {
+    'id',
+    'name',
+    'nameCs',
+    'muscle',
+    'type',
+    'custom',
+    'equipment',
+    'aliases',
+    'pattern',
+  };
 
   factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
     id: json['id'] as String,
     name: json['name'] as String? ?? '',
+    nameCs: json['nameCs'] as String? ?? '',
     muscle: json['muscle'] as String? ?? 'Ostatní',
     type: ExerciseType.parse(json['type']),
     custom: json['custom'] == true,
     equipment: Equipment.parse(json['equipment']),
+    aliases: [
+      for (final a in json['aliases'] as List? ?? const [])
+        if (a is String && a.trim().isNotEmpty) a,
+    ],
+    pattern: json['pattern'] as String? ?? '',
     extra: _extra(json, _known),
   );
 
@@ -87,10 +109,13 @@ class Exercise {
     ...extra,
     'id': id,
     'name': name,
+    if (nameCs.isNotEmpty) 'nameCs': nameCs,
     'muscle': muscle,
     'type': type.name,
     'custom': custom,
     'equipment': equipment.name,
+    if (aliases.isNotEmpty) 'aliases': aliases,
+    if (pattern.isNotEmpty) 'pattern': pattern,
   };
 }
 

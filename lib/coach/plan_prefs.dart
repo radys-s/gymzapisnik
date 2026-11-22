@@ -32,8 +32,14 @@ enum Experience {
 
 /// Kde cvičí: určuje, jaké vybavení plán smí použít.
 enum TrainingPlace {
-  gym('Velké fitko', 'Extrifit, Form Factory a podobné: všechny stroje'),
-  smallGym('Menší fitko', 'Osa, jednoručky, kladky a základní stroje'),
+  gym(
+    'Velké komerční fitko',
+    'Suncity, Okragon, Extrifit, Form Factory — většina strojů i volných vah',
+  ),
+  smallGym(
+    'Menší / hotelové fitko',
+    'Osa, jednoručky, kladky a základní stroje',
+  ),
   home('Doma s činkami', 'Jednoručky, kettlebell, gumy a lavička'),
   bodyweight('Jen vlastní váha', 'Bez vybavení, nanejvýš guma');
 

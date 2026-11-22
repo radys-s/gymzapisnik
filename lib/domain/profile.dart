@@ -157,6 +157,12 @@ class Profile {
   /// Uživatel viděl upozornění, kam jde fotka pro AI.
   bool get aiNoticeAccepted => extra[ProfileKey.aiNotice] == true;
 
+  /// Preferred UI language code: cs, en, sk. Exercises remain English.
+  String get appLanguage {
+    final v = extra[ProfileKey.language];
+    return v is String && const {'cs', 'en', 'sk'}.contains(v) ? v : 'cs';
+  }
+
   /// Nezletilý bez souhlasu zákonného zástupce souhlas udělit nemůže.
   Profile acceptConsent({
     required bool adult,
