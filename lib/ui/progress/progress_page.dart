@@ -292,24 +292,19 @@ class _Rank {
 _Rank _trainingRank(int workouts, int sets, int badges, int badgesTotal) {
   final score = workouts * 10 + sets + badges * 25;
   const tiers = [
-    (0, 'Starter', 'Buduješ základ. Hlavní je konzistence.'),
-    (120, 'Builder', 'Základ sedí. Přidávej objem a kvalitu sérií.'),
-    (300, 'Grinder', 'Pravidelnost se mění v výkon. Drž progres.'),
-    (600, 'Athlete', 'Silná rutina. Teď hraj o PR a kvalitu.'),
-    (1000, 'Elite', 'Top úroveň konzistence. Sbírej čisté PR.'),
+    (0, 'Nováček', 'Buduješ základ. Hlavní je pravidelnost.'),
+    (120, 'Pravidelný', 'Základ sedí. Přidávej objem a kvalitu sérií.'),
+    (300, 'Dříč', 'Pravidelnost se mění ve výkon. Drž progres.'),
+    (600, 'Atlet', 'Silná rutina. Teď hraj o rekordy a kvalitu.'),
+    (1000, 'Elita', 'Špička pravidelnosti. Sbírej čisté rekordy.'),
   ];
   var idx = 0;
   for (var i = 0; i < tiers.length; i++) {
     if (score >= tiers[i].$1) idx = i;
   }
   final nextAt = idx < tiers.length - 1 ? tiers[idx + 1].$1 : tiers.last.$1;
-  final color = [
-    AppPalette.blue,
-    AppPalette.green,
-    AppPalette.orange,
-    AppPalette.violet,
-    AppPalette.yellow,
-  ][idx];
+  // Jeden akcent; zlatá patří až nejvyšší úrovni (jako rekordy).
+  final color = idx == tiers.length - 1 ? AppPalette.amber : AppPalette.ember;
   return _Rank(tiers[idx].$2, tiers[idx].$3, idx + 1, nextAt, score, color);
 }
 
@@ -353,7 +348,7 @@ class _RankCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${rank.name} · Lv. ${rank.level}',
+                      '${rank.name} · úroveň ${rank.level}',
                       style: text.titleLarge,
                     ),
                   ],
@@ -386,7 +381,7 @@ class _RankCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             rank.level >= 5
-                ? 'Max level - drž konzistenci a sbírej další PR.'
+                ? 'Nejvyšší úroveň. Drž pravidelnost a sbírej rekordy.'
                 : 'Do další úrovně: ${rank.nextAt - rank.score} bodů',
             style: text.bodySmall?.copyWith(color: p.tertiaryLabel),
           ),

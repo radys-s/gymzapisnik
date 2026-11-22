@@ -160,12 +160,13 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
               AnimatedBuilder(
                 animation: _t,
                 builder: (_, _) {
-                  final phase = _t.value < 0.5 ? 'Start → squeeze' : 'Control → return';
+                  final phase = _t.value < 0.5
+                      ? 'Zvednout → zpevnit'
+                      : 'Pomalu → zpět';
                   return Text(
                     '$phase · tap to replay',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: p.secondaryLabel,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: p.secondaryLabel),
                   );
                 },
               ),
