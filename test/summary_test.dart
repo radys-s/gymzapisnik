@@ -75,12 +75,12 @@ void main() {
     expect(find.text('Hotovo'), findsOneWidget);
     // Kouč řekne verdikt a konkrétní cíl na příště.
     expect(
-      find.text('Nové rekordy: Bench press (osa). Takhle vypadá progres.'),
+      find.text('Nové rekordy: Barbell Bench Press. Takhle vypadá progres.'),
       findsOneWidget,
     );
     expect(find.text('Příště'), findsOneWidget);
     expect(
-      find.textContaining(RegExp(r'^Bench press \(osa\) [\d,]+ kg × \d+$')),
+      find.textContaining(RegExp(r'^Barbell Bench Press [\d,]+ kg × \d+$')),
       findsOneWidget,
     );
     await tester.pumpAndSettle();

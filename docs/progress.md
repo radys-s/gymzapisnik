@@ -47,3 +47,12 @@
 - Bug found during verification: the screenshot tour's `pageBack()` looks for the English "Back" tooltip, but this Czech app uses "Zpět", so the tour failed on the exercise detail page even though its back arrow is present. Replaced with a localized `_back` helper. The tour now also captures the weight and measurements screens.
 - Numbers: 7 domain/state/UI tests added or updated, 33 focused tests pass, tour renders 29 screens in 12 s; format, `git diff --check` and targeted analyze are clean.
 - Next: finish the remaining top-20 research items in priority order and review the rendered screens with Tomáš.
+
+## 2026-11-22 — Deep redesign pass, audit fixes, and mobile review artifact
+
+- What: English-first exercise catalog (211 entries) with Czech names/aliases/pattern metadata; improved exercise search/filtering (EN/CZ/alias/muscle/equipment) and gym-only filter in library and workout picker; richer exercise detail with Czech name, clearer demo framing/replay/phase cue, science-based technique tips, alternatives, and next PR target.
+- Onboarding: added language selection (cs/en/sk, exercise names remain English), beginner vs 6+ months fork, and "I have my own plan" flow that collects schedule/gym preferences, saves a recommended fallback, then opens Program Editor prefilled with the selected day count.
+- Dopamine/UI: added Progress rank card and "Další PR cíle" card, made Home food block more prominent with calorie/protein progress and quick add, refreshed bottom nav with animated bar, updated gym presets (Suncity/Okragon/Extrifit/Form Factory/generic big gym).
+- Audit fixes: used suggested nutrition targets per field when only one custom target is set, restored counted-set guard in exercise history counts, guarded null bestToday in exercise comparison, skipped unknown recent exercises in picker, and added app-language setting in Settings.
+- Verification: `flutter analyze` clean on changed Dart files; focused tests passed (`progress_page_test`, `set_sheet_test`, `catalog_test`, `summary_test`, `measurement_test`, `bodyweight_test`, `backup_test`, `app_state_test`, `state_slices_test`); `flutter build web --release` succeeded; review artifact refreshed at `docs/screenshots/review-2026-11-22/`.
+- Next: collect user feedback from mobile emulator, polish demo quality beyond figurine animation, and continue i18n/dopamine tuning based on review.

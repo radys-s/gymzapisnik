@@ -19,7 +19,7 @@ void main() {
       custom: true,
     );
     expect(findExercise('my_row', [custom])!.name, 'Můj přítah');
-    expect(findExercise('bench_press', const [])!.name, 'Bench press (osa)');
+    expect(findExercise('bench_press', const [])!.name, 'Barbell Bench Press');
     expect(findExercise('missing', const []), isNull);
   });
 }

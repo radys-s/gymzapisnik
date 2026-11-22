@@ -61,7 +61,7 @@ void main() {
 
     await tester.tap(field('Váha v kg, Série 2'));
     await tester.pumpAndSettle();
-    expect(find.text('Bench press (osa) · Série 2'), findsOneWidget);
+    expect(find.text('Barbell Bench Press · Série 2'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(byLabel('Přidat 2,5 kg'));
@@ -134,9 +134,14 @@ void main() {
   ) async {
     await pump(tester);
     expect(byLabel('Vyměnit cvik'), findsOneWidget);
-    await tester.tap(find.text('Bench press (osa)'));
+    await tester.tap(find.text('Barbell Bench Press'));
     await tester.pumpAndSettle();
     expect(find.byType(ExerciseDetailPage), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Technika'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('Technika'), findsOneWidget);
   });
 

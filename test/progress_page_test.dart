@@ -98,10 +98,15 @@ void main() {
     expect(find.text('Trénink tento týden'), findsOneWidget);
     expect(find.text('Objem podle partií'), findsOneWidget);
     expect(find.text('Partie tento týden'), findsOneWidget);
-    expect(find.text('Bench press (osa)'), findsWidgets); // křivka i rekordy
+    expect(find.text('Barbell Bench Press'), findsWidgets); // křivka i rekordy
     expect(find.textContaining('Odhad 1RM'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('Rekord: Barbell Bench Press'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(
-      find.textContaining('Rekord: Bench press (osa) 82,5 kg'),
+      find.textContaining('Rekord: Barbell Bench Press'),
       findsOneWidget,
     );
     // Souhrn: 3 tréninky a 3 série, v přehledu historie taky 3.
