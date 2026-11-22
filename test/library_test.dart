@@ -88,14 +88,14 @@ void main() {
     expect(builtInExercises.length, greaterThanOrEqualTo(130));
   });
 
-  test('every exercise has equipment, pattern and a name with equipment', () {
+  test('every exercise has equipment, pattern and English/Czech names', () {
     for (final e in builtInExercises) {
-      // Kolečko na břicho nemá vlastní kategorii vybavení.
       if (e.id != 'ab_wheel') {
         expect(e.equipment, isNot(Equipment.other), reason: e.id);
       }
       expect(e.pattern, isNotEmpty, reason: e.id);
-      expect(e.name, contains('('), reason: e.id);
+      expect(e.name.trim(), isNotEmpty, reason: e.id);
+      expect(e.nameCs.trim(), isNotEmpty, reason: e.id);
       expect(techniqueOf(e.id), isNotNull, reason: e.id);
     }
   });

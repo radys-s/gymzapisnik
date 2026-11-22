@@ -250,7 +250,8 @@ const _fallback = Movement(
   holds: false,
 );
 
-final Map<String, Movement> movements = {
+final Map<String, Movement> movements = () {
+  final m = <String, Movement>{
   // ---- Nohy ----
   'squat': Movement(
     start: _stand(hand: const Pt(-5, 4), elbow: const Pt(-1, 1)),
@@ -1073,4 +1074,11 @@ final Map<String, Movement> movements = {
       hand2: const Pt(28, 72),
     ),
   ),
-};
+  };
+  m['pull_vertical'] = m['pulldown']!;
+  m['pull_horizontal'] = m['row_bent']!;
+  m['push_overhead'] = m['push_vertical']!;
+  m['raise'] = m['lateral_raise']!;
+  m['core'] = m['rotation']!;
+  return m;
+}();

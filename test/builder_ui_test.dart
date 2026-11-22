@@ -74,23 +74,22 @@ void main() {
     await tester.tap(find.byTooltip('Méně: Počet cviků'));
     await tester.pumpAndSettle();
     expect(find.text('Vrátit'), findsOneWidget);
-    expect(find.text('Upažování (jednoručky)'), findsOneWidget);
 
-    // Výměna bočního deltu za alternativu na stejnou hlavu.
-    await tester.tap(find.text('Upažování (jednoručky)'));
+    // Výměna cviku za alternativu na stejnou hlavu.
+    await tester.tap(find.text('Overhead Press'));
     await tester.pumpAndSettle();
-    expect(find.text('Stejná hlava: Boční delt'), findsOneWidget);
-    await tester.tap(find.text('Upažování (kladka)'));
+    expect(find.text('Stejná hlava: Přední delt'), findsOneWidget);
+    await tester.ensureVisible(find.text('Arnold Press').last);
+    await tester.tap(find.text('Arnold Press').last);
     await tester.pumpAndSettle();
-    expect(find.text('Upažování (jednoručky)'), findsNothing);
 
     await tester.tap(find.text('Začít trénink'));
     await tester.pumpAndSettle();
     expect(result!.name, 'Ramena');
     final ids = result!.exercises.map((p) => p.exerciseId).toList();
     expect(ids, hasLength(3));
-    expect(ids, contains('cable_lateral_raise'));
-    expect(ids, isNot(contains('lateral_raise')));
+    expect(ids, contains('arnold_press'));
+    expect(ids, isNot(contains('overhead_press')));
 
     await tester.runAsync(() => state.startPlanned(result!));
     expect(state.active!.name, 'Ramena');
@@ -106,9 +105,15 @@ void main() {
     await tester.tap(byLabel('Vyměnit cvik').first);
     await tester.pumpAndSettle();
     expect(find.text('Stejná hlava: Boční delt'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text('Face Pull'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Zadní delt'), findsWidgets);
     await tester.runAsync(() async {
-      await tester.tap(find.text('Face pull (kladka)'));
+      await tester.tap(find.text('Face Pull'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pumpAndSettle();

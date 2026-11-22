@@ -1158,4 +1158,785 @@ const Map<String, Technique> techniques = {
     ],
     mistakes: ['Předklon nebo záklon.', 'Činky v obou rukách.'],
   ),
+  'cable_crossover_high': (
+    steps: [
+      'Nastav výšku/postoj tak, aby ramena byla stabilní a lokty lehce pokrčené.',
+      'Veď paže v kontrolovaném oblouku, cítíš práci hrudníku.',
+      'Vrať se pomalu do protažení bez ztráty kontroly ramen.',
+    ],
+    mistakes: [
+      'Příliš velká váha a trhání.',
+      'Ohýbání loktů mění cvik na tlak.',
+    ],
+  ),
+  'incline_cable_press': (
+    steps: [
+      'Nastav sed/lavici tak, aby úchop/držadla byly ve výšce středu hrudníku.',
+      'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
+      'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
+    ],
+    mistakes: [
+      'Příliš velká váha a zkrácený rozsah.',
+      'Ramena jedou k uším.',
+    ],
+  ),
+  'svend_press': (
+    steps: [
+      'Nastav sed/lavici tak, aby úchop/držadla byly ve výšce středu hrudníku.',
+      'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
+      'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
+    ],
+    mistakes: [
+      'Příliš velká váha a zkrácený rozsah.',
+      'Ramena jedou k uším.',
+    ],
+  ),
+  'floor_press': (
+    steps: [
+      'Nastav sed/lavici tak, aby úchop/držadla byly ve výšce středu hrudníku.',
+      'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
+      'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
+    ],
+    mistakes: [
+      'Příliš velká váha a zkrácený rozsah.',
+      'Ramena jedou k uším.',
+    ],
+  ),
+  'dumbbell_floor_press': (
+    steps: [
+      'Nastav sed/lavici tak, aby úchop/držadla byly ve výšce středu hrudníku.',
+      'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
+      'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
+    ],
+    mistakes: [
+      'Příliš velká váha a zkrácený rozsah.',
+      'Ramena jedou k uším.',
+    ],
+  ),
+  'incline_push_up': (
+    steps: [
+      'Opři ruce pod rameny, tělo v jedné přímce od hlavy k patám.',
+      'Spouštěj hrudník kontrolovaně dolů, lokty pod úhlem cca 45° od těla.',
+      'Vytlač se zpět nahoru a drž pevný střed těla.',
+    ],
+    mistakes: [
+      'Propadlé boky nebo zvednutý zadek.',
+      'Lokty příliš do stran.',
+    ],
+  ),
+  'decline_push_up': (
+    steps: [
+      'Opři ruce pod rameny, tělo v jedné přímce od hlavy k patám.',
+      'Spouštěj hrudník kontrolovaně dolů, lokty pod úhlem cca 45° od těla.',
+      'Vytlač se zpět nahoru a drž pevný střed těla.',
+    ],
+    mistakes: [
+      'Propadlé boky nebo zvednutý zadek.',
+      'Lokty příliš do stran.',
+    ],
+  ),
+  'wide_grip_lat_pulldown': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'neutral_grip_lat_pulldown': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'half_kneeling_lat_pulldown': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'chest_supported_dumbbell_row': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'machine_lat_pulldown': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'dumbbell_deadlift': (
+    steps: [
+      'Zaujmi stabilní postoj, páteř neutrální a střed těla zpevněný.',
+      'Prováděj kontrolovaný pohyb v plném rozsahu.',
+      'Vrať se pomalu do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhání a ztráta kontroly trupu.',
+      'Příliš velká váha.',
+    ],
+  ),
+  'hammer_strength_row': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'hammer_strength_chest_press': (
+    steps: [
+      'Nastav sed/lavici tak, aby úchop/držadla byly ve výšce středu hrudníku.',
+      'Spouštěj kontrolovaně do plného, bezbolestného rozsahu.',
+      'Tlač zpět nahoru, lopatky drž stabilní a lokty nezamykej na doraz.',
+    ],
+    mistakes: [
+      'Příliš velká váha a zkrácený rozsah.',
+      'Ramena jedou k uším.',
+    ],
+  ),
+  'landmine_row': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'smith_machine_row': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'cable_shrug': (
+    steps: [
+      'Chyť úchop, hrudník otevři a lopatky stáhni dolů.',
+      'Táhni kontrolovaně k horní části hrudníku/požadované dráze.',
+      'Vrať pomalu do protažení bez houpání trupu.',
+    ],
+    mistakes: [
+      'Houpání tělem a tah za krk.',
+      'Příliš velká váha na úkor rozsahu.',
+    ],
+  ),
+  'leg_press_narrow': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'leg_press_high': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'smith_lunge': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'single_leg_rdl': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'lying_leg_curl_machine': (
+    steps: [
+      'Nastav stroj tak, aby osa odpovídala kolenu.',
+      'Ohýbej koleno kontrolovaně proti odporu.',
+      'Vracej pomalu, závaží nenech dopadnout.',
+    ],
+    mistakes: [
+      'Zvedání boků/pánve ze sedáku.',
+      'Trhaný pohyb.',
+    ],
+  ),
+  'hip_extension_machine': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'adductor_machine': (
+    steps: [
+      'Sedni stabilně, opěrky nastav na pohodlný rozsah.',
+      'Pohyb prováděj kontrolovaně v bezbolestném rozsahu.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Příliš velký rozsah za komfort.',
+      'Trhání a houpání trupu.',
+    ],
+  ),
+  'abductor_machine': (
+    steps: [
+      'Sedni stabilně, opěrky nastav na pohodlný rozsah.',
+      'Pohyb prováděj kontrolovaně v bezbolestném rozsahu.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Příliš velký rozsah za komfort.',
+      'Trhání a houpání trupu.',
+    ],
+  ),
+  'leg_press_calf_raise': (
+    steps: [
+      'Nastav chodidla stabilně, plný rozsah v kotníku.',
+      'Zvedni se na špičky a nahoře krátce podrž.',
+      'Spouštěj pomalu do protažení.',
+    ],
+    mistakes: [
+      'Odrážení a zkrácený rozsah.',
+      'Příliš rychlé tempo.',
+    ],
+  ),
+  'split_squat': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'cable_pull_through_glute': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'bodyweight_squat': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'wall_sit': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'glute_bridge_bodyweight': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'step_up_box': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'bodyweight_lunge': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'hip_thrust_bodyweight': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'barbell_glute_bridge': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'kettlebell_goblet_squat': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'smith_machine_squat': (
+    steps: [
+      'Zaujmi stabilní postoj/sed, střed těla zpevněný.',
+      'Prováděj pohyb kontrolovaně, kolena ve směru prstů.',
+      'Vrať se pomalu a drž plnou kontrolu.',
+    ],
+    mistakes: [
+      'Zkrácený rozsah a rychlé odrážení.',
+      'Ztráta kontroly kolen nebo trupu.',
+    ],
+  ),
+  'leg_extension_single': (
+    steps: [
+      'Kolena v ose stroje, opora nad kotníky.',
+      'Propni nohy kontrolovaně a nahoře krátce stáhni.',
+      'Spouštěj pomalu bez dosednutí závaží.',
+    ],
+    mistakes: [
+      'Příliš velká váha a kopání.',
+      'Zvedání sedáku od opěrky.',
+    ],
+  ),
+  'seated_calf_raise_machine': (
+    steps: [
+      'Nastav chodidla stabilně, plný rozsah v kotníku.',
+      'Zvedni se na špičky a nahoře krátce podrž.',
+      'Spouštěj pomalu do protažení.',
+    ],
+    mistakes: [
+      'Odrážení a zkrácený rozsah.',
+      'Příliš rychlé tempo.',
+    ],
+  ),
+  'seated_dumbbell_press': (
+    steps: [
+      'Zpevni trup a žebra stáhni dolů, zápěstí nad lokty.',
+      'Tlač kontrolovaně nahoru v bezbolestné dráze.',
+      'Spouštěj pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Prohnutí v bedrech.',
+      'Příliš velká váha a zkrácený rozsah.',
+    ],
+  ),
+  'standing_barbell_press': (
+    steps: [
+      'Zpevni trup a žebra stáhni dolů, zápěstí nad lokty.',
+      'Tlač kontrolovaně nahoru v bezbolestné dráze.',
+      'Spouštěj pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Prohnutí v bedrech.',
+      'Příliš velká váha a zkrácený rozsah.',
+    ],
+  ),
+  'seated_barbell_press': (
+    steps: [
+      'Zpevni trup a žebra stáhni dolů, zápěstí nad lokty.',
+      'Tlač kontrolovaně nahoru v bezbolestné dráze.',
+      'Spouštěj pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Prohnutí v bedrech.',
+      'Příliš velká váha a zkrácený rozsah.',
+    ],
+  ),
+  'cable_front_raise': (
+    steps: [
+      'Stůj stabilně, lokty lehce pokrčené.',
+      'Zvedej paže kontrolovaně do výšky ramen (nebo bez bolesti).',
+      'Spouštěj pomalu, nehoupej trupem.',
+    ],
+    mistakes: [
+      'Houpání tělem.',
+      'Zvedání ramen k uším.',
+    ],
+  ),
+  'dumbbell_front_raise': (
+    steps: [
+      'Stůj stabilně, lokty lehce pokrčené.',
+      'Zvedej paže kontrolovaně do výšky ramen (nebo bez bolesti).',
+      'Spouštěj pomalu, nehoupej trupem.',
+    ],
+    mistakes: [
+      'Houpání tělem.',
+      'Zvedání ramen k uším.',
+    ],
+  ),
+  'cable_upright_row': (
+    steps: [
+      'Nastav stabilní pozici a drž ramena dole od uší.',
+      'Prováděj kontrolovaný pohyb cíleného svalu.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Ztráta kontroly ramen.',
+    ],
+  ),
+  'single_arm_cable_lateral_raise': (
+    steps: [
+      'Stůj stabilně, lokty lehce pokrčené.',
+      'Zvedej paže kontrolovaně do výšky ramen (nebo bez bolesti).',
+      'Spouštěj pomalu, nehoupej trupem.',
+    ],
+    mistakes: [
+      'Houpání tělem.',
+      'Zvedání ramen k uším.',
+    ],
+  ),
+  'machine_reverse_fly': (
+    steps: [
+      'Nastav stabilní pozici a drž ramena dole od uší.',
+      'Prováděj kontrolovaný pohyb cíleného svalu.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Ztráta kontroly ramen.',
+    ],
+  ),
+  'rope_face_pull': (
+    steps: [
+      'Nastav stabilní pozici a drž ramena dole od uší.',
+      'Prováděj kontrolovaný pohyb cíleného svalu.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Ztráta kontroly ramen.',
+    ],
+  ),
+  'pike_push_up': (
+    steps: [
+      'Zpevni trup a žebra stáhni dolů, zápěstí nad lokty.',
+      'Tlač kontrolovaně nahoru v bezbolestné dráze.',
+      'Spouštěj pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Prohnutí v bedrech.',
+      'Příliš velká váha a zkrácený rozsah.',
+    ],
+  ),
+  'dumbbell_preacher_curl': (
+    steps: [
+      'Lokty drž blízko těla a trup stabilní.',
+      'Ohýbej lokty kontrolovaně proti odporu.',
+      'Spouštěj pomalu do protažení bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem.',
+      'Zvedání loktů dopředu.',
+    ],
+  ),
+  'cross_body_hammer_curl': (
+    steps: [
+      'Lokty drž blízko těla a trup stabilní.',
+      'Ohýbej lokty kontrolovaně proti odporu.',
+      'Spouštěj pomalu do protažení bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem.',
+      'Zvedání loktů dopředu.',
+    ],
+  ),
+  'cable_biceps_curl_bar': (
+    steps: [
+      'Lokty drž blízko těla a trup stabilní.',
+      'Ohýbej lokty kontrolovaně proti odporu.',
+      'Spouštěj pomalu do protažení bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem.',
+      'Zvedání loktů dopředu.',
+    ],
+  ),
+  'ez_bar_preacher_curl': (
+    steps: [
+      'Lokty drž blízko těla a trup stabilní.',
+      'Ohýbej lokty kontrolovaně proti odporu.',
+      'Spouštěj pomalu do protažení bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem.',
+      'Zvedání loktů dopředu.',
+    ],
+  ),
+  'overhead_rope_extension': (
+    steps: [
+      'Lokty drž stabilně podle typu cviku.',
+      'Propínej/extenduj paže kontrolovaně.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Pohyb v rameni místo lokte.',
+    ],
+  ),
+  'assisted_dip': (
+    steps: [
+      'Lokty drž stabilně podle typu cviku.',
+      'Propínej/extenduj paže kontrolovaně.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Pohyb v rameni místo lokte.',
+    ],
+  ),
+  'seated_dumbbell_triceps_extension': (
+    steps: [
+      'Lokty drž stabilně podle typu cviku.',
+      'Propínej/extenduj paže kontrolovaně.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Pohyb v rameni místo lokte.',
+    ],
+  ),
+  'cable_kickback_triceps': (
+    steps: [
+      'Lokty drž stabilně podle typu cviku.',
+      'Propínej/extenduj paže kontrolovaně.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Pohyb v rameni místo lokte.',
+    ],
+  ),
+  'seated_dumbbell_curl': (
+    steps: [
+      'Lokty drž blízko těla a trup stabilní.',
+      'Ohýbej lokty kontrolovaně proti odporu.',
+      'Spouštěj pomalu do protažení bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem.',
+      'Zvedání loktů dopředu.',
+    ],
+  ),
+  'barbell_wrist_curl_seated': (
+    steps: [
+      'Lokty drž blízko těla a trup stabilní.',
+      'Ohýbej lokty kontrolovaně proti odporu.',
+      'Spouštěj pomalu do protažení bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem.',
+      'Zvedání loktů dopředu.',
+    ],
+  ),
+  'diamond_push_up': (
+    steps: [
+      'Lokty drž stabilně podle typu cviku.',
+      'Propínej/extenduj paže kontrolovaně.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Pohyb v rameni místo lokte.',
+    ],
+  ),
+  'bench_dip': (
+    steps: [
+      'Lokty drž stabilně podle typu cviku.',
+      'Propínej/extenduj paže kontrolovaně.',
+      'Vrať pomalu do výchozí polohy.',
+    ],
+    mistakes: [
+      'Trhání a příliš velká váha.',
+      'Pohyb v rameni místo lokte.',
+    ],
+  ),
+  'dead_bug': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
+  'bird_dog': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
+  'mountain_climber': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
+  'toe_touch': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
+  'farmer_carry': (
+    steps: [
+      'Zvedni váhu kontrolovaně, stůj vzpřímeně a zpevni střed těla.',
+      'Kráčej krátkými stabilními kroky, dýchej plynule.',
+      'Odlož váhu kontrolovaně.',
+    ],
+    mistakes: [
+      'Naklánění trupu na stranu.',
+      'Příliš rychlá a nekontrolovaná chůze.',
+    ],
+  ),
+  'suitcase_carry': (
+    steps: [
+      'Zvedni váhu kontrolovaně, stůj vzpřímeně a zpevni střed těla.',
+      'Kráčej krátkými stabilními kroky, dýchej plynule.',
+      'Odlož váhu kontrolovaně.',
+    ],
+    mistakes: [
+      'Naklánění trupu na stranu.',
+      'Příliš rychlá a nekontrolovaná chůze.',
+    ],
+  ),
+  'cable_pallof_rotation': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
+  'ab_rollout_barbell': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
+  'russian_twist_bodyweight': (
+    steps: [
+      'Zaujmi stabilní pozici a zpevni střed těla.',
+      'Prováděj pohyb pomalu a kontrolovaně v plném rozsahu.',
+      'Vrať se do výchozí polohy bez trhání.',
+    ],
+    mistakes: [
+      'Trhaný pohyb a ztráta napětí.',
+      'Příliš velký rozsah na úkor kontroly.',
+    ],
+  ),
 };

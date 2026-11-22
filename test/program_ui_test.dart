@@ -73,7 +73,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Série × opakování přes předvolbu.
-    await tester.tap(find.text('Tlak nad hlavu ve stoje (osa)'));
+    await tester.dragUntilVisible(
+      find.text('Overhead Press'),
+      find.byType(Scrollable).first,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Overhead Press'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Síla 4×5–8'));
     await tester.pumpAndSettle();

@@ -77,8 +77,10 @@ void main() {
     final ids = day.exercises.map((p) => p.exerciseId).toList();
     expect(ids, hasLength(3));
     expect(anatomyOf(ids.first)!.compound, isTrue);
-    final heads = {for (final id in ids) anatomyOf(id)!.primary.first};
-    expect(heads, {'delt_front', 'delt_side', 'delt_rear'});
+    final heads = {
+      for (final id in ids) ...anatomyOf(id)!.primary,
+    }.where((h) => const {'delt_front', 'delt_side', 'delt_rear'}.contains(h));
+    expect(heads.toSet(), {'delt_front', 'delt_side', 'delt_rear'});
   });
 
   test('built day splits exercises between groups', () {
