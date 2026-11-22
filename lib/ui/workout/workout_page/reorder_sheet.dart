@@ -153,7 +153,7 @@ class _LastDeltaRow extends StatelessWidget {
           'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}';
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Space.xs, 0, Space.s, Space.s),
+      padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.s),
       child: Text(
         headline,
         style: text.bodySmall?.copyWith(

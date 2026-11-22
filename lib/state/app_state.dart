@@ -288,6 +288,7 @@ class AppState extends ChangeNotifier {
 
   // Pauza mezi sériemi: stav pro app_state/rest_timer.dart
   static const _restKey = 'restEndsAt';
+  static const _restStartKey = 'restStartedAt';
   Future<void>? _restUpdates;
 
   // Split a progrese: stav pro app_state/program_ops.dart

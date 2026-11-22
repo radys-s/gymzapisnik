@@ -404,7 +404,8 @@ extension ActiveWorkoutOps on AppState {
       // V supersérii se jde rovnou na další cvik; pauza až po kole.
       if (entry == null || restsAfter(list, entry)) {
         final seconds = restFor(entry?.exerciseId);
-        _setRestEnd((now ?? DateTime.now()).add(Duration(seconds: seconds)));
+        final at = now ?? DateTime.now();
+        _setRestEnd(at.add(Duration(seconds: seconds)), start: at);
       } else {
         _setRestEnd(null);
       }

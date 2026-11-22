@@ -450,24 +450,40 @@ class _WorkoutPageState extends State<WorkoutPage> {
                     context.palette.controlRadius,
                   ),
                   onTap: () => _rename(workout),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: minTap),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
                         workout.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: text.titleMedium,
+                        style: text.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      _Elapsed(workout.startedAt),
-                    ],
+                    ),
                   ),
                 ),
               ),
+
               actions: [
-                TextButton(
-                  onPressed: () => _finish(workout),
-                  child: Text(_busy ? 'Ukládám…' : 'Dokončit'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: FilledButton(
+                    onPressed: () => _finish(workout),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      textStyle: text.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    child: Text(_busy ? 'Ukládám…' : 'Dokončit'),
+                  ),
                 ),
                 PopupMenuButton<String>(
                   tooltip: 'Možnosti tréninku',
@@ -496,55 +512,62 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 ),
               ],
             ),
-            body: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                Space.page,
-                Space.s,
-                Space.page,
-                Space.xxxl,
-              ),
+            body: Column(
               children: [
-                if (workout.note.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Space.xs,
-                      0,
-                      Space.xs,
-                      Space.m,
-                    ),
-                    child: Text(workout.note, style: text.bodySmall),
+                _SessionStrip(workout),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.only(bottom: Space.xxxl),
+                    children: [
+                      if (workout.note.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            Space.page,
+                            Space.m,
+                            Space.page,
+                            0,
+                          ),
+                          child: Text(workout.note, style: text.bodySmall),
+                        ),
+                      if (exercises.isEmpty)
+                        const EmptyState(
+                          icon: Icons.fitness_center_rounded,
+                          title: 'Zatím žádný cvik',
+                          message: 'Přidej první cvik a zapiš sérii.',
+                        ),
+                      for (var i = 0; i < exercises.length; i++)
+                        _ExerciseCard(
+                          superset: slots[i],
+                          key: ObjectKey(exercises[i]),
+                          state: state,
+                          entry: exercises[i],
+                          canMoveUp: i > 0,
+                          canMoveDown: i < exercises.length - 1,
+                          onMenu: (action) =>
+                              _exerciseMenu(exercises[i], action),
+                          onRemoveSet: (set) => _removeSet(exercises[i], set),
+                          onError: _snack,
+                        ),
+                      const SizedBox(height: Space.l),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.page,
+                        ),
+                        child: exercises.isEmpty
+                            ? PrimaryButton(
+                                'Přidat cvik',
+                                icon: Icons.add_rounded,
+                                onPressed: _addExercises,
+                              )
+                            : SecondaryButton(
+                                'Přidat cvik',
+                                icon: Icons.add_rounded,
+                                onPressed: _addExercises,
+                              ),
+                      ),
+                    ],
                   ),
-                if (exercises.isEmpty)
-                  const EmptyState(
-                    icon: Icons.fitness_center_rounded,
-                    title: 'Zatím žádný cvik',
-                    message: 'Přidej první cvik a zapiš sérii.',
-                  ),
-                for (var i = 0; i < exercises.length; i++)
-                  _ExerciseCard(
-                    superset: slots[i],
-                    key: ObjectKey(exercises[i]),
-                    state: state,
-                    entry: exercises[i],
-                    canMoveUp: i > 0,
-                    canMoveDown: i < exercises.length - 1,
-                    onMenu: (action) => _exerciseMenu(exercises[i], action),
-                    onRemoveSet: (set) => _removeSet(exercises[i], set),
-                    onError: _snack,
-                  ),
-                const SizedBox(height: Space.s),
-                if (exercises.isEmpty)
-                  PrimaryButton(
-                    'Přidat cvik',
-                    icon: Icons.add_rounded,
-                    onPressed: _addExercises,
-                  )
-                else
-                  SecondaryButton(
-                    'Přidat cvik',
-                    icon: Icons.add_rounded,
-                    onPressed: _addExercises,
-                  ),
+                ),
               ],
             ),
             bottomNavigationBar: state.restEndsAt == null

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models.dart';
+import '../design/tokens.dart';
 
 /// Odznak série: R = rozcvička, D = drop, S = do selhání, jinak pořadí.
 String setBadge(SetEntry set, int index) => set.warmup
@@ -36,3 +37,13 @@ List<PopupMenuEntry<String>> setTypeItems(SetEntry set) => [
       child: Text(k.label),
     ),
 ];
+
+/// Barva odznaku: rozcvička zlatá, drop fialová, selhání červená,
+/// pracovní série bílá (jako v Hevy).
+Color setKindColor(SetEntry set, AppPalette p) => set.warmup
+    ? AppPalette.amber
+    : switch (set.kind) {
+        SetKind.drop => AppPalette.violet,
+        SetKind.failure => p.negative,
+        SetKind.normal => p.label,
+      };

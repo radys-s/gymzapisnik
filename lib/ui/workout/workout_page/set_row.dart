@@ -199,29 +199,43 @@ class _SetRowState extends State<_SetRow> {
         child: ExcludeSemantics(child: field),
       ),
       // Pole jen ukazuje hodnotu, klepnutí otevře list s − / +.
-      child: TextField(
-        controller: c,
-        readOnly: true,
-        // Bez fokusu: po zavření listu nezůstane pole zvýrazněné.
-        canRequestFocus: false,
-        showCursor: false,
-        enableInteractiveSelection: false,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodyLarge
-            ?.copyWith(fontFeatures: tabular),
-        decoration: InputDecoration(
-          hintText: '0',
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 4,
-            vertical: 12,
-          ),
-          // Náročnost série (RPE) drobně za opakováními.
-          suffixText: suffix,
-          suffixStyle: Theme.of(context).textTheme.labelSmall
-              ?.copyWith(color: context.palette.secondaryLabel),
+      child: Container(
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: widget.set.done ? null : context.palette.fill,
+          borderRadius: BorderRadius.circular(8),
         ),
-        onTap: () => _openSheet(focusReps: !decimal),
+        child: TextField(
+          controller: c,
+          readOnly: true,
+          // Bez fokusu: po zavření listu nezůstane pole zvýrazněné.
+          canRequestFocus: false,
+          showCursor: false,
+          enableInteractiveSelection: false,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: textFont,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: context.palette.label,
+            fontFeatures: tabular,
+          ),
+          decoration: InputDecoration(
+            hintText: '–',
+            isCollapsed: true,
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            // Náročnost série (RPE) drobně za opakováními.
+            suffixText: suffix,
+            suffixStyle: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: context.palette.secondaryLabel),
+          ),
+          onTap: () => _openSheet(focusReps: !decimal),
+        ),
       ),
     ),
   );
@@ -246,10 +260,7 @@ class _SetRowState extends State<_SetRow> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: Space.xl),
-        decoration: BoxDecoration(
-          color: p.negative,
-          borderRadius: BorderRadius.circular(context.palette.controlRadius),
-        ),
+        decoration: BoxDecoration(color: p.negative),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       onDismissed: (_) => widget.onRemove(),
@@ -257,12 +268,8 @@ class _SetRowState extends State<_SetRow> {
       child: AnimatedContainer(
         duration: Motion.of(context, Motion.quick),
         curve: Motion.curve,
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.only(right: _edgeInset),
-        decoration: BoxDecoration(
-          color: set.done ? p.accent.withValues(alpha: 0.12) : null,
-          borderRadius: BorderRadius.circular(context.palette.controlRadius),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: _rowInset),
+        color: set.done ? p.positive.withValues(alpha: 0.13) : null,
         child: Row(
           children: [
             SizedBox(
@@ -289,18 +296,15 @@ class _SetRowState extends State<_SetRow> {
                   ],
                   child: Center(
                     child: Container(
-                      constraints: const BoxConstraints(minWidth: _badgeWidth),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 4,
+                      constraints: const BoxConstraints(
+                        minWidth: _badgeWidth,
+                        minHeight: 26,
                       ),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: record
-                            ? p.gold.withValues(alpha: 0.2)
-                            : set.warmup || set.kind != SetKind.normal
-                            ? p.accent.withValues(alpha: 0.16)
-                            : p.fill,
-                        borderRadius: BorderRadius.circular(2),
+                        color: record ? p.gold.withValues(alpha: 0.18) : null,
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       // Rekordní série má místo čísla pohár.
                       child: record
@@ -314,9 +318,8 @@ class _SetRowState extends State<_SetRow> {
                               widget.label,
                               textAlign: TextAlign.center,
                               style: text.titleSmall?.copyWith(
-                                color: set.warmup || set.kind != SetKind.normal
-                                    ? p.accent
-                                    : p.label,
+                                fontWeight: FontWeight.w700,
+                                color: setKindColor(set, p),
                                 fontFeatures: tabular,
                               ),
                             ),
@@ -350,7 +353,8 @@ class _SetRowState extends State<_SetRow> {
                             : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
                         maxLines: 1,
                         style: text.bodyMedium?.copyWith(
-                          color: p.secondaryLabel,
+                          color: canCopy ? p.secondaryLabel : p.tertiaryLabel,
+                          fontWeight: FontWeight.w500,
                           fontFeatures: tabular,
                         ),
                       ),
@@ -373,21 +377,10 @@ class _SetRowState extends State<_SetRow> {
                 suffix: rpe == null ? null : '@${formatRpe(rpe)}',
               ),
             ),
-            Container(
+            SizedBox(
               width: _doneWidth,
-              height: 48,
-              padding: const EdgeInsets.only(left: Space.xs),
-              // Potvrzená série svítí přechodem motivu.
-              child: AnimatedContainer(
-                duration: Motion.of(context, Motion.quick),
-                curve: Motion.curve,
-                decoration: BoxDecoration(
-                  gradient: set.done ? p.linear : null,
-                  color: set.done ? null : p.fill,
-                  borderRadius: BorderRadius.circular(
-                    context.palette.controlRadius,
-                  ),
-                ),
+              height: minTap,
+              child: Center(
                 // Bez tooltipu: na webu po potvrzení visel přes další řádek.
                 // Vlastní uzel s akcí, jinak splyne s řádkem a čtečka
                 // sérii nepotvrdí.
@@ -397,23 +390,24 @@ class _SetRowState extends State<_SetRow> {
                   label: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
                   onTap: _saving ? null : _toggleDone,
                   excludeSemantics: true,
-                  child: IconButton(
-                    onPressed: _saving ? null : _toggleDone,
-                    padding: EdgeInsets.zero,
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      foregroundColor: set.done
-                          ? p.onGradient
-                          : p.secondaryLabel,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          context.palette.controlRadius,
+                  child: InkResponse(
+                    onTap: _saving ? null : _toggleDone,
+                    radius: 24,
+                    child: AnimatedContainer(
+                      duration: Motion.of(context, Motion.quick),
+                      curve: Motion.curve,
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: set.done ? p.positive : p.fill,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: _DrawnCheck(
+                          done: set.done,
+                          color: set.done ? AppPalette.ink : p.tertiaryLabel,
                         ),
                       ),
-                    ),
-                    icon: _DrawnCheck(
-                      done: set.done,
-                      color: set.done ? p.onGradient : p.secondaryLabel,
                     ),
                   ),
                 ),
@@ -440,7 +434,7 @@ class _DrawnCheck extends StatelessWidget {
     duration: Motion.of(context, Motion.setDone),
     curve: Motion.curve,
     builder: (context, t, _) => CustomPaint(
-      size: const Size.square(24),
+      size: const Size.square(22),
       painter: _CheckPainter(progress: t, color: color),
     ),
   );
@@ -460,11 +454,11 @@ class _CheckPainter extends CustomPainter {
       ..lineTo(size.width * 0.79, size.height * 0.31);
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.6
+      ..strokeWidth = 2.8
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     // Podklad: celá fajfka slabě, ať je vidět, kam klepnout.
-    canvas.drawPath(path, stroke..color = color.withValues(alpha: 0.35));
+    canvas.drawPath(path, stroke..color = color.withValues(alpha: 0.6));
     if (progress <= 0) return;
     final metric = path.computeMetrics().first;
     canvas.drawPath(
