@@ -63,7 +63,13 @@ void main() {
     expect(find.textContaining('Lepší než minule'), findsOneWidget);
     expect(find.text('minule 80×8'), findsOneWidget);
     expect(find.textContaining('Nové osobní rekordy'), findsOneWidget);
-    expect(find.textContaining('Max váha: 82,5 kg'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Text && (w.semanticsLabel ?? '').contains('Max váha: 82,5 kg'),
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('(+20 kg)'), findsOneWidget);
     expect(find.byType(BackButton), findsNothing);
     expect(find.text('Hotovo'), findsOneWidget);

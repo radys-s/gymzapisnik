@@ -417,71 +417,95 @@ class _SummaryPageState extends State<SummaryPage> {
     int sets,
     double kg,
   ) => HeroCard(
-    vivid: true,
-    watermark: '$number',
     child: Builder(
       builder: (context) {
         final p = context.palette;
         final text = Theme.of(context).textTheme;
+        final weekDone = week.workouts >= state.weekGoal;
+        Widget divider() =>
+            Container(width: 0.5, height: 40, color: p.separator);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (finished) ...[
-              Text(workout.name, style: text.titleLarge),
-              const SizedBox(height: 2),
-            ],
-            Text(
-              formatDateTime(workout.date),
-              style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
-            ),
-            const SizedBox(height: Space.s),
-            Wrap(
-              spacing: Space.s,
-              runSpacing: Space.xs,
+            Row(
               children: [
-                Pill('$number. trénink', icon: Icons.flag_rounded),
-                Pill(
-                  'Týden ${week.workouts}/${state.weekGoal}',
-                  icon: week.workouts >= state.weekGoal
-                      ? Icons.check_circle_rounded
-                      : Icons.date_range_rounded,
+                if (finished) ...[
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: p.positive,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: AppPalette.ink,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: Space.m),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$number. TRÉNINK · ${formatDateTime(workout.date)}'
+                            .toUpperCase(),
+                        style: text.labelSmall,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(workout.name, style: text.titleLarge),
+                    ],
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: Space.l),
             Row(
-              spacing: Space.s,
               children: [
-                if (duration != null)
-                  Expanded(
-                    child: StatTile(
-                      durationLabel(duration),
-                      'Délka',
-                      big: true,
-                    ),
-                  ),
+                if (duration != null) ...[
+                  Expanded(child: StatTile(durationLabel(duration), 'Délka')),
+                  divider(),
+                  const SizedBox(width: Space.m),
+                ],
                 Expanded(
                   child: StatTile(
                     '$sets',
                     'Série',
                     countTo: sets.toDouble(),
                     format: (v) => '${v.round()}',
-                    big: true,
                   ),
                 ),
+                divider(),
+                const SizedBox(width: Space.m),
                 Expanded(
+                  flex: 2,
                   child: StatTile(
                     '${formatVolume(kg)} kg',
                     'Objem',
                     countTo: kg,
                     format: (v) => '${formatVolume(v)} kg',
-                    big: true,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: Space.m),
+            Wrap(
+              spacing: Space.s,
+              runSpacing: Space.xs,
+              children: [
+                Pill(
+                  'Týden ${week.workouts}/${state.weekGoal}',
+                  icon: weekDone
+                      ? Icons.check_circle_rounded
+                      : Icons.date_range_rounded,
+                  color: weekDone ? p.positive : p.secondaryLabel,
+                ),
+              ],
+            ),
             if (workout.note.isNotEmpty) ...[
-              const SizedBox(height: Space.l),
+              const SizedBox(height: Space.m),
               Text(workout.note, style: text.bodyMedium),
             ],
           ],
@@ -601,12 +625,12 @@ class _RecordsPanel extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Panel(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              IconTile(Icons.emoji_events_rounded, color: p.accent),
-              const SizedBox(width: Space.m),
+              Icon(Icons.emoji_events_rounded, color: p.gold, size: 22),
+              const SizedBox(width: Space.s),
               Expanded(
                 child: Text(
                   records.length == 1
@@ -618,15 +642,41 @@ class _RecordsPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Space.s),
-          for (final r in records)
+          for (final (i, r) in records.indexed) ...[
+            if (i > 0) Divider(color: p.separator, height: 1),
             Padding(
-              padding: const EdgeInsets.only(top: Space.xs),
-              child: Text(
-                '${state.exercise(r.exerciseId).name} – ${r.kind.label}: '
-                '${recordLabel(r.kind, r.value)}',
-                style: text.bodyMedium?.copyWith(fontFeatures: tabular),
+              padding: const EdgeInsets.symmetric(vertical: Space.s),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          state.exercise(r.exerciseId).name,
+                          style: text.titleSmall,
+                        ),
+                        Text(r.kind.label, style: text.bodySmall),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    recordLabel(r.kind, r.value),
+                    semanticsLabel:
+                        '${state.exercise(r.exerciseId).name} – '
+                        '${r.kind.label}: ${recordLabel(r.kind, r.value)}',
+                    style: TextStyle(
+                      fontFamily: condensedFont,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: p.gold,
+                      fontFeatures: tabular,
+                    ),
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );
