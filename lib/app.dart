@@ -113,15 +113,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   NavigationBarThemeData _barTheme(BuildContext context, Color color) {
     final p = context.palette;
     Color of(Set<WidgetState> states) =>
-        states.contains(WidgetState.selected) ? color : p.secondaryLabel;
+        states.contains(WidgetState.selected) ? p.label : p.tertiaryLabel;
     return NavigationBarTheme.of(context).copyWith(
-      indicatorColor: color.withValues(alpha: 0.16),
+      indicatorColor: Colors.transparent,
       iconTheme: WidgetStateProperty.resolveWith(
-        (st) => IconThemeData(size: 26, color: of(st)),
+        (st) => IconThemeData(size: 24, color: of(st)),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (st) =>
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: of(st)),
+        (st) => TextStyle(
+          fontFamily: textFont,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: of(st),
+        ),
       ),
     );
   }

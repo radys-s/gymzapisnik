@@ -92,7 +92,7 @@ class HomeFoodBlock extends StatelessWidget {
               Expanded(child: Text('Jídlo dnes', style: text.titleMedium)),
               IconButton(
                 tooltip: 'Čárový kód',
-                color: AppPalette.amber,
+                color: context.palette.secondaryLabel,
                 icon: const Icon(Icons.qr_code_2),
                 onPressed: () => barcodeFlow(context, state, key),
               ),

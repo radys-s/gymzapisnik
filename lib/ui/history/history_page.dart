@@ -179,6 +179,7 @@ class WorkoutRow extends StatelessWidget {
                               ? '$prs rekordy'
                               : '$prs rekordů',
                           icon: Icons.emoji_events,
+                          color: context.palette.gold,
                         ),
                       ],
                     ],

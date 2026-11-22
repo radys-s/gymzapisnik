@@ -120,8 +120,8 @@ ThemeData buildTheme() {
       scrolledUnderElevation: 0,
       centerTitle: true,
       titleTextStyle: text.titleMedium,
-      iconTheme: IconThemeData(color: p.accent),
-      actionsIconTheme: IconThemeData(color: p.accent),
+      iconTheme: IconThemeData(color: p.label),
+      actionsIconTheme: IconThemeData(color: p.label),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: p.background,
@@ -251,7 +251,7 @@ ThemeData buildTheme() {
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(
-        foregroundColor: p.accent,
+        foregroundColor: p.label,
         minimumSize: const Size(minTap, minTap),
       ),
     ),
