@@ -226,10 +226,12 @@ class _RestBarState extends State<_RestBar> {
                 12,
                 8 + MediaQuery.paddingOf(context).bottom,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+              // Jeden řádek: čas vlevo, tlačítka vpravo. Na úzkém telefonu
+              // se čas zmenší a „Přeskočit“ zůstane jen jako ikona.
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final compact = box.maxWidth < 300;
+                  return Row(
                     children: [
                       Icon(
                         finished
@@ -239,32 +241,30 @@ class _RestBarState extends State<_RestBar> {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          text,
-                          semanticsLabel: finished ? text : 'Pauza $text',
-                          style: finished
-                              ? Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: fg,
-                                  fontWeight: FontWeight.w700,
-                                )
-                              : TextStyle(
-                                  fontFamily: condensedFont,
-                                  fontSize: 30,
-                                  height: 1,
-                                  fontWeight: FontWeight.w700,
-                                  color: fg,
-                                  fontFeatures: tabular,
-                                ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            text,
+                            semanticsLabel: finished ? text : 'Pauza $text',
+                            maxLines: 1,
+                            style: finished
+                                ? Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: fg,
+                                        fontWeight: FontWeight.w700,
+                                      )
+                                : TextStyle(
+                                    fontFamily: condensedFont,
+                                    fontSize: 30,
+                                    height: 1,
+                                    fontWeight: FontWeight.w700,
+                                    color: fg,
+                                    fontFeatures: tabular,
+                                  ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: [
                       if (!finished) ...[
                         chip(
                           '−15',
@@ -279,13 +279,31 @@ class _RestBarState extends State<_RestBar> {
                           ),
                         ),
                       ],
-                      chip(
-                        finished ? 'Zavřít' : 'Přeskočit',
-                        widget.state.skipRest,
-                      ),
+                      if (compact && !finished)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: IconButton(
+                            tooltip: 'Přeskočit',
+                            onPressed: widget.state.skipRest,
+                            style: IconButton.styleFrom(
+                              foregroundColor: chipFg,
+                              backgroundColor: chipFg.withValues(alpha: 0.1),
+                              minimumSize: const Size(minTap, minTap),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.skip_next_rounded),
+                          ),
+                        )
+                      else
+                        chip(
+                          finished ? 'Zavřít' : 'Přeskočit',
+                          widget.state.skipRest,
+                        ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

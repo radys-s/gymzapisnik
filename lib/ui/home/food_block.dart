@@ -24,56 +24,73 @@ class HomeFoodBlock extends StatelessWidget {
     final kcalTarget = own.kcalTarget ?? suggested?.kcal;
     final proteinTarget = own.proteinTarget ?? suggested?.protein;
     final quick = state.quickFoods.take(4).toList();
-    Widget stat(
-      String label,
-      double value,
-      double? target,
-      String unit,
-      Color color,
-      IconData icon,
-    ) {
+    Widget stat(String label, double value, double? target, String unit) {
       final progress = target == null || target <= 0
           ? 0.0
           : (value / target).clamp(0.0, 1.0);
-      final shown =
-          '${value.round()}${target == null ? '' : ' / ${target.round()}'} $unit';
+      final left = target == null ? null : (target - value).round();
       return Expanded(
-        child: Container(
-          padding: const EdgeInsets.all(Space.m),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(Radii.card),
-            border: Border.all(color: color.withValues(alpha: 0.16)),
-          ),
+        child: Semantics(
+          label:
+              '$label ${value.round()}'
+              '${target == null ? '' : ' z ${target.round()}'} $unit',
+          excludeSemantics: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(icon, size: 16, color: color),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: text.labelMedium?.copyWith(color: p.secondaryLabel),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
               Text(
-                shown,
-                style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                label.toUpperCase(),
+                style: text.labelSmall?.copyWith(
+                  color: p.secondaryLabel,
+                  letterSpacing: 1.1,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '${value.round()}'),
+                      TextSpan(
+                        text: target == null
+                            ? ' $unit'
+                            : ' / ${target.round()} $unit',
+                        style: TextStyle(fontSize: 18, color: p.tertiaryLabel),
+                      ),
+                    ],
+                  ),
+                  style: TextStyle(
+                    fontFamily: condensedFont,
+                    fontSize: 28,
+                    height: 1.1,
+                    fontWeight: FontWeight.w700,
+                    color: p.label,
+                    fontFeatures: tabular,
+                  ),
+                ),
+              ),
+              const SizedBox(height: Space.s),
               ClipRRect(
                 borderRadius: BorderRadius.circular(99),
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 6,
                   backgroundColor: p.fill,
-                  valueColor: AlwaysStoppedAnimation(color),
+                  valueColor: AlwaysStoppedAnimation(
+                    progress >= 1 ? p.positive : p.accent,
+                  ),
                 ),
+              ),
+              const SizedBox(height: Space.xs),
+              Text(
+                left == null
+                    ? 'bez cíle'
+                    : left > 0
+                    ? 'zbývá $left $unit'
+                    : 'cíl splněn',
+                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ],
           ),
@@ -82,60 +99,41 @@ class HomeFoodBlock extends StatelessWidget {
     }
 
     return Panel(
-      tone: Tone.food,
-      padding: const EdgeInsets.all(Space.l),
+      padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.s, Space.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppPalette.orange.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.restaurant_rounded, color: AppPalette.orange),
-              ),
-              const SizedBox(width: Space.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Jídlo dnes', style: text.titleMedium),
-                    Text(
-                      totals.kcal <= 0
-                          ? 'Zapiš první jídlo a drž palivo pod kontrolou'
-                          : 'Kalorie a bílkoviny na dnešek',
-                      style: text.bodySmall?.copyWith(color: p.secondaryLabel),
-                    ),
-                  ],
-                ),
-              ),
+              Icon(Icons.restaurant_rounded, size: 20, color: p.accent),
+              const SizedBox(width: Space.s),
+              Expanded(child: Text('Jídlo dnes', style: text.titleMedium)),
               IconButton(
                 tooltip: 'Čárový kód',
                 color: p.secondaryLabel,
-                icon: const Icon(Icons.qr_code_2),
+                icon: const Icon(Icons.qr_code_scanner_rounded),
                 onPressed: () => barcodeFlow(context, state, key),
               ),
-              FilledButton.tonalIcon(
+              TextButton.icon(
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => NutritionPage(state)),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
+                icon: const Icon(Icons.add_rounded, size: 20),
                 label: const Text('Přidat'),
               ),
             ],
           ),
-          const SizedBox(height: Space.m),
-          Row(
-            children: [
-              stat('Kalorie', totals.kcal, kcalTarget, 'kcal', AppPalette.orange, Icons.local_fire_department_rounded),
-              const SizedBox(width: Space.s),
-              stat('Bílkoviny', totals.protein, proteinTarget, 'g', AppPalette.blue, Icons.fitness_center_rounded),
-            ],
+          const SizedBox(height: Space.xs),
+          Padding(
+            padding: const EdgeInsets.only(right: Space.s),
+            child: Row(
+              children: [
+                stat('Kalorie', totals.kcal, kcalTarget, 'kcal'),
+                const SizedBox(width: Space.xl),
+                stat('Bílkoviny', totals.protein, proteinTarget, 'g'),
+              ],
+            ),
           ),
           if (quick.isNotEmpty) ...[
             const SizedBox(height: Space.m),
