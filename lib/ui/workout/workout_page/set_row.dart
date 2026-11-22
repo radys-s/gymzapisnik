@@ -16,6 +16,9 @@ class _SetRow extends StatefulWidget {
   final String label;
   final bool bodyweight;
   final SetEntry? previous;
+
+  /// Další série na řadě: ember proužek vlevo.
+  final bool current;
   final VoidCallback onRemove;
   final ValueChanged<String> onError;
 
@@ -30,6 +33,7 @@ class _SetRow extends StatefulWidget {
     required this.label,
     required this.bodyweight,
     required this.previous,
+    this.current = false,
     required this.onRemove,
     required this.onError,
   });
@@ -269,7 +273,22 @@ class _SetRowState extends State<_SetRow> {
         duration: Motion.of(context, Motion.quick),
         curve: Motion.curve,
         padding: const EdgeInsets.symmetric(horizontal: _rowInset),
-        color: set.done ? p.positive.withValues(alpha: 0.13) : null,
+        color: set.done
+            ? p.positive.withValues(alpha: 0.13)
+            : widget.current
+            ? p.accent.withValues(alpha: 0.07)
+            : null,
+        // Proužek se kreslí přes obsah, takže řádek neposune.
+        foregroundDecoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: widget.current && !set.done
+                  ? p.accent
+                  : Colors.transparent,
+              width: 3,
+            ),
+          ),
+        ),
         child: Row(
           children: [
             SizedBox(

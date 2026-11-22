@@ -424,6 +424,11 @@ class _WorkoutPageState extends State<WorkoutPage> {
       final p = context.palette;
       final text = Theme.of(context).textTheme;
       final exercises = workout.exercises;
+      // Série, na které uživatel je: první nepotvrzená v pořadí cviků.
+      final current = exercises
+          .expand((e) => e.sets)
+          .where((s) => !s.done)
+          .firstOrNull;
       final slots = supersetSlots(exercises);
       return PopScope(
         canPop: !_busy,
@@ -537,6 +542,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                         ),
                       for (var i = 0; i < exercises.length; i++)
                         _ExerciseCard(
+                          current: current,
                           superset: slots[i],
                           key: ObjectKey(exercises[i]),
                           state: state,

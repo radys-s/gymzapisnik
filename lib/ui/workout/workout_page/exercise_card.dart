@@ -30,8 +30,12 @@ class _ExerciseCard extends StatelessWidget {
   final ValueChanged<SetEntry> onRemoveSet;
   final ValueChanged<String> onError;
 
+  /// Série, na které uživatel právě je (zvýrazní se).
+  final SetEntry? current;
+
   const _ExerciseCard({
     super.key,
+    this.current,
     required this.state,
     required this.entry,
     required this.canMoveUp,
@@ -290,6 +294,7 @@ class _ExerciseCard extends StatelessWidget {
                 label: setBadge(entry.sets[i], ++workingIndex),
                 bodyweight: bodyweight,
                 previous: previous[i],
+                current: identical(entry.sets[i], current),
                 onRemove: () => onRemoveSet(entry.sets[i]),
                 onError: onError,
               ),
