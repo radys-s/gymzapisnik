@@ -470,7 +470,7 @@ class _EntryTile extends StatelessWidget {
         // Same row shape as the meal rows below: icon, text, chevron.
         child: Row(
           children: [
-            IconTile(icon, color: ToneScope.of(context).color),
+            IconTile(icon, color: p.secondaryLabel),
             const SizedBox(width: Space.m),
             Expanded(
               child: Column(
@@ -609,7 +609,7 @@ class _RingStack extends StatelessWidget {
       if (kcal case (final v, final t))
         ('Energie', v, t, 'kcal', AppPalette.food),
       if (protein case (final v, final t))
-        ('Bílkoviny', v, t, 'g', const [AppPalette.cyan, Color(0xFF7BE4FF)]),
+        ('Bílkoviny', v, t, 'g', const [AppPalette.cyan, AppPalette.cyan]),
     ];
     const outer = 132.0, stroke = 14.0;
     // Při velkém písmu nebo úzkém displeji legenda pod kruhy.

@@ -68,7 +68,7 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
               children: [
                 GroupedRow(
                   icon: Icons.auto_awesome_rounded,
-                  iconColor: AppPalette.pink,
+                  iconColor: p.accent,
                   title: 'Sestavit plán na míru',
                   subtitle: 'Pár otázek a rutiny jsou hotové',
                   onTap: () => _push(PlanSetupPage(state)),
@@ -76,42 +76,30 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
               ],
             )
           else
-            GroupedSection(
-              dividerIndent: 58,
-              children: [
-                for (final (i, day) in split.days.indexed)
-                  GroupedRow(
-                    icon: i == today % split.days.length
-                        ? Icons.play_circle_fill_rounded
-                        : Icons.play_circle_outline_rounded,
-                    iconColor: i == today % split.days.length
-                        ? p.accent
-                        : p.secondaryLabel,
-                    title: day.name,
-                    subtitle:
-                        '${exercisesLabel(day.exercises.length)} · '
-                        '~${workoutMinutes(day.exercises.fold(0, (n, e) => n + e.sets))} min'
-                        '${i == today % split.days.length ? ' · dnes' : ''}',
-                    onTap: active == null
-                        ? () => runWorkout(() => state.startSplitDay(i))
-                        : null,
-                  ),
-              ],
-            ),
+            for (var i = 0; i < split.days.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: Space.m),
+                child: _RoutineCard(
+                  state: state,
+                  index: i,
+                  today: i == today % split.days.length,
+                  onStart: active == null
+                      ? () => runWorkout(() => state.startSplitDay(i))
+                      : null,
+                ),
+              ),
           const SectionHeader('Prozkoumat'),
           GroupedSection(
             dividerIndent: 58,
             children: [
               GroupedRow(
                 icon: Icons.view_list_rounded,
-                iconColor: AppPalette.violet,
                 title: 'Hotové programy',
                 subtitle: split == null ? null : 'Teď: ${split.name}',
                 onTap: () => _push(ProgramPage(state)),
               ),
               GroupedRow(
                 icon: Icons.quiz_outlined,
-                iconColor: AppPalette.cyan,
                 title: 'Plán podle dotazníku',
                 subtitle: 'Cíl, čas a vybavení',
                 onTap: () => _push(PlanSetupPage(state)),
@@ -131,4 +119,98 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
       );
     },
   );
+}
+
+/// Rutina jako karta (Hevy): název, náhled cviků, rozsah a tlačítko Začít.
+class _RoutineCard extends StatelessWidget {
+  final AppState state;
+  final int index;
+  final bool today;
+  final VoidCallback? onStart;
+  const _RoutineCard({
+    required this.state,
+    required this.index,
+    required this.today,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final day = state.split!.days[index];
+    final names = [
+      for (final e in day.exercises) state.exercise(e.exerciseId).name,
+    ];
+    final preview =
+        names.take(3).join(', ') +
+        (names.length > 3 ? ' a další ${names.length - 3}' : '');
+    final minutes = workoutMinutes(day.exercises.fold(0, (n, e) => n + e.sets));
+    return Panel(
+      onTap: onStart,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  day.name,
+                  style: text.titleMedium?.copyWith(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (today)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: p.accent.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'DNES',
+                    style: text.labelSmall?.copyWith(color: p.accent),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            preview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${exercisesLabel(day.exercises.length)} · ~$minutes min',
+            style: text.bodySmall?.copyWith(
+              color: p.tertiaryLabel,
+              fontFeatures: tabular,
+            ),
+          ),
+          const SizedBox(height: Space.m),
+          FilledButton.icon(
+            onPressed: onStart,
+            style: FilledButton.styleFrom(
+              backgroundColor: today ? p.accent : p.fill,
+              foregroundColor: today ? p.onAccent : p.label,
+              minimumSize: const Size.fromHeight(42),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              textStyle: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            icon: const Icon(Icons.play_arrow_rounded, size: 20),
+            label: Text('Začít ${day.name}'),
+          ),
+        ],
+      ),
+    );
+  }
 }

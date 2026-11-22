@@ -660,7 +660,7 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                   Expanded(
                     child: _ModeCard(
                       icon: Icons.checklist_rounded,
-                      color: AppPalette.violet,
+                      color: p.accent,
                       label: 'Vyberu sám',
                       hint: 'Celý seznam cviků',
                       selected: own,

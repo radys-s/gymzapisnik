@@ -6,18 +6,26 @@ import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 void main() {
-  test('one dark gym look: ink palette with color accents and rounded '
-      'surfaces', () {
+  test('one flat dark look: one ember accent, green only for done, '
+      'gold only for records, no glows', () {
     final theme = buildTheme();
     final p = theme.extension<AppPalette>()!;
     expect(theme.brightness, Brightness.dark);
     expect(theme.colorScheme.primary, p.accent);
-    expect(theme.scaffoldBackgroundColor, const Color(0xFF0B0C14));
-    expect(p.cta, AppPalette.green);
-    expect(p.label, const Color(0xFFF4F5FA));
-    expect(p.gradient, AppPalette.training);
+    expect(theme.scaffoldBackgroundColor, const Color(0xFF0A0A0B));
+    expect(p.accent, AppPalette.ember);
+    expect(p.cta, AppPalette.ember);
+    expect(p.positive, AppPalette.done);
+    expect(p.gold, AppPalette.amber);
+    expect(p.cardShadow, isEmpty);
+    expect(p.glow(AppPalette.ember), isEmpty);
+    // Every section shares the one accent.
+    for (final t in Tone.values) {
+      expect(t.color, AppPalette.ember);
+    }
     expect(p.cardShape(), isA<RoundedRectangleBorder>());
-    expect(p.controlRadius, 14.0);
+    expect(p.controlRadius, Radii.control);
+    expect(theme.textTheme.bodyMedium?.fontFamily, textFont);
     expect(appFrame(home: const SizedBox()).themeMode, ThemeMode.dark);
   });
 
@@ -58,7 +66,7 @@ void main() {
     expect(page.center.dx, 720);
   });
 
-  testWidgets('start shows one green segment per exercise, lit at once '
+  testWidgets('start shows one accent segment per exercise, lit at once '
       'with reduced motion', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -74,10 +82,10 @@ void main() {
     final lit = tester
         .widgetList<Container>(find.byType(Container))
         .where(
-          // Lit segments glow; each takes its color from the gradient.
+          // Lit segments wear the accent.
           (c) =>
               c.decoration is BoxDecoration &&
-              (c.decoration! as BoxDecoration).boxShadow != null,
+              (c.decoration! as BoxDecoration).color == AppPalette.ember,
         );
     expect(lit.length, 4);
     expect(find.text('4 cviky · ~40 min'), findsOneWidget);

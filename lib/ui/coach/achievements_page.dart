@@ -203,12 +203,9 @@ class BadgeShareCard extends StatelessWidget {
   final BadgeState state;
   const BadgeShareCard(this.state, {super.key});
 
-  static const _bg = Color(0xFF0C0C10);
-  static const _muted = Color(0xFFB4B4BC);
-  static const _gold = Color(0xFFFFD60A);
-
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final at = state.unlockedAt;
     const white = TextStyle(color: Colors.white);
     return SizedBox(
@@ -216,14 +213,8 @@ class BadgeShareCard extends StatelessWidget {
       height: 450,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: _bg,
+          color: p.background,
           borderRadius: BorderRadius.circular(28),
-          gradient: RadialGradient(
-            center: const Alignment(0, -0.35),
-            radius: 0.9,
-            // Neprůhledné barvy, jinak PNG propustí pozadí (viz ShareCard).
-            colors: [Color.alphaBlend(_gold.withValues(alpha: 0.22), _bg), _bg],
-          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -248,19 +239,12 @@ class BadgeShareCard extends StatelessWidget {
                 height: 132,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _gold,
-                      Color.lerp(_gold, Colors.deepOrange, 0.45)!,
-                    ],
-                  ),
+                  color: p.gold,
                 ),
                 child: Icon(
                   badgeIcon(state.badge.metric),
                   size: 60,
-                  color: Colors.black,
+                  color: p.onAccent,
                 ),
               ),
               const SizedBox(height: 22),
@@ -270,7 +254,7 @@ class BadgeShareCard extends StatelessWidget {
                   fontSize: 12,
                   letterSpacing: 1.6,
                   fontWeight: FontWeight.w700,
-                  color: _gold,
+                  color: p.gold,
                 ),
               ),
               const SizedBox(height: 6),
@@ -290,13 +274,13 @@ class BadgeShareCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: white.copyWith(fontSize: 15, color: _muted),
+                style: white.copyWith(fontSize: 15, color: p.secondaryLabel),
               ),
               const Spacer(),
               if (at != null)
                 Text(
                   formatDate(at),
-                  style: white.copyWith(fontSize: 13, color: _muted),
+                  style: white.copyWith(fontSize: 13, color: p.secondaryLabel),
                 ),
             ],
           ),
@@ -321,20 +305,13 @@ class BadgeMedal extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: on ? null : p.fill,
-        gradient: on
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [p.gold, Color.lerp(p.gold, Colors.deepOrange, 0.45)!],
-              )
-            : null,
+        color: on ? p.gold : p.fill,
         border: on ? null : Border.all(color: p.separator),
       ),
       child: Icon(
         badgeIcon(state.badge.metric),
         size: size * 0.46,
-        color: on ? Colors.black : p.tertiaryLabel,
+        color: on ? p.onAccent : p.tertiaryLabel,
       ),
     );
   }

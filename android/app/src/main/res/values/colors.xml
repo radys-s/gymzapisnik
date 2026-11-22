@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Pozadí spouštěcí obrazovky = pozadí aplikace (světlý režim). -->
-    <color name="splash_bg">#0B0C14</color>
-    <color name="icon_gradient_start">#2A2E5C</color>
-    <color name="icon_gradient_end">#0B0C14</color>
+    <color name="splash_bg">#0A0A0B</color>
+    <color name="icon_gradient_start">#1E1E21</color>
+    <color name="icon_gradient_end">#0A0A0B</color>
 </resources>

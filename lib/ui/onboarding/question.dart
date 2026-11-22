@@ -46,9 +46,7 @@ class QuestionScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Scaffold(
-      body: SafeArea(child: _body(context, text)),
-    );
+    return Scaffold(body: SafeArea(child: _body(context, text)));
   }
 
   Widget _body(BuildContext context, TextTheme text) {

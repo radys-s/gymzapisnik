@@ -8,6 +8,7 @@ import '../../domain/stats.dart';
 import '../../state/app_state.dart';
 import '../widgets/exercise_media.dart';
 import '../design/components.dart';
+import '../design/tokens.dart';
 import '../widgets/labels.dart';
 import 'exercise_detail_page.dart';
 
@@ -33,6 +34,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
     listenable: widget.state.on.resting,
     builder: (context, _) {
       final state = widget.state;
+      final p = context.palette;
       final folded = fold(query.trim());
       final trained = <String, int>{};
       for (final w in state.workouts) {
@@ -87,7 +89,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
                 for (final r in records)
                   GroupedRow(
                     icon: Icons.emoji_events,
-                    iconColor: const Color(0xFFFF9F0A),
+                    iconColor: p.gold,
                     title: state.exercise(r.exerciseId).name,
                     subtitle:
                         '${r.kind.label} ${recordLabel(r.kind, r.value)} · '

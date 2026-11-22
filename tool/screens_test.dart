@@ -268,10 +268,7 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         await _shot(tester, 'summary');
-        await tester.drag(
-          find.byType(Scrollable).first,
-          const Offset(0, -600),
-        );
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
         for (var i = 0; i < 20; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }

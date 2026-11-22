@@ -191,7 +191,6 @@ class SettingsPage extends StatelessWidget {
             children: [
               GroupedRow(
                 icon: Icons.timer_outlined,
-                iconColor: _orange,
                 title: 'Pauza mezi sériemi',
                 verticalPadding: 0,
                 trailing: DropdownButton<int>(
@@ -212,7 +211,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.exposure_rounded,
-                iconColor: _indigo,
                 title: 'Krok tlačítek +/−',
                 verticalPadding: 0,
                 trailing: DropdownButton<double>(
@@ -235,7 +233,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.flag_outlined,
-                iconColor: _green,
                 title: 'Frekvence tréninku',
                 value: profile.trainingDays == null
                     ? perWeekLabel(state.weekGoal)
@@ -250,7 +247,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.fitness_center_rounded,
-                iconColor: _indigo,
                 title: 'Moje posilovna',
                 value: (state.planAnswers?.place ?? TrainingPlace.gym).label,
                 onTap: () => Navigator.push(
@@ -266,7 +262,6 @@ class SettingsPage extends StatelessWidget {
             children: [
               GroupedRow(
                 icon: Icons.egg_outlined,
-                iconColor: _teal,
                 title: 'Denní cíl bílkovin',
                 value: profile.proteinTarget == null
                     ? 'Bez cíle'
@@ -289,7 +284,6 @@ class SettingsPage extends StatelessWidget {
               if (!profile.restrictWeightLoss)
                 GroupedRow(
                   icon: Icons.local_fire_department_outlined,
-                  iconColor: _red,
                   title: 'Denní cíl energie',
                   value: profile.kcalTarget == null
                       ? 'Bez cíle'
@@ -320,7 +314,6 @@ class SettingsPage extends StatelessWidget {
               if (!state.notifier.supported)
                 const GroupedRow(
                   icon: Icons.notifications_off_outlined,
-                  iconColor: _grey,
                   title: 'Připomínky tréninku',
                   subtitle:
                       'Ve webové verzi nejsou dostupné. Denní úkol od kouče '
@@ -332,7 +325,6 @@ class SettingsPage extends StatelessWidget {
                     child: GroupedRow(
                       onTap: () => _setRestAlerts(context, !state.restAlerts),
                       icon: Icons.timer_outlined,
-                      iconColor: _orange,
                       title: 'Upozornit na konec pauzy',
                       subtitle:
                           'Místní oznámení i při zamčeném telefonu. '
@@ -350,7 +342,6 @@ class SettingsPage extends StatelessWidget {
                       profile.reminderMinutes == null ? 18 * 60 : null,
                     ),
                     icon: Icons.notifications_outlined,
-                    iconColor: _red,
                     title: 'Připomínat trénink',
                     trailing: Switch.adaptive(
                       value: profile.reminderMinutes != null,
@@ -362,7 +353,6 @@ class SettingsPage extends StatelessWidget {
                 if (profile.reminderMinutes != null)
                   GroupedRow(
                     icon: Icons.schedule_rounded,
-                    iconColor: _blue,
                     title: 'Čas připomínky',
                     value: _clock(profile.reminderMinutes!),
                     onTap: () => _pickReminderTime(context),
@@ -378,7 +368,6 @@ class SettingsPage extends StatelessWidget {
               children: [
                 GroupedRow(
                   icon: Icons.workspace_premium_outlined,
-                  iconColor: _purple,
                   title: 'Co obsahuje Pro',
                   onTap: () => Navigator.push(
                     context,
@@ -398,7 +387,6 @@ class SettingsPage extends StatelessWidget {
             children: [
               GroupedRow(
                 icon: Icons.save_alt_rounded,
-                iconColor: _blue,
                 title: 'Uložit zálohu',
                 subtitle: 'Všechny tréninky a nastavení do souboru',
                 chevron: false,
@@ -412,7 +400,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.restore_rounded,
-                iconColor: _green,
                 title: 'Obnovit ze zálohy',
                 subtitle: 'Doplní tréninky ze souboru, nic nesmaže',
                 chevron: false,
@@ -420,7 +407,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.swap_horiz_rounded,
-                iconColor: _indigo,
                 title: 'Import z Hevy',
                 subtitle:
                     'Soubor workout_data.csv z Hevy (Export data), nic nesmaže',
@@ -429,7 +415,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.table_chart_outlined,
-                iconColor: _teal,
                 title: 'Export do Excelu (CSV)',
                 subtitle: 'Jedna řádka na sérii',
                 chevron: false,
@@ -452,7 +437,6 @@ class SettingsPage extends StatelessWidget {
               if (feedbackContact.isNotEmpty)
                 GroupedRow(
                   icon: Icons.mail_outline_rounded,
-                  iconColor: _blue,
                   title: 'Napsat zpětnou vazbu',
                   subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
                   chevron: false,
@@ -460,7 +444,6 @@ class SettingsPage extends StatelessWidget {
                 ),
               GroupedRow(
                 icon: Icons.auto_awesome_outlined,
-                iconColor: _purple,
                 title: 'Novinky',
                 onTap: () => Navigator.push(
                   context,
@@ -469,7 +452,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.policy_outlined,
-                iconColor: _grey,
                 title: 'Podmínky a soukromí',
                 onTap: () => Navigator.push(
                   context,
@@ -478,7 +460,6 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.bug_report_outlined,
-                iconColor: _grey,
                 title: 'Diagnostika',
                 subtitle: 'Chyby od spuštění a stav úložiště',
                 onTap: () => Navigator.push(
@@ -523,16 +504,6 @@ class SettingsPage extends StatelessWidget {
 
 /// Odsazení oddělovače za barevnou ikonou řádku.
 const _indent = Space.l + 30 + Space.m;
-
-// Barvy ikon jako v Nastavení iPhonu (stejné ve světlém i tmavém).
-const _orange = Color(0xFFFF9500);
-const _green = Color(0xFF34C759);
-const _teal = Color(0xFF30B0C7);
-const _blue = Color(0xFF007AFF);
-const _indigo = Color(0xFF5856D6);
-const _purple = Color(0xFFAF52DE);
-const _red = Color(0xFFFF3B30);
-const _grey = Color(0xFF8E8E93);
 
 /// Dialog pro vlastní denní cíl. Prázdné pole cíl zruší.
 Future<void> _editTarget(

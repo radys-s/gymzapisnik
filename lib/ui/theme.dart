@@ -133,9 +133,7 @@ ThemeData buildTheme() {
       iconTheme: WidgetStateProperty.resolveWith(
         (st) => IconThemeData(
           size: 24,
-          color: st.contains(WidgetState.selected)
-              ? p.label
-              : p.tertiaryLabel,
+          color: st.contains(WidgetState.selected) ? p.label : p.tertiaryLabel,
         ),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
@@ -143,9 +141,7 @@ ThemeData buildTheme() {
           fontFamily: textFont,
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: st.contains(WidgetState.selected)
-              ? p.label
-              : p.tertiaryLabel,
+          color: st.contains(WidgetState.selected) ? p.label : p.tertiaryLabel,
         ),
       ),
     ),
@@ -351,9 +347,7 @@ ThemeData buildTheme() {
       dragHandleColor: p.tertiaryLabel,
       dragHandleSize: const Size(36, 5),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(Radii.sheet),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
       ),
     ),
     snackBarTheme: SnackBarThemeData(

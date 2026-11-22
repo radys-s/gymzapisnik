@@ -29,9 +29,7 @@ extension RestTimerOps on AppState {
     } else {
       workout.extra[AppState._restKey] = end.toUtc().toIso8601String();
       if (start != null) {
-        workout.extra[AppState._restStartKey] = start
-            .toUtc()
-            .toIso8601String();
+        workout.extra[AppState._restStartKey] = start.toUtc().toIso8601String();
       }
     }
   }

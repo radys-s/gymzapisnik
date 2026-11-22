@@ -62,7 +62,7 @@ void main() {
     final state = AppState(LocalStore(db));
     await tester.runAsync(state.load);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: HomePage(state))));
-    expect(find.text('Vyber si plán'), findsOneWidget);
+    expect(find.text('VYBER SI PLÁN'), findsOneWidget);
     expect(find.text('Použít Full body 3×'), findsOneWidget);
     expect(find.text('Vybrat podle sebe'), findsOneWidget);
     // Bez plánu není "jiný" trénink: volný jde jedním klepnutím.

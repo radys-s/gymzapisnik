@@ -109,9 +109,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
   BorderRadius cardRadius() => BorderRadius.circular(Radii.card);
 
   /// Flat card, no outline: surfaces separate by tone.
-  ShapeBorder cardShape() => RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(Radii.card),
-  );
+  ShapeBorder cardShape() =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.card));
 
   /// Zaoblení tlačítek a polí.
   double get controlRadius => Radii.control;

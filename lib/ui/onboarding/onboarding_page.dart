@@ -470,7 +470,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           for (final g in PlanGoal.values)
             ChoiceCard(
               icon: _goalIcon(g),
-              color: _goalColor(g),
               label: g.label,
               hint: g.hint,
               selected: g == plan.goal,
@@ -491,12 +490,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         children: [
           for (final (i, e) in Experience.values.indexed)
             ChoiceCard(
-              color: AppPalette.blue,
-              leading: LevelBars(
-                level: i + 1,
-                selected: e == plan.experience,
-                color: AppPalette.blue,
-              ),
+              leading: LevelBars(level: i + 1, selected: e == plan.experience),
               label: e.label,
               hint: e.hint,
               selected: e == plan.experience,
@@ -534,7 +528,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           for (final g in TrainingPlace.values)
             ChoiceCard(
               icon: placeIcon(g),
-              color: _placeColor(g),
               label: g.label,
               hint: g.hint,
               selected: g == plan.place,
@@ -558,7 +551,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           for (final j in Joint.values)
             ChoiceCard(
               icon: _jointIcon(j),
-              color: _jointColor(j),
               label: j.label,
               hint: _jointHint(j),
               multi: true,

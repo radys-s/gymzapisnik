@@ -58,42 +58,36 @@ class GrowthPage extends StatelessWidget {
   static List<_Rule> _principles(bool adult) => [
     const _Rule(
       Icons.stacked_bar_chart_rounded,
-      Color(0xFF5E5CE6),
       'Objem: 10–20 sérií týdně',
       'Na každou partii 10–20 těžkých sérií za týden. Začni u spodní '
           'hranice a přidávej, jen když stíháš regenerovat.',
     ),
     const _Rule(
       Icons.local_fire_department_rounded,
-      Color(0xFFFF6A1A),
       'Blízko selhání',
       'Pracovní série končí 0–3 opakování před selháním. U izolovaných '
           'cviků klidně až do selhání, u dřepu a mrtvého tahu s rezervou.',
     ),
     const _Rule(
       Icons.repeat_rounded,
-      Color(0xFF14A9D0),
       'Opakování 6–30',
       'Svaly rostou v širokém rozsahu. Prakticky: 5–10 u těžkých '
           'vícekloubových cviků, 10–20 u izolací.',
     ),
     const _Rule(
       Icons.calendar_month_rounded,
-      Color(0xFF34C759),
       'Každá partie 2× týdně',
       'Rozdělit stejný objem do dvou tréninků funguje lépe než jeden '
           'dlouhý trénink týdně.',
     ),
     const _Rule(
       Icons.trending_up_rounded,
-      Color(0xFFFF9F0A),
       'Postupné přetížení',
       'Nejdřív přidej opakování, pak váhu. Aplikace to hlídá: když dáš '
           'horní hranici ve všech sériích, navrhne vyšší váhu.',
     ),
     const _Rule(
       Icons.call_split_rounded,
-      Color(0xFFAF52DE),
       'Všechny hlavy svalu',
       'Kombinuj vícekloubové a izolované cviky. Dlouhá hlava tricepsu '
           'potřebuje cvik nad hlavou, boční delt upažování. V tréninku najdeš '
@@ -101,21 +95,18 @@ class GrowthPage extends StatelessWidget {
     ),
     const _Rule(
       Icons.open_in_full_rounded,
-      Color(0xFF0B7A70),
       'Plný rozsah a kontrola',
       'Celý rozsah pohybu, hlavně v protažení svalu. Váhu spouštěj pod '
           'kontrolou zhruba 2–3 sekundy.',
     ),
     const _Rule(
       Icons.timer_outlined,
-      Color(0xFF8E8E93),
       'Pauzy',
       'Mezi těžkými sériemi 2–3 minuty, u izolací 1–2 minuty. Krátké '
           'pauzy ubírají opakování v dalších sériích.',
     ),
     _Rule(
       Icons.restaurant_rounded,
-      const Color(0xFFFF375F),
       'Jídlo a bílkoviny',
       adult
           ? 'Bílkoviny zhruba 1,6–2,2 g na kilo tělesné váhy denně, '
@@ -127,20 +118,17 @@ class GrowthPage extends StatelessWidget {
     ),
     const _Rule(
       Icons.bedtime_rounded,
-      Color(0xFF5856D6),
       'Spánek 7–9 hodin',
       'Sval roste při odpočinku. Málo spánku zhoršuje výkon i regeneraci.',
     ),
     const _Rule(
       Icons.battery_charging_full_rounded,
-      Color(0xFF30B0C7),
       'Lehčí týden',
       'Když se výkon několik týdnů nehýbe nebo jsi pořád unavený, dej si '
           'týden s polovičním objemem a pak pokračuj.',
     ),
     const _Rule(
       Icons.hourglass_bottom_rounded,
-      Color(0xFF636366),
       'Trpělivost',
       'První rok jde růst nejrychleji, pak zpomalí. Rozhoduje, kolik '
           'týdnů za sebou odcvičíš, ne jeden perfektní trénink.',
@@ -150,10 +138,9 @@ class GrowthPage extends StatelessWidget {
 
 class _Rule {
   final IconData icon;
-  final Color color;
   final String title;
   final String body;
-  const _Rule(this.icon, this.color, this.title, this.body);
+  const _Rule(this.icon, this.title, this.body);
 }
 
 class _Principle extends StatelessWidget {
@@ -170,7 +157,7 @@ class _Principle extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconTile(rule.icon, color: rule.color, size: 34),
+            IconTile(rule.icon, color: p.secondaryLabel, size: 34),
             const SizedBox(width: Space.m),
             Expanded(
               child: Column(

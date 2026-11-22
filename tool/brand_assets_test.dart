@@ -27,7 +27,7 @@ Future<Uint8List> _png(int px, BrandPainter painter, {Color? matte}) async {
 
 void main() {
   testWidgets('write logo files', (tester) async {
-    const ink = Color(0xFF0B0C14);
+    const ink = Color(0xFF0A0A0B);
     // Full square: iOS and the web mask the corners themselves.
     const icon = BrandPainter(rounded: false);
     // Maskable web icon: the mark stays inside the 80 % safe circle.

@@ -8,25 +8,6 @@ IconData _goalIcon(PlanGoal g) => switch (g) {
   PlanGoal.fitness => Icons.favorite_rounded,
 };
 
-Color _goalColor(PlanGoal g) => switch (g) {
-  PlanGoal.muscle => AppPalette.green,
-  PlanGoal.strength => AppPalette.orange,
-  PlanGoal.fitness => AppPalette.pink,
-};
-
-Color _placeColor(TrainingPlace p) => switch (p) {
-  TrainingPlace.gym => AppPalette.violet,
-  TrainingPlace.smallGym => AppPalette.blue,
-  TrainingPlace.home => AppPalette.teal,
-  TrainingPlace.bodyweight => AppPalette.amber,
-};
-
-Color _jointColor(Joint j) => switch (j) {
-  Joint.knees => AppPalette.cyan,
-  Joint.lowerBack => AppPalette.orange,
-  Joint.shoulders => AppPalette.violet,
-};
-
 IconData placeIcon(TrainingPlace p) => switch (p) {
   TrainingPlace.gym => Icons.apartment_rounded,
   TrainingPlace.smallGym => Icons.storefront_rounded,
@@ -251,7 +232,7 @@ class _ReminderStepState extends State<_ReminderStep> {
           Center(
             child: IconTile(
               Icons.notifications_active_rounded,
-              color: AppPalette.pink,
+              color: context.palette.secondaryLabel,
               size: 72,
             ),
           ),
@@ -281,21 +262,14 @@ class _Value extends StatelessWidget {
   const _Value();
 
   static const _points = [
-    (
-      Icons.today_rounded,
-      AppPalette.green,
-      'Každý den víš, co cvičit',
-      'Plán podle tvého času',
-    ),
+    (Icons.today_rounded, 'Každý den víš, co cvičit', 'Plán podle tvého času'),
     (
       Icons.trending_up_rounded,
-      AppPalette.violet,
       'Váhy se předvyplní samy',
       'Potvrdíš sérii a vidíš, jak sílíš',
     ),
     (
       Icons.lock_outline_rounded,
-      AppPalette.amber,
       'Bez účtu a bez reklam',
       'Tréninky zůstávají v telefonu',
     ),
@@ -332,14 +306,14 @@ class _Value extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Space.xxl),
-        for (final (i, (icon, color, title, body)) in _points.indexed)
+        for (final (i, (icon, title, body)) in _points.indexed)
           Reveal(
             index: 3 + i,
             child: Padding(
               padding: const EdgeInsets.only(bottom: Space.l),
               child: Row(
                 children: [
-                  IconTile(icon, color: color, size: 40),
+                  IconTile(icon, color: p.secondaryLabel, size: 40),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Column(
@@ -509,13 +483,12 @@ class _WeekDay extends StatelessWidget {
       height: 38,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        gradient: on ? p.linear : null,
-        color: on ? null : p.fill,
+        color: on ? p.accent : p.fill,
         borderRadius: BorderRadius.circular(context.palette.controlRadius),
       ),
       child: Text(
         label,
-        style: style?.copyWith(color: on ? p.onGradient : p.secondaryLabel),
+        style: style?.copyWith(color: on ? p.onAccent : p.secondaryLabel),
       ),
     );
     return on ? Reveal(index: 2 + index, offset: 8, child: cell) : cell;

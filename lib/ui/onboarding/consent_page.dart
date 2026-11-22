@@ -114,7 +114,6 @@ class _ConsentPageState extends State<ConsentPage> {
           const SizedBox(height: Space.xs),
           ChoiceCard(
             icon: Icons.description_outlined,
-            color: AppPalette.violet,
             label: 'Souhlasím s podmínkami používání',
             multi: true,
             selected: termsAccepted,
@@ -125,7 +124,6 @@ class _ConsentPageState extends State<ConsentPage> {
           const SizedBox(height: Space.s),
           ChoiceCard(
             icon: Icons.verified_user_outlined,
-            color: AppPalette.cyan,
             label: 'Je mi 18 let nebo víc',
             selected: age == AgeChoice.adult,
             onTap: () => _setAge(AgeChoice.adult),
@@ -133,7 +131,6 @@ class _ConsentPageState extends State<ConsentPage> {
           const SizedBox(height: Space.s),
           ChoiceCard(
             icon: Icons.school_outlined,
-            color: AppPalette.amber,
             label: 'Je mi méně než 18 let',
             hint: minor ? 'Bez cílů hubnutí a omezování jídla' : null,
             selected: minor,
@@ -143,7 +140,6 @@ class _ConsentPageState extends State<ConsentPage> {
             const SizedBox(height: Space.s),
             ChoiceCard(
               icon: Icons.family_restroom_rounded,
-              color: AppPalette.amber,
               label: 'Mám souhlas rodiče nebo zákonného zástupce',
               multi: true,
               selected: guardianConsent,
