@@ -260,8 +260,10 @@ class _RestBarState extends State<_RestBar> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 4,
+                    runSpacing: 4,
                     children: [
                       if (!finished) ...[
                         chip(
