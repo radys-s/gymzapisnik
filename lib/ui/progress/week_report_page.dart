@@ -21,14 +21,22 @@ const _dayLetters = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 class WeekReportPage extends StatefulWidget {
   final AppState state;
   final DateTime Function() now;
-  const WeekReportPage(this.state, {super.key, this.now = DateTime.now});
+
+  /// Den v týdnu, který se otevře (jinak tento týden).
+  final DateTime? week;
+  const WeekReportPage(
+    this.state, {
+    super.key,
+    this.now = DateTime.now,
+    this.week,
+  });
 
   @override
   State<WeekReportPage> createState() => _WeekReportPageState();
 }
 
 class _WeekReportPageState extends State<WeekReportPage> {
-  late DateTime _monday = weekStart(widget.now());
+  late DateTime _monday = weekStart(widget.week ?? widget.now());
 
   void _shift(int weeks) => setState(
     () => _monday = DateTime(
@@ -656,6 +664,69 @@ class _Muscles extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Na Domů v pondělí a úterý: krátké shrnutí minulého týdne a cesta do
+/// reportu. Bez tréninku v minulém týdnu se neukáže.
+class LastWeekCard extends StatelessWidget {
+  final AppState state;
+  final DateTime now;
+  const LastWeekCard({super.key, required this.state, required this.now});
+
+  @override
+  Widget build(BuildContext context) {
+    final local = now.toLocal();
+    if (local.weekday > DateTime.tuesday) return const SizedBox.shrink();
+    final day = DateTime(local.year, local.month, local.day - 7);
+    final r = weekReport(state.workouts, day, state.typeOf);
+    if (r.isEmpty) return const SizedBox.shrink();
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final exercises = r.records.map((x) => x.exerciseId).toSet().length;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.m),
+      child: Panel(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WeekReportPage(state, now: () => now, week: day),
+          ),
+        ),
+        child: Row(
+          children: [
+            IconTile(Icons.calendar_month_rounded, color: p.accent),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Minulý týden', style: text.titleMedium),
+                  Text(
+                    [
+                      workoutsLabel(r.workouts),
+                      if (r.volumeKg > 0)
+                        '${formatVolume(r.volumeKg)} kg'
+                      else
+                        setsLabel(r.sets),
+                      if (exercises > 0)
+                        exercises == 1
+                            ? '1 rekord'
+                            : exercises <= 4
+                            ? '$exercises rekordy'
+                            : '$exercises rekordů',
+                    ].join(' · '),
+                    style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+                  ),
+                ],
+              ),
+            ),
+            Text('Report', style: text.labelLarge?.copyWith(color: p.accent)),
+            Icon(Icons.chevron_right_rounded, color: p.accent),
+          ],
+        ),
       ),
     );
   }

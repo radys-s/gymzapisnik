@@ -19,6 +19,7 @@ import '../premium/pro_gate.dart';
 import '../onboarding/onboarding_page.dart' show PlanSetupPage;
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
+import '../progress/week_report_page.dart';
 import '../settings/settings_button.dart';
 import '../widgets/labels.dart';
 import '../workout/launcher.dart';
@@ -176,6 +177,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
             ),
           ),
           const SizedBox(height: Space.m),
+          LastWeekCard(state: state, now: now),
           Reveal(
             index: 1,
             child: HomeFoodBlock(state: state, now: now),

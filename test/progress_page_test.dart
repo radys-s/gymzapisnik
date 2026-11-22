@@ -10,6 +10,7 @@ import 'package:gymzapisnik/ui/history/history_page.dart';
 import 'package:gymzapisnik/ui/home/dashboard.dart';
 import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/progress/progress_page.dart';
+import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 import 'package:gymzapisnik/ui/widgets/labels.dart';
 
@@ -100,18 +101,31 @@ void main() {
     expect(find.text('Partie tento týden'), findsOneWidget);
     expect(find.text('Barbell Bench Press'), findsWidgets); // křivka i rekordy
     expect(find.textContaining('Odhad 1RM'), findsOneWidget);
+    // Souhrn nahoře: 3 tréninky a 3 série.
+    expect(find.text('tréninky'), findsOneWidget);
+    expect(find.text('3'), findsAtLeastNWidgets(2));
     await tester.scrollUntilVisible(
       find.textContaining('Rekord: Barbell Bench Press'),
       300,
       scrollable: find.byType(Scrollable).last,
     );
+    expect(find.textContaining('Rekord: Barbell Bench Press'), findsOneWidget);
+    // V přehledu má historie taky 3.
+    await tester.scrollUntilVisible(
+      find.text('Historie'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(
-      find.textContaining('Rekord: Barbell Bench Press'),
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('Historie'),
+          matching: find.byType(GroupedRow),
+        ),
+        matching: find.text('3'),
+      ),
       findsOneWidget,
     );
-    // Souhrn: 3 tréninky a 3 série, v přehledu historie taky 3.
-    expect(find.text('tréninky'), findsOneWidget);
-    expect(find.text('3'), findsNWidgets(3));
   });
 
   testWidgets('progress tab: history is one tap away, not below the fold', (

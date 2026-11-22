@@ -78,4 +78,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('9.–15. 11.'), findsOneWidget);
   });
+
+  testWidgets('last week card shows on Monday and Tuesday only', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final state = AppState(LocalStore(db));
+    await tester.runAsync(state.load);
+    await tester.runAsync(
+      () => state.restoreWorkout(_w('w', DateTime(2026, 11, 18, 18), 80, 3)),
+    );
+    Future<void> show(DateTime now) => tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(),
+        home: Scaffold(
+          body: LastWeekCard(state: state, now: now),
+        ),
+      ),
+    );
+    await show(DateTime(2026, 11, 23, 9));
+    expect(find.text('Minulý týden'), findsOneWidget);
+    expect(find.textContaining('1 trénink'), findsOneWidget);
+    await show(DateTime(2026, 11, 25, 9));
+    expect(find.text('Minulý týden'), findsNothing);
+    // Týden bez tréninku nic neukáže.
+    await show(DateTime(2026, 11, 30, 9));
+    expect(find.text('Minulý týden'), findsNothing);
+  });
 }
