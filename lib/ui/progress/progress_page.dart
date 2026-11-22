@@ -23,6 +23,7 @@ import '../settings/settings_page.dart';
 import '../stats/stats_page.dart';
 import '../widgets/labels.dart';
 import 'progress_cards.dart';
+import 'week_report_page.dart';
 
 /// Záložka Pokrok: souhrn, křivka síly, rekordy a cesty ke statistikám,
 /// cvikům, odznakům, váze a nastavení.
@@ -126,7 +127,16 @@ class ProgressPage extends StatelessWidget {
               child: Reveal(index: i, child: b),
             ),
           if (finished.isNotEmpty) ...[
-            const SectionHeader('Trénink tento týden'),
+            SectionHeader(
+              'Trénink tento týden',
+              action: 'Report',
+              onAction: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WeekReportPage(state, now: now),
+                ),
+              ),
+            ),
             WeekSummaryCard(state: state, now: current),
             const SectionHeader('Objem podle partií'),
             CoverageCard(state: state, now: current),
@@ -146,6 +156,12 @@ class ProgressPage extends StatelessWidget {
     void push(Widget page) =>
         Navigator.push(context, MaterialPageRoute(builder: (_) => page));
     return [
+      GroupedRow(
+        icon: Icons.calendar_month_rounded,
+        title: 'Týdenní report',
+        subtitle: 'Objem po dnech, rekordy, srovnání s minulým týdnem',
+        onTap: () => push(WeekReportPage(state, now: now)),
+      ),
       GroupedRow(
         icon: Icons.insights_rounded,
         title: 'Statistiky',
@@ -399,14 +415,23 @@ class _NextPrCard extends StatelessWidget {
         if (last == null || last.entry.countedSets.isEmpty) continue;
         final type = state.typeOf(e.exerciseId);
         final bestSet = last.entry.countedSets.reduce((a, b) {
-          final av = type == ExerciseType.weighted ? e1rm(a.weight, a.reps) : a.reps.toDouble();
-          final bv = type == ExerciseType.weighted ? e1rm(b.weight, b.reps) : b.reps.toDouble();
+          final av = type == ExerciseType.weighted
+              ? e1rm(a.weight, a.reps)
+              : a.reps.toDouble();
+          final bv = type == ExerciseType.weighted
+              ? e1rm(b.weight, b.reps)
+              : b.reps.toDouble();
           return bv > av ? b : a;
         });
         String title;
         String detail;
         if (type == ExerciseType.bodyweight) {
-          final current = state.recordsOf(e.exerciseId)[RecordKind.maxReps]?.value.round() ?? bestSet.reps;
+          final current =
+              state
+                  .recordsOf(e.exerciseId)[RecordKind.maxReps]
+                  ?.value
+                  .round() ??
+              bestSet.reps;
           title = '${current + 1} reps';
           detail = 'Teď: $current reps. Přidej 1 čisté opakování.';
         } else {
@@ -445,7 +470,12 @@ class _NextPrCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(state.exercise(c.id).name, style: text.bodyLarge),
-                        Text(c.detail, style: text.bodySmall?.copyWith(color: p.secondaryLabel)),
+                        Text(
+                          c.detail,
+                          style: text.bodySmall?.copyWith(
+                            color: p.secondaryLabel,
+                          ),
+                        ),
                       ],
                     ),
                   ),

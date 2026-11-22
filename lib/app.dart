@@ -284,6 +284,7 @@ class _NavItem extends StatelessWidget {
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOut,
                 style: TextStyle(
+                  fontFamily: textFont,
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   color: fg,

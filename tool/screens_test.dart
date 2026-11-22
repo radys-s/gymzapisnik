@@ -225,6 +225,21 @@ void main() {
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -700));
     await tester.pumpAndSettle();
     await _shot(tester, 'progress-2');
+    final reportRow = find.text('Týdenní report');
+    await tester.scrollUntilVisible(
+      reportRow,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    if (reportRow.evaluate().isNotEmpty) {
+      await _tap(tester, reportRow.first);
+      await _shot(tester, 'week-report');
+      await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      await _shot(tester, 'week-report-2');
+      await _back(tester);
+    }
     final weightRow = find.text('Váha a míry');
     if (weightRow.evaluate().isNotEmpty) {
       await tester.ensureVisible(weightRow.first);
