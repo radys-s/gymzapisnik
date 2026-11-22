@@ -69,7 +69,7 @@ class RecentRecordsCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.emoji_events_rounded, color: p.accent),
+                    Icon(Icons.emoji_events_rounded, color: p.gold),
                     const SizedBox(width: Space.m),
                     Expanded(
                       child: Column(
@@ -93,7 +93,7 @@ class RecentRecordsCard extends StatelessWidget {
                     Text(
                       recordLabel(r.kind, r.value),
                       style: text.titleSmall?.copyWith(
-                        color: p.positive,
+                        color: p.gold,
                         fontFeatures: tabular,
                       ),
                     ),

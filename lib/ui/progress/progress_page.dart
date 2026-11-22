@@ -21,6 +21,7 @@ import '../settings/settings_button.dart';
 import '../settings/settings_page.dart';
 import '../stats/stats_page.dart';
 import '../widgets/labels.dart';
+import 'progress_cards.dart';
 
 /// Záložka Pokrok: souhrn, křivka síly, rekordy a cesty ke statistikám,
 /// cvikům, odznakům, váze a nastavení.
@@ -88,6 +89,8 @@ class ProgressPage extends StatelessWidget {
               'Křivka síly se ukáže po druhém tréninku stejného cviku.',
             ),
           if (records.isNotEmpty) RecentRecordsCard(state, records: records),
+          ConsistencyCard(state: state, now: current),
+          StrengthLevelsCard(state: state),
         ],
       ];
       return LargeTitlePage(
@@ -136,14 +139,12 @@ class ProgressPage extends StatelessWidget {
     return [
       GroupedRow(
         icon: Icons.insights_rounded,
-        iconColor: AppPalette.violet,
         title: 'Statistiky',
         subtitle: 'Kalendář, grafy, měsíc proti minulému',
         onTap: () => push(StatsPage(state, now: now)),
       ),
       GroupedRow(
         icon: Icons.fitness_center_rounded,
-        iconColor: AppPalette.green,
         title: 'Cviky a rekordy',
         subtitle: record == null
             ? null
@@ -153,14 +154,12 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.history_rounded,
-        iconColor: AppPalette.blue,
         title: 'Historie',
         value: '$count',
         onTap: () => push(HistoryPage(state)),
       ),
       GroupedRow(
         icon: Icons.military_tech_rounded,
-        iconColor: AppPalette.amber,
         title: 'Odznaky',
         value:
             '${state.badgeStates.where((b) => b.unlocked).length}'
@@ -169,7 +168,6 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.monitor_weight_outlined,
-        iconColor: AppPalette.cyan,
         title: 'Tělesná váha',
         value: state.bodyweights.isEmpty
             ? null
@@ -178,21 +176,18 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.calendar_view_week_rounded,
-        iconColor: AppPalette.pink,
         title: 'Program',
         value: state.split?.name ?? 'Volně',
         onTap: () => push(ProgramPage(state)),
       ),
       GroupedRow(
         icon: Icons.lightbulb_outline_rounded,
-        iconColor: AppPalette.orange,
         title: 'Rady pro růst svalů',
         subtitle: 'Objem, technika, jídlo, spánek',
         onTap: () => push(GrowthPage(state, now: now)),
       ),
       GroupedRow(
         icon: Icons.settings_outlined,
-        iconColor: context.palette.secondaryLabel,
         title: 'Nastavení',
         subtitle: 'Pauza, krok váhy, záloha, soukromí',
         onTap: () => Navigator.of(
@@ -216,10 +211,7 @@ class _Empty extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconTile(
-            Icons.show_chart_rounded,
-            color: ToneScope.of(context).color,
-          ),
+          IconTile(Icons.show_chart_rounded, color: p.accent),
           const SizedBox(width: Space.m),
           Expanded(
             child: Column(

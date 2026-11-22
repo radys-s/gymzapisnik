@@ -210,6 +210,9 @@ void main() {
     await _shot(tester, 'food');
     await _tap(tester, find.text('Pokrok'));
     await _shot(tester, 'progress');
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -700));
+    await tester.pumpAndSettle();
+    await _shot(tester, 'progress-2');
   });
 
   _screens('workout', (tester) async {
