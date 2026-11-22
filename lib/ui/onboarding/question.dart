@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../design/ambient.dart';
 import '../design/components.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
@@ -48,10 +47,7 @@ class QuestionScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      body: AuroraBackground(
-        tone: tone,
-        child: SafeArea(child: _body(context, text)),
-      ),
+      body: SafeArea(child: _body(context, text)),
     );
   }
 

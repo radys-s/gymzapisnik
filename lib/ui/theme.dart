@@ -47,6 +47,7 @@ ThemeData buildTheme() {
   );
 
   final base = ThemeData(
+    fontFamily: textFont,
     // Keep comfortable touch targets while allowing centered desktop layouts.
     visualDensity: VisualDensity.standard,
     useMaterial3: true,
@@ -69,38 +70,40 @@ ThemeData buildTheme() {
     height: 1.12,
   );
   final text = t.copyWith(
-    displaySmall: heading(s(t.displaySmall, 40, FontWeight.w700, -0.8)),
-    headlineLarge: heading(s(t.headlineLarge, 34, FontWeight.w800, -1.0)),
-    headlineMedium: heading(s(t.headlineMedium, 28, FontWeight.w700, -0.4)),
-    headlineSmall: heading(s(t.headlineSmall, 24, FontWeight.w800, -0.6)),
-    titleLarge: heading(s(t.titleLarge, 20, FontWeight.w700, -0.4)),
-    titleMedium: s(t.titleMedium, 17, FontWeight.w600, -0.2),
-    titleSmall: s(t.titleSmall, 15, FontWeight.w600),
-    bodyLarge: s(t.bodyLarge, 17, FontWeight.w400, -0.2),
-    bodyMedium: s(t.bodyMedium, 15, FontWeight.w400, -0.1),
+    displaySmall: heading(s(t.displaySmall, 36, FontWeight.w800, -1.2)),
+    headlineLarge: heading(s(t.headlineLarge, 30, FontWeight.w800, -1.0)),
+    headlineMedium: heading(s(t.headlineMedium, 26, FontWeight.w700, -0.7)),
+    headlineSmall: heading(s(t.headlineSmall, 22, FontWeight.w700, -0.5)),
+    titleLarge: heading(s(t.titleLarge, 19, FontWeight.w700, -0.4)),
+    titleMedium: s(t.titleMedium, 16, FontWeight.w600, -0.2),
+    titleSmall: s(t.titleSmall, 14, FontWeight.w600, -0.1),
+    bodyLarge: s(t.bodyLarge, 16, FontWeight.w400, -0.2),
+    bodyMedium: s(t.bodyMedium, 14, FontWeight.w400, -0.1),
     bodySmall: s(
       t.bodySmall,
       13,
       FontWeight.w400,
+      -0.05,
     ).copyWith(color: p.secondaryLabel),
-    labelLarge: s(t.labelLarge, 17, FontWeight.w600, -0.2),
+    labelLarge: s(t.labelLarge, 16, FontWeight.w600, -0.2),
     labelMedium: s(
       t.labelMedium,
-      13,
+      12,
       FontWeight.w500,
     ).copyWith(color: p.secondaryLabel),
     labelSmall: s(
       t.labelSmall,
-      12,
-      FontWeight.w500,
-    ).copyWith(color: p.secondaryLabel),
+      11,
+      FontWeight.w600,
+      0.4,
+    ).copyWith(color: p.tertiaryLabel),
   );
 
   final control = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(p.controlRadius),
   );
   final OutlinedBorder buttonShape = control;
-  const buttonSize = Size(minTap, 52);
+  const buttonSize = Size(minTap, 50);
   final buttonText = text.labelLarge;
 
   return base.copyWith(
@@ -121,27 +124,28 @@ ThemeData buildTheme() {
       actionsIconTheme: IconThemeData(color: p.accent),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: p.grouped,
+      backgroundColor: p.background,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: p.accent.withValues(alpha: 0.14),
+      indicatorColor: Colors.transparent,
       elevation: 0,
-      height: 72,
+      height: 64,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       iconTheme: WidgetStateProperty.resolveWith(
         (st) => IconThemeData(
-          size: 26,
+          size: 24,
           color: st.contains(WidgetState.selected)
-              ? p.accent
-              : p.secondaryLabel,
+              ? p.label
+              : p.tertiaryLabel,
         ),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (st) => TextStyle(
-          fontSize: 12,
+          fontFamily: textFont,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
           color: st.contains(WidgetState.selected)
-              ? p.accent
-              : p.secondaryLabel,
+              ? p.label
+              : p.tertiaryLabel,
         ),
       ),
     ),
@@ -286,7 +290,7 @@ ThemeData buildTheme() {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: p.fill,
-      selectedColor: p.accent.withValues(alpha: 0.25),
+      selectedColor: p.accent.withValues(alpha: 0.18),
       disabledColor: p.fill,
       side: BorderSide.none,
       shape: RoundedRectangleBorder(
@@ -302,7 +306,7 @@ ThemeData buildTheme() {
     switchTheme: SwitchThemeData(
       thumbColor: const WidgetStatePropertyAll(Colors.white),
       trackColor: WidgetStateProperty.resolveWith(
-        (st) => st.contains(WidgetState.selected) ? p.positive : p.fill,
+        (st) => st.contains(WidgetState.selected) ? p.accent : p.fill,
       ),
       trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
     ),
@@ -347,7 +351,9 @@ ThemeData buildTheme() {
       dragHandleColor: p.tertiaryLabel,
       dragHandleSize: const Size(36, 5),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(Radii.sheet),
+        ),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -357,7 +363,7 @@ ThemeData buildTheme() {
         color: scheme.onInverseSurface,
       ),
       // Světlý pruh: akce tmavou zelenou.
-      actionTextColor: const Color(0xFF3A6B00),
+      actionTextColor: const Color(0xFFC2410C),
       elevation: 0,
       insetPadding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.m),
       shape: RoundedRectangleBorder(
@@ -367,7 +373,7 @@ ThemeData buildTheme() {
     popupMenuTheme: PopupMenuThemeData(
       color: p.elevated,
       surfaceTintColor: Colors.transparent,
-      elevation: 8,
+      elevation: 0,
       textStyle: text.bodyLarge,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(p.controlRadius),

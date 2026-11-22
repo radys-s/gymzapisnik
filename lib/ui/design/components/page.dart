@@ -64,8 +64,8 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
     return Scaffold(
       bottomNavigationBar: widget.bottom,
       floatingActionButton: widget.floatingActionButton,
-      body: AuroraBackground(
-        tone: widget.tone,
+      body: ColoredBox(
+        color: p.background,
         child: ToneScope(
           tone: widget.tone,
           child: Center(
@@ -324,10 +324,7 @@ class GroupedRow extends StatelessWidget {
                 leading!,
                 const SizedBox(width: Space.m),
               ] else if (icon != null) ...[
-                IconTile(
-                  icon!,
-                  color: iconColor ?? ToneScope.of(context).color,
-                ),
+                IconTile(icon!, color: iconColor ?? p.secondaryLabel),
                 const SizedBox(width: Space.m),
               ],
               Expanded(
@@ -392,20 +389,9 @@ class IconTile extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: color,
-      // Light from the top-left corner gives the tile some volume.
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color.lerp(color, Colors.white, 0.28)!, color],
-      ),
-      borderRadius: BorderRadius.circular(size * 0.26),
+      color: color.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(size * 0.28),
     ),
-    // Na světlé dlaždici (Studio v tmavém režimu) tmavá ikona.
-    child: Icon(
-      icon,
-      size: size * 0.6,
-      color: color.computeLuminance() > 0.179 ? Colors.black : Colors.white,
-    ),
+    child: Icon(icon, size: size * 0.58, color: color),
   );
 }

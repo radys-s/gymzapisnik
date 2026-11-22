@@ -44,6 +44,10 @@ Future<void> _fonts() async {
       '$material/Roboto-$w.ttf',
   ]);
   await _font('MaterialIcons', ['$material/MaterialIcons-Regular.otf']);
+  await _font('Inter', [
+    for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold'])
+      'assets/fonts/Inter-$w.ttf',
+  ]);
   await _font('Barlow Condensed', [
     for (final w in ['SemiBold', 'Bold', 'ExtraBold'])
       'assets/fonts/BarlowCondensed-$w.ttf',
@@ -206,5 +210,70 @@ void main() {
     await _shot(tester, 'food');
     await _tap(tester, find.text('Pokrok'));
     await _shot(tester, 'progress');
+  });
+
+  _screens('workout', (tester) async {
+    final state = await _state(tester);
+    final now = DateTime.now();
+    await tester.runAsync(() async {
+      await state.applyPlan(const PlanAnswers());
+      await state.acceptConsent(
+        adult: true,
+        guardianConsent: false,
+        welcomeVersion: whatsNewRelease,
+        aiNotice: true,
+      );
+      await state.addBodyweight(78);
+      for (final (daysAgo, kg) in [(9, 75.0), (5, 80.0), (2, 82.5)]) {
+        final at = now.subtract(Duration(days: daysAgo));
+        await state.startWorkout(now: at);
+        final e = await state.addExercise('bench_press');
+        e.sets = [
+          SetEntry(weight: kg, reps: 8, done: true),
+          SetEntry(weight: kg, reps: 7, done: true),
+        ];
+        await state.finishActive(now: at.add(const Duration(hours: 1)));
+      }
+    });
+    await _pump(tester, state);
+    await _tap(tester, find.textContaining('Začít').first);
+    await tester.pump(const Duration(seconds: 1));
+    await _shot(tester, 'workout');
+    final checks = find.bySemanticsLabel('Potvrdit sérii');
+    if (checks.evaluate().isNotEmpty) {
+      await tester.tap(checks.first, warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.tap(checks.at(1), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+    await _shot(tester, 'workout-rest');
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+    await tester.pump(const Duration(milliseconds: 600));
+    await _shot(tester, 'workout-2');
+    final finish = find.text('Dokončit');
+    if (finish.evaluate().isNotEmpty) {
+      await tester.tap(finish.first, warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 500));
+      await _shot(tester, 'finish-dialog');
+      final confirm = find.text('Dokončit');
+      if (confirm.evaluate().length > 1) {
+        await tester.runAsync(() async {
+          await tester.tap(confirm.last, warnIfMissed: false);
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        });
+        for (var i = 0; i < 40; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await _shot(tester, 'summary');
+        await tester.drag(
+          find.byType(Scrollable).first,
+          const Offset(0, -600),
+        );
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await _shot(tester, 'summary-2');
+      }
+    }
   });
 }
