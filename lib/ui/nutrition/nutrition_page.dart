@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../coach/nutrition_target.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/ids.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
@@ -25,6 +26,7 @@ String amountLabel(FoodEntry e) {
     // 1 porce, 2–4 porce, 5 porcí; desetinné množství je „porce" (2,5 porce).
     final whole = e.amount == e.amount.roundToDouble();
     final n = e.amount.round();
+    if (isEnglish) return e.amount == 1 ? '$a serving' : '$a servings';
     return !whole || (n >= 1 && n <= 4) ? '$a porce' : '$a porcí';
   }
   return '$a ${e.unit == FoodUnit.ml ? 'ml' : 'g'}';
@@ -32,8 +34,8 @@ String amountLabel(FoodEntry e) {
 
 String _dayTitle(DateTime day, DateTime now) {
   final diff = calendarDaysBetween(day, now);
-  if (diff == 0) return 'Dnes';
-  if (diff == 1) return 'Včera';
+  if (diff == 0) return tr('Dnes', 'Today');
+  if (diff == 1) return tr('Včera', 'Yesterday');
   return formatDate(day);
 }
 
@@ -59,12 +61,23 @@ const _mealTimes = {
   'V noci': (1, 0),
 };
 
-const _addTo = {
-  'Snídaně': 'Přidat ke snídani',
-  'Oběd': 'Přidat k obědu',
-  'Svačina': 'Přidat ke svačině',
-  'Večeře': 'Přidat k večeři',
-  'V noci': 'Přidat k jídlu v noci',
+/// Display name for a meal key returned by [mealOf].
+String mealLabel(String key) => switch (key) {
+  'Snídaně' => tr('Snídaně', 'Breakfast'),
+  'Oběd' => tr('Oběd', 'Lunch'),
+  'Svačina' => tr('Svačina', 'Snack'),
+  'Večeře' => tr('Večeře', 'Dinner'),
+  'V noci' => tr('V noci', 'Late night'),
+  _ => key,
+};
+
+String mealAddLabel(String key) => switch (key) {
+  'Snídaně' => tr('Přidat ke snídani', 'Add to breakfast'),
+  'Oběd' => tr('Přidat k obědu', 'Add to lunch'),
+  'Svačina' => tr('Přidat ke svačině', 'Add to snack'),
+  'Večeře' => tr('Přidat k večeři', 'Add to dinner'),
+  'V noci' => tr('Přidat k jídlu v noci', 'Add to late-night food'),
+  _ => key,
 };
 
 /// Čas nového záznamu v části dne [meal]: dnes v ní právě jsme → teď,
@@ -118,13 +131,16 @@ Future<void> addFoodFlow(
             children: [
               GroupedRow(
                 icon: Icons.qr_code_2,
-                title: 'Najít podle čárového kódu',
-                subtitle: 'Open Food Facts, vyžaduje internet',
+                title: tr('Najít podle čárového kódu', 'Search by barcode'),
+                subtitle: tr(
+                  'Open Food Facts, vyžaduje internet',
+                  'Open Food Facts, requires internet',
+                ),
                 onTap: () => Navigator.pop(sheet, 'barcode'),
               ),
               GroupedRow(
                 icon: Icons.edit_outlined,
-                title: 'Zadat ručně',
+                title: tr('Zadat ručně', 'Enter manually'),
                 onTap: () => Navigator.pop(sheet, 'manual'),
               ),
             ],
@@ -133,8 +149,11 @@ Future<void> addFoodFlow(
             ListenableBuilder(
               listenable: state.on.resting,
               builder: (sheet, _) => GroupedSection(
-                header: 'Oblíbená a nedávná',
-                footer: 'Hvězdičkou jídlo připneš do Rychle přidat.',
+                header: tr('Oblíbená a nedávná', 'Favorites and recent'),
+                footer: tr(
+                  'Hvězdičkou jídlo připneš do Rychle přidat.',
+                  'Tap the star to pin food to Quick add.',
+                ),
                 children: [
                   for (final f in state.quickFoods)
                     GroupedRow(
@@ -222,9 +241,9 @@ class _NutritionPageState extends State<NutritionPage> {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('Smazáno: ${e.name}'),
+          content: Text(tr('Smazáno: ${e.name}', 'Deleted: ${e.name}')),
           action: SnackBarAction(
-            label: 'Vrátit',
+            label: tr('Vrátit', 'Undo'),
             onPressed: () => state.saveFood(e),
           ),
         ),
@@ -237,10 +256,19 @@ class _NutritionPageState extends State<NutritionPage> {
     try {
       final pinned = await state.toggleFavoriteFood(f);
       message = pinned
-          ? 'Připnuto mezi oblíbená: ${f.name}'
-          : 'Odepnuto z oblíbených: ${f.name}';
+          ? tr(
+              'Připnuto mezi oblíbená: ${f.name}',
+              'Pinned to favorites: ${f.name}',
+            )
+          : tr(
+              'Odepnuto z oblíbených: ${f.name}',
+              'Removed from favorites: ${f.name}',
+            );
     } catch (_) {
-      message = 'Oblíbená se nepodařilo uložit. Zkus to znovu.';
+      message = tr(
+        'Oblíbená se nepodařilo uložit. Zkus to znovu.',
+        'Could not save favorites. Try again.',
+      );
     }
     messenger
       ..clearSnackBars()
@@ -273,7 +301,7 @@ class _NutritionPageState extends State<NutritionPage> {
               totals.fatMissing);
       String lower(bool missing) => missing && entries.isNotEmpty ? '≥ ' : '';
       return LargeTitlePage(
-        title: widget.root ? 'Strava' : 'Výživa',
+        title: tr('Strava', 'Nutrition'),
         tone: Tone.food,
         actions: [if (widget.root) SettingsButton(state)],
         padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
@@ -283,7 +311,7 @@ class _NutritionPageState extends State<NutritionPage> {
             child: Row(
               children: [
                 IconButton(
-                  tooltip: 'Předchozí den',
+                  tooltip: tr('Předchozí den', 'Previous day'),
                   icon: const Icon(Icons.chevron_left),
                   onPressed: () => _shift(-1),
                 ),
@@ -297,7 +325,7 @@ class _NutritionPageState extends State<NutritionPage> {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Další den',
+                  tooltip: tr('Další den', 'Next day'),
                   icon: const Icon(Icons.chevron_right),
                   onPressed: _isToday ? null : () => _shift(1),
                 ),
@@ -310,21 +338,25 @@ class _NutritionPageState extends State<NutritionPage> {
           // Zápis jídla nahoře, nápady (AI lednička) až pod jídly dne.
           _EntryTile(
             icon: Icons.qr_code_2,
-            title: 'Čárový kód',
-            subtitle: 'Najdi jídlo v databázi',
+            title: tr('Čárový kód', 'Barcode'),
+            subtitle: tr('Najdi jídlo v databázi', 'Find food in the database'),
             onTap: () => barcodeFlow(context, state, key),
           ),
           if (anyMissing)
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 0),
               child: Text(
-                '≥ = u některého jídla hodnota chybí, skutečný '
-                'součet může být vyšší.',
+                tr(
+                  '≥ = u některého jídla hodnota chybí, skutečný '
+                      'součet může být vyšší.',
+                  '≥ = a value is missing for some food, the real total '
+                      'may be higher.',
+                ),
                 style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ),
           if (state.quickFoods.isNotEmpty) ...[
-            const SectionHeader('Rychle přidat'),
+            SectionHeader(tr('Rychle přidat', 'Quick add')),
             Wrap(
               spacing: Space.s,
               runSpacing: Space.s,
@@ -357,7 +389,10 @@ class _NutritionPageState extends State<NutritionPage> {
                 0,
               ),
               child: Text(
-                'Podržením jídlo připneš mezi oblíbená (hvězdička).',
+                tr(
+                  'Podržením jídlo připneš mezi oblíbená (hvězdička).',
+                  'Long-press a food to pin it to favorites (star).',
+                ),
                 style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ),
@@ -367,7 +402,7 @@ class _NutritionPageState extends State<NutritionPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.s),
               child: Text(
-                'Tento den nic nezapsáno.',
+                tr('Tento den nic nezapsáno.', 'Nothing logged for this day.'),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
             ),
@@ -376,10 +411,13 @@ class _NutritionPageState extends State<NutritionPage> {
             if (meal != 'V noci' || byMeal.containsKey(meal))
               GroupedSection(
                 header: switch (byMeal[meal]) {
-                  final list? =>
+                  final list? => tr(
                     '$meal · ${lower(totalsOf(list).kcalMissing)}'
                         '${_n(totalsOf(list).kcal)} kcal',
-                  null => meal,
+                    '${mealLabel(meal)} · ${lower(totalsOf(list).kcalMissing)}'
+                        '${_n(totalsOf(list).kcal)} kcal',
+                  ),
+                  null => mealLabel(meal),
                 },
                 children: [
                   for (final e in byMeal[meal] ?? const <FoodEntry>[])
@@ -390,14 +428,14 @@ class _NutritionPageState extends State<NutritionPage> {
                           openFoodForm(context, state, day: key, entry: e),
                       chevron: false,
                       trailing: IconButton(
-                        tooltip: 'Smazat záznam',
+                        tooltip: tr('Smazat záznam', 'Delete entry'),
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => _delete(e),
                       ),
                     ),
                   GroupedRow(
                     icon: Icons.add_rounded,
-                    title: _addTo[meal]!,
+                    title: mealAddLabel(meal),
                     chevron: false,
                     onTap: () => addFoodFlow(
                       context,
@@ -409,12 +447,15 @@ class _NutritionPageState extends State<NutritionPage> {
                 ],
               ),
           GroupedSection(
-            header: 'Nápady',
+            header: tr('Nápady', 'Ideas'),
             children: [
               GroupedRow(
                 icon: Icons.kitchen_outlined,
-                title: 'Lednička',
-                subtitle: 'Vyfoť ji a nech si navrhnout jídlo',
+                title: tr('Lednička', 'Fridge'),
+                subtitle: tr(
+                  'Vyfoť ji a nech si navrhnout jídlo',
+                  'Snap a photo and get meal ideas',
+                ),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => FridgePage(state)),
@@ -425,9 +466,13 @@ class _NutritionPageState extends State<NutritionPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.l),
             child: Text(
-              'Orientační hodnoty, žádné zdravotní doporučení. Údaje z '
-              'čárových kódů pocházejí z databáze Open Food Facts (ODbL) '
-              'a mohou být nepřesné.',
+              tr(
+                'Orientační hodnoty, žádné zdravotní doporučení. Údaje z '
+                    'čárových kódů pocházejí z databáze Open Food Facts (ODbL) '
+                    'a mohou být nepřesné.',
+                'Approximate values, not health advice. Barcode data comes '
+                    'from the Open Food Facts database (ODbL) and may be inaccurate.',
+              ),
               style: text.bodySmall?.copyWith(color: p.secondaryLabel),
             ),
           ),
@@ -439,8 +484,12 @@ class _NutritionPageState extends State<NutritionPage> {
   String _subtitle(FoodEntry e) {
     final v = e.eaten;
     final kcal = v.kcal == null ? '– kcal' : '${_n(v.kcal!)} kcal';
-    return '${amountLabel(e)} · $kcal · B ${_g(v.protein)} · '
-        'S ${_g(v.carbs)} · T ${_g(v.fat)}';
+    return tr(
+      '${amountLabel(e)} · $kcal · B ${_g(v.protein)} · '
+          'S ${_g(v.carbs)} · T ${_g(v.fat)}',
+      '${amountLabel(e)} · $kcal · P ${_g(v.protein)} · '
+          'C ${_g(v.carbs)} · F ${_g(v.fat)}',
+    );
   }
 }
 
@@ -505,7 +554,13 @@ class _Summary extends StatelessWidget {
       await state.setNutritionTargets(protein: s.protein, kcal: s.kcal);
     } catch (_) {
       if (context.mounted) {
-        showToast(context, 'Cíl se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Cíl se nepodařilo uložit. Zkus to znovu.',
+            'Could not save target. Try again.',
+          ),
+        );
       }
     }
   }
@@ -543,13 +598,16 @@ class _Summary extends StatelessWidget {
                 if (proteinTarget == null)
                   (
                     '${lower(totals.proteinMissing)}${_g(totals.protein)}',
-                    'bílkoviny',
+                    tr('bílkoviny', 'protein'),
                   ),
                 (
                   '${lower(totals.carbsMissing)}${_g(totals.carbs)}',
-                  'sacharidy',
+                  tr('sacharidy', 'carbs'),
                 ),
-                ('${lower(totals.fatMissing)}${_g(totals.fat)}', 'tuky'),
+                (
+                  '${lower(totals.fatMissing)}${_g(totals.fat)}',
+                  tr('tuky', 'fat'),
+                ),
               ])
                 Expanded(child: StatTile(value, label)),
             ],
@@ -560,14 +618,18 @@ class _Summary extends StatelessWidget {
               children: [
                 Flexible(
                   child: Text(
-                    'Doporučeno z tvé váhy '
-                    '${formatKg(state.bodyweights.first.kg)} kg.',
+                    tr(
+                      'Doporučeno z tvé váhy '
+                          '${formatKg(state.bodyweights.first.kg)} kg.',
+                      'Suggested from your body weight '
+                          '${formatKg(state.bodyweights.first.kg)} kg.',
+                    ),
                     style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                   ),
                 ),
                 TextButton(
                   onPressed: () => _useSuggested(context, suggested),
-                  child: const Text('Nastavit jako cíl'),
+                  child: Text(tr('Nastavit jako cíl', 'Set as target')),
                 ),
               ],
             ),
@@ -577,7 +639,10 @@ class _Summary extends StatelessWidget {
               children: [
                 Flexible(
                   child: Text(
-                    'Zapiš tělesnou váhu a doporučím ti cíl bílkovin.',
+                    tr(
+                      'Zapiš tělesnou váhu a doporučím ti cíl bílkovin.',
+                      'Log your body weight and I will suggest a protein target.',
+                    ),
                     style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                   ),
                 ),
@@ -586,7 +651,7 @@ class _Summary extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (_) => BodyweightPage(state)),
                   ),
-                  child: const Text('Zapsat váhu'),
+                  child: Text(tr('Zapsat váhu', 'Log weight')),
                 ),
               ],
             ),
@@ -607,9 +672,15 @@ class _RingStack extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = [
       if (kcal case (final v, final t))
-        ('Energie', v, t, 'kcal', AppPalette.food),
+        (tr('Energie', 'Energy'), v, t, 'kcal', AppPalette.food),
       if (protein case (final v, final t))
-        ('Bílkoviny', v, t, 'g', const [AppPalette.cyan, AppPalette.cyan]),
+        (
+          tr('Bílkoviny', 'Protein'),
+          v,
+          t,
+          'g',
+          const [AppPalette.cyan, AppPalette.cyan],
+        ),
     ];
     const outer = 132.0, stroke = 14.0;
     // Při velkém písmu nebo úzkém displeji legenda pod kruhy.
@@ -679,9 +750,12 @@ class _RingLegend extends StatelessWidget {
     final p = context.palette;
     final left = target - value;
     return Semantics(
-      label:
-          '$label ${_n(value)} z ${_n(target)} $unit'
-          '${left > 0 ? ', zbývá ${_n(left)}' : ', cíl splněn'}',
+      label: tr(
+        '$label ${_n(value)} z ${_n(target)} $unit'
+            '${left > 0 ? ', zbývá ${_n(left)}' : ', cíl splněn'}',
+        '$label ${_n(value)} of ${_n(target)} $unit'
+            '${left > 0 ? ', ${_n(left)} left' : ', goal reached'}',
+      ),
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -730,7 +804,9 @@ class _RingLegend extends StatelessWidget {
             ),
           ),
           Text(
-            left > 0 ? 'zbývá ${_n(left)} $unit' : 'cíl splněn',
+            left > 0
+                ? tr('zbývá ${_n(left)} $unit', '${_n(left)} $unit left')
+                : tr('cíl splněn', 'goal reached'),
             style: Theme.of(context).textTheme.bodySmall
                 ?.copyWith(color: left > 0 ? p.secondaryLabel : p.positive),
           ),
@@ -773,7 +849,9 @@ class _FavoriteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final on = state.isFavoriteFood(food);
     return IconButton(
-      tooltip: on ? 'Odepnout z oblíbených' : 'Připnout mezi oblíbená',
+      tooltip: on
+          ? tr('Odepnout z oblíbených', 'Remove from favorites')
+          : tr('Připnout mezi oblíbená', 'Pin to favorites'),
       isSelected: on,
       icon: Icon(
         on ? Icons.star_rounded : Icons.star_outline_rounded,
@@ -785,8 +863,13 @@ class _FavoriteButton extends StatelessWidget {
         } catch (_) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Oblíbená se nepodařilo uložit. Zkus to znovu.'),
+              SnackBar(
+                content: Text(
+                  tr(
+                    'Oblíbená se nepodařilo uložit. Zkus to znovu.',
+                    'Could not save favorites. Try again.',
+                  ),
+                ),
               ),
             );
           }
@@ -824,11 +907,17 @@ Future<void> quickAddFood(
     ..clearSnackBars()
     ..showSnackBar(
       SnackBar(
-        content: Text(error ?? 'Přidáno: ${f.name}, ${amountLabel(f)}'),
+        content: Text(
+          error ??
+              tr(
+                'Přidáno: ${f.name}, ${amountLabel(f)}',
+                'Added: ${f.name}, ${amountLabel(f)}',
+              ),
+        ),
         action: error != null
             ? null
             : SnackBarAction(
-                label: 'Vrátit',
+                label: tr('Vrátit', 'Undo'),
                 onPressed: () => state.removeFood(entry.id),
               ),
       ),

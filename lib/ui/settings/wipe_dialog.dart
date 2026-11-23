@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
+
 import '../design/motion.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -9,11 +11,14 @@ import '../design/tokens.dart';
 Future<bool> confirmWipe(BuildContext context) async {
   final first = await confirmAction(
     context,
-    title: 'Smazat všechna data?',
-    message:
-        'Tréninky, vlastní cviky, strava i nastavení v tomto zařízení se '
-        'trvale smažou a nejdou vrátit. Nejdřív si ulož zálohu do souboru.',
-    confirm: 'Pokračovat',
+    title: tr('Smazat všechna data?', 'Delete all data?'),
+    message: tr(
+      'Tréninky, vlastní cviky, strava i nastavení v tomto zařízení se '
+          'trvale smažou a nejdou vrátit. Nejdřív si ulož zálohu do souboru.',
+      'Workouts, custom exercises, food and settings on this device will '
+          'be permanently deleted and cannot be restored. Back up to a file first.',
+    ),
+    confirm: tr('Pokračovat', 'Continue'),
     destructive: true,
   );
   if (!first || !context.mounted) return false;
@@ -63,7 +68,7 @@ class _HoldToWipeState extends State<_HoldToWipe>
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     return AlertDialog(
-      title: const Text('Poslední krok'),
+      title: Text(tr('Poslední krok', 'Last step')),
       // Pevná šířka: zaškrtávací řádek ani výplň neumí vnitřní rozměry.
       content: SizedBox(
         width: double.maxFinite,
@@ -79,13 +84,21 @@ class _HoldToWipeState extends State<_HoldToWipe>
                 setState(() => understood = v ?? false);
                 if (!understood) _progress.value = 0;
               },
-              title: const Text('Rozumím, že se data nedají vrátit'),
+              title: Text(
+                tr(
+                  'Rozumím, že se data nedají vrátit',
+                  'I understand data cannot be restored',
+                ),
+              ),
             ),
             const SizedBox(height: Space.m),
             Semantics(
               button: true,
               enabled: understood,
-              label: 'Podrž 3 sekundy pro smazání všech dat',
+              label: tr(
+                'Podrž 3 sekundy pro smazání všech dat',
+                'Hold for 3 seconds to delete all data',
+              ),
               // Čtečka obrazovky nemá jak držet: dlouhé stisknutí potvrdí hned.
               onLongPress: understood
                   ? () => Navigator.pop(context, true)
@@ -117,8 +130,11 @@ class _HoldToWipeState extends State<_HoldToWipe>
                         Center(
                           child: Text(
                             _progress.value > 0
-                                ? 'Drž dál…'
-                                : 'Podrž 3 s pro smazání',
+                                ? tr('Drž dál…', 'Keep holding…')
+                                : tr(
+                                    'Podrž 3 s pro smazání',
+                                    'Hold 3 s to delete',
+                                  ),
                             style: text.titleSmall?.copyWith(
                               color: understood ? p.label : p.tertiaryLabel,
                               fontWeight: FontWeight.w700,
@@ -137,7 +153,7 @@ class _HoldToWipeState extends State<_HoldToWipe>
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Zrušit'),
+          child: Text(tr('Zrušit', 'Cancel')),
         ),
       ],
     );

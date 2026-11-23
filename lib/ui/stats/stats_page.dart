@@ -7,25 +7,38 @@ import '../../coach/splits.dart';
 import '../../coach/tips.dart';
 import '../../coach/weeks.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../widgets/labels.dart';
 
-const _months = [
-  'leden',
-  'únor',
-  'březen',
-  'duben',
-  'květen',
-  'červen',
-  'červenec',
-  'srpen',
-  'září',
-  'říjen',
-  'listopad',
-  'prosinec',
-];
+String _monthName(int month) => switch (month) {
+  1 => tr('leden', 'January'),
+  2 => tr('únor', 'February'),
+  3 => tr('březen', 'March'),
+  4 => tr('duben', 'April'),
+  5 => tr('květen', 'May'),
+  6 => tr('červen', 'June'),
+  7 => tr('červenec', 'July'),
+  8 => tr('srpen', 'August'),
+  9 => tr('září', 'September'),
+  10 => tr('říjen', 'October'),
+  11 => tr('listopad', 'November'),
+  12 => tr('prosinec', 'December'),
+  _ => '',
+};
+
+/// [muscleLabel] covers the shared muscle keys; these day-focus names are
+/// specific to the stats bars.
+String _focusName(String name) => switch (name) {
+  'Hýždě' => tr(name, 'Glutes'),
+  'Biceps' => tr(name, 'Biceps'),
+  'Triceps' => tr(name, 'Triceps'),
+  'Lýtka' => tr(name, 'Calves'),
+  'Břicho' => tr(name, 'Abs'),
+  _ => muscleLabel(name),
+};
 
 /// Statistiky: součty, měsíc proti minulému, kalendář a grafy po týdnech.
 class StatsPage extends StatelessWidget {
@@ -62,32 +75,40 @@ class StatsPage extends StatelessWidget {
         days: 30,
       );
       if (all.workouts == 0) {
-        return const LargeTitlePage(
-          title: 'Statistiky',
+        return LargeTitlePage(
+          title: tr('Statistiky', 'Stats'),
           children: [
             EmptyState(
               icon: Icons.insights_rounded,
-              title: 'Zatím bez dat',
-              message:
-                  'Po prvním dokončeném tréninku tu uvidíš kalendář, '
-                  'grafy a součty.',
+              title: tr('Zatím bez dat', 'No data yet'),
+              message: tr(
+                'Po prvním dokončeném tréninku tu uvidíš kalendář, '
+                    'grafy a součty.',
+                'After your first completed workout you will see a calendar, '
+                    'charts and totals here.',
+              ),
             ),
           ],
         );
       }
       return LargeTitlePage(
-        title: 'Statistiky',
+        title: tr('Statistiky', 'Stats'),
         children: [
           Panel(
             child: Column(
               children: [
                 Row(
                   children: [
-                    Expanded(child: StatTile('${all.workouts}', 'Tréninky')),
+                    Expanded(
+                      child: StatTile(
+                        '${all.workouts}',
+                        tr('Tréninky', 'Workouts'),
+                      ),
+                    ),
                     Expanded(
                       child: StatTile(
                         '${(all.time.inMinutes / 60).round()} h',
-                        'Čas v posilovně',
+                        tr('Čas v posilovně', 'Time in the gym'),
                       ),
                     ),
                   ],
@@ -98,33 +119,40 @@ class StatsPage extends StatelessWidget {
                     Expanded(
                       child: StatTile(
                         '${formatKg((all.volumeKg / 100).round() / 10)} t',
-                        'Zvednuto',
+                        tr('Zvednuto', 'Lifted'),
                       ),
                     ),
-                    Expanded(child: StatTile('${all.sets}', 'Série')),
+                    Expanded(
+                      child: StatTile('${all.sets}', tr('Série', 'Sets')),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          SectionHeader('Tento měsíc (${_months[at.toLocal().month - 1]})'),
+          SectionHeader(
+            tr(
+              'Tento měsíc (${_monthName(at.toLocal().month)})',
+              'This month (${_monthName(at.toLocal().month)})',
+            ),
+          ),
           Panel(
             child: Column(
               children: [
                 _CompareRow(
-                  label: 'Tréninky',
+                  label: tr('Tréninky', 'Workouts'),
                   now: '${thisMonth.workouts}',
                   before: '${lastMonth.workouts}',
                   better: thisMonth.workouts > lastMonth.workouts,
                 ),
                 _CompareRow(
-                  label: 'Série',
+                  label: tr('Série', 'Sets'),
                   now: '${thisMonth.sets}',
                   before: '${lastMonth.sets}',
                   better: thisMonth.sets > lastMonth.sets,
                 ),
                 _CompareRow(
-                  label: 'Objem',
+                  label: tr('Objem', 'Volume'),
                   now: '${formatVolume(thisMonth.volumeKg)} kg',
                   before: '${formatVolume(lastMonth.volumeKg)} kg',
                   better: thisMonth.volumeKg > lastMonth.volumeKg,
@@ -135,39 +163,44 @@ class StatsPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(Space.l, 6, Space.l, 0),
             child: Text(
-              '„Minule“ = minulý měsíc za stejný počet dní.',
+              tr(
+                '„Minule“ = minulý měsíc za stejný počet dní.',
+                '"Previous" = last month over the same number of days.',
+              ),
               style: text.bodySmall,
             ),
           ),
-          const SectionHeader('Kalendář'),
+          SectionHeader(tr('Kalendář', 'Calendar')),
           Panel(
             child: _Heatmap(counts: dailyCounts(state.workouts), now: at),
           ),
-          const SectionHeader('Tréninky po týdnech'),
+          SectionHeader(tr('Tréninky po týdnech', 'Workouts by week')),
           Panel(
             child: _WeekBars(
               weeks: weeks,
               value: (w) => w.totals.workouts.toDouble(),
               label: (v) => '${v.round()}',
-              unit: 'tréninků',
+              unit: tr('tréninků', 'workouts'),
             ),
           ),
-          const SectionHeader('Objem po týdnech'),
+          SectionHeader(tr('Objem po týdnech', 'Volume by week')),
           Panel(
             child: _WeekBars(
               weeks: weeks,
               value: (w) => w.totals.volumeKg / 1000,
               label: (v) => v == 0 ? '0' : formatKg((v * 10).round() / 10),
-              unit: 'tun',
+              unit: tr('tun', 'tons'),
             ),
           ),
-          const SectionHeader('Série na partii (30 dní)'),
+          SectionHeader(
+            tr('Série na partii (30 dní)', 'Sets per muscle group (30 days)'),
+          ),
           Panel(
             child: Column(
               children: [
                 for (final f in dayFocuses)
                   _FocusBar(
-                    name: f.name,
+                    name: _focusName(f.name),
                     sets: focus[f.id] ?? 0,
                     max: focus.values.fold(1, math.max),
                   ),
@@ -178,8 +211,12 @@ class StatsPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.l, 6, Space.l, 0),
               child: Text(
-                'Pro růst zhruba ${weeklySetsMin * 4}–${weeklySetsMax * 4} '
-                'sérií na partii za 30 dní.',
+                tr(
+                  'Pro růst zhruba ${weeklySetsMin * 4}–${weeklySetsMax * 4} '
+                      'sérií na partii za 30 dní.',
+                  'For growth, about ${weeklySetsMin * 4}–${weeklySetsMax * 4} '
+                      'sets per muscle group in 30 days.',
+                ),
                 style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ),
@@ -207,7 +244,10 @@ class _CompareRow extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Semantics(
       container: true,
-      label: '$label: tento měsíc $now, minulý $before',
+      label: tr(
+        '$label: tento měsíc $now, minulý $before',
+        '$label: this month $now, previous $before',
+      ),
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -226,7 +266,7 @@ class _CompareRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'minule $before',
+                    tr('minule $before', 'previous $before'),
                     style: text.bodySmall?.copyWith(fontFeatures: tabular),
                   ),
                 ],
@@ -246,7 +286,9 @@ class _Heatmap extends StatelessWidget {
   const _Heatmap({required this.counts, required this.now});
 
   static const weeks = 16;
-  static const _days = ['Po', '', 'St', '', 'Pá', '', 'Ne'];
+  List<String> get _days => isEnglish
+      ? ['Mo', '', 'We', '', 'Fr', '', 'Su']
+      : ['Po', '', 'St', '', 'Pá', '', 'Ne'];
 
   @override
   Widget build(BuildContext context) {
@@ -267,9 +309,12 @@ class _Heatmap extends StatelessWidget {
       if (n > 0) active++;
     }
     return Semantics(
-      label:
-          'Za posledních $weeks týdnů ${workoutsLabel(total)}, '
-          'dny s tréninkem: $active',
+      label: tr(
+        'Za posledních $weeks týdnů ${workoutsLabel(total)}, '
+            'dny s tréninkem: $active',
+        'Over the last $weeks weeks ${workoutsLabel(total)}, '
+            'days with a workout: $active',
+      ),
       child: ExcludeSemantics(
         child: LayoutBuilder(
           builder: (context, c) {
@@ -309,7 +354,10 @@ class _Heatmap extends StatelessWidget {
                   ),
                 const SizedBox(height: Space.s),
                 Text(
-                  'Za $weeks týdnů ${workoutsLabel(total)}, dny s tréninkem: $active',
+                  tr(
+                    'Za $weeks týdnů ${workoutsLabel(total)}, dny s tréninkem: $active',
+                    'In $weeks weeks ${workoutsLabel(total)}, days with a workout: $active',
+                  ),
                   style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                 ),
               ],
@@ -360,9 +408,12 @@ class _WeekBars extends StatelessWidget {
     final top = values.fold<double>(0, math.max);
     String date(DateTime d) => '${d.day}. ${d.month}.';
     return Semantics(
-      label:
-          'Posledních ${weeks.length} týdnů, $unit: '
-          '${values.map(label).join(', ')}',
+      label: tr(
+        'Posledních ${weeks.length} týdnů, $unit: '
+            '${values.map(label).join(', ')}',
+        'Last ${weeks.length} weeks, $unit: '
+            '${values.map(label).join(', ')}',
+      ),
       child: ExcludeSemantics(
         child: Column(
           children: [
@@ -417,7 +468,11 @@ class _WeekBars extends StatelessWidget {
                     style: text.labelSmall,
                   ),
                 ),
-                Text('tento týden', maxLines: 1, style: text.labelSmall),
+                Text(
+                  tr('tento týden', 'this week'),
+                  maxLines: 1,
+                  style: text.labelSmall,
+                ),
               ],
             ),
           ],

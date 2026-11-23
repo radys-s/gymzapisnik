@@ -46,19 +46,44 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
               busy: starting,
               onPressed: () => runWorkout(() async {}),
             )
-          else
+          else if (split != null)
+            // The routine card below has the one orange button; these two
+            // are the side doors.
+            Row(
+              children: [
+                Expanded(
+                  child: SecondaryButton(
+                    tr('Prázdný trénink', 'Empty workout'),
+                    icon: Icons.add_rounded,
+                    onPressed: starting
+                        ? null
+                        : () => runWorkout(state.startWorkout),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: SecondaryButton(
+                    tr('Podle partií', 'By muscle'),
+                    icon: Icons.tune_rounded,
+                    onPressed: buildWorkout,
+                  ),
+                ),
+              ],
+            )
+          else ...[
             PrimaryButton(
               tr('Začít prázdný trénink', 'Start empty workout'),
               icon: Icons.add_rounded,
               busy: starting,
               onPressed: () => runWorkout(state.startWorkout),
             ),
-          const SizedBox(height: Space.s),
-          SecondaryButton(
-            tr('Sestavit podle partií', 'Build by muscle groups'),
-            icon: Icons.tune_rounded,
-            onPressed: active == null ? buildWorkout : null,
-          ),
+            const SizedBox(height: Space.s),
+            SecondaryButton(
+              tr('Sestavit podle partií', 'Build by muscle groups'),
+              icon: Icons.tune_rounded,
+              onPressed: buildWorkout,
+            ),
+          ],
           SectionHeader(
             tr('Moje rutiny', 'My routines'),
             action: split == null ? null : tr('Upravit', 'Edit'),

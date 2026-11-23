@@ -336,9 +336,10 @@ abstract final class MissionCopy {
       'You need to train today',
     ),
     MissionKind.rest => tr('Dnes odpočinek', 'Rest day today'),
+    // The week count already sits above the day strip.
     MissionKind.trainToday => tr(
-      'Tento týden ${m.done} z ${m.goal}',
-      'This week ${m.done} of ${m.goal}',
+      'Dnes je den na trénink',
+      'Today is a training day',
     ),
     MissionKind.plannedRest => tr(
       'Dnes volno podle plánu',

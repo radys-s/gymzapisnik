@@ -62,9 +62,15 @@ class SettingsPage extends StatelessWidget {
     try {
       final saved = await files.saveText(name, content(), mime);
       if (saved) await onSaved?.call();
-      if (saved && context.mounted) _toast(context, 'Uloženo: $name');
+      if (saved && context.mounted) {
+        _toast(context, tr('Uloženo: $name', 'Saved: $name'));
+      }
     } catch (e) {
-      if (context.mounted) _toast(context, 'Soubor se nepodařilo uložit: $e');
+      if (context.mounted)
+        _toast(
+          context,
+          tr('Soubor se nepodařilo uložit: $e', 'Could not save file: $e'),
+        );
     }
   }
 
@@ -73,7 +79,11 @@ class SettingsPage extends StatelessWidget {
     try {
       source = await files.pickText(const ['json']);
     } catch (e) {
-      if (context.mounted) _toast(context, 'Soubor se nepodařilo otevřít: $e');
+      if (context.mounted)
+        _toast(
+          context,
+          tr('Soubor se nepodařilo otevřít: $e', 'Could not open file: $e'),
+        );
       return;
     }
     if (source == null || !context.mounted) return;
@@ -85,7 +95,8 @@ class SettingsPage extends StatelessWidget {
     } on FormatException catch (e) {
       if (context.mounted) _toast(context, e.message);
     } catch (e) {
-      if (context.mounted) _toast(context, 'Obnova se nezdařila: $e');
+      if (context.mounted)
+        _toast(context, tr('Obnova se nezdařila: $e', 'Restore failed: $e'));
     }
   }
 
@@ -94,7 +105,11 @@ class SettingsPage extends StatelessWidget {
     try {
       source = await files.pickText(const ['csv']);
     } catch (e) {
-      if (context.mounted) _toast(context, 'Soubor se nepodařilo otevřít: $e');
+      if (context.mounted)
+        _toast(
+          context,
+          tr('Soubor se nepodařilo otevřít: $e', 'Could not open file: $e'),
+        );
       return;
     }
     if (source == null || !context.mounted) return;
@@ -104,14 +119,21 @@ class SettingsPage extends StatelessWidget {
         _toast(
           context,
           count == 0
-              ? 'Nic nového, tyto tréninky už tu jsou.'
-              : 'Z Hevy přidáno: ${workoutsLabel(count)}.',
+              ? tr(
+                  'Nic nového, tyto tréninky už tu jsou.',
+                  'Nothing new, these workouts are already here.',
+                )
+              : tr(
+                  'Z Hevy přidáno: ${workoutsLabel(count)}.',
+                  'Added from Hevy: ${workoutsLabel(count)}.',
+                ),
         );
       }
     } on FormatException catch (e) {
       if (context.mounted) _toast(context, e.message);
     } catch (e) {
-      if (context.mounted) _toast(context, 'Import se nezdařil: $e');
+      if (context.mounted)
+        _toast(context, tr('Import se nezdařil: $e', 'Import failed: $e'));
     }
   }
 
@@ -123,7 +145,10 @@ class SettingsPage extends StatelessWidget {
     if (!ok && context.mounted) {
       _toast(
         context,
-        'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+        tr(
+          'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+          'Notifications are not allowed. Enable them in your phone settings.',
+        ),
       );
     }
   }
@@ -133,7 +158,7 @@ class SettingsPage extends StatelessWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
-      helpText: 'Čas připomínky',
+      helpText: tr('Čas připomínky', 'Reminder time'),
     );
     if (picked == null || !context.mounted) return;
     await _setReminder(context, picked.hour * 60 + picked.minute);
@@ -145,15 +170,19 @@ class SettingsPage extends StatelessWidget {
     await showAdaptiveDialog<void>(
       context: context,
       builder: (dialog) => AlertDialog.adaptive(
-        title: const Text('Zpětná vazba'),
+        title: Text(tr('Zpětná vazba', 'Feedback')),
         content: Text(
-          'Napiš na $feedbackContact (adresa je zkopírovaná). Připiš verzi '
-          '$appVersion a co jsi dělal.',
+          tr(
+            'Napiš na $feedbackContact (adresa je zkopírovaná). Připiš verzi '
+                '$appVersion a co jsi dělal.',
+            'Write to $feedbackContact (address copied). Include version '
+                '$appVersion and what you were doing.',
+          ),
         ),
         actions: [
           adaptiveAction(
             dialog,
-            label: 'Zavřít',
+            label: tr('Zavřít', 'Close'),
             strong: true,
             onPressed: () => Navigator.pop(dialog),
           ),
@@ -169,7 +198,13 @@ class SettingsPage extends StatelessWidget {
       await state.wipeAll();
     } catch (_) {
       if (context.mounted) {
-        showToast(context, 'Data se nepodařilo smazat. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Data se nepodařilo smazat. Zkus to znovu.',
+            'Could not delete data. Try again.',
+          ),
+        );
       }
       return;
     }
@@ -184,15 +219,15 @@ class SettingsPage extends StatelessWidget {
       final profile = state.profile;
       final rest = profile.restSeconds;
       return LargeTitlePage(
-        title: 'Nastavení',
+        title: tr('Nastavení', 'Settings'),
         children: [
           GroupedSection(
-            header: 'Trénink',
+            header: tr('Trénink', 'Training'),
             dividerIndent: _indent,
             children: [
               GroupedRow(
                 icon: Icons.timer_outlined,
-                title: 'Pauza mezi sériemi',
+                title: tr('Pauza mezi sériemi', 'Rest between sets'),
                 verticalPadding: 0,
                 trailing: DropdownButton<int>(
                   value: restOptions.contains(rest) ? rest : null,
@@ -212,7 +247,7 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.exposure_rounded,
-                title: 'Krok tlačítek +/−',
+                title: tr('Krok tlačítek +/−', '+/− button step'),
                 verticalPadding: 0,
                 trailing: DropdownButton<double>(
                   value: profile.weightStep,
@@ -234,7 +269,7 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.flag_outlined,
-                title: 'Frekvence tréninku',
+                title: tr('Frekvence tréninku', 'Training frequency'),
                 value: profile.trainingDays == null
                     ? perWeekLabel(state.weekGoal)
                     : [
@@ -248,7 +283,7 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.fitness_center_rounded,
-                title: 'Moje posilovna',
+                title: tr('Moje posilovna', 'My gym'),
                 value: (state.planAnswers?.place ?? TrainingPlace.gym).label,
                 onTap: () => Navigator.push(
                   context,
@@ -258,24 +293,30 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           GroupedSection(
-            header: 'Výživa',
+            header: tr('Výživa', 'Nutrition'),
             dividerIndent: _indent,
             children: [
               GroupedRow(
                 icon: Icons.egg_outlined,
-                title: 'Denní cíl bílkovin',
+                title: tr('Denní cíl bílkovin', 'Daily protein target'),
                 value: profile.proteinTarget == null
-                    ? 'Bez cíle'
+                    ? tr('Bez cíle', 'No target')
                     : '${profile.proteinTarget!.round()} g',
                 onTap: () => _editTarget(
                   context,
-                  title: 'Denní cíl bílkovin (g)',
+                  title: tr(
+                    'Denní cíl bílkovin (g)',
+                    'Daily protein target (g)',
+                  ),
                   current: profile.proteinTarget,
                   min: 20,
                   max: 400,
-                  hint:
-                      'Číslo si zvol sám, třeba podle trenéra nebo lékaře. '
-                      'Prázdné pole = bez cíle.',
+                  hint: tr(
+                    'Číslo si zvol sám, třeba podle trenéra nebo lékaře. '
+                        'Prázdné pole = bez cíle.',
+                    'Pick your own number, for example with your trainer or '
+                        'doctor. Empty field = no target.',
+                  ),
                   save: (v) => state.setNutritionTargets(
                     protein: v,
                     kcal: profile.kcalTarget,
@@ -285,17 +326,23 @@ class SettingsPage extends StatelessWidget {
               if (!profile.restrictWeightLoss)
                 GroupedRow(
                   icon: Icons.local_fire_department_outlined,
-                  title: 'Denní cíl energie',
+                  title: tr('Denní cíl energie', 'Daily calorie target'),
                   value: profile.kcalTarget == null
-                      ? 'Bez cíle'
+                      ? tr('Bez cíle', 'No target')
                       : '${profile.kcalTarget!.round()} kcal',
                   onTap: () => _editTarget(
                     context,
-                    title: 'Denní cíl energie (kcal)',
+                    title: tr(
+                      'Denní cíl energie (kcal)',
+                      'Daily calorie target (kcal)',
+                    ),
                     current: profile.kcalTarget,
                     min: 1000,
                     max: 6000,
-                    hint: 'Prázdné pole = bez cíle.',
+                    hint: tr(
+                      'Prázdné pole = bez cíle.',
+                      'Empty field = no target.',
+                    ),
                     save: (v) => state.setNutritionTargets(
                       protein: profile.proteinTarget,
                       kcal: v,
@@ -305,20 +352,27 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           GroupedSection(
-            header: 'Připomínky',
+            header: tr('Připomínky', 'Reminders'),
             footer: state.notifier.supported
-                ? 'Připomínka přijde jen v plánované dny a jen když týdenní '
-                      'cíl ještě není splněný.'
+                ? tr(
+                    'Připomínka přijde jen v plánované dny a jen když týdenní '
+                        'cíl ještě není splněný.',
+                    'Reminders come only on planned days and only while the '
+                        'weekly goal is not complete.',
+                  )
                 : null,
             dividerIndent: _indent,
             children: [
               if (!state.notifier.supported)
-                const GroupedRow(
+                GroupedRow(
                   icon: Icons.notifications_off_outlined,
-                  title: 'Připomínky tréninku',
-                  subtitle:
-                      'Ve webové verzi nejsou dostupné. Denní úkol od kouče '
-                      'uvidíš po otevření aplikace.',
+                  title: tr('Připomínky tréninku', 'Workout reminders'),
+                  subtitle: tr(
+                    'Ve webové verzi nejsou dostupné. Denní úkol od kouče '
+                        'uvidíš po otevření aplikace.',
+                    'Not available on the web. You will see your coach’s '
+                        'daily task when you open the app.',
+                  ),
                 )
               else ...[
                 if (state.notifier is RestNotifier)
@@ -326,10 +380,16 @@ class SettingsPage extends StatelessWidget {
                     child: GroupedRow(
                       onTap: () => _setRestAlerts(context, !state.restAlerts),
                       icon: Icons.timer_outlined,
-                      title: 'Upozornit na konec pauzy',
-                      subtitle:
-                          'Místní oznámení i při zamčeném telefonu. '
-                          'Android může doručení opozdit.',
+                      title: tr(
+                        'Upozornit na konec pauzy',
+                        'Alert when rest ends',
+                      ),
+                      subtitle: tr(
+                        'Místní oznámení i při zamčeném telefonu. '
+                            'Android může doručení opozdit.',
+                        'Local notification even with a locked phone. '
+                            'Android may delay delivery.',
+                      ),
                       trailing: Switch.adaptive(
                         value: state.restAlerts,
                         onChanged: (on) => _setRestAlerts(context, on),
@@ -343,7 +403,7 @@ class SettingsPage extends StatelessWidget {
                       profile.reminderMinutes == null ? 18 * 60 : null,
                     ),
                     icon: Icons.notifications_outlined,
-                    title: 'Připomínat trénink',
+                    title: tr('Připomínat trénink', 'Remind me to train'),
                     trailing: Switch.adaptive(
                       value: profile.reminderMinutes != null,
                       onChanged: (on) =>
@@ -354,7 +414,7 @@ class SettingsPage extends StatelessWidget {
                 if (profile.reminderMinutes != null)
                   GroupedRow(
                     icon: Icons.schedule_rounded,
-                    title: 'Čas připomínky',
+                    title: tr('Čas připomínky', 'Reminder time'),
                     value: _clock(profile.reminderMinutes!),
                     onTap: () => _pickReminderTime(context),
                   ),
@@ -364,12 +424,12 @@ class SettingsPage extends StatelessWidget {
           // Bez paywallu je všechno odemčené: nabídka Pro by jen mátla.
           if (state.paywall)
             GroupedSection(
-              header: 'Gym zápisník Pro',
+              header: tr('Gym zápisník Pro', 'Gym Log Pro'),
               dividerIndent: _indent,
               children: [
                 GroupedRow(
                   icon: Icons.workspace_premium_outlined,
-                  title: 'Co obsahuje Pro',
+                  title: tr('Co obsahuje Pro', 'What Pro includes'),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => PremiumPage(state)),
@@ -378,18 +438,25 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           GroupedSection(
-            header: 'Data',
+            header: tr('Data', 'Data'),
             footer: [
-              'Data jsou jen v tomto zařízení. Zálohu si ulož do souboru '
-                  'aspoň jednou za pár týdnů.',
+              tr(
+                'Data jsou jen v tomto zařízení. Zálohu si ulož do souboru '
+                    'aspoň jednou za pár týdnů.',
+                'Data is only on this device. Save a backup to a file every '
+                    'few weeks.',
+              ),
               ?storageStatusLine(),
             ].join(' '),
             dividerIndent: _indent,
             children: [
               GroupedRow(
                 icon: Icons.save_alt_rounded,
-                title: 'Uložit zálohu',
-                subtitle: 'Všechny tréninky a nastavení do souboru',
+                title: tr('Uložit zálohu', 'Save a backup'),
+                subtitle: tr(
+                  'Všechny tréninky a nastavení do souboru',
+                  'All workouts and settings to a file',
+                ),
                 chevron: false,
                 onTap: () => _save(
                   context,
@@ -401,23 +468,28 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.restore_rounded,
-                title: 'Obnovit ze zálohy',
-                subtitle: 'Doplní tréninky ze souboru, nic nesmaže',
+                title: tr('Obnovit ze zálohy', 'Restore from backup'),
+                subtitle: tr(
+                  'Doplní tréninky ze souboru, nic nesmaže',
+                  'Adds workouts from a file, deletes nothing',
+                ),
                 chevron: false,
                 onTap: () => _restore(context),
               ),
               GroupedRow(
                 icon: Icons.swap_horiz_rounded,
-                title: 'Import z Hevy',
-                subtitle:
-                    'Soubor workout_data.csv z Hevy (Export data), nic nesmaže',
+                title: tr('Import z Hevy', 'Import from Hevy'),
+                subtitle: tr(
+                  'Soubor workout_data.csv z Hevy (Export data), nic nesmaže',
+                  'Hevy workout_data.csv file (Export data), deletes nothing',
+                ),
                 chevron: false,
                 onTap: () => _importHevy(context),
               ),
               GroupedRow(
                 icon: Icons.table_chart_outlined,
-                title: 'Export do Excelu (CSV)',
-                subtitle: 'Jedna řádka na sérii',
+                title: tr('Export do Excelu (CSV)', 'Export to Excel (CSV)'),
+                subtitle: tr('Jedna řádka na sérii', 'One row per set'),
                 chevron: false,
                 onTap: () => _save(
                   context,
@@ -429,10 +501,13 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           GroupedSection(
-            header: 'O aplikaci',
-            footer:
-                'Gym zápisník, verze $appVersion. Aplikace nenahrazuje '
-                'trenéra ani lékaře.',
+            header: tr('O aplikaci', 'About'),
+            footer: tr(
+              'Gym zápisník, verze $appVersion. Aplikace nenahrazuje '
+                  'trenéra ani lékaře.',
+              'Gym Log, version $appVersion. The app does not replace '
+                  'a trainer or a doctor.',
+            ),
             dividerIndent: _indent,
             children: [
               GroupedRow(
@@ -445,14 +520,17 @@ class SettingsPage extends StatelessWidget {
               if (feedbackContact.isNotEmpty)
                 GroupedRow(
                   icon: Icons.mail_outline_rounded,
-                  title: 'Napsat zpětnou vazbu',
-                  subtitle: 'Co tě zdrželo, co chybělo, co nefunguje',
+                  title: tr('Napsat zpětnou vazbu', 'Send feedback'),
+                  subtitle: tr(
+                    'Co tě zdrželo, co chybělo, co nefunguje',
+                    'What slowed you down, what was missing, what broke',
+                  ),
                   chevron: false,
                   onTap: () => _feedback(context),
                 ),
               GroupedRow(
                 icon: Icons.auto_awesome_outlined,
-                title: 'Novinky',
+                title: tr('Novinky', "What's new"),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const WhatsNewPage()),
@@ -460,7 +538,7 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.policy_outlined,
-                title: 'Podmínky a soukromí',
+                title: tr('Podmínky a soukromí', 'Terms and privacy'),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const LegalPage()),
@@ -468,8 +546,11 @@ class SettingsPage extends StatelessWidget {
               ),
               GroupedRow(
                 icon: Icons.bug_report_outlined,
-                title: 'Diagnostika',
-                subtitle: 'Chyby od spuštění a stav úložiště',
+                title: tr('Diagnostika', 'Diagnostics'),
+                subtitle: tr(
+                  'Chyby od spuštění a stav úložiště',
+                  'Errors since launch and storage status',
+                ),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const DiagnosticsPage()),
@@ -481,7 +562,7 @@ class SettingsPage extends StatelessWidget {
           GroupedSection(
             children: [
               GroupedRow(
-                title: 'Smazat všechna data',
+                title: tr('Smazat všechna data', 'Delete all data'),
                 destructive: true,
                 chevron: false,
                 onTap: () => _wipe(context),
@@ -499,12 +580,21 @@ class SettingsPage extends StatelessWidget {
       if (!ok && context.mounted) {
         _toast(
           context,
-          'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+          tr(
+            'Oznámení nejsou povolená. Zapni je v nastavení telefonu.',
+            'Notifications are not allowed. Enable them in your phone settings.',
+          ),
         );
       }
     } catch (_) {
       if (context.mounted) {
-        _toast(context, 'Nastavení se nepodařilo uložit. Zkus to znovu.');
+        _toast(
+          context,
+          tr(
+            'Nastavení se nepodařilo uložit. Zkus to znovu.',
+            'Could not save settings. Try again.',
+          ),
+        );
       }
     }
   }
@@ -611,8 +701,10 @@ class _TargetDialogState extends State<_TargetDialog> {
     final v = parseNum(raw);
     if (v == null || v < widget.min || v > widget.max) {
       setState(
-        () => error =
-            'Zadej číslo od ${widget.min.round()} do ${widget.max.round()}.',
+        () => error = tr(
+          'Zadej číslo od ${widget.min.round()} do ${widget.max.round()}.',
+          'Enter a number from ${widget.min.round()} to ${widget.max.round()}.',
+        ),
       );
       return;
     }
@@ -636,9 +728,9 @@ class _TargetDialogState extends State<_TargetDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Zrušit'),
+        child: Text(tr('Zrušit', 'Cancel')),
       ),
-      FilledButton(onPressed: _save, child: const Text('Uložit')),
+      FilledButton(onPressed: _save, child: Text(tr('Uložit', 'Save'))),
     ],
   );
 }

@@ -192,14 +192,16 @@ class _Segment extends StatelessWidget {
 
 /// Štítek „ŽIVĚ" s tečkou, která třikrát blikne a pak svítí.
 class LiveTag extends StatefulWidget {
-  final String label;
-  const LiveTag({super.key, this.label = 'ŽIVĚ'});
+  final String? label;
+  const LiveTag({super.key, this.label});
 
   @override
   State<LiveTag> createState() => _LiveTagState();
 }
 
 class _LiveTagState extends State<LiveTag> with SingleTickerProviderStateMixin {
+  String get _label => widget.label ?? tr('ŽIVĚ', 'LIVE');
+
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1200),
@@ -240,7 +242,7 @@ class _LiveTagState extends State<LiveTag> with SingleTickerProviderStateMixin {
         ),
         const SizedBox(width: 6),
         Text(
-          widget.label,
+          _label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: c,
             fontWeight: FontWeight.w800,

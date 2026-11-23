@@ -8,7 +8,7 @@ Future<bool> confirmAction(
   required String title,
   String? message,
   required String confirm,
-  String cancel = 'Zrušit',
+  String? cancel,
   bool destructive = false,
 }) async {
   final p = context.palette;
@@ -20,7 +20,7 @@ Future<bool> confirmAction(
       actions: [
         adaptiveAction(
           dialog,
-          label: cancel,
+          label: cancel ?? tr('Zrušit', 'Cancel'),
           onPressed: () => Navigator.pop(dialog, false),
         ),
         adaptiveAction(
@@ -79,7 +79,10 @@ void showUndo(BuildContext context, String message, VoidCallback onUndo) =>
         SnackBar(
           content: Text(message),
           duration: const Duration(seconds: 5),
-          action: SnackBarAction(label: 'Vrátit', onPressed: onUndo),
+          action: SnackBarAction(
+            label: tr('Vrátit', 'Undo'),
+            onPressed: onUndo,
+          ),
         ),
       );
 

@@ -45,7 +45,7 @@ void main() {
       remaining: 2,
       daysLeft: 4,
     );
-    expect(MissionCopy.title(m), 'Tento týden 1 z 3');
+    expect(MissionCopy.title(m), 'Dnes je den na trénink');
     expect(MissionCopy.subtitle(m), startsWith('První trénink'));
     expect(MissionCopy.subtitle(m, daysSince: 1), startsWith('Minule včera'));
     expect(

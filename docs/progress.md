@@ -64,3 +64,11 @@
 - Why: competitor research item 19 (Boostcamp-style weekly report) was the last missing top-20 feature; the rest were visible inconsistencies Tomáš called slop.
 - Numbers: 11 new tests (9 domain, 2 widget); focused workout, home and progress suites pass (61 + 13 tests); screenshot tour renders the report.
 - Next: Tomáš's hands-on feedback from the new IPA.
+
+## 2026-11-23 — Onboarding rebuilt around plan styles, Czech + English, new figure
+
+- What: onboarding starts with a one-tap language choice (Czech or English, Slovak dropped, nothing preselected), then "Jak chceš trénovat?": a highlighted own-plan card or one of three styles (science-based, old school, strength). Questions show no answer until tapped; the schedule asks for days and session length. Six new style plans; science-based exercises carry a short "why this exercise" note with its study (Maeo 2021/2023, Pedrosa 2022, Kubo 2019, Kassiano 2023, Wolf 2023; plan principles from Schoenfeld 2016/2017 and Robinson 2024). The own-plan editor starts from any template with one tap, names are optional, empty days show one big add button.
+- Languages: `tr(cs, en)` pairs (lib/core/i18n.dart); the app rebuilds when the language changes. Translated in batches by a worker model and reviewed.
+- Exercises: 33 English names made consistent, 17 duplicates hidden from lists (ids kept for history), 45 exercises got a matching movement. The figure got volume, working muscles in the accent (helpers half-tone, equipment neutral), a faint start pose, three slow reps with phase labels and start/end frames.
+- Declined: copying scraped photos from free-exercise-db/wrkout (their maintainer says he does not own the image copyright); used only as pose reference.
+- Next: English for the remaining screens and technique texts, 54 new exercises, review, IPA.

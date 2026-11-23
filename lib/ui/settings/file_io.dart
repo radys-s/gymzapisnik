@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/i18n.dart';
+
 /// Ukládání a otevírání souborů. V testech jde nahradit.
 abstract class FileIo {
   /// Uloží text; `false` = uživatel ukládání zrušil.
@@ -21,7 +23,7 @@ class PickerFileIo implements FileIo {
       fileName: name,
       bytes: Uint8List.fromList(utf8.encode(content)),
       mimeType: mimeType,
-      dialogTitle: 'Uložit soubor',
+      dialogTitle: tr('Uložit soubor', 'Save file'),
     );
     // Na webu se soubor stáhne a plugin vrací vždy `null`.
     return kIsWeb || target != null;

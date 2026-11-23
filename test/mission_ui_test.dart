@@ -39,7 +39,7 @@ void main() {
     final state = await newState(tester);
     await show(tester, state);
     expect(state.weekGoal, 3);
-    expect(find.text('Tento týden 0 z 3'), findsOneWidget);
+    expect(find.text('Dnes je den na trénink'), findsOneWidget);
     expect(find.text('0/3'), findsNothing); // weekly ring moved to Progress
   });
 

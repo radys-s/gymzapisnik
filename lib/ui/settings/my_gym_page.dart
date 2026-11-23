@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../ai/fridge_coach.dart' show AiError, AiOk;
 import '../../ai/photo.dart';
+import '../../core/i18n.dart';
 import '../../coach/plan_quiz.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
@@ -12,6 +13,7 @@ import '../design/tokens.dart';
 import '../onboarding/onboarding_page.dart' show placeIcon;
 import '../onboarding/question.dart';
 import '../widgets/ai_photo.dart';
+import '../widgets/labels.dart';
 import '../widgets/exercise_media.dart';
 
 /// Vybavení, u kterého dává smysl se ptát, jestli ho posilovna má.
@@ -59,7 +61,10 @@ class _MyGymPageState extends State<MyGymPage> {
       if (raw == null) return;
       final jpeg = prepareJpeg(raw);
       if (jpeg == null) {
-        message = 'Tenhle formát fotky neumím přečíst. Zkus jinou.';
+        message = tr(
+          'Tenhle formát fotky neumím přečíst. Zkus jinou.',
+          'I cannot read this photo format. Try another one.',
+        );
       } else {
         final result = await state.trainer.recognizeMachine(
           jpeg,
@@ -74,16 +79,24 @@ class _MyGymPageState extends State<MyGymPage> {
                 if (m.confidence >= 0.4) m.id,
             ];
             if (ids.isEmpty) {
-              message = 'Stroj jsem nepoznal. Zkus fotku z větší dálky.';
+              message = tr(
+                'Stroj jsem nepoznal. Zkus fotku z větší dálky.',
+                'I could not recognize the machine. Try a photo from farther away.',
+              );
             } else {
               await state.markGymHas(ids);
-              message =
-                  'Máš: ${ids.map((id) => state.exercise(id).name).join(', ')}';
+              message = tr(
+                'Máš: ${ids.map((id) => state.exercise(id).name).join(', ')}',
+                'You have: ${ids.map((id) => state.exercise(id).name).join(', ')}',
+              );
             }
         }
       }
     } catch (_) {
-      message = 'Fotku se nepodařilo načíst. Zkus to znovu.';
+      message = tr(
+        'Fotku se nepodařilo načíst. Zkus to znovu.',
+        'Could not load photo. Try again.',
+      );
     } finally {
       if (mounted) setState(() => scanning = false);
     }
@@ -105,11 +118,15 @@ class _MyGymPageState extends State<MyGymPage> {
             .where((e) => state.gymHas(e.id))
             .length;
         return LargeTitlePage(
-          title: 'Moje posilovna',
+          title: tr('Moje posilovna', 'My gym'),
           children: [
-            const WhyLine(
-              'Plán pak navrhuje jen cviky, které u tebe jdou odcvičit. '
-              'Chybějící stroj nahradí podobný cvik.',
+            WhyLine(
+              tr(
+                'Plán pak navrhuje jen cviky, které u tebe jdou odcvičit. '
+                    'Chybějící stroj nahradí podobný cvik.',
+                'Your plan only suggests exercises you can do there. '
+                    'A missing machine is replaced with a similar exercise.',
+              ),
             ),
             const SizedBox(height: Space.xl),
             StaggerColumn(
@@ -131,9 +148,17 @@ class _MyGymPageState extends State<MyGymPage> {
               const SizedBox(height: Space.xl),
               Row(
                 children: [
-                  Expanded(child: Text('Stroje', style: text.titleLarge)),
+                  Expanded(
+                    child: Text(
+                      tr('Stroje', 'Machines'),
+                      style: text.titleLarge,
+                    ),
+                  ),
                   Semantics(
-                    label: 'Máš $have z $count strojů',
+                    label: tr(
+                      'Máš $have z $count strojů',
+                      'You have $have of $count machines',
+                    ),
                     excludeSemantics: true,
                     child: Text(
                       '$have / $count',
@@ -147,13 +172,18 @@ class _MyGymPageState extends State<MyGymPage> {
               ),
               const SizedBox(height: Space.s),
               Text(
-                'Vypni, co u vás chybí. Nebo stroj vyfoť a zapnu ho sám.',
+                tr(
+                  'Vypni, co u vás chybí. Nebo stroj vyfoť a zapnu ho sám.',
+                  'Switch off what your gym lacks. Or snap a machine to add it.',
+                ),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
               if (state.trainer.enabled) ...[
                 const SizedBox(height: Space.m),
                 SecondaryButton(
-                  scanning ? 'Poznávám stroj…' : 'Nafotit stroj',
+                  scanning
+                      ? tr('Poznávám stroj…', 'Recognizing machine…')
+                      : tr('Nafotit stroj', 'Photograph machine'),
                   icon: Icons.photo_camera_outlined,
                   onPressed: scanning ? null : _scan,
                 ),
@@ -161,7 +191,7 @@ class _MyGymPageState extends State<MyGymPage> {
               const SizedBox(height: Space.l),
               for (final MapEntry(key: muscle, value: list) in groups.entries)
                 GroupedSection(
-                  header: muscle,
+                  header: muscleLabel(muscle),
                   children: [
                     for (final e in list)
                       GroupedRow(
@@ -181,8 +211,12 @@ class _MyGymPageState extends State<MyGymPage> {
             ] else ...[
               const SizedBox(height: Space.xl),
               Text(
-                'Bez strojů není co ladit. Plán bere cviky s vlastní váhou '
-                'a tím, co máš doma.',
+                tr(
+                  'Bez strojů není co ladit. Plán bere cviky s vlastní váhou '
+                      'a tím, co máš doma.',
+                  'No machines to set up. Your plan uses bodyweight and '
+                      'whatever you have at home.',
+                ),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
             ],

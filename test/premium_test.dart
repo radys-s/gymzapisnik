@@ -74,7 +74,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Denní mise a streak'), findsOneWidget);
-    expect(find.text('Tento týden 0 z 3'), findsNothing);
+    expect(find.text('Dnes je den na trénink'), findsNothing);
 
     await tester.tap(find.text('Denní mise a streak'));
     await tester.pumpAndSettle();
@@ -95,7 +95,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Tento týden 0 z 3'), findsOneWidget);
+    expect(find.text('Dnes je den na trénink'), findsOneWidget);
     expect(find.byIcon(Icons.lock_outline), findsNothing);
   });
 }

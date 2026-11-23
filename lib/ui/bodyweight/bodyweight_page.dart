@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/parse.dart';
 import '../../domain/bodyweight.dart';
 import '../../domain/measurement.dart';
@@ -9,6 +10,19 @@ import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import '../widgets/chart_axis.dart';
+
+/// [BodyPart.label] is also a stored value, so keep the Czech source and add
+/// the English display text here.
+String bodyPartLabel(BodyPart part) => switch (part) {
+  BodyPart.waist => tr(part.label, 'Waist'),
+  BodyPart.chest => tr(part.label, 'Chest'),
+  BodyPart.arm => tr(part.label, 'Arm'),
+  BodyPart.forearm => tr(part.label, 'Forearm'),
+  BodyPart.thigh => tr(part.label, 'Thigh'),
+  BodyPart.calf => tr(part.label, 'Calf'),
+  BodyPart.hips => tr(part.label, 'Hips'),
+  BodyPart.neck => tr(part.label, 'Neck'),
+};
 
 /// Dialog „Zapsat váhu". Vrací `true`, když se váha uložila.
 Future<bool> addBodyweightDialog(BuildContext context, AppState state) async {
@@ -48,12 +62,23 @@ class _WeightDialogState extends State<_WeightDialog> {
     setState(() => busy = true);
     try {
       if (kg == null || !await widget.state.addBodyweight(kg)) {
-        if (mounted) setState(() => error = 'Zadej váhu mezi 20 a 400 kg.');
+        if (mounted) {
+          setState(() {
+            error = tr(
+              'Zadej váhu mezi 20 a 400 kg.',
+              'Enter a weight between 20 and 400 kg.',
+            );
+          });
+        }
         return;
       }
       if (mounted) popOnce(context, true);
     } catch (_) {
-      if (mounted) setState(() => error = 'Váhu se nepodařilo uložit.');
+      if (mounted) {
+        setState(() {
+          error = tr('Váhu se nepodařilo uložit.', 'Could not save weight.');
+        });
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -61,19 +86,25 @@ class _WeightDialogState extends State<_WeightDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Zapsat váhu'),
+    title: Text(tr('Zapsat váhu', 'Log weight')),
     content: TextField(
       controller: controller,
       autofocus: true,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(labelText: 'Váha (kg)', errorText: error),
+      decoration: InputDecoration(
+        labelText: tr('Váha (kg)', 'Weight (kg)'),
+        errorText: error,
+      ),
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context, false),
-        child: const Text('Zrušit'),
+        child: Text(tr('Zrušit', 'Cancel')),
       ),
-      FilledButton(onPressed: busy ? null : _save, child: const Text('Uložit')),
+      FilledButton(
+        onPressed: busy ? null : _save,
+        child: Text(tr('Uložit', 'Save')),
+      ),
     ],
   );
 }
@@ -112,12 +143,25 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
     setState(() => busy = true);
     try {
       if (cm == null || !await widget.state.addMeasurement(_part, cm)) {
-        if (mounted) showToast(context, 'Zadej míru mezi 10 a 250 cm.');
+        if (mounted) {
+          showToast(
+            context,
+            tr(
+              'Zadej míru mezi 10 a 250 cm.',
+              'Enter a measurement between 10 and 250 cm.',
+            ),
+          );
+        }
         return;
       }
       if (mounted) popOnce(context, true);
     } catch (_) {
-      if (mounted) showToast(context, 'Míru se nepodařilo uložit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Míru se nepodařilo uložit.', 'Could not save measurement.'),
+        );
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -125,7 +169,7 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Přidat míru'),
+    title: Text(tr('Přidat míru', 'Add measurement')),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,7 +179,7 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
           isExpanded: true,
           items: [
             for (final part in BodyPart.values)
-              DropdownMenuItem(value: part, child: Text(part.label)),
+              DropdownMenuItem(value: part, child: Text(bodyPartLabel(part))),
           ],
           onChanged: busy
               ? null
@@ -147,7 +191,9 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
           controller: controller,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Obvod (cm)'),
+          decoration: InputDecoration(
+            labelText: tr('Obvod (cm)', 'Circumference (cm)'),
+          ),
           onSubmitted: (_) => _save(),
         ),
       ],
@@ -155,9 +201,12 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context, false),
-        child: const Text('Zrušit'),
+        child: Text(tr('Zrušit', 'Cancel')),
       ),
-      FilledButton(onPressed: busy ? null : _save, child: const Text('Uložit')),
+      FilledButton(
+        onPressed: busy ? null : _save,
+        child: Text(tr('Uložit', 'Save')),
+      ),
     ],
   );
 }
@@ -181,21 +230,29 @@ class BodyweightCard extends StatelessWidget {
         : (change > 0 ? '+' : (change < 0 ? '−' : '±'));
     final changeText = change == null
         ? ''
-        : ' · $sign${formatKg(change.abs())} kg za měsíc';
+        : tr(
+            ' · $sign${formatKg(change.abs())} kg za měsíc',
+            ' · $sign${formatKg(change.abs())} kg per month',
+          );
     return Card(
       child: ListTile(
         leading: const Icon(Icons.monitor_weight_outlined),
         title: Text(
-          list.isEmpty ? 'Tělesná váha' : '${formatKg(list.first.kg)} kg',
+          list.isEmpty
+              ? tr('Tělesná váha', 'Body weight')
+              : '${formatKg(list.first.kg)} kg',
         ),
         subtitle: Text(
           list.isEmpty
-              ? 'Zapiš si váhu a sleduj vývoj'
+              ? tr(
+                  'Zapiš si váhu a sleduj vývoj',
+                  'Log your weight to track changes',
+                )
               : '${formatDate(list.first.date)}$changeText',
           style: TextStyle(color: scheme.onSurfaceVariant),
         ),
         trailing: IconButton(
-          tooltip: 'Zapsat váhu',
+          tooltip: tr('Zapsat váhu', 'Log weight'),
           icon: const Icon(Icons.add_circle_outline),
           onPressed: () => addBodyweightDialog(context, state),
         ),
@@ -219,9 +276,14 @@ class BodyweightPage extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('Smazáno: ${formatKg(entry.kg)} kg'),
+          content: Text(
+            tr(
+              'Smazáno: ${formatKg(entry.kg)} kg',
+              'Deleted: ${formatKg(entry.kg)} kg',
+            ),
+          ),
           action: SnackBarAction(
-            label: 'Vrátit',
+            label: tr('Vrátit', 'Undo'),
             onPressed: () => state.restoreBodyweight(entry),
           ),
         ),
@@ -238,9 +300,14 @@ class BodyweightPage extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('Smazáno: ${formatKg(entry.cm)} cm'),
+          content: Text(
+            tr(
+              'Smazáno: ${formatKg(entry.cm)} cm',
+              'Deleted: ${formatKg(entry.cm)} cm',
+            ),
+          ),
           action: SnackBarAction(
-            label: 'Vrátit',
+            label: tr('Vrátit', 'Undo'),
             onPressed: () => state.restoreMeasurement(entry),
           ),
         ),
@@ -258,11 +325,14 @@ class BodyweightPage extends StatelessWidget {
         ? ''
         : (change > 0 ? '+' : (change < 0 ? '−' : '±'));
     return GroupedRow(
-      title: part.label,
+      title: bodyPartLabel(part),
       value: '${formatKg(latest.cm)} cm',
       subtitle: change == null
           ? formatDate(latest.date)
-          : '$sign${formatKg(change.abs())} cm za 30 dní',
+          : tr(
+              '$sign${formatKg(change.abs())} cm za 30 dní',
+              '$sign${formatKg(change.abs())} cm in 30 days',
+            ),
       onTap: () => _measurementHistory(context, part),
     );
   }
@@ -284,7 +354,10 @@ class BodyweightPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(part.label, style: Theme.of(sheet).textTheme.titleLarge),
+              Text(
+                bodyPartLabel(part),
+                style: Theme.of(sheet).textTheme.titleLarge,
+              ),
               const SizedBox(height: Space.s),
               ListenableBuilder(
                 listenable: state.on.resting,
@@ -295,7 +368,7 @@ class BodyweightPage extends StatelessWidget {
                   ];
                   if (entries.isEmpty) {
                     return Text(
-                      'Zatím žádné záznamy.',
+                      tr('Zatím žádné záznamy.', 'No entries yet.'),
                       style: Theme.of(context).textTheme.bodyMedium
                           ?.copyWith(color: context.palette.secondaryLabel),
                     );
@@ -309,7 +382,7 @@ class BodyweightPage extends StatelessWidget {
                             value: '${formatKg(m.cm)} cm',
                             chevron: false,
                             trailing: IconButton(
-                              tooltip: 'Smazat záznam',
+                              tooltip: tr('Smazat záznam', 'Delete entry'),
                               icon: const Icon(Icons.delete_outline),
                               onPressed: () => _removeMeasurement(context, m),
                             ),
@@ -336,10 +409,13 @@ class BodyweightPage extends StatelessWidget {
         if (byPart[part] != null) part,
     ];
     return [
-      const SectionHeader('Míry'),
+      SectionHeader(tr('Míry', 'Measurements')),
       if (parts.isEmpty)
         Text(
-          'Měř pas, paže nebo hrudník jednou za 2–4 týdny. Váha neřekne všechno.',
+          tr(
+            'Měř pas, paže nebo hrudník jednou za 2–4 týdny. Váha neřekne všechno.',
+            'Measure your waist, arm or chest every 2–4 weeks. Weight does not tell the whole story.',
+          ),
           style: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: context.palette.secondaryLabel),
         )
@@ -351,7 +427,7 @@ class BodyweightPage extends StatelessWidget {
           ],
         ),
       SecondaryButton(
-        'Přidat míru',
+        tr('Přidat míru', 'Add measurement'),
         icon: Icons.straighten_rounded,
         onPressed: () => addMeasurementDialog(context, state),
       ),
@@ -364,19 +440,22 @@ class BodyweightPage extends StatelessWidget {
     builder: (context, _) {
       final list = state.bodyweights;
       return LargeTitlePage(
-        title: 'Tělesná váha',
+        title: tr('Tělesná váha', 'Body weight'),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => addBodyweightDialog(context, state),
           icon: const Icon(Icons.add),
-          label: const Text('Zapsat váhu'),
+          label: Text(tr('Zapsat váhu', 'Log weight')),
         ),
         padding: const EdgeInsets.fromLTRB(Space.page, Space.s, Space.page, 96),
         children: [
           if (list.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.monitor_weight_outlined,
-              title: 'Zatím žádná váha',
-              message: 'Zapiš si váhu a uvidíš, jak se mění.',
+              title: tr('Zatím žádná váha', 'No weight yet'),
+              message: tr(
+                'Zapiš si váhu a uvidíš, jak se mění.',
+                'Log your weight to see how it changes.',
+              ),
             )
           else ...[
             if (list.length >= 2)
@@ -386,13 +465,20 @@ class BodyweightPage extends StatelessWidget {
                   children: [
                     if (list.length >= 3) ...[
                       Text(
-                        'Průměr za 7 dní: ${formatKg(double.parse(trailingAverage(list.reversed.toList()).last.toStringAsFixed(1)))} kg',
+                        tr(
+                          'Průměr za 7 dní: ${formatKg(double.parse(trailingAverage(list.reversed.toList()).last.toStringAsFixed(1)))} kg',
+                          '7-day average: ${formatKg(double.parse(trailingAverage(list.reversed.toList()).last.toStringAsFixed(1)))} kg',
+                        ),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: Space.xs),
                       Text(
-                        'Čára je průměr, tečky jednotlivá vážení. '
-                        'Váha během dne kolísá, průměr ukáže skutečný směr.',
+                        tr(
+                          'Čára je průměr, tečky jednotlivá vážení. '
+                              'Váha během dne kolísá, průměr ukáže skutečný směr.',
+                          'The line is the average, dots are individual weigh-ins. '
+                              'Weight fluctuates during the day; the average shows the real trend.',
+                        ),
                         style: Theme.of(context).textTheme.bodySmall
                             ?.copyWith(color: context.palette.secondaryLabel),
                       ),
@@ -407,7 +493,7 @@ class BodyweightPage extends StatelessWidget {
               ),
             if (list.length >= 2) const SizedBox(height: Space.xxl),
             GroupedSection(
-              header: 'Záznamy',
+              header: tr('Záznamy', 'Entries'),
               children: [
                 for (final b in list)
                   GroupedRow(
@@ -415,7 +501,7 @@ class BodyweightPage extends StatelessWidget {
                     subtitle: formatDate(b.date),
                     chevron: false,
                     trailing: IconButton(
-                      tooltip: 'Smazat záznam',
+                      tooltip: tr('Smazat záznam', 'Delete entry'),
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () => _remove(context, b),
                     ),
@@ -445,9 +531,12 @@ class _Chart extends StatelessWidget {
     final pad = ((maxY - minY) * 0.2).clamp(1.0, 10.0);
     return Semantics(
       container: true,
-      label:
-          'Graf váhy, ${points.length} záznamů, od ${formatKg(points.first.kg)} '
-          'do ${formatKg(points.last.kg)} kg',
+      label: tr(
+        'Graf váhy, ${points.length} záznamů, od ${formatKg(points.first.kg)} '
+            'do ${formatKg(points.last.kg)} kg',
+        'Weight chart, ${points.length} entries, from ${formatKg(points.first.kg)} '
+            'to ${formatKg(points.last.kg)} kg',
+      ),
       child: LineChart(
         LineChartData(
           minY: minY - pad,

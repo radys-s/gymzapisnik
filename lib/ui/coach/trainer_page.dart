@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../ai/fridge_coach.dart';
 import '../../ai/trainer.dart';
 import '../../coach/local_coach.dart';
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/motion.dart';
@@ -11,12 +12,24 @@ import '../program/program_page.dart';
 import '../widgets/ai_photo.dart';
 
 /// Otázky do začátku. Jen o tréninku, nic o hubnutí.
-const trainerSuggestions = [
-  'Co mám dnes cvičit?',
-  'Kde nejvíc stagnuju a co s tím?',
-  'Čím nahradit dřepy, když bolí koleno?',
-  'Kolik sérií týdně dávám na partii?',
-  'Jak rozložit tréninky do konce týdne?',
+List<String> get trainerSuggestions => [
+  tr('Co mám dnes cvičit?', 'What should I train today?'),
+  tr(
+    'Kde nejvíc stagnuju a co s tím?',
+    'Where am I stuck most and what can I do?',
+  ),
+  tr(
+    'Čím nahradit dřepy, když bolí koleno?',
+    'What can I replace squats with when my knee hurts?',
+  ),
+  tr(
+    'Kolik sérií týdně dávám na partii?',
+    'How many sets per week per muscle group?',
+  ),
+  tr(
+    'Jak rozložit tréninky do konce týdne?',
+    'How should I plan the rest of this week?',
+  ),
 ];
 
 /// Chat s AI trenérem. Trenér vidí jen krátký souhrn tréninků
@@ -86,7 +99,12 @@ class _TrainerPageState extends State<TrainerPage> {
     try {
       await state.saveCoachChat(messages);
     } catch (_) {
-      if (mounted) showToast(context, 'Chat se nepodařilo uložit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Chat se nepodařilo uložit.', 'Could not save chat.'),
+        );
+      }
     }
   }
 
@@ -127,8 +145,12 @@ class _TrainerPageState extends State<TrainerPage> {
     if (instant) {
       _reply(
         localAnswer(intent, state.coachFacts(widget.now())) ??
-            'Na tohle potřebuju AI, která teď v aplikaci není zapnutá. '
-                'Zkus jednu z otázek níž, na ty odpovím z tvých dat.',
+            tr(
+              'Na tohle potřebuju AI, která teď v aplikaci není zapnutá. '
+                  'Zkus jednu z otázek níž, na ty odpovím z tvých dat.',
+              'I need AI for this, but it is not enabled in the app right now. '
+                  'Try one of the questions below, I can answer those from your data.',
+            ),
         local: true,
       );
       await _save();
@@ -182,7 +204,7 @@ class _TrainerPageState extends State<TrainerPage> {
           waiting = false;
           error = local == null
               ? message
-              : '$message Odpověď níž je jen z tvých dat.';
+              : '$message ${tr('Odpověď níž je jen z tvých dat.', 'The answer below is based only on your data.')}';
           retryable =
               local == null &&
               kind != AiErrorKind.quota &&
@@ -204,7 +226,7 @@ class _TrainerPageState extends State<TrainerPage> {
     return [
       if (intent == CoachIntent.today && start != null && f.canStart)
         (
-          label: 'Začít ${f.day}',
+          label: '${tr('Začít', 'Start')} ${f.day}',
           icon: Icons.play_arrow_rounded,
           onTap: () {
             Navigator.of(context).pop();
@@ -215,7 +237,7 @@ class _TrainerPageState extends State<TrainerPage> {
           intent == CoachIntent.week ||
           intent == CoachIntent.stall)
         (
-          label: 'Otevřít program',
+          label: tr('Otevřít program', 'Open program'),
           icon: Icons.view_week_rounded,
           onTap: () => Navigator.of(
             context,
@@ -227,9 +249,12 @@ class _TrainerPageState extends State<TrainerPage> {
   Future<void> _clear() async {
     final ok = await confirmAction(
       context,
-      title: 'Smazat chat?',
-      message: 'Zprávy s trenérem zmizí z tohoto zařízení.',
-      confirm: 'Smazat',
+      title: tr('Smazat chat?', 'Delete chat?'),
+      message: tr(
+        'Zprávy s trenérem zmizí z tohoto zařízení.',
+        'Messages with your coach will be removed from this device.',
+      ),
+      confirm: tr('Smazat', 'Delete'),
       destructive: true,
     );
     if (!ok || !mounted) return;
@@ -257,11 +282,11 @@ class _TrainerPageState extends State<TrainerPage> {
         retryable && !waiting && last?.role == ChatRole.user && enabled;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trenér'),
+        title: Text(tr('Trenér', 'Coach')),
         actions: [
           if (messages.isNotEmpty)
             IconButton(
-              tooltip: 'Smazat chat',
+              tooltip: tr('Smazat chat', 'Delete chat'),
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: _clear,
             ),
@@ -282,8 +307,12 @@ class _TrainerPageState extends State<TrainerPage> {
                 if (!enabled)
                   Panel(
                     child: Text(
-                      'AI v této verzi není zapnutá. Na otázky níž odpovím '
-                      'z tvých tréninků, bez internetu.',
+                      tr(
+                        'AI v této verzi není zapnutá. Na otázky níž odpovím '
+                            'z tvých tréninků, bez internetu.',
+                        'AI is not enabled in this version. I can answer the '
+                            'questions below from your workouts, without internet.',
+                      ),
                       style: text.bodyMedium,
                     ),
                   ),
@@ -297,8 +326,12 @@ class _TrainerPageState extends State<TrainerPage> {
                   Reveal(
                     index: 2,
                     child: Text(
-                      'Trenér vidí tvůj program, poslední tréninky, rekordy '
-                      'a regeneraci. Neví tvoje jméno ani poznámky.',
+                      tr(
+                        'Trenér vidí tvůj program, poslední tréninky, rekordy '
+                            'a regeneraci. Neví tvoje jméno ani poznámky.',
+                        'Your coach sees your program, recent workouts, records '
+                            'and recovery. It does not know your name or notes.',
+                      ),
                       style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                     ),
                   ),
@@ -365,7 +398,7 @@ class _TrainerPageState extends State<TrainerPage> {
                             TextButton.icon(
                               onPressed: _ask,
                               icon: const Icon(Icons.refresh_rounded),
-                              label: const Text('Zkusit znovu'),
+                              label: Text(tr('Zkusit znovu', 'Retry')),
                             ),
                         ],
                       ),
@@ -398,8 +431,8 @@ class _TrainerPageState extends State<TrainerPage> {
                           maxLength: maxChatMessage,
                           textCapitalization: TextCapitalization.sentences,
                           textInputAction: TextInputAction.send,
-                          decoration: const InputDecoration(
-                            hintText: 'Zeptej se trenéra',
+                          decoration: InputDecoration(
+                            hintText: tr('Zeptej se trenéra', 'Ask your coach'),
                             counterText: '',
                           ),
                           onSubmitted: (_) => _send(),
@@ -409,7 +442,7 @@ class _TrainerPageState extends State<TrainerPage> {
                       ListenableBuilder(
                         listenable: input,
                         builder: (context, _) => IconButton.filled(
-                          tooltip: 'Odeslat',
+                          tooltip: tr('Odeslat', 'Send'),
                           constraints: const BoxConstraints.tightFor(
                             width: minTap + 4,
                             height: minTap + 4,
@@ -427,8 +460,12 @@ class _TrainerPageState extends State<TrainerPage> {
                   ),
                   const SizedBox(height: Space.xs),
                   Text(
-                    'AI se může splést. Nenahrazuje lékaře ani trenéra '
-                    'naživo; při bolesti přestaň.',
+                    tr(
+                      'AI se může splést. Nenahrazuje lékaře ani trenéra '
+                          'naživo; při bolesti přestaň.',
+                      'AI can make mistakes. It does not replace a doctor or a '
+                          'live coach; stop if you feel pain.',
+                    ),
                     textAlign: TextAlign.center,
                     style: text.bodySmall?.copyWith(color: p.tertiaryLabel),
                   ),
@@ -502,7 +539,7 @@ class _Bubble extends StatelessWidget {
       ),
       child: m == null
           ? Text(
-              'Trenér píše…',
+              tr('Trenér píše…', 'Coach is typing…'),
               style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             )
           : SelectableText(
@@ -513,7 +550,9 @@ class _Bubble extends StatelessWidget {
             ),
     );
     return Semantics(
-      label: m == null ? null : (mine ? 'Ty' : 'Trenér'),
+      label: m == null
+          ? null
+          : (mine ? tr('Ty', 'You') : tr('Trenér', 'Coach')),
       child: Align(
         alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
         child: bubble,

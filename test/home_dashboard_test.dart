@@ -69,7 +69,7 @@ void main() {
     expect(find.text('Volný trénink'), findsOneWidget);
     expect(find.text('Rady pro růst svalů'), findsNothing);
     expect(find.text('Historie'), findsNothing);
-    expect(find.text('Tento týden 0 z 3'), findsOneWidget);
+    expect(find.text('Dnes je den na trénink'), findsOneWidget);
 
     // Jedno klepnutí nastaví doporučený program.
     await tester.runAsync(() async {
