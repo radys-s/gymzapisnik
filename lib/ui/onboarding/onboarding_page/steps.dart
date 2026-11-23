@@ -630,8 +630,8 @@ class _OwnPlanCard extends StatelessWidget {
                             ),
                             Text(
                               tr(
-                                'Cvičíš už nějakou dobu a víš, co děláš',
-                                'You already train and know your routine',
+                                'Cvičíš už čtvrt roku a víc? Slož si ho za minutu.',
+                                'Training for 3+ months? Build yours in a minute.',
                               ),
                               style: text.bodySmall?.copyWith(
                                 color: p.secondaryLabel,

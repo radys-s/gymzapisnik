@@ -49,11 +49,7 @@ class ExerciseDetailPage extends StatelessWidget {
           if (records[kind] != null) kind,
       ];
       final csName = exercise.nameCs.trim();
-      // English name is the title; the Czech UI adds the Czech one.
-      final showCs =
-          !isEnglish &&
-          csName.isNotEmpty &&
-          fold(csName) != fold(exercise.name);
+      final showCs = csName.isNotEmpty && fold(csName) != fold(exercise.name);
       return LargeTitlePage(
         title: exercise.name,
         children: [
@@ -95,7 +91,10 @@ class ExerciseDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(tr('Osobní rekordy', 'Personal records'), style: text.titleMedium),
+                  Text(
+                    tr('Osobní rekordy', 'Personal records'),
+                    style: text.titleMedium,
+                  ),
                   const SizedBox(height: Space.m),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,9 +177,9 @@ class ExerciseDetailPage extends StatelessWidget {
                   if (comparison.bestToday != null)
                     tr(
                       'nejlepší série ${setLabel(type, comparison.bestToday!)}'
-                      '${comparison.bestLast == null ? '' : ' (předtím ${setLabel(type, comparison.bestLast!)})'}',
+                          '${comparison.bestLast == null ? '' : ' (předtím ${setLabel(type, comparison.bestLast!)})'}',
                       'best set ${setLabel(type, comparison.bestToday!)}'
-                      '${comparison.bestLast == null ? '' : ' (before ${setLabel(type, comparison.bestLast!)})'}',
+                          '${comparison.bestLast == null ? '' : ' (before ${setLabel(type, comparison.bestLast!)})'}',
                     ),
                 ].join(' · '),
                 style: text.bodyMedium?.copyWith(fontFeatures: tabular),
@@ -379,9 +378,9 @@ class _RepTable extends StatelessWidget {
   Widget build(BuildContext context) => GroupedSection(
     footer: tr(
       'Odhad z tvé nejlepší série: ${formatKg(oneRm.roundToDouble())} kg '
-      'na jedno opakování. Ber to jako orientaci, ne jako cíl na každý trénink.',
+          'na jedno opakování. Ber to jako orientaci, ne jako cíl na každý trénink.',
       'Estimate from your best set: ${formatKg(oneRm.roundToDouble())} kg '
-      'for one rep. Treat it as a guide, not a target for every workout.',
+          'for one rep. Treat it as a guide, not a target for every workout.',
     ),
     children: [
       for (final r in reps)
@@ -436,11 +435,11 @@ class _ProgressChart extends StatelessWidget {
       container: true,
       label: tr(
         'Graf progresu, ${points.length} tréninků, '
-        'od ${formatKg(points.first.value.roundToDouble())} '
-        'do ${formatKg(points.last.value.roundToDouble())}',
+            'od ${formatKg(points.first.value.roundToDouble())} '
+            'do ${formatKg(points.last.value.roundToDouble())}',
         'Progress chart, ${points.length} workouts, '
-        'from ${formatKg(points.first.value.roundToDouble())} '
-        'to ${formatKg(points.last.value.roundToDouble())}',
+            'from ${formatKg(points.first.value.roundToDouble())} '
+            'to ${formatKg(points.last.value.roundToDouble())}',
       ),
       child: LineChart(
         LineChartData(
@@ -536,9 +535,9 @@ class _StrengthCard extends StatelessWidget {
             Text(
               tr(
                 'Zapiš si tělesnou váhu a uvidíš svou úroveň síly '
-                'vůči vlastní váze.',
+                    'vůči vlastní váze.',
                 'Log your body weight to see your strength level '
-                'relative to your own weight.',
+                    'relative to your own weight.',
               ),
               style: text.bodyMedium,
             )
@@ -556,11 +555,11 @@ class _StrengthCard extends StatelessWidget {
             Text(
               tr(
                 '1RM ${formatKg(oneRm.roundToDouble())} kg = '
-                '${level.ratio.toStringAsFixed(2).replaceAll('.', ',')}× '
-                'tělesné váhy',
+                    '${level.ratio.toStringAsFixed(2).replaceAll('.', ',')}× '
+                    'tělesné váhy',
                 '1RM ${formatKg(oneRm.roundToDouble())} kg = '
-                '${level.ratio.toStringAsFixed(2)}× '
-                'body weight',
+                    '${level.ratio.toStringAsFixed(2)}× '
+                    'body weight',
               ),
               style: text.bodySmall?.copyWith(
                 color: p.secondaryLabel,
@@ -573,7 +572,10 @@ class _StrengthCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: level.progress,
                 minHeight: 8,
-                semanticsLabel: tr('Postup k další úrovni', 'Progress to the next level'),
+                semanticsLabel: tr(
+                  'Postup k další úrovni',
+                  'Progress to the next level',
+                ),
               ),
             ),
             const SizedBox(height: Space.s),
@@ -582,7 +584,7 @@ class _StrengthCard extends StatelessWidget {
                   ? tr('Nejvyšší úroveň. Klobouk dolů.', 'Top level. Hats off.')
                   : tr(
                       'Do úrovně ${level.nextLabel} chybí '
-                      '${formatKg(level.toNext!.ceilToDouble())} kg na 1RM.',
+                          '${formatKg(level.toNext!.ceilToDouble())} kg na 1RM.',
                       '${formatKg(level.toNext!.ceilToDouble())} kg on 1RM to reach ${level.nextLabel}.',
                     ),
               style: text.bodySmall,
