@@ -120,7 +120,7 @@ class ProgramPage extends StatelessWidget {
                 'Hotový program jde upravit: vznikne z něj tvůj vlastní a '
                 'originál zůstane.',
             children: [
-              for (final t in splitTemplates)
+              for (final t in [...styleTemplates, ...splitTemplates])
                 GroupedRow(
                   title: t.name,
                   subtitle:

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../coach/plan_quiz.dart';
 import '../../coach/routine_audit.dart';
 import '../../coach/splits.dart';
@@ -111,14 +112,45 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
 
   void _changed() => setState(() {});
 
+  /// Empty names get a default instead of an error: naming is optional.
   SplitTemplate _draft() => SplitTemplate(
     id: _id ?? '',
-    name: _name.text.trim(),
+    name: _name.text.trim().isEmpty
+        ? tr('Můj plán', 'My plan')
+        : _name.text.trim(),
     description: '',
     perWeek: _days.length.clamp(1, 7),
-    days: [for (final d in _days) d.toDay()],
+    days: [
+      for (final (i, d) in _days.indexed)
+        d.name.text.trim().isEmpty
+            ? d.toDay().copyWith(name: tr('Den ${i + 1}', 'Day ${i + 1}'))
+            : d.toDay(),
+    ],
     custom: true,
   );
+
+  /// No exercise anywhere yet: offer templates to start from.
+  bool get _blank => _days.every((d) => d.exercises.isEmpty);
+
+  /// Replaces the (empty) days with a template's days to edit.
+  void _useTemplate(SplitTemplate t) {
+    for (final d in _days) {
+      d.name.removeListener(_changed);
+      _removed.add(d);
+    }
+    setState(() {
+      _days.clear();
+      if (_name.text.trim().isEmpty ||
+          _name.text.trim() == tr('Můj plán', 'My plan')) {
+        _name.text = t.name.length > maxNameLength
+            ? t.name.substring(0, maxNameLength)
+            : t.name;
+      }
+    });
+    for (final d in t.days.take(maxProgramDays)) {
+      _addDraft(d);
+    }
+  }
 
   String _snapshot() => jsonEncode(_draft().toJson());
 
@@ -356,13 +388,14 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
               controller: _name,
               maxLength: maxNameLength,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Název programu',
-                hintText: 'Třeba Ruce a ramena',
+              decoration: InputDecoration(
+                labelText: tr('Název (nepovinné)', 'Name (optional)'),
+                hintText: tr('Třeba Můj PPL', 'e.g. My PPL'),
                 counterText: '',
               ),
             ),
           ),
+          if (_isNew && _blank) _Templates(onPick: _useTemplate),
           if (exercises > 0)
             AuditPanel(state: state, findings: findings, onAdd: _addSuggested),
           SectionHeader(
@@ -534,18 +567,36 @@ class _DayCard extends StatelessWidget {
                 onTap: () => onEditExercise(e),
               ),
             if (draft.exercises.isEmpty)
+              // An empty day has one job: a big button to fill it.
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: Space.s),
-                child: Text(
-                  'Zatím žádný cvik.',
-                  style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
+                padding: const EdgeInsets.fromLTRB(
+                  0,
+                  Space.s,
+                  Space.m,
+                  Space.s,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: onAddExercises,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(tr('Přidat cviky', 'Add exercises')),
+                  ),
+                ),
+              )
+            else
+              TextButton.icon(
+                onPressed: full ? null : onAddExercises,
+                icon: const Icon(Icons.add_rounded),
+                label: Text(
+                  full
+                      ? tr('Den je plný', 'Day is full')
+                      : tr('Přidat cviky', 'Add exercises'),
                 ),
               ),
-            TextButton.icon(
-              onPressed: full ? null : onAddExercises,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(full ? 'Den je plný' : 'Přidat cviky'),
-            ),
           ],
         ),
       ),
@@ -1072,6 +1123,55 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Start from a ready split and edit it: the quickest way to log a
+/// routine you already know.
+class _Templates extends StatelessWidget {
+  final ValueChanged<SplitTemplate> onPick;
+  const _Templates({required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final templates = [
+      ...splitTemplates,
+      for (final t in styleTemplates)
+        if (t.id != 'science_full_body') t,
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            tr('Začni ze šablony', 'Start from a template'),
+            style: text.titleSmall,
+          ),
+          Text(
+            tr(
+              'Dny i cviky se předvyplní, pak je přepíšeš podle sebe.',
+              'Days and exercises fill in, then make them yours.',
+            ),
+            style: text.bodySmall?.copyWith(color: p.secondaryLabel),
+          ),
+          const SizedBox(height: Space.s),
+          Wrap(
+            spacing: Space.s,
+            runSpacing: Space.s,
+            children: [
+              for (final t in templates)
+                ActionChip(
+                  label: Text('${t.name} · ${t.days.length}'),
+                  onPressed: () => onPick(t),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
