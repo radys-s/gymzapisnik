@@ -4,45 +4,94 @@
 /// který pokryje celou partii, ne jen jednu její část.
 library;
 
+import '../core/i18n.dart';
+import '../ui/widgets/labels.dart';
 import 'catalog.dart';
 import 'models.dart';
 
 class MuscleHead {
   final String id;
 
-  /// Krátký český název („Boční delt“).
-  final String name;
+  /// Czech name, kept for storage/display pairing.
+  final String nameCs;
+
+  /// English name.
+  final String nameEn;
 
   /// Partie z katalogu, do které hlava patří (`muscleGroups`).
   final String group;
-  const MuscleHead(this.id, this.name, this.group);
+
+  const MuscleHead(this.id, this.nameCs, this.group, [this.nameEn = '']);
+
+  /// Display name in the current language.
+  String get name => tr(nameCs, nameEn.isEmpty ? nameCs : nameEn);
 }
 
 const muscleHeads = <MuscleHead>[
-  MuscleHead('chest_upper', 'Horní hrudník', 'Hrudník'),
-  MuscleHead('chest_mid', 'Střední a spodní hrudník', 'Hrudník'),
-  MuscleHead('lats', 'Široký sval zádový', 'Záda'),
-  MuscleHead('upper_back', 'Střed zad a trapézy', 'Záda'),
-  MuscleHead('lower_back', 'Bedra (vzpřimovače)', 'Záda'),
-  MuscleHead('quads', 'Kvadricepsy', 'Nohy'),
-  MuscleHead('adductors', 'Přitahovače stehna (adduktory)', 'Nohy'),
-  MuscleHead('hamstrings', 'Hamstringy', 'Nohy'),
-  MuscleHead('glutes', 'Hýždě', 'Nohy'),
-  MuscleHead('glutes_med', 'Střední hýžďový sval (abduktory)', 'Nohy'),
-  MuscleHead('calves_gastro', 'Lýtka – dvojhlavý sval', 'Nohy'),
-  MuscleHead('calves_soleus', 'Lýtka – šikmý sval', 'Nohy'),
-  MuscleHead('delt_front', 'Přední delt', 'Ramena'),
-  MuscleHead('delt_side', 'Boční delt', 'Ramena'),
-  MuscleHead('delt_rear', 'Zadní delt', 'Ramena'),
-  MuscleHead('biceps_long', 'Biceps – dlouhá hlava', 'Paže'),
-  MuscleHead('biceps_short', 'Biceps – krátká hlava', 'Paže'),
-  MuscleHead('brachialis', 'Brachialis (nadloktí)', 'Paže'),
-  MuscleHead('triceps_long', 'Triceps – dlouhá hlava', 'Paže'),
-  MuscleHead('triceps_lateral', 'Triceps – boční a střední hlava', 'Paže'),
-  MuscleHead('forearms', 'Předloktí', 'Paže'),
-  MuscleHead('abs', 'Přímý sval břišní', 'Střed těla'),
-  MuscleHead('abs_lower', 'Spodní břicho a flexory kyčle', 'Střed těla'),
-  MuscleHead('obliques', 'Šikmé břišní svaly', 'Střed těla'),
+  MuscleHead('chest_upper', 'Horní hrudník', 'Hrudník', 'Upper chest'),
+  MuscleHead(
+    'chest_mid',
+    'Střední a spodní hrudník',
+    'Hrudník',
+    'Mid and lower chest',
+  ),
+  MuscleHead('lats', 'Široký sval zádový', 'Záda', 'Lats'),
+  MuscleHead('upper_back', 'Střed zad a trapézy', 'Záda', 'Mid back and traps'),
+  MuscleHead('lower_back', 'Bedra (vzpřimovače)', 'Záda', 'Lower back'),
+  MuscleHead('quads', 'Kvadricepsy', 'Nohy', 'Quads'),
+  MuscleHead(
+    'adductors',
+    'Přitahovače stehna (adduktory)',
+    'Nohy',
+    'Adductors',
+  ),
+  MuscleHead('hamstrings', 'Hamstringy', 'Nohy', 'Hamstrings'),
+  MuscleHead('glutes', 'Hýždě', 'Nohy', 'Glutes'),
+  MuscleHead(
+    'glutes_med',
+    'Střední hýžďový sval (abduktory)',
+    'Nohy',
+    'Glute med (abductors)',
+  ),
+  MuscleHead(
+    'calves_gastro',
+    'Lýtka – dvojhlavý sval',
+    'Nohy',
+    'Calves – gastrocnemius',
+  ),
+  MuscleHead('calves_soleus', 'Lýtka – šikmý sval', 'Nohy', 'Calves – soleus'),
+  MuscleHead('delt_front', 'Přední delt', 'Ramena', 'Front delt'),
+  MuscleHead('delt_side', 'Boční delt', 'Ramena', 'Side delt'),
+  MuscleHead('delt_rear', 'Zadní delt', 'Ramena', 'Rear delt'),
+  MuscleHead('biceps_long', 'Biceps – dlouhá hlava', 'Paže', 'Biceps – long head'),
+  MuscleHead(
+    'biceps_short',
+    'Biceps – krátká hlava',
+    'Paže',
+    'Biceps – short head',
+  ),
+  MuscleHead('brachialis', 'Brachialis (nadloktí)', 'Paže', 'Brachialis'),
+  MuscleHead(
+    'triceps_long',
+    'Triceps – dlouhá hlava',
+    'Paže',
+    'Triceps – long head',
+  ),
+  MuscleHead(
+    'triceps_lateral',
+    'Triceps – boční a střední hlava',
+    'Paže',
+    'Triceps – lateral and medial head',
+  ),
+  MuscleHead('forearms', 'Předloktí', 'Paže', 'Forearms'),
+  MuscleHead('abs', 'Přímý sval břišní', 'Střed těla', 'Abs'),
+  MuscleHead(
+    'abs_lower',
+    'Spodní břicho a flexory kyčle',
+    'Střed těla',
+    'Lower abs and hip flexors',
+  ),
+  MuscleHead('obliques', 'Šikmé břišní svaly', 'Střed těla', 'Obliques'),
 ];
 
 MuscleHead? headById(String id) {
@@ -978,8 +1027,12 @@ List<AlternativeSection> alternativesFor(
       return k != 0 ? k : a.name.compareTo(b.name);
     });
     if (same.isNotEmpty) {
+      final head = headById(main)!;
       sections.add(
-        AlternativeSection('Stejná hlava: ${headById(main)!.name}', same),
+        AlternativeSection(
+          tr('Stejná hlava: ${head.nameCs}', 'Same head: ${head.nameEn}'),
+          same,
+        ),
       );
       used.addAll(same.map((e) => e.id));
     }
@@ -1004,7 +1057,12 @@ List<AlternativeSection> alternativesFor(
       if (!used.contains(e.id) && e.muscle == group) e,
   ]..sort((a, b) => a.name.compareTo(b.name));
   if (rest.isNotEmpty) {
-    sections.add(AlternativeSection('Další cviky – $group', rest));
+    sections.add(
+      AlternativeSection(
+        tr('Další cviky – $group', 'More exercises – ${muscleLabel(group)}'),
+        rest,
+      ),
+    );
   }
   return sections;
 }

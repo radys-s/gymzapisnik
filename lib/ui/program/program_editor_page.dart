@@ -34,6 +34,13 @@ const _presets = [
   ('Vytrvalost', 3, 12, 15),
 ];
 
+String _presetLabel(String cs) => switch (cs) {
+  'Síla' => tr('Síla', 'Strength'),
+  'Svaly' => tr('Svaly', 'Muscle'),
+  'Vytrvalost' => tr('Vytrvalost', 'Endurance'),
+  _ => cs,
+};
+
 /// Editor vlastního programu: název, dny, cviky, série × opakování.
 /// S [initial] hotovou šablonou vznikne kopie; s vlastním programem úprava.
 /// Po uložení vrací ID uloženého programu.
@@ -77,10 +84,10 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
     _id = initial != null && initial.custom ? initial.id : null;
     _name = TextEditingController(
       text: initial == null
-          ? (widget.initialDayCount != null ? 'Můj plán' : '')
+          ? (widget.initialDayCount != null ? tr('Můj plán', 'My plan') : '')
           : initial.custom
           ? initial.name
-          : '${initial.name} (vlastní)',
+          : tr('${initial.name} (vlastní)', '${initial.name} (custom)'),
     )..addListener(_changed);
     final initialDays = initial?.days;
     _days = [
@@ -88,7 +95,7 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
         for (final d in initialDays) _DayDraft(d.name, [...d.exercises])
       else if (widget.initialDayCount != null)
         for (var i = 1; i <= widget.initialDayCount!.clamp(1, 7); i++)
-          _DayDraft('Den $i', <PlannedExercise>[]),
+          _DayDraft(tr('Den $i', 'Day $i'), <PlannedExercise>[]),
     ];
     for (final d in _days) {
       d.name.addListener(_changed);
@@ -168,7 +175,13 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
     final before = at > 0 ? _days[at - 1] : null;
     setState(() => _days.removeAt(at));
     _removed.add(day);
-    showUndo(context, 'Den ${day.name.text.trim()} odebrán.', () {
+    showUndo(
+      context,
+      tr(
+        'Den ${day.name.text.trim()} odebrán.',
+        'Day ${day.name.text.trim()} removed.',
+      ),
+      () {
       if (!mounted || _days.contains(day)) return;
       // Vrátí se za původního souseda, i když se mezitím pořadí změnilo.
       final after = before == null ? -1 : _days.indexOf(before);
@@ -199,7 +212,13 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
 
   Future<void> _addDay() async {
     if (_days.length >= maxProgramDays) {
-      showToast(context, 'Program může mít nejvýš $maxProgramDays dní.');
+      showToast(
+        context,
+        tr(
+          'Program může mít nejvýš $maxProgramDays dní.',
+          'A program can have at most $maxProgramDays days.',
+        ),
+      );
       return;
     }
     final day = await showModalBottomSheet<SplitDay>(
@@ -229,7 +248,13 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
       ],
     );
     if (ids.length > free) {
-      showToast(context, 'Den může mít nejvýš $maxDayExercises cviků.');
+      showToast(
+        context,
+        tr(
+          'Den může mít nejvýš $maxDayExercises cviků.',
+          'A day can have at most $maxDayExercises exercises.',
+        ),
+      );
     }
   }
 
@@ -265,7 +290,10 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
         setState(() => day.exercises = list);
         showUndo(
           context,
-          '${state.exercise(removed.exerciseId).name} odebrán.',
+          tr(
+            '${state.exercise(removed.exerciseId).name} odebrán.',
+            '${state.exercise(removed.exerciseId).name} removed.',
+          ),
           () {
             if (!mounted) return;
             setState(
@@ -294,13 +322,22 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
     if (id == null || _days.isEmpty) return;
     final day = _days[f.dayIndex.clamp(0, _days.length - 1)];
     if (day.exercises.length >= maxDayExercises) {
-      showToast(context, 'Den může mít nejvýš $maxDayExercises cviků.');
+      showToast(
+        context,
+        tr(
+          'Den může mít nejvýš $maxDayExercises cviků.',
+          'A day can have at most $maxDayExercises exercises.',
+        ),
+      );
       return;
     }
     setState(() => day.exercises = [...day.exercises, PlannedExercise(id)]);
     showToast(
       context,
-      '${state.exercise(id).name} přidán do dne ${day.name.text.trim()}.',
+      tr(
+        '${state.exercise(id).name} přidán do dne ${day.name.text.trim()}.',
+        '${state.exercise(id).name} added to day ${day.name.text.trim()}.',
+      ),
     );
   }
 
@@ -319,13 +356,23 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
       setState(() => _done = true);
       showToast(
         context,
-        _activate ? 'Program ${saved.name} je aktivní.' : 'Program uložen.',
+        _activate
+            ? tr(
+                'Program ${saved.name} je aktivní.',
+                '${saved.name} is now active.',
+              )
+            : tr('Program uložen.', 'Program saved.'),
       );
       Navigator.pop(context, saved.id);
     } on ArgumentError catch (e) {
       if (mounted) showToast(context, '${e.message}');
     } catch (_) {
-      if (mounted) showToast(context, 'Program se nepodařilo uložit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Program se nepodařilo uložit.', 'Could not save the program.'),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -334,10 +381,13 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
   Future<void> _leave() async {
     final ok = await confirmAction(
       context,
-      title: 'Zahodit změny?',
-      message: 'Neuložené úpravy programu se ztratí.',
-      confirm: 'Zahodit',
-      cancel: 'Pokračovat v úpravách',
+      title: tr('Zahodit změny?', 'Discard changes?'),
+      message: tr(
+        'Neuložené úpravy programu se ztratí.',
+        'Unsaved program edits will be lost.',
+      ),
+      confirm: tr('Zahodit', 'Discard'),
+      cancel: tr('Pokračovat v úpravách', 'Keep editing'),
       destructive: true,
     );
     if (!ok || !mounted) return;
@@ -362,7 +412,9 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
         if (!didPop) _leave();
       },
       child: LargeTitlePage(
-        title: _isNew ? 'Nový program' : 'Upravit program',
+        title: _isNew
+            ? tr('Nový program', 'New program')
+            : tr('Upravit program', 'Edit program'),
         bottom: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -373,10 +425,10 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
             ),
             child: PrimaryButton(
               _activate
-                  ? 'Uložit a používat'
+                  ? tr('Uložit a používat', 'Save and use')
                   : _isNew
-                  ? 'Uložit kopii'
-                  : 'Uložit změny',
+                  ? tr('Uložit kopii', 'Save copy')
+                  : tr('Uložit změny', 'Save changes'),
               busy: _busy,
               onPressed: _save,
             ),
@@ -400,7 +452,10 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
             AuditPanel(state: state, findings: findings, onAdd: _addSuggested),
           SectionHeader(
             _days.isEmpty
-                ? 'Dny'
+                ? tr('Dny', 'Days')
+                : isEnglish
+                ? 'Days · ${_days.length} · $exercises '
+                      '${exercises == 1 ? 'exercise' : 'exercises'}'
                 : 'Dny · ${_days.length} · $exercises '
                       '${exercises == 1 ? 'cvik' : (exercises >= 2 && exercises <= 4 ? 'cviky' : 'cviků')}',
           ),
@@ -414,8 +469,12 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
                     const SizedBox(width: Space.m),
                     Expanded(
                       child: Text(
-                        'Přidej první den. Cviky ti navrhnu podle partií, '
-                        'nebo si je vybereš sám ze seznamu.',
+                        tr(
+                          'Přidej první den. Cviky ti navrhnu podle partií, '
+                          'nebo si je vybereš sám ze seznamu.',
+                          'Add your first day. I\'ll suggest exercises by '
+                          'muscle group, or you can pick them from the list.',
+                        ),
                         style: text.bodyMedium?.copyWith(
                           color: p.secondaryLabel,
                         ),
@@ -446,14 +505,18 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
               onEditExercise: (e) => _editExercise(_days[i], e),
             ),
           SecondaryButton(
-            'Přidat den',
+            tr('Přidat den', 'Add day'),
             icon: Icons.add_rounded,
             onPressed: _days.length >= maxProgramDays ? null : _addDay,
           ),
           const SizedBox(height: Space.s),
           Text(
-            'Dny jdou za sebou dokola: po posledním zase první. '
-            'Kdy cvičíš, nastavíš ve Frekvenci.',
+            tr(
+              'Dny jdou za sebou dokola: po posledním zase první. '
+              'Kdy cvičíš, nastavíš ve Frekvenci.',
+              'Days cycle in order: after the last comes the first. '
+              'Set when you train in Frequency.',
+            ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
         ],
@@ -502,7 +565,7 @@ class _DayCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Den ${index + 1}',
+                  tr('Den ${index + 1}', 'Day ${index + 1}'),
                   style: text.labelMedium?.copyWith(
                     color: p.accent,
                     fontWeight: FontWeight.w600,
@@ -510,7 +573,10 @@ class _DayCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 PopupMenuButton<String>(
-                  tooltip: 'Možnosti dne ${index + 1}',
+                  tooltip: tr(
+                    'Možnosti dne ${index + 1}',
+                    'Day ${index + 1} options',
+                  ),
                   icon: Icon(Icons.more_horiz_rounded, color: p.secondaryLabel),
                   onSelected: (v) => switch (v) {
                     'up' => onMove(-1),
@@ -520,24 +586,24 @@ class _DayCard extends StatelessWidget {
                   },
                   itemBuilder: (_) => [
                     if (index > 0)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'up',
-                        child: Text('Posunout výš'),
+                        child: Text(tr('Posunout výš', 'Move up')),
                       ),
                     if (index < count - 1)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'down',
-                        child: Text('Posunout níž'),
+                        child: Text(tr('Posunout níž', 'Move down')),
                       ),
                     if (onDuplicate != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'copy',
-                        child: Text('Duplikovat den'),
+                        child: Text(tr('Duplikovat den', 'Duplicate day')),
                       ),
                     PopupMenuItem(
                       value: 'remove',
                       child: Text(
-                        'Smazat den',
+                        tr('Smazat den', 'Delete day'),
                         style: TextStyle(color: p.negative),
                       ),
                     ),
@@ -553,8 +619,8 @@ class _DayCard extends StatelessWidget {
                 textCapitalization: TextCapitalization.sentences,
                 style: text.titleMedium,
                 decoration: InputDecoration(
-                  labelText: 'Název dne ${index + 1}',
-                  hintText: 'Třeba Ramena a triceps',
+                  labelText: tr('Název dne ${index + 1}', 'Day ${index + 1} name'),
+                  hintText: tr('Třeba Ramena a triceps', 'e.g. Shoulders and triceps'),
                   counterText: '',
                 ),
               ),
@@ -621,7 +687,10 @@ class _ExerciseRow extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
-      label: '$name, ${planLabel(plan)}, upravit',
+      label: tr(
+        '$name, ${planLabel(plan)}, upravit',
+        '$name, ${planLabel(plan)}, edit',
+      ),
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -671,12 +740,13 @@ class _AddDaySheetState extends State<_AddDaySheet> {
   /// Navržené cviky, které uživatel vyřadil.
   final Set<String> _dropped = {};
 
-  String _count(int n) =>
-      '$n ${n == 1
-          ? 'cvik'
-          : n < 5
-          ? 'cviky'
-          : 'cviků'}';
+  String _count(int n) => isEnglish
+      ? '$n ${n == 1 ? 'exercise' : 'exercises'}'
+      : '$n ${n == 1
+            ? 'cvik'
+            : n < 5
+            ? 'cviky'
+            : 'cviků'}';
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +773,10 @@ class _AddDaySheetState extends State<_AddDaySheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Den ${widget.number}', style: text.headlineSmall),
+              Text(
+                tr('Den ${widget.number}', 'Day ${widget.number}'),
+                style: text.headlineSmall,
+              ),
               const SizedBox(height: Space.m),
               Row(
                 children: [
@@ -711,8 +784,8 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                     child: _ModeCard(
                       icon: Icons.auto_awesome_rounded,
                       color: p.accent,
-                      label: 'Navrhnout cviky',
-                      hint: 'Vybereš partie',
+                      label: tr('Navrhnout cviky', 'Suggest exercises'),
+                      hint: tr('Vybereš partie', 'You pick muscle groups'),
                       selected: !own,
                       onTap: () => setState(() => _mode = _DayMode.suggest),
                     ),
@@ -722,8 +795,8 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                     child: _ModeCard(
                       icon: Icons.checklist_rounded,
                       color: p.accent,
-                      label: 'Vyberu sám',
-                      hint: 'Celý seznam cviků',
+                      label: tr('Vyberu sám', 'I\'ll pick myself'),
+                      hint: tr('Celý seznam cviků', 'The full exercise list'),
                       selected: own,
                       onTap: () => setState(() => _mode = _DayMode.own),
                     ),
@@ -739,8 +812,12 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                   ),
                   child: own
                       ? Text(
-                          'Otevřu seznam všech cviků. Vybereš jich, kolik '
-                          'chceš, a den pak pojmenuješ.',
+                          tr(
+                            'Otevřu seznam všech cviků. Vybereš jich, kolik '
+                            'chceš, a den pak pojmenuješ.',
+                            'Opens the full exercise list. Pick as many as '
+                            'you want, then name the day.',
+                          ),
                           style: text.bodyMedium?.copyWith(
                             color: p.secondaryLabel,
                           ),
@@ -749,8 +826,12 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Co ten den procvičíš? Klidně víc partií '
-                              'najednou.',
+                              tr(
+                                'Co ten den procvičíš? Klidně víc partií '
+                                'najednou.',
+                                'What will you train that day? Feel free to '
+                                'pick several muscle groups.',
+                              ),
                               style: text.bodyMedium?.copyWith(
                                 color: p.secondaryLabel,
                               ),
@@ -778,19 +859,25 @@ class _AddDaySheetState extends State<_AddDaySheet> {
               ),
               if (own)
                 PrimaryButton(
-                  'Vybrat cviky',
+                  tr('Vybrat cviky', 'Pick exercises'),
                   onPressed: () => popOnce(
                     context,
-                    SplitDay('Den ${widget.number}', const []),
+                    SplitDay(
+                      tr('Den ${widget.number}', 'Day ${widget.number}'),
+                      const [],
+                    ),
                   ),
                 )
               else
                 PrimaryButton(
                   _picked.isEmpty
-                      ? 'Vyber partie'
+                      ? tr('Vyber partie', 'Pick muscle groups')
                       : kept.isEmpty
-                      ? 'Nech aspoň jeden cvik'
-                      : 'Přidat den · ${_count(kept.length)}',
+                      ? tr('Nech aspoň jeden cvik', 'Keep at least one exercise')
+                      : tr(
+                          'Přidat den · ${_count(kept.length)}',
+                          'Add day · ${_count(kept.length)}',
+                        ),
                   onPressed: kept.isEmpty
                       ? null
                       : () => popOnce(context, SplitDay(raw.name, kept)),
@@ -821,7 +908,10 @@ class _AddDaySheetState extends State<_AddDaySheet> {
             child: Text(name, style: text.titleMedium),
           ),
           Text(
-            'Co nechceš, klepnutím vyřaď.',
+            tr(
+              'Co nechceš, klepnutím vyřaď.',
+              'Tap to drop anything you don\'t want.',
+            ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
           const SizedBox(height: Space.xs),
@@ -1020,8 +1110,11 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
-    String sets(int n) =>
-        n == 1 ? '1 série' : (n < 5 ? '$n série' : '$n sérií');
+    String sets(int n) => isEnglish
+        ? (n == 1 ? '1 set' : '$n sets')
+        : n == 1
+        ? '1 série'
+        : (n < 5 ? '$n série' : '$n sérií');
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(Space.xxl, 0, Space.xxl, Space.xl),
@@ -1044,7 +1137,7 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
               children: [
                 for (final (label, s, lo, hi) in _presets)
                   ChoiceChip(
-                    label: Text('$label $s×$lo–$hi'),
+                    label: Text('${_presetLabel(label)} $s×$lo–$hi'),
                     selected:
                         _plan.sets == s &&
                         _plan.repMin == lo &&
@@ -1059,7 +1152,7 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
               child: Column(
                 children: [
                   StepperControl(
-                    label: 'Série',
+                    label: tr('Série', 'Sets'),
                     value: _plan.sets,
                     min: 1,
                     max: 10,
@@ -1068,7 +1161,7 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
                   ),
                   const SizedBox(height: Space.s),
                   StepperControl(
-                    label: 'Opakování od',
+                    label: tr('Opakování od', 'Reps from'),
                     value: _plan.repMin,
                     min: 1,
                     max: _plan.repMax,
@@ -1076,7 +1169,7 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
                   ),
                   const SizedBox(height: Space.s),
                   StepperControl(
-                    label: 'Opakování do',
+                    label: tr('Opakování do', 'Reps to'),
                     value: _plan.repMax,
                     min: _plan.repMin,
                     max: 50,
@@ -1087,7 +1180,10 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
             ),
             const SizedBox(height: Space.s),
             Text(
-              'Když zvládneš horní hranici ve všech sériích, trenér přidá váhu.',
+              tr(
+                'Když zvládneš horní hranici ve všech sériích, trenér přidá váhu.',
+                'When you hit the top of the range in every set, the coach adds weight.',
+              ),
               style: text.bodySmall?.copyWith(color: p.secondaryLabel),
             ),
             const SizedBox(height: Space.l),
@@ -1095,26 +1191,26 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
               children: [
                 GroupedRow(
                   icon: Icons.swap_horiz_rounded,
-                  title: 'Nahradit jiným cvikem',
+                  title: tr('Nahradit jiným cvikem', 'Replace with another exercise'),
                   onTap: () => popOnce(context, 'replace'),
                 ),
                 if (widget.canUp)
                   GroupedRow(
                     icon: Icons.arrow_upward_rounded,
-                    title: 'Posunout výš',
+                    title: tr('Posunout výš', 'Move up'),
                     chevron: false,
                     onTap: () => popOnce(context, 'up'),
                   ),
                 if (widget.canDown)
                   GroupedRow(
                     icon: Icons.arrow_downward_rounded,
-                    title: 'Posunout níž',
+                    title: tr('Posunout níž', 'Move down'),
                     chevron: false,
                     onTap: () => popOnce(context, 'down'),
                   ),
                 GroupedRow(
                   icon: Icons.delete_outline_rounded,
-                  title: 'Odebrat ze dne',
+                  title: tr('Odebrat ze dne', 'Remove from day'),
                   destructive: true,
                   chevron: false,
                   onTap: () => popOnce(context, 'remove'),

@@ -37,7 +37,10 @@ class _ReorderSheet extends StatelessWidget {
                 Space.page,
                 Space.xs,
               ),
-              child: Text('Seřadit cviky', style: text.titleLarge),
+              child: Text(
+                tr('Seřadit cviky', 'Reorder exercises'),
+                style: text.titleLarge,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -47,7 +50,10 @@ class _ReorderSheet extends StatelessWidget {
                 Space.m,
               ),
               child: Text(
-                'Podrž úchyt vpravo a přetáhni cvik na nové místo.',
+                tr(
+                  'Podrž úchyt vpravo a přetáhni cvik na nové místo.',
+                  'Hold the handle on the right and drag the exercise to a new spot.',
+                ),
                 style: text.bodySmall?.copyWith(color: p.secondaryLabel),
               ),
             ),
@@ -63,9 +69,12 @@ class _ReorderSheet extends StatelessWidget {
                   } catch (_) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
-                            'Pořadí se nepodařilo uložit. Zkus to znovu.',
+                            tr(
+                              'Pořadí se nepodařilo uložit. Zkus to znovu.',
+                              'Could not save the order. Try again.',
+                            ),
                           ),
                         ),
                       );
@@ -76,19 +85,26 @@ class _ReorderSheet extends StatelessWidget {
                   final entry = exercises[i];
                   final exercise = state.exercise(entry.exerciseId);
                   final done = entry.sets.where((s) => s.done && !s.warmup);
+                  final working = entry.sets.where((s) => !s.warmup).length;
                   return ListTile(
                     key: ObjectKey(entry),
                     leading: ExerciseThumb(exercise.id, size: 36),
                     title: Text(exercise.name),
                     subtitle: Text(
                       done.isEmpty
-                          ? 'Zatím bez potvrzené série'
-                          : 'Hotovo ${done.length} z ${entry.sets.where((s) => !s.warmup).length}',
+                          ? tr('Zatím bez potvrzené série', 'No confirmed sets yet')
+                          : tr(
+                              'Hotovo ${done.length} z $working',
+                              'Done ${done.length} of $working',
+                            ),
                     ),
                     trailing: ReorderableDragStartListener(
                       index: i,
                       child: Semantics(
-                        label: 'Přetáhnout ${exercise.name}',
+                        label: tr(
+                          'Přetáhnout ${exercise.name}',
+                          'Drag ${exercise.name}',
+                        ),
                         child: const Padding(
                           padding: EdgeInsets.all(Space.s),
                           child: Icon(Icons.drag_handle_rounded),
@@ -122,7 +138,10 @@ class _LastDeltaRow extends StatelessWidget {
     final String headline;
     Color? tone;
     if (now == null) {
-      headline = 'Minule nejvíc $lastLabel · objem ${_kg(d.lastVolume)}';
+      headline = tr(
+        'Minule nejvíc $lastLabel · objem ${_kg(d.lastVolume)}',
+        'Last best $lastLabel · volume ${_kg(d.lastVolume)}',
+      );
     } else {
       final diff = now.weight - last.weight;
       final repsDiff = now.reps - last.reps;
@@ -131,11 +150,12 @@ class _LastDeltaRow extends StatelessWidget {
       // série na začátku tréninku není zhoršení.
       final down =
           (diff < 0 || (diff == 0 && repsDiff < 0)) && d.nowSets >= d.lastSets;
+      final same = tr('stejně', 'same');
       final change = diff != 0
           ? '${diff > 0 ? '+' : '−'}${formatKg(diff.abs())} kg'
           : repsDiff != 0
-          ? '${repsDiff > 0 ? '+' : '−'}${repsDiff.abs()} opak.'
-          : 'stejně';
+          ? '${repsDiff > 0 ? '+' : '−'}${repsDiff.abs()} ${tr('opak.', 'reps')}'
+          : same;
       tone = up
           ? p.positive
           : down
@@ -145,12 +165,15 @@ class _LastDeltaRow extends StatelessWidget {
           ? '▲ $change'
           : down
           ? '▼ $change'
-          : change == 'stejně'
-          ? '= stejně'
-          : 'zatím $change';
-      headline =
-          '$sign proti minule ($lastLabel) · '
-          'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}';
+          : change == same
+          ? '= $same'
+          : tr('zatím $change', '$change so far');
+      headline = tr(
+        '$sign proti minule ($lastLabel) · '
+        'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}',
+        '$sign vs last ($lastLabel) · '
+        'volume ${_kg(d.nowVolume)} of ${_kg(d.lastVolume)}',
+      );
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.s),

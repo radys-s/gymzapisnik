@@ -78,7 +78,10 @@ class _SetRowState extends State<_SetRow> {
     } catch (_) {
       if (mounted) {
         widget.onError(
-          'Změnu se nepodařilo uložit. Zkus ji znovu; aplikaci zatím nezavírej.',
+          tr(
+            'Změnu se nepodařilo uložit. Zkus ji znovu; aplikaci zatím nezavírej.',
+            'Could not save the change. Try again; don\'t close the app yet.',
+          ),
         );
       }
     }
@@ -98,7 +101,10 @@ class _SetRowState extends State<_SetRow> {
     } catch (_) {
       if (mounted) {
         widget.onError(
-          'Sérii se nepodařilo uložit. Zkus zápis znovu; aplikaci zatím nezavírej.',
+          tr(
+            'Sérii se nepodařilo uložit. Zkus zápis znovu; aplikaci zatím nezavírej.',
+            'Could not save the set. Try again; don\'t close the app yet.',
+          ),
         );
       }
     } finally {
@@ -197,7 +203,7 @@ class _SetRowState extends State<_SetRow> {
         container: true,
         label: label,
         value: c.text.isEmpty ? '0' : c.text,
-        hint: 'Otevře úpravu série',
+        hint: tr('Otevře úpravu série', 'Opens set editor'),
         button: true,
         onTap: () => _openSheet(focusReps: !decimal),
         child: ExcludeSemantics(child: field),
@@ -250,7 +256,9 @@ class _SetRowState extends State<_SetRow> {
     final text = Theme.of(context).textTheme;
     final set = widget.set;
     final prev = widget.previous;
-    final kgLabel = widget.bodyweight ? 'Přidaná váha v kg' : 'Váha v kg';
+    final kgLabel = widget.bodyweight
+        ? tr('Přidaná váha v kg', 'Added weight (kg)')
+        : tr('Váha v kg', 'Weight (kg)');
     final record = set.done && widget.state.liveRecords(set).isNotEmpty;
     final rpe = set.warmup ? null : set.rpe;
     final canCopy =
@@ -299,7 +307,7 @@ class _SetRowState extends State<_SetRow> {
                 container: true,
                 button: true,
                 child: PopupMenuButton<String>(
-                  tooltip: '$_name, změnit typ',
+                  tooltip: tr('$_name, změnit typ', '$_name, change type'),
                   padding: EdgeInsets.zero,
                   onSelected: _typeMenu,
                   itemBuilder: (_) => [
@@ -308,7 +316,7 @@ class _SetRowState extends State<_SetRow> {
                     PopupMenuItem(
                       value: 'delete',
                       child: Text(
-                        'Smazat sérii',
+                        tr('Smazat sérii', 'Delete set'),
                         style: TextStyle(color: p.negative),
                       ),
                     ),
@@ -331,7 +339,7 @@ class _SetRowState extends State<_SetRow> {
                               Icons.emoji_events_rounded,
                               size: 18,
                               color: p.gold,
-                              semanticLabel: 'Osobní rekord',
+                              semanticLabel: tr('Osobní rekord', 'Personal record'),
                             )
                           : Text(
                               widget.label,
@@ -353,7 +361,9 @@ class _SetRowState extends State<_SetRow> {
               child: Semantics(
                 container: true,
                 button: canCopy,
-                hint: canCopy ? 'Opíše hodnoty z minula' : null,
+                hint: canCopy
+                    ? tr('Opíše hodnoty z minula', 'Copies values from last time')
+                    : null,
                 onTap: canCopy ? () => _copyPrevious(prev) : null,
                 child: InkWell(
                   onTap: canCopy ? () => _copyPrevious(prev) : null,
@@ -368,8 +378,11 @@ class _SetRowState extends State<_SetRow> {
                       child: Text(
                         _prevLabel(prev),
                         semanticsLabel: prev == null
-                            ? 'Minule nic'
-                            : 'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
+                            ? tr('Minule nic', 'Nothing last time')
+                            : tr(
+                                'Minule ${formatKg(prev.weight)} kg, ${prev.reps} opakování',
+                                'Last time ${formatKg(prev.weight)} kg, ${prev.reps} reps',
+                              ),
                         maxLines: 1,
                         style: text.bodyMedium?.copyWith(
                           color: canCopy ? p.secondaryLabel : p.tertiaryLabel,
@@ -391,8 +404,11 @@ class _SetRowState extends State<_SetRow> {
               child: _field(
                 reps,
                 label: rpe == null
-                    ? 'Opakování, $_name'
-                    : 'Opakování, $_name, RPE ${formatRpe(rpe)}',
+                    ? tr('Opakování, $_name', 'Reps, $_name')
+                    : tr(
+                        'Opakování, $_name, RPE ${formatRpe(rpe)}',
+                        'Reps, $_name, RPE ${formatRpe(rpe)}',
+                      ),
                 suffix: rpe == null ? null : '@${formatRpe(rpe)}',
               ),
             ),
@@ -406,7 +422,9 @@ class _SetRowState extends State<_SetRow> {
                 child: Semantics(
                   container: true,
                   button: true,
-                  label: set.done ? 'Zrušit potvrzení' : 'Potvrdit sérii',
+                  label: set.done
+                      ? tr('Zrušit potvrzení', 'Undo confirmation')
+                      : tr('Potvrdit sérii', 'Confirm set'),
                   onTap: _saving ? null : _toggleDone,
                   excludeSemantics: true,
                   child: InkResponse(

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/text.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/exercise_media.dart';
+import '../widgets/labels.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import 'exercise_detail_page.dart';
@@ -101,12 +103,15 @@ class _ExercisesPageState extends State<ExercisesPage> {
       }
 
       return LargeTitlePage(
-        title: 'Cviky',
+        title: tr('Cviky', 'Exercises'),
         children: [
           TextField(
-            decoration: const InputDecoration(
-              hintText: 'Hledat cvik, sval, vybavení, česky/EN…',
-              prefixIcon: Icon(Icons.search_rounded),
+            decoration: InputDecoration(
+              hintText: tr(
+                'Hledat cvik, sval, vybavení, česky/EN…',
+                'Search exercise, muscle, equipment, Czech/EN…',
+              ),
+              prefixIcon: const Icon(Icons.search_rounded),
             ),
             textInputAction: TextInputAction.search,
             onChanged: (v) => setState(() => query = v),
@@ -117,13 +122,13 @@ class _ExercisesPageState extends State<ExercisesPage> {
             child: Row(
               children: [
                 chip(
-                  label: 'Vše',
+                  label: tr('Vše', 'All'),
                   selected: muscle == null,
                   onTap: () => setState(() => muscle = null),
                 ),
                 for (final m in muscleGroups)
                   chip(
-                    label: m,
+                    label: muscleLabel(m),
                     selected: muscle == m,
                     onTap: () =>
                         setState(() => muscle = muscle == m ? null : m),
@@ -136,7 +141,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
             child: Row(
               children: [
                 chip(
-                  label: 'Vše vybavení',
+                  label: tr('Vše vybavení', 'All equipment'),
                   selected: equipment == null,
                   onTap: () => setState(() => equipment = null),
                 ),
@@ -155,7 +160,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
             child: FilterChip(
               selected: gymOnly,
               showCheckmark: false,
-              label: const Text('Jen moje posilovna'),
+              label: Text(tr('Jen moje posilovna', 'My gym only')),
               onSelected: (v) => setState(() => gymOnly = v),
             ),
           ),
@@ -165,7 +170,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
               equipment == null &&
               !gymOnly &&
               recent.isNotEmpty) ...[
-            const SectionHeader('Nedávné rekordy'),
+            SectionHeader(tr('Nedávné rekordy', 'Recent records')),
             GroupedSection(
               children: [
                 for (final e in recent.take(6))
@@ -179,16 +184,22 @@ class _ExercisesPageState extends State<ExercisesPage> {
           ],
           SectionHeader(
             folded.isEmpty && muscle == null && equipment == null && !gymOnly
-                ? 'Knihovna cviků'
-                : 'Výsledky (${filtered.length})',
+                ? tr('Knihovna cviků', 'Exercise library')
+                : tr('Výsledky (${filtered.length})', 'Results (${filtered.length})'),
           ),
           if (filtered.isEmpty)
             EmptyState(
               icon: Icons.search_off_rounded,
-              title: 'Nic nenalezeno',
+              title: tr('Nic nenalezeno', 'Nothing found'),
               message: gymOnly
-                  ? 'V této posilovně nic neodpovídá filtru. Zkus vypnout "Jen moje posilovna" nebo změnit hledání.'
-                  : 'Zkus jiný název, sval nebo vybavení. Hledání rozumí anglickým i českým názvům.',
+                  ? tr(
+                      'V této posilovně nic neodpovídá filtru. Zkus vypnout "Jen moje posilovna" nebo změnit hledání.',
+                      'Nothing in this gym matches the filter. Try turning off "My gym only" or changing the search.',
+                    )
+                  : tr(
+                      'Zkus jiný název, sval nebo vybavení. Hledání rozumí anglickým i českým názvům.',
+                      'Try a different name, muscle or equipment. Search understands both English and Czech names.',
+                    ),
             )
           else
             GroupedSection(
@@ -222,9 +233,9 @@ class _ExerciseRow extends StatelessWidget {
     final p = context.palette;
     final subtitle = [
       if (e.nameCs.isNotEmpty && fold(e.nameCs) != fold(e.name)) e.nameCs,
-      e.muscle,
+      muscleLabel(e.muscle),
       e.equipment.label,
-      if (trained > 0) '$trained× v historii',
+      if (trained > 0) tr('$trained× v historii', '$trained× in history'),
     ].join(' · ');
     return GroupedRow(
       leading: ExerciseThumb(e.id),

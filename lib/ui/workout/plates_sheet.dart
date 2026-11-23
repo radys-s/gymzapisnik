@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../coach/plates.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/parse.dart';
 import '../design/tokens.dart';
 
@@ -43,13 +44,19 @@ class _PlatesSheetState extends State<PlatesSheet> {
     final load = platesFor(total, bar: bar);
     final String result;
     if (total <= 0) {
-      result = 'Zadej celkovou váhu.';
+      result = tr('Zadej celkovou váhu.', 'Enter the total weight.');
     } else if (total < bar) {
-      result = 'Lehčí než samotná osa (${formatKg(bar)} kg).';
+      result = tr(
+        'Lehčí než samotná osa (${formatKg(bar)} kg).',
+        'Lighter than the bar itself (${formatKg(bar)} kg).',
+      );
     } else if (load.perSide.isEmpty) {
-      result = 'Jen osa, bez kotoučů.';
+      result = tr('Jen osa, bez kotoučů.', 'Just the bar, no plates.');
     } else {
-      result = 'Na každou stranu: ${load.perSide.map(formatKg).join(' + ')} kg';
+      result = tr(
+        'Na každou stranu: ${load.perSide.map(formatKg).join(' + ')} kg',
+        'Per side: ${load.perSide.map(formatKg).join(' + ')} kg',
+      );
     }
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -62,7 +69,10 @@ class _PlatesSheetState extends State<PlatesSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Kotouče na činku', style: text.titleLarge),
+          Text(
+            tr('Kotouče na činku', 'Barbell plates'),
+            style: text.titleLarge,
+          ),
           const SizedBox(height: Space.m),
           TextField(
             controller: controller,
@@ -70,14 +80,14 @@ class _PlatesSheetState extends State<PlatesSheet> {
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
             ],
-            decoration: const InputDecoration(
-              labelText: 'Celková váha včetně osy',
+            decoration: InputDecoration(
+              labelText: tr('Celková váha včetně osy', 'Total weight including bar'),
               suffixText: 'kg',
             ),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: Space.m),
-          Text('Osa', style: text.labelLarge),
+          Text(tr('Osa', 'Bar'), style: text.labelLarge),
           const SizedBox(height: Space.xs),
           SegmentedButton<double>(
             segments: [
@@ -99,7 +109,10 @@ class _PlatesSheetState extends State<PlatesSheet> {
           if (load.missing > 0 && total > bar) ...[
             const SizedBox(height: Space.s),
             Text(
-              'Z běžných kotoučů nejde přesně; chybí ${formatKg(load.missing)} kg.',
+              tr(
+                'Z běžných kotoučů nejde přesně; chybí ${formatKg(load.missing)} kg.',
+                'Can\'t match exactly with common plates; ${formatKg(load.missing)} kg short.',
+              ),
               style: text.bodySmall?.copyWith(color: p.negative),
             ),
           ],

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../coach/plates.dart';
 import '../../coach/progression.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/parse.dart';
 import '../../domain/last_delta.dart';
 import '../../domain/models.dart';
@@ -65,12 +66,20 @@ class _WorkoutPageState extends State<WorkoutPage> {
             Space.l,
           ),
           child: GroupedSection(
-            header: 'Pauza u cviku ${state.exercise(exerciseId).name}',
-            footer: 'Platí pro tento cvik i v dalších trénincích.',
+            header: tr(
+              'Pauza u cviku ${state.exercise(exerciseId).name}',
+              'Rest for ${state.exercise(exerciseId).name}',
+            ),
+            footer: tr(
+              'Platí pro tento cvik i v dalších trénincích.',
+              'Applies to this exercise in future workouts too.',
+            ),
             children: [
               for (final s in [0, 60, 90, 120, 150, 180, 240])
                 GroupedRow(
-                  title: s == 0 ? 'Výchozí (${restLabel(base)})' : restLabel(s),
+                  title: s == 0
+                      ? tr('Výchozí (${restLabel(base)})', 'Default (${restLabel(base)})')
+                      : restLabel(s),
                   trailing: (s == 0 ? own == null : own == s)
                       ? Icon(Icons.check_rounded, color: sheet.palette.accent)
                       : null,
@@ -85,7 +94,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
     try {
       await state.setExerciseRest(exerciseId, picked == 0 ? null : picked);
     } catch (_) {
-      _snack('Pauzu se nepodařilo uložit. Zkus to znovu.');
+      _snack(
+        tr(
+          'Pauzu se nepodařilo uložit. Zkus to znovu.',
+          'Could not save rest. Try again.',
+        ),
+      );
     }
   }
 
@@ -121,8 +135,14 @@ class _WorkoutPageState extends State<WorkoutPage> {
     if (failed > 0) {
       _snack(
         failed == ids.length
-            ? 'Cvik se nepodařilo přidat. Zkus to znovu.'
-            : 'Některé cviky se nepodařilo přidat. Zkus je přidat znovu.',
+            ? tr(
+                'Cvik se nepodařilo přidat. Zkus to znovu.',
+                'Could not add the exercise. Try again.',
+              )
+            : tr(
+                'Některé cviky se nepodařilo přidat. Zkus je přidat znovu.',
+                'Could not add some exercises. Try adding them again.',
+              ),
       );
     }
   }
@@ -147,11 +167,11 @@ class _WorkoutPageState extends State<WorkoutPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Zpět'),
+            child: Text(tr('Zpět', 'Back')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Uložit'),
+            child: Text(tr('Uložit', 'Save')),
           ),
         ],
       ),
@@ -168,13 +188,18 @@ class _WorkoutPageState extends State<WorkoutPage> {
     try {
       await state.saveActive();
     } catch (_) {
-      _snack('Změnu se nepodařilo uložit. Zkus to znovu.');
+      _snack(
+        tr(
+          'Změnu se nepodařilo uložit. Zkus to znovu.',
+          'Could not save the change. Try again.',
+        ),
+      );
     }
   }
 
   Future<void> _rename(Workout workout) async {
     final name = await _editText(
-      title: 'Název tréninku',
+      title: tr('Název tréninku', 'Workout name'),
       initial: workout.name,
     );
     if (name == null || name.trim().isEmpty) return;
@@ -184,7 +209,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
   Future<void> _editWorkoutNote(Workout workout) async {
     final note = await _editText(
-      title: 'Poznámka k tréninku',
+      title: tr('Poznámka k tréninku', 'Workout note'),
       initial: workout.note,
       maxLines: 4,
     );
@@ -219,10 +244,13 @@ class _WorkoutPageState extends State<WorkoutPage> {
       if (mounted &&
           await confirmAction(
             context,
-            title: 'Zatím žádná potvrzená série',
-            message: 'Sérii potvrdíš zaškrtnutím vpravo. Trénink bez série se neuloží.',
-            confirm: 'Zahodit trénink',
-            cancel: 'Pokračovat',
+            title: tr('Zatím žádná potvrzená série', 'No confirmed sets yet'),
+            message: tr(
+              'Sérii potvrdíš zaškrtnutím vpravo. Trénink bez série se neuloží.',
+              'Confirm a set with the checkmark on the right. A workout without sets won\'t be saved.',
+            ),
+            confirm: tr('Zahodit trénink', 'Discard workout'),
+            cancel: tr('Pokračovat', 'Continue'),
             destructive: true,
           )) {
         await _discardNow();
@@ -233,12 +261,15 @@ class _WorkoutPageState extends State<WorkoutPage> {
     if (pending > 0 &&
         (!await confirmAction(
               context,
-              title: 'Dokončit trénink?',
-              message:
-                  'Hotovo $confirmed z ${working.length} sérií. '
-                  'Nepotvrzené se neuloží.',
-              confirm: 'Dokončit',
-              cancel: 'Pokračovat',
+              title: tr('Dokončit trénink?', 'Finish workout?'),
+              message: tr(
+                'Hotovo $confirmed z ${working.length} sérií. '
+                    'Nepotvrzené se neuloží.',
+                'Done $confirmed of ${working.length} sets. '
+                    'Unconfirmed sets won\'t be saved.',
+              ),
+              confirm: tr('Dokončit', 'Finish'),
+              cancel: tr('Pokračovat', 'Continue'),
             ) ||
             !mounted)) {
       return;
@@ -252,7 +283,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
       _hideUndo();
       Navigator.pop(context, result.workout);
     } catch (_) {
-      _snack('Trénink se nepodařilo uložit. Zkus dokončení znovu.');
+      _snack(
+        tr(
+          'Trénink se nepodařilo uložit. Zkus dokončení znovu.',
+          'Could not save the workout. Try finishing again.',
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -262,9 +298,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
     if (_busy) return;
     if (!await confirmAction(
       context,
-      title: 'Zahodit trénink?',
-      message: 'Rozepsaný trénink se smaže.',
-      confirm: 'Zahodit',
+      title: tr('Zahodit trénink?', 'Discard workout?'),
+      message: tr(
+        'Rozepsaný trénink se smaže.',
+        'The workout in progress will be deleted.',
+      ),
+      confirm: tr('Zahodit', 'Discard'),
       destructive: true,
     )) {
       return;
@@ -277,7 +316,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
       await state.discardActive();
       if (mounted) Navigator.pop(context);
     } catch (_) {
-      _snack('Trénink se nepodařilo zahodit. Zkus to znovu.');
+      _snack(
+        tr(
+          'Trénink se nepodařilo zahodit. Zkus to znovu.',
+          'Could not discard the workout. Try again.',
+        ),
+      );
     }
   }
 
@@ -287,16 +331,21 @@ class _WorkoutPageState extends State<WorkoutPage> {
     try {
       final index = await state.removeSet(entry, set);
       if (index < 0 || !mounted) return;
-      showUndo(context, 'Série smazána', () async {
+      showUndo(context, tr('Série smazána', 'Set deleted'), () async {
         try {
           final ok = await state.restoreSet(entry, set, index, sets: sets);
-          if (!ok) _snack('Sérii už nejde vrátit.');
+          if (!ok) _snack(tr('Sérii už nejde vrátit.', 'Can\'t restore the set anymore.'));
         } catch (_) {
-          _snack('Sérii se nepodařilo vrátit.');
+          _snack(tr('Sérii se nepodařilo vrátit.', 'Could not restore the set.'));
         }
       });
     } catch (_) {
-      _snack('Sérii se nepodařilo smazat. Zkus to znovu.');
+      _snack(
+        tr(
+          'Sérii se nepodařilo smazat. Zkus to znovu.',
+          'Could not delete the set. Try again.',
+        ),
+      );
     }
   }
 
@@ -308,9 +357,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
     switch (action) {
       case 'note':
         final note = await _editText(
-          title: 'Poznámka ke cviku',
+          title: tr('Poznámka ke cviku', 'Exercise note'),
           initial: entry.note,
-          hint: 'např. nastavení stroje',
+          hint: tr('např. nastavení stroje', 'e.g. machine setting'),
           maxLines: 3,
         );
         if (note == null) return;
@@ -318,38 +367,64 @@ class _WorkoutPageState extends State<WorkoutPage> {
         await _save();
       case 'pin':
         final pinned = await _editText(
-          title: 'Připnutá poznámka',
+          title: tr('Připnutá poznámka', 'Pinned note'),
           initial: state.profile.exerciseNote(entry.exerciseId) ?? '',
-          hint: 'ukáže se v každém tréninku, např. sedačka 4',
+          hint: tr(
+            'ukáže se v každém tréninku, např. sedačka 4',
+            'shows in every workout, e.g. seat 4',
+          ),
           maxLines: 3,
         );
         if (pinned == null) return;
         try {
           await state.setExerciseNote(entry.exerciseId, pinned);
         } catch (_) {
-          _snack('Poznámku se nepodařilo uložit. Zkus to znovu.');
+          _snack(
+            tr(
+              'Poznámku se nepodařilo uložit. Zkus to znovu.',
+              'Could not save the note. Try again.',
+            ),
+          );
         }
       case 'superset':
         try {
           if (!await state.linkSuperset(entry)) {
-            _snack('Pod tímto cvikem už žádný další není.');
+            _snack(
+              tr(
+                'Pod tímto cvikem už žádný další není.',
+                'There\'s no exercise below this one.',
+              ),
+            );
           }
         } catch (_) {
-          _snack('Supersérii se nepodařilo uložit. Zkus to znovu.');
+          _snack(
+            tr(
+              'Supersérii se nepodařilo uložit. Zkus to znovu.',
+              'Could not save the superset. Try again.',
+            ),
+          );
         }
       case 'unsuperset':
         try {
           await state.unlinkSuperset(entry);
         } catch (_) {
-          _snack('Supersérii se nepodařilo zrušit. Zkus to znovu.');
+          _snack(
+            tr(
+              'Supersérii se nepodařilo zrušit. Zkus to znovu.',
+              'Could not remove the superset. Try again.',
+            ),
+          );
         }
       case 'replace':
         if (hasDone &&
             !await confirmAction(
               context,
-              title: 'Nahradit cvik?',
-              message: 'Potvrzené série tohoto cviku se smažou.',
-              confirm: 'Nahradit',
+              title: tr('Nahradit cvik?', 'Replace exercise?'),
+              message: tr(
+                'Potvrzené série tohoto cviku se smažou.',
+                'Confirmed sets for this exercise will be deleted.',
+              ),
+              confirm: tr('Nahradit', 'Replace'),
               destructive: true,
             )) {
           return;
@@ -361,20 +436,42 @@ class _WorkoutPageState extends State<WorkoutPage> {
         try {
           await state.replaceExercise(entry, id);
         } catch (_) {
-          _snack('Cvik se nepodařilo nahradit. Zkus to znovu.');
+          _snack(
+            tr(
+              'Cvik se nepodařilo nahradit. Zkus to znovu.',
+              'Could not replace the exercise. Try again.',
+            ),
+          );
         }
       case 'warmups':
         try {
           final added = await state.addWarmups(entry);
           _snack(switch (added) {
-            null => 'Rozcvička už je potvrzená, nebo chybí pracovní váha.',
-            0 => 'Na takhle lehkou váhu rozcvička není potřeba.',
-            1 => 'Přidána 1 rozcvičovací série.',
-            final n when n < 5 => 'Přidány $n rozcvičovací série.',
-            final n => 'Přidáno $n rozcvičovacích sérií.',
+            null => tr(
+                'Rozcvička už je potvrzená, nebo chybí pracovní váha.',
+                'Warm-up already confirmed, or working weight is missing.',
+              ),
+            0 => tr(
+                'Na takhle lehkou váhu rozcvička není potřeba.',
+                'No warm-up needed for this light a weight.',
+              ),
+            1 => tr('Přidána 1 rozcvičovací série.', 'Added 1 warm-up set.'),
+            final n when n < 5 => tr(
+                'Přidány $n rozcvičovací série.',
+                'Added $n warm-up sets.',
+              ),
+            final n => tr(
+                'Přidáno $n rozcvičovacích sérií.',
+                'Added $n warm-up sets.',
+              ),
           });
         } catch (_) {
-          _snack('Rozcvičku se nepodařilo přidat. Zkus to znovu.');
+          _snack(
+            tr(
+              'Rozcvičku se nepodařilo přidat. Zkus to znovu.',
+              'Could not add warm-up sets. Try again.',
+            ),
+          );
         }
       case 'rest':
         await _pickRest(entry.exerciseId);
@@ -391,7 +488,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
         try {
           await state.moveExercise(entry, action == 'up' ? -1 : 1);
         } catch (_) {
-          _snack('Pořadí se nepodařilo uložit. Zkus to znovu.');
+          _snack(
+            tr(
+              'Pořadí se nepodařilo uložit. Zkus to znovu.',
+              'Could not save the order. Try again.',
+            ),
+          );
         }
       case 'reorder':
         await showReorderSheet(context, state);
@@ -399,9 +501,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
         if (hasDone &&
             !await confirmAction(
               context,
-              title: 'Odebrat cvik?',
-              message: 'Potvrzené série tohoto cviku se smažou.',
-              confirm: 'Odebrat',
+              title: tr('Odebrat cvik?', 'Remove exercise?'),
+              message: tr(
+                'Potvrzené série tohoto cviku se smažou.',
+                'Confirmed sets for this exercise will be deleted.',
+              ),
+              confirm: tr('Odebrat', 'Remove'),
               destructive: true,
             )) {
           return;
@@ -410,7 +515,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
         try {
           await state.removeExercise(entry);
         } catch (_) {
-          _snack('Cvik se nepodařilo odebrat. Zkus to znovu.');
+          _snack(
+            tr(
+              'Cvik se nepodařilo odebrat. Zkus to znovu.',
+              'Could not remove the exercise. Try again.',
+            ),
+          );
         }
     }
   }
@@ -440,7 +550,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               // Šipka dolů trénink jen schová (běží dál v liště nad
               // navigací, jako v Hevy); zrušit jde z menu vpravo.
               leading: IconButton(
-                tooltip: 'Skrýt trénink',
+                tooltip: tr('Skrýt trénink', 'Hide workout'),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
                 onPressed: () => Navigator.maybePop(context),
               ),
@@ -450,7 +560,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               title: Semantics(
                 container: true,
                 button: true,
-                hint: 'Přejmenovat trénink',
+                hint: tr('Přejmenovat trénink', 'Rename workout'),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(
                     context.palette.controlRadius,
@@ -488,29 +598,31 @@ class _WorkoutPageState extends State<WorkoutPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: Text(_busy ? 'Ukládám…' : 'Dokončit'),
+                    child: Text(
+                      _busy ? tr('Ukládám…', 'Saving…') : tr('Dokončit', 'Finish'),
+                    ),
                   ),
                 ),
                 PopupMenuButton<String>(
-                  tooltip: 'Možnosti tréninku',
+                  tooltip: tr('Možnosti tréninku', 'Workout options'),
                   onSelected: (v) => switch (v) {
                     'rename' => _rename(workout),
                     'note' => _editWorkoutNote(workout),
                     _ => _discard(),
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'rename',
-                      child: Text('Přejmenovat'),
+                      child: Text(tr('Přejmenovat', 'Rename')),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'note',
-                      child: Text('Poznámka k tréninku'),
+                      child: Text(tr('Poznámka k tréninku', 'Workout note')),
                     ),
                     PopupMenuItem(
                       value: 'discard',
                       child: Text(
-                        'Zahodit trénink',
+                        tr('Zahodit trénink', 'Discard workout'),
                         style: TextStyle(color: p.negative),
                       ),
                     ),
@@ -536,10 +648,13 @@ class _WorkoutPageState extends State<WorkoutPage> {
                           child: Text(workout.note, style: text.bodySmall),
                         ),
                       if (exercises.isEmpty)
-                        const EmptyState(
+                        EmptyState(
                           icon: Icons.fitness_center_rounded,
-                          title: 'Zatím žádný cvik',
-                          message: 'Přidej první cvik a zapiš sérii.',
+                          title: tr('Zatím žádný cvik', 'No exercises yet'),
+                          message: tr(
+                            'Přidej první cvik a zapiš sérii.',
+                            'Add your first exercise and log a set.',
+                          ),
                         ),
                       for (var i = 0; i < exercises.length; i++)
                         _ExerciseCard(
@@ -562,12 +677,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
                         ),
                         child: exercises.isEmpty
                             ? PrimaryButton(
-                                'Přidat cvik',
+                                tr('Přidat cvik', 'Add exercise'),
                                 icon: Icons.add_rounded,
                                 onPressed: _addExercises,
                               )
                             : SecondaryButton(
-                                'Přidat cvik',
+                                tr('Přidat cvik', 'Add exercise'),
                                 icon: Icons.add_rounded,
                                 onPressed: _addExercises,
                               ),

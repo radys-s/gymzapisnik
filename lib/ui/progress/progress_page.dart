@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
@@ -79,11 +80,11 @@ class ProgressPage extends StatelessWidget {
                 ),
                 StatTile(
                   '$sets',
-                  setsNoun(sets),
+                  isEnglish ? (sets == 1 ? 'set' : 'sets') : setsNoun(sets),
                   countTo: sets.toDouble(),
                   format: (v) => '${v.round()}',
                 ),
-                StatTile('$unlocked / ${badges.length}', 'odznaků'),
+                StatTile('$unlocked / ${badges.length}', tr('odznaků', 'badges')),
               ],
             ),
           ),
@@ -94,8 +95,11 @@ class ProgressPage extends StatelessWidget {
               child: QuickProgressCard(state, exerciseId: top, series: series),
             )
           else
-            const _Hint(
-              'Křivka síly se ukáže po druhém tréninku stejného cviku.',
+            _Hint(
+              tr(
+                'Křivka síly se ukáže po druhém tréninku stejného cviku.',
+                'The strength curve appears after the second workout of the same exercise.',
+              ),
             ),
           if (records.isNotEmpty) RecentRecordsCard(state, records: records),
           _NextPrCard(state: state),
@@ -104,13 +108,13 @@ class ProgressPage extends StatelessWidget {
         ],
       ];
       return LargeTitlePage(
-        title: 'Pokrok',
+        title: tr('Pokrok', 'Progress'),
         tone: Tone.progress,
         actions: [
           // Historie a její hledání bez rolování pod grafy.
           if (finished.isNotEmpty)
             IconButton(
-              tooltip: 'Historie',
+              tooltip: tr('Historie', 'History'),
               icon: const Icon(Icons.history_rounded),
               onPressed: () => Navigator.push(
                 context,
@@ -128,7 +132,7 @@ class ProgressPage extends StatelessWidget {
             ),
           if (finished.isNotEmpty) ...[
             SectionHeader(
-              'Trénink tento týden',
+              tr('Trénink tento týden', "This week's training"),
               action: 'Report',
               onAction: () => Navigator.push(
                 context,
@@ -138,10 +142,10 @@ class ProgressPage extends StatelessWidget {
               ),
             ),
             WeekSummaryCard(state: state, now: current),
-            const SectionHeader('Objem podle partií'),
+            SectionHeader(tr('Objem podle partií', 'Volume by muscle group')),
             CoverageCard(state: state, now: current),
           ],
-          const SectionHeader('Přehled'),
+          SectionHeader(tr('Přehled', 'Overview')),
           GroupedSection(
             dividerIndent: 58,
             children: _rows(context, finished.length, records.firstOrNull),
@@ -158,34 +162,44 @@ class ProgressPage extends StatelessWidget {
     return [
       GroupedRow(
         icon: Icons.calendar_month_rounded,
-        title: 'Týdenní report',
-        subtitle: 'Objem po dnech, rekordy, srovnání s minulým týdnem',
+        title: tr('Týdenní report', 'Weekly report'),
+        subtitle: tr(
+          'Objem po dnech, rekordy, srovnání s minulým týdnem',
+          'Volume by day, records, comparison with last week',
+        ),
         onTap: () => push(WeekReportPage(state, now: now)),
       ),
       GroupedRow(
         icon: Icons.insights_rounded,
-        title: 'Statistiky',
-        subtitle: 'Kalendář, grafy, měsíc proti minulému',
+        title: tr('Statistiky', 'Statistics'),
+        subtitle: tr(
+          'Kalendář, grafy, měsíc proti minulému',
+          'Calendar, charts, month vs previous',
+        ),
         onTap: () => push(StatsPage(state, now: now)),
       ),
       GroupedRow(
         icon: Icons.fitness_center_rounded,
-        title: 'Cviky a rekordy',
+        title: tr('Cviky a rekordy', 'Exercises & records'),
         subtitle: record == null
             ? null
-            : 'Rekord: ${state.exercise(record.exerciseId).name} '
-                  '${recordLabel(record.kind, record.value)}',
+            : tr(
+                'Rekord: ${state.exercise(record.exerciseId).name} '
+                '${recordLabel(record.kind, record.value)}',
+                'Record: ${state.exercise(record.exerciseId).name} '
+                '${recordLabel(record.kind, record.value)}',
+              ),
         onTap: () => push(ExercisesPage(state)),
       ),
       GroupedRow(
         icon: Icons.history_rounded,
-        title: 'Historie',
+        title: tr('Historie', 'History'),
         value: '$count',
         onTap: () => push(HistoryPage(state)),
       ),
       GroupedRow(
         icon: Icons.military_tech_rounded,
-        title: 'Odznaky',
+        title: tr('Odznaky', 'Badges'),
         value:
             '${state.badgeStates.where((b) => b.unlocked).length}'
             ' / ${state.badgeStates.length}',
@@ -193,7 +207,7 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.monitor_weight_outlined,
-        title: 'Váha a míry',
+        title: tr('Váha a míry', 'Weight & measurements'),
         value: state.bodyweights.isEmpty
             ? null
             : '${formatKg(state.bodyweights.first.kg)} kg',
@@ -201,20 +215,23 @@ class ProgressPage extends StatelessWidget {
       ),
       GroupedRow(
         icon: Icons.calendar_view_week_rounded,
-        title: 'Program',
-        value: state.split?.name ?? 'Volně',
+        title: tr('Program', 'Program'),
+        value: state.split?.name ?? tr('Volně', 'Freestyle'),
         onTap: () => push(ProgramPage(state)),
       ),
       GroupedRow(
         icon: Icons.lightbulb_outline_rounded,
-        title: 'Rady pro růst svalů',
-        subtitle: 'Objem, technika, jídlo, spánek',
+        title: tr('Rady pro růst svalů', 'Muscle growth tips'),
+        subtitle: tr('Objem, technika, jídlo, spánek', 'Volume, technique, food, sleep'),
         onTap: () => push(GrowthPage(state, now: now)),
       ),
       GroupedRow(
         icon: Icons.settings_outlined,
-        title: 'Nastavení',
-        subtitle: 'Pauza, krok váhy, záloha, soukromí',
+        title: tr('Nastavení', 'Settings'),
+        subtitle: tr(
+          'Pauza, krok váhy, záloha, soukromí',
+          'Rest, weight step, backup, privacy',
+        ),
         onTap: () => Navigator.of(
           context,
           rootNavigator: true,
@@ -242,11 +259,18 @@ class _Empty extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Pokrok začne prvním tréninkem', style: text.titleMedium),
+                Text(
+                  tr('Pokrok začne prvním tréninkem', 'Progress starts with your first workout'),
+                  style: text.titleMedium,
+                ),
                 const SizedBox(height: 2),
                 Text(
-                  'Po každém tréninku tu přibudou rekordy, křivka síly '
-                  'a odznaky.',
+                  tr(
+                    'Po každém tréninku tu přibudou rekordy, křivka síly '
+                    'a odznaky.',
+                    'After each workout, records, the strength curve '
+                    'and badges appear here.',
+                  ),
                   style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
                 ),
               ],
@@ -291,12 +315,12 @@ class _Rank {
 
 _Rank _trainingRank(int workouts, int sets, int badges, int badgesTotal) {
   final score = workouts * 10 + sets + badges * 25;
-  const tiers = [
-    (0, 'Nováček', 'Buduješ základ. Hlavní je pravidelnost.'),
-    (120, 'Pravidelný', 'Základ sedí. Přidávej objem a kvalitu sérií.'),
-    (300, 'Dříč', 'Pravidelnost se mění ve výkon. Drž progres.'),
-    (600, 'Atlet', 'Silná rutina. Teď hraj o rekordy a kvalitu.'),
-    (1000, 'Elita', 'Špička pravidelnosti. Sbírej čisté rekordy.'),
+  final tiers = [
+    (0, tr('Nováček', 'Newcomer'), tr('Buduješ základ. Hlavní je pravidelnost.', 'Building the base. Consistency is what matters.')),
+    (120, tr('Pravidelný', 'Regular'), tr('Základ sedí. Přidávej objem a kvalitu sérií.', 'The base is solid. Add volume and set quality.')),
+    (300, tr('Dříč', 'Grinder'), tr('Pravidelnost se mění ve výkon. Drž progres.', 'Consistency is turning into performance. Keep progressing.')),
+    (600, tr('Atlet', 'Athlete'), tr('Silná rutina. Teď hraj o rekordy a kvalitu.', 'A strong routine. Now play for records and quality.')),
+    (1000, tr('Elita', 'Elite'), tr('Špička pravidelnosti. Sbírej čisté rekordy.', 'The top of consistency. Collect clean records.')),
   ];
   var idx = 0;
   for (var i = 0; i < tiers.length; i++) {
@@ -342,13 +366,16 @@ class _RankCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tvá úroveň',
+                      tr('Tvá úroveň', 'Your level'),
                       style: text.labelMedium?.copyWith(
                         color: p.secondaryLabel,
                       ),
                     ),
                     Text(
-                      '${rank.name} · úroveň ${rank.level}',
+                      tr(
+                        '${rank.name} · úroveň ${rank.level}',
+                        '${rank.name} · level ${rank.level}',
+                      ),
                       style: text.titleLarge,
                     ),
                   ],
@@ -381,8 +408,14 @@ class _RankCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             rank.level >= 5
-                ? 'Nejvyšší úroveň. Drž pravidelnost a sbírej rekordy.'
-                : 'Do další úrovně: ${rank.nextAt - rank.score} bodů',
+                ? tr(
+                    'Nejvyšší úroveň. Drž pravidelnost a sbírej rekordy.',
+                    'Top level. Stay consistent and collect records.',
+                  )
+                : tr(
+                    'Do další úrovně: ${rank.nextAt - rank.score} bodů',
+                    'To the next level: ${rank.nextAt - rank.score} points',
+                  ),
             style: text.bodySmall?.copyWith(color: p.tertiaryLabel),
           ),
         ],
@@ -428,14 +461,20 @@ class _NextPrCard extends StatelessWidget {
                   .round() ??
               bestSet.reps;
           title = '${current + 1} reps';
-          detail = 'Teď: $current reps. Přidej 1 čisté opakování.';
+          detail = tr(
+            'Teď: $current reps. Přidej 1 čisté opakování.',
+            'Now: $current reps. Add 1 clean rep.',
+          );
         } else {
           final w0 = bestSet.weight;
           final r0 = bestSet.reps;
           if (w0 <= 0 || r0 <= 0) continue;
           final nextW = ((w0 + (w0 >= 40 ? 2.5 : 1.25)) * 4).round() / 4;
           title = '${formatKg(nextW)} kg × $r0';
-          detail = 'Nebo ${formatKg(w0)} kg × ${r0 + 1}. Až to půjde lehce.';
+          detail = tr(
+            'Nebo ${formatKg(w0)} kg × ${r0 + 1}. Až to půjde lehce.',
+            'Or ${formatKg(w0)} kg × ${r0 + 1}. When it feels easy.',
+          );
         }
         candidates.add((id: e.exerciseId, title: title, detail: detail));
         if (candidates.length >= 3) break;
@@ -451,7 +490,7 @@ class _NextPrCard extends StatelessWidget {
             children: [
               Icon(Icons.track_changes_rounded, color: p.accent),
               const SizedBox(width: 8),
-              Text('Další PR cíle', style: text.titleMedium),
+              Text(tr('Další PR cíle', 'Next PR targets'), style: text.titleMedium),
             ],
           ),
           const SizedBox(height: Space.s),

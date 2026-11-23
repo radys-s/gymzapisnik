@@ -95,7 +95,7 @@ class _ExerciseCard extends StatelessWidget {
                             child: Semantics(
                               container: true,
                               header: true,
-                              hint: 'Otevře techniku cviku',
+                              hint: tr('Otevře techniku cviku', 'Opens exercise technique'),
                               child: Text(
                                 exercise.name,
                                 style: text.titleMedium?.copyWith(
@@ -114,7 +114,7 @@ class _ExerciseCard extends StatelessWidget {
                 Semantics(
                   container: true,
                   button: true,
-                  label: 'Vyměnit cvik',
+                  label: tr('Vyměnit cvik', 'Replace exercise'),
                   onTap: () => onMenu('replace'),
                   excludeSemantics: true,
                   child: IconButton(
@@ -126,65 +126,73 @@ class _ExerciseCard extends StatelessWidget {
                   ),
                 ),
                 PopupMenuButton<String>(
-                  tooltip: 'Možnosti cviku',
+                  tooltip: tr('Možnosti cviku', 'Exercise options'),
                   icon: Icon(Icons.more_horiz_rounded, color: p.secondaryLabel),
                   onSelected: onMenu,
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'note', child: Text('Poznámka')),
+                    PopupMenuItem(
+                      value: 'note',
+                      child: Text(tr('Poznámka', 'Note')),
+                    ),
                     PopupMenuItem(
                       value: 'pin',
                       child: Text(
                         pinned == null
-                            ? 'Připnout poznámku'
-                            : 'Upravit připnutou poznámku',
+                            ? tr('Připnout poznámku', 'Pin note')
+                            : tr('Upravit připnutou poznámku', 'Edit pinned note'),
                       ),
                     ),
                     PopupMenuItem(
                       value: 'rest',
                       child: Text(
-                        'Pauza: ${restLabel(state.restFor(exercise.id))}',
+                        tr(
+                          'Pauza: ${restLabel(state.restFor(exercise.id))}',
+                          'Rest: ${restLabel(state.restFor(exercise.id))}',
+                        ),
                       ),
                     ),
                     if (!bodyweight) ...[
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'warmups',
-                        child: Text('Přidat rozcvičku'),
+                        child: Text(tr('Přidat rozcvičku', 'Add warm-up')),
                       ),
                       if (usesPlates(exercise.id, custom: exercise.custom))
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'plates',
-                          child: Text('Kotouče na činku'),
+                          child: Text(tr('Kotouče na činku', 'Barbell plates')),
                         ),
                     ],
                     if (canMoveUp)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'up',
-                        child: Text('Posunout výš'),
+                        child: Text(tr('Posunout výš', 'Move up')),
                       ),
                     if (canMoveDown)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'down',
-                        child: Text('Posunout níž'),
+                        child: Text(tr('Posunout níž', 'Move down')),
                       ),
                     if (canMoveUp || canMoveDown)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'reorder',
-                        child: Text('Seřadit cviky'),
+                        child: Text(tr('Seřadit cviky', 'Reorder exercises')),
                       ),
                     if (canMoveDown && !linked)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'superset',
-                        child: Text('Supersérie s dalším cvikem'),
+                        child: Text(
+                          tr('Supersérie s dalším cvikem', 'Superset with next exercise'),
+                        ),
                       ),
                     if (slot != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'unsuperset',
-                        child: Text('Zrušit supersérii'),
+                        child: Text(tr('Zrušit supersérii', 'Remove superset')),
                       ),
                     PopupMenuItem(
                       value: 'remove',
                       child: Text(
-                        'Odebrat',
+                        tr('Odebrat', 'Remove'),
                         style: TextStyle(color: p.negative),
                       ),
                     ),
@@ -228,7 +236,7 @@ class _ExerciseCard extends StatelessWidget {
                       Icons.push_pin_rounded,
                       size: 16,
                       color: p.secondaryLabel,
-                      semanticLabel: 'Připnutá poznámka',
+                      semanticLabel: tr('Připnutá poznámka', 'Pinned note'),
                     ),
                     const SizedBox(width: 6),
                     Expanded(child: Text(pinned, style: text.bodySmall)),
@@ -255,11 +263,17 @@ class _ExerciseCard extends StatelessWidget {
                   style: text.labelSmall,
                   child: Row(
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: _typeWidth,
-                        child: Text('SÉRIE', textAlign: TextAlign.center),
+                        child: Text(
+                          tr('SÉRIE', 'SET'),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      const Expanded(flex: 3, child: Text('MINULE')),
+                      Expanded(
+                        flex: 3,
+                        child: Text(tr('MINULE', 'PREVIOUS')),
+                      ),
                       Expanded(
                         flex: 3,
                         child: Text(
@@ -267,9 +281,12 @@ class _ExerciseCard extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const Expanded(
+                      Expanded(
                         flex: 3,
-                        child: Text('OPAK.', textAlign: TextAlign.center),
+                        child: Text(
+                          tr('OPAK.', 'REPS'),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                       const SizedBox(
                         width: _doneWidth,
@@ -310,7 +327,12 @@ class _ExerciseCard extends StatelessWidget {
                   try {
                     await state.addSet(entry);
                   } catch (_) {
-                    onError('Sérii se nepodařilo přidat. Zkus to znovu.');
+                    onError(
+                      tr(
+                        'Sérii se nepodařilo přidat. Zkus to znovu.',
+                        'Could not add the set. Try again.',
+                      ),
+                    );
                   }
                 },
                 style: TextButton.styleFrom(
@@ -323,7 +345,7 @@ class _ExerciseCard extends StatelessWidget {
                   textStyle: text.titleSmall,
                 ),
                 icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Přidat sérii'),
+                label: Text(tr('Přidat sérii', 'Add set')),
               ),
             ),
           ],
@@ -381,16 +403,22 @@ class _SupersetLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(Space.page, Space.xs, 0, 0),
       child: Semantics(
         container: true,
-        label:
-            'Supersérie ${slot.letter}, cvik ${slot.position + 1} '
-            'z ${slot.size}, střídej bez pauzy',
+        label: tr(
+          'Supersérie ${slot.letter}, cvik ${slot.position + 1} '
+              'z ${slot.size}, střídej bez pauzy',
+          'Superset ${slot.letter}, exercise ${slot.position + 1} '
+              'of ${slot.size}, alternate without rest',
+        ),
         excludeSemantics: true,
         child: Row(
           children: [
             Icon(Icons.link_rounded, size: 16, color: color),
             const SizedBox(width: 6),
             Text(
-              'Supersérie ${slot.letter} · ${slot.position + 1}/${slot.size}',
+              tr(
+                'Supersérie ${slot.letter} · ${slot.position + 1}/${slot.size}',
+                'Superset ${slot.letter} · ${slot.position + 1}/${slot.size}',
+              ),
               style: Theme.of(context).textTheme.labelMedium
                   ?.copyWith(color: color),
             ),

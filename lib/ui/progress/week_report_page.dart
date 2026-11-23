@@ -4,6 +4,7 @@ import '../../coach/routine_audit.dart' show weekCoverage, weeklyRange;
 import '../../coach/splits.dart' show dayFocuses;
 import '../../coach/weeks.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../domain/week_report.dart';
@@ -15,6 +16,53 @@ import '../exercises/exercise_detail_page.dart';
 import '../widgets/labels.dart';
 
 const _dayLetters = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+const _dayLettersEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _monthsShortEn = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+String _focusName(String id, String fallback) => switch (id) {
+  'chest' => tr('Hrudník', 'Chest'),
+  'back' => tr('Záda', 'Back'),
+  'legs' => tr('Nohy', 'Legs'),
+  'shoulders' => tr('Ramena', 'Shoulders'),
+  'biceps' => tr('Biceps', 'Biceps'),
+  'triceps' => tr('Triceps', 'Triceps'),
+  'core' => tr('Břicho', 'Core'),
+  'glutes' => tr('Hýždě', 'Glutes'),
+  'calves' => tr('Lýtka', 'Calves'),
+  _ => fallback,
+};
+
+/// [relativeDay] is shared and Czech-only, so keep the source text and add
+/// the English day name here.
+String _englishRelativeDay(DateTime d, DateTime now) {
+  const weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  final diff = calendarDaysBetween(d, now);
+  if (diff == 0) return 'Today';
+  if (diff == 1) return 'Yesterday';
+  if (diff > 1 && diff < 7) return weekdays[d.toLocal().weekday - 1];
+  return formatDate(d);
+}
 
 /// Týdenní report: objem po dnech, srovnání s minulým týdnem, rekordy,
 /// cvik týdne a partie. Šipkami se jde do starších týdnů.
@@ -61,7 +109,7 @@ class _WeekReportPageState extends State<WeekReportPage> {
     final canBack = _monday.isAfter(first);
     final canForward = _monday.isBefore(thisWeek);
     return LargeTitlePage(
-      title: 'Týdenní report',
+      title: tr('Týdenní report', 'Weekly report'),
       tone: Tone.progress,
       children: [
         _WeekSwitcher(
@@ -74,22 +122,28 @@ class _WeekReportPageState extends State<WeekReportPage> {
         if (report.isEmpty)
           EmptyState(
             icon: Icons.event_busy_rounded,
-            title: 'Týden bez tréninku',
+            title: tr('Týden bez tréninku', 'No workouts this week'),
             message: _monday == thisWeek
-                ? 'Po prvním tréninku tu uvidíš objem, čas a rekordy týdne.'
-                : 'Žádný dokončený trénink. Šipkami přejdeš na jiný týden.',
+                ? tr(
+                    'Po prvním tréninku tu uvidíš objem, čas a rekordy týdne.',
+                    'After your first workout, you\'ll see the week\'s volume, time and records here.',
+                  )
+                : tr(
+                    'Žádný dokončený trénink. Šipkami přejdeš na jiný týden.',
+                    'No finished workout. Use the arrows to switch weeks.',
+                  ),
           )
         else ...[
           _VolumeHero(report: report, prev: prev, today: widget.now()),
           const SizedBox(height: Space.m),
           _CompareGrid(report: report, prev: prev, goal: state.weekGoal),
-          const SectionHeader('Rekordy týdne'),
+          SectionHeader(tr('Rekordy týdne', 'Records of the week')),
           _Records(state: state, report: report, now: widget.now()),
           if (report.topExerciseId case final id?) ...[
-            const SectionHeader('Cvik týdne'),
+            SectionHeader(tr('Cvik týdne', 'Exercise of the week')),
             _TopExercise(state: state, report: report, exerciseId: id),
           ],
-          const SectionHeader('Série podle partií'),
+          SectionHeader(tr('Série podle partií', 'Sets by muscle group')),
           _Muscles(coverage: weekCoverage(state.workouts, report.end)),
         ],
         const SizedBox(height: Space.xl),
@@ -115,13 +169,17 @@ class _WeekSwitcher extends StatelessWidget {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final sunday = DateTime(monday.year, monday.month, monday.day + 6);
-    final range = monday.month == sunday.month
+    final range = isEnglish
+        ? monday.month == sunday.month
+              ? '${_monthsShortEn[sunday.month - 1]} ${monday.day}–${sunday.day}'
+              : '${_monthsShortEn[monday.month - 1]} ${monday.day} – ${_monthsShortEn[sunday.month - 1]} ${sunday.day}'
+        : monday.month == sunday.month
         ? '${monday.day}.–${sunday.day}. ${sunday.month}.'
         : '${monday.day}. ${monday.month}. – ${sunday.day}. ${sunday.month}.';
     return Row(
       children: [
         IconButton(
-          tooltip: 'Předchozí týden',
+          tooltip: tr('Předchozí týden', 'Previous week'),
           onPressed: onBack,
           icon: const Icon(Icons.chevron_left_rounded),
         ),
@@ -129,7 +187,7 @@ class _WeekSwitcher extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                current ? 'Tento týden' : range,
+                current ? tr('Tento týden', 'This week') : range,
                 style: text.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -142,7 +200,7 @@ class _WeekSwitcher extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: 'Další týden',
+          tooltip: tr('Další týden', 'Next week'),
           onPressed: onForward,
           icon: const Icon(Icons.chevron_right_rounded),
         ),
@@ -176,10 +234,13 @@ class _Delta extends StatelessWidget {
         : Icons.remove_rounded;
     return Semantics(
       label: v == 0
-          ? 'stejně jako minulý týden'
+          ? tr('stejně jako minulý týden', 'same as last week')
           : v > 0
-          ? 'o $v % víc než minulý týden'
-          : 'o ${-v} % méně než minulý týden',
+          ? tr('o $v % víc než minulý týden', '$v% more than last week')
+          : tr(
+              'o ${-v} % méně než minulý týden',
+              '${-v}% less than last week',
+            ),
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -231,7 +292,7 @@ class _VolumeHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            byKg ? 'OBJEM' : 'SÉRIE',
+            byKg ? tr('OBJEM', 'VOLUME') : tr('SÉRIE', 'SETS'),
             style: text.labelSmall?.copyWith(
               color: p.secondaryLabel,
               letterSpacing: 1.2,
@@ -278,7 +339,7 @@ class _VolumeHero extends StatelessWidget {
                 for (var i = 0; i < 7; i++)
                   Expanded(
                     child: _DayBar(
-                      label: _dayLetters[i],
+                      label: isEnglish ? _dayLettersEn[i] : _dayLetters[i],
                       fraction: max == 0 ? 0 : values[i] / max,
                       trained: report.dailySets[i] > 0,
                       today: i == todayIndex,
@@ -376,16 +437,20 @@ class _CompareGrid extends StatelessWidget {
     final cells = [
       (
         '${report.workouts}/$goal',
-        'tréninky',
+        tr('tréninky', 'workouts'),
         _pct(report.workouts, prev.workouts),
       ),
       (
         durationLabel(report.time),
-        'v posilovně',
+        tr('v posilovně', 'in the gym'),
         _pct(report.time.inMinutes, prev.time.inMinutes),
       ),
-      ('${report.sets}', setsNoun(report.sets), _pct(report.sets, prev.sets)),
-      ('${report.reps}', 'opakování', _pct(report.reps, prev.reps)),
+      (
+        '${report.sets}',
+        isEnglish ? 'sets' : setsNoun(report.sets),
+        _pct(report.sets, prev.sets),
+      ),
+      ('${report.reps}', tr('opakování', 'reps'), _pct(report.reps, prev.reps)),
     ];
     return Panel(
       child: Column(
@@ -451,7 +516,10 @@ class _Records extends StatelessWidget {
             const SizedBox(width: Space.m),
             Expanded(
               child: Text(
-                'Bez nového rekordu. Další série je šance.',
+                tr(
+                  'Bez nového rekordu. Další série je šance.',
+                  'No new records. Your next set is a chance.',
+                ),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
             ),
@@ -510,7 +578,10 @@ class _Records extends StatelessWidget {
                               [
                                 main.kind.label,
                                 ...others,
-                                relativeDay(main.date, now).toLowerCase(),
+                                tr(
+                                  relativeDay(main.date, now),
+                                  _englishRelativeDay(main.date, now),
+                                ).toLowerCase(),
                               ].join(' · '),
                               style: text.bodySmall?.copyWith(
                                 color: p.secondaryLabel,
@@ -599,7 +670,11 @@ class _TopExercise extends StatelessWidget {
                     setsLabel(sets),
                     if (type == ExerciseType.weighted && kg > 0)
                       '${formatVolume(kg)} kg',
-                    if (best != null) 'nejlepší ${setLabel(type, best)}',
+                    if (best != null)
+                      tr(
+                        'nejlepší ${setLabel(type, best)}',
+                        'best ${setLabel(type, best)}',
+                      ),
                   ].join(' · '),
                   style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                 ),
@@ -628,7 +703,10 @@ class _Muscles extends StatelessWidget {
     if (rows.isEmpty) {
       return Panel(
         child: Text(
-          'Cviky tohoto týdne nemají přiřazené partie.',
+          tr(
+            'Cviky tohoto týdne nemají přiřazené partie.',
+            'This week\'s exercises have no muscle groups assigned.',
+          ),
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
         ),
       );
@@ -646,7 +724,7 @@ class _Muscles extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 96,
-                    child: Text(f.name, style: text.bodyMedium),
+                    child: Text(_focusName(f.id, f.name), style: text.bodyMedium),
                   ),
                   Expanded(
                     child: ClipRRect(
@@ -712,7 +790,7 @@ class LastWeekCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Minulý týden', style: text.titleMedium),
+                  Text(tr('Minulý týden', 'Last week'), style: text.titleMedium),
                   Text(
                     [
                       workoutsLabel(r.workouts),
@@ -721,7 +799,11 @@ class LastWeekCard extends StatelessWidget {
                       else
                         setsLabel(r.sets),
                       if (exercises > 0)
-                        exercises == 1
+                        isEnglish
+                            ? exercises == 1
+                                  ? '1 record'
+                                  : '$exercises records'
+                            : exercises == 1
                             ? '1 rekord'
                             : exercises <= 4
                             ? '$exercises rekordy'
@@ -732,7 +814,10 @@ class LastWeekCard extends StatelessWidget {
                 ],
               ),
             ),
-            Text('Report', style: text.labelLarge?.copyWith(color: p.accent)),
+            Text(
+              tr('Report', 'Report'),
+              style: text.labelLarge?.copyWith(color: p.accent),
+            ),
             Icon(Icons.chevron_right_rounded, color: p.accent),
           ],
         ),

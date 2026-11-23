@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/parse.dart';
 import '../../domain/rpe.dart';
 import '../design/components.dart';
@@ -107,9 +108,15 @@ class _SetSheetState extends State<SetSheet> {
     final r = reps.text.trim();
     final repsValue = r.isEmpty ? 0 : int.tryParse(r);
     return w.isNotEmpty && parseNum(w) == null
-        ? 'Váha není číslo. Oprav ji, jinak se neuloží.'
+        ? tr(
+            'Váha není číslo. Oprav ji, jinak se neuloží.',
+            'Weight is not a number. Fix it or it won\'t be saved.',
+          )
         : repsValue == null || repsValue > 999
-        ? 'Opakování musí být číslo do 999.'
+        ? tr(
+            'Opakování musí být číslo do 999.',
+            'Reps must be a number up to 999.',
+          )
         : null;
   }
 
@@ -123,7 +130,12 @@ class _SetSheetState extends State<SetSheet> {
     final saved = await widget.onChanged(weight.text, reps.text);
     if (!mounted) return;
     setState(
-      () => error = saved ? null : 'Změnu se nepodařilo uložit. Zkus to znovu; aplikaci zatím nezavírej.',
+      () => error = saved
+          ? null
+          : tr(
+              'Změnu se nepodařilo uložit. Zkus to znovu; aplikaci zatím nezavírej.',
+              'Could not save the change. Try again; don\'t close the app yet.',
+            ),
     );
   }
 
@@ -136,7 +148,10 @@ class _SetSheetState extends State<SetSheet> {
     } catch (_) {
       if (mounted) {
         setState(
-          () => error = 'Náročnost se nepodařilo uložit. Zkus to znovu.',
+          () => error = tr(
+            'Náročnost se nepodařilo uložit. Zkus to znovu.',
+            'Could not save effort. Try again.',
+          ),
         );
       }
     }
@@ -156,7 +171,10 @@ class _SetSheetState extends State<SetSheet> {
     try {
       problem = await confirm();
     } catch (_) {
-      problem = 'Sérii se nepodařilo uložit. Zkus to znovu.';
+      problem = tr(
+        'Sérii se nepodařilo uložit. Zkus to znovu.',
+        'Could not save the set. Try again.',
+      );
     }
     if (!mounted) return;
     if (problem == null) {
@@ -176,7 +194,12 @@ class _SetSheetState extends State<SetSheet> {
   void _stepKg(double by) {
     final cur = weight.text.trim().isEmpty ? 0.0 : parseNum(weight.text);
     if (cur == null) {
-      setState(() => error = 'Oprav váhu, tlačítko jí nerozumí.');
+      setState(
+        () => error = tr(
+          'Oprav váhu, tlačítko jí nerozumí.',
+          'Fix the weight, the button can\'t read it.',
+        ),
+      );
       return;
     }
     final next = (cur + by).clamp(0.0, math.max(cur, maxStepKg));
@@ -188,7 +211,12 @@ class _SetSheetState extends State<SetSheet> {
   void _stepReps(int by) {
     final cur = reps.text.trim().isEmpty ? 0 : int.tryParse(reps.text.trim());
     if (cur == null || cur > 999) {
-      setState(() => error = 'Oprav opakování, tlačítko jim nerozumí.');
+      setState(
+        () => error = tr(
+          'Oprav opakování, tlačítko jim nerozumí.',
+          'Fix the reps, the button can\'t read them.',
+        ),
+      );
       return;
     }
     final next = (cur + by).clamp(0, 999);
@@ -226,13 +254,15 @@ class _SetSheetState extends State<SetSheet> {
             children: [
               Expanded(
                 child: _Value(
-                  label: widget.bodyweight ? 'Přidaná váha (kg)' : 'Váha (kg)',
+                  label: widget.bodyweight
+                      ? tr('Přidaná váha (kg)', 'Added weight (kg)')
+                      : tr('Váha (kg)', 'Weight (kg)'),
                   controller: weight,
                   focus: weightFocus,
                   autofocus: !widget.focusReps,
                   decimal: true,
-                  minus: 'Ubrat $kg kg',
-                  plus: 'Přidat $kg kg',
+                  minus: tr('Ubrat $kg kg', 'Remove $kg kg'),
+                  plus: tr('Přidat $kg kg', 'Add $kg kg'),
                   onMinus: () => _stepKg(-widget.step),
                   onPlus: () => _stepKg(widget.step),
                   onTap: () => _select(weight),
@@ -243,12 +273,12 @@ class _SetSheetState extends State<SetSheet> {
               const SizedBox(width: Space.m),
               Expanded(
                 child: _Value(
-                  label: 'Opakování',
+                  label: tr('Opakování', 'Reps'),
                   controller: reps,
                   focus: repsFocus,
                   autofocus: widget.focusReps,
-                  minus: 'Ubrat opakování',
-                  plus: 'Přidat opakování',
+                  minus: tr('Ubrat opakování', 'Remove rep'),
+                  plus: tr('Přidat opakování', 'Add rep'),
                   onMinus: () => _stepReps(-1),
                   onPlus: () => _stepReps(1),
                   onTap: () => _select(reps),
@@ -282,13 +312,13 @@ class _SetSheetState extends State<SetSheet> {
           const SizedBox(height: Space.l),
           if (widget.onConfirm == null)
             PrimaryButton(
-              'Hotovo',
+              tr('Hotovo', 'Done'),
               onPressed: () => Navigator.maybePop(context),
             )
           else ...[
             // Úprava a potvrzení jedním klepnutím, bez hledání ✓ v řádku.
             PrimaryButton(
-              'Potvrdit sérii',
+              tr('Potvrdit sérii', 'Confirm set'),
               icon: Icons.check_rounded,
               busy: _confirming,
               onPressed: _confirm,
@@ -299,7 +329,7 @@ class _SetSheetState extends State<SetSheet> {
               style: TextButton.styleFrom(
                 minimumSize: const Size.fromHeight(minTap),
               ),
-              child: const Text('Jen uložit'),
+              child: Text(tr('Jen uložit', 'Just save')),
             ),
           ],
         ],
@@ -460,7 +490,7 @@ class _RpePicker extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Náročnost (RPE), nepovinné',
+          tr('Náročnost (RPE), nepovinné', 'Effort (RPE), optional'),
           textAlign: TextAlign.center,
           style: text.labelMedium?.copyWith(color: p.secondaryLabel),
         ),
@@ -483,7 +513,10 @@ class _RpePicker extends StatelessWidget {
         const SizedBox(height: Space.xs),
         Text(
           current == null
-              ? 'Kolik opakování ti zbylo? Kouč podle toho volí váhu.'
+              ? tr(
+                  'Kolik opakování ti zbylo? Kouč podle toho volí váhu.',
+                  'How many reps left in the tank? The coach uses this for weight picks.',
+                )
               : rpeHint(current),
           textAlign: TextAlign.center,
           style: text.bodySmall?.copyWith(color: p.secondaryLabel),

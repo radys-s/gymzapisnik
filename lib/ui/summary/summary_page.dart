@@ -5,6 +5,7 @@ import '../../coach/push.dart';
 import '../../coach/routine.dart';
 import '../../coach/summary_coach.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
@@ -94,7 +95,13 @@ class _SummaryPageState extends State<SummaryPage> {
   Future<void> _saveRoutine(Workout workout) async {
     final routine = routineFromWorkout(workout);
     if (routine == null) {
-      showToast(context, 'Trénink nemá žádnou pracovní sérii.');
+      showToast(
+        context,
+        tr(
+          'Trénink nemá žádnou pracovní sérii.',
+          'The workout has no working sets.',
+        ),
+      );
       return;
     }
     setState(() => _savingRoutine = true);
@@ -102,12 +109,23 @@ class _SummaryPageState extends State<SummaryPage> {
       final saved = await state.saveProgram(routine);
       _routineSaved = true;
       if (mounted) {
-        showToast(context, 'Rutina „${saved.name}“ je v záložce Trénink.');
+        showToast(
+          context,
+          tr(
+            'Rutina „${saved.name}“ je v záložce Trénink.',
+            'Routine "${saved.name}" is on the Training tab.',
+          ),
+        );
       }
     } on ArgumentError catch (e) {
       if (mounted) showToast(context, '${e.message}');
     } catch (_) {
-      if (mounted) showToast(context, 'Rutinu se nepodařilo uložit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Rutinu se nepodařilo uložit.', 'Could not save the routine.'),
+        );
+      }
     } finally {
       if (mounted) setState(() => _savingRoutine = false);
     }
@@ -116,7 +134,13 @@ class _SummaryPageState extends State<SummaryPage> {
   Future<void> _repeat(Workout workout) async {
     if (_busy) return;
     if (state.active != null) {
-      showToast(context, 'Nejdřív dokonči rozepsaný trénink.');
+      showToast(
+        context,
+        tr(
+          'Nejdřív dokonči rozepsaný trénink.',
+          'Finish the workout in progress first.',
+        ),
+      );
       return;
     }
     final navigator = Navigator.of(context);
@@ -124,7 +148,12 @@ class _SummaryPageState extends State<SummaryPage> {
     try {
       await state.repeatWorkout(workout);
     } catch (_) {
-      if (mounted) showToast(context, 'Trénink se nepodařilo založit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Trénink se nepodařilo založit.', 'Could not start the workout.'),
+        );
+      }
       return;
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -144,9 +173,9 @@ class _SummaryPageState extends State<SummaryPage> {
   Future<void> _delete(Workout workout) async {
     final ok = await confirmAction(
       context,
-      title: 'Smazat trénink?',
+      title: tr('Smazat trénink?', 'Delete workout?'),
       message: '${workout.name}, ${formatDate(workout.date)}',
-      confirm: 'Smazat',
+      confirm: tr('Smazat', 'Delete'),
       destructive: true,
     );
     if (!ok || !mounted) return;
@@ -155,7 +184,12 @@ class _SummaryPageState extends State<SummaryPage> {
     try {
       await state.deleteWorkout(workout);
     } catch (_) {
-      if (mounted) showToast(context, 'Trénink se nepodařilo smazat.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Trénink se nepodařilo smazat.', 'Could not delete the workout.'),
+        );
+      }
       return;
     }
     navigator.pop();
@@ -163,9 +197,9 @@ class _SummaryPageState extends State<SummaryPage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: const Text('Trénink smazán.'),
+          content: Text(tr('Trénink smazán.', 'Workout deleted.')),
           action: SnackBarAction(
-            label: 'Vrátit',
+            label: tr('Vrátit', 'Undo'),
             onPressed: () => state.restoreWorkout(workout),
           ),
         ),
@@ -202,17 +236,17 @@ class _SummaryPageState extends State<SummaryPage> {
       state.typeOf,
     );
     final page = LargeTitlePage(
-      title: finished ? 'Trénink hotový' : workout.name,
+      title: finished ? tr('Trénink hotový', 'Workout complete') : workout.name,
       implyLeading: !finished,
       actions: [
         // Oprava překlepu hned po dokončení, bez cesty přes historii.
         IconButton(
-          tooltip: 'Upravit',
+          tooltip: tr('Upravit', 'Edit'),
           icon: const Icon(Icons.edit_outlined),
           onPressed: () => _edit(workout),
         ),
         IconButton(
-          tooltip: 'Sdílet',
+          tooltip: tr('Sdílet', 'Share'),
           icon: const Icon(Icons.ios_share_rounded),
           onPressed: () => showShareCard(
             context,
@@ -224,7 +258,7 @@ class _SummaryPageState extends State<SummaryPage> {
         ),
         if (!finished)
           PopupMenuButton<String>(
-            tooltip: 'Možnosti',
+            tooltip: tr('Možnosti', 'Options'),
             icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (a) => switch (a) {
               'compare' => compareWithAnother(context, state, workout),
@@ -232,13 +266,16 @@ class _SummaryPageState extends State<SummaryPage> {
             },
             itemBuilder: (_) => [
               if (state.workouts.any((w) => w.finished && w.id != workout.id))
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'compare',
-                  child: Text('Porovnat s jiným'),
+                  child: Text(tr('Porovnat s jiným', 'Compare with another')),
                 ),
               PopupMenuItem(
                 value: 'delete',
-                child: Text('Smazat', style: TextStyle(color: p.negative)),
+                child: Text(
+                  tr('Smazat', 'Delete'),
+                  style: TextStyle(color: p.negative),
+                ),
               ),
             ],
           ),
@@ -252,9 +289,12 @@ class _SummaryPageState extends State<SummaryPage> {
             Space.s,
           ),
           child: finished
-              ? PrimaryButton('Hotovo', onPressed: () => Navigator.pop(context))
+              ? PrimaryButton(
+                  tr('Hotovo', 'Done'),
+                  onPressed: () => Navigator.pop(context),
+                )
               : PrimaryButton(
-                  'Zopakovat trénink',
+                  tr('Zopakovat trénink', 'Repeat workout'),
                   icon: Icons.replay_rounded,
                   busy: _busy,
                   onPressed: () => _repeat(workout),
@@ -307,7 +347,9 @@ class _SummaryPageState extends State<SummaryPage> {
               _BadgesPanel(state: state, badges: badges, fresh: false),
           if (finished && state.split != null) _NextPanel(state: state),
           SecondaryButton(
-            _routineSaved ? 'Uloženo jako rutina' : 'Uložit jako rutinu',
+            _routineSaved
+                ? tr('Uloženo jako rutina', 'Saved as routine')
+                : tr('Uložit jako rutinu', 'Save as routine'),
             icon: _routineSaved
                 ? Icons.bookmark_added_outlined
                 : Icons.bookmark_add_outlined,
@@ -328,7 +370,12 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
           ),
         const SizedBox(height: Space.xl),
-        SectionHeader('Cviky (${workout.exercises.length})'),
+        SectionHeader(
+          tr(
+            'Cviky (${workout.exercises.length})',
+            'Exercises (${workout.exercises.length})',
+          ),
+        ),
         for (final entry in workout.exercises)
           Padding(
             padding: const EdgeInsets.only(bottom: Space.m),
@@ -450,8 +497,10 @@ class _SummaryPageState extends State<SummaryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '$number. TRÉNINK · ${formatDateTime(workout.date)}'
-                            .toUpperCase(),
+                        tr(
+                          '$number. TRÉNINK · ${formatDateTime(workout.date)}',
+                          '$number. WORKOUT · ${formatDateTime(workout.date)}',
+                        ).toUpperCase(),
                         style: text.labelSmall,
                       ),
                       const SizedBox(height: 2),
@@ -465,14 +514,19 @@ class _SummaryPageState extends State<SummaryPage> {
             Row(
               children: [
                 if (duration != null) ...[
-                  Expanded(child: StatTile(durationLabel(duration), 'Délka')),
+                  Expanded(
+                    child: StatTile(
+                      durationLabel(duration),
+                      tr('Délka', 'Duration'),
+                    ),
+                  ),
                   divider(),
                   const SizedBox(width: Space.m),
                 ],
                 Expanded(
                   child: StatTile(
                     '$sets',
-                    'Série',
+                    tr('Série', 'Sets'),
                     countTo: sets.toDouble(),
                     format: (v) => '${v.round()}',
                   ),
@@ -483,7 +537,7 @@ class _SummaryPageState extends State<SummaryPage> {
                   flex: 2,
                   child: StatTile(
                     '${formatVolume(kg)} kg',
-                    'Objem',
+                    tr('Objem', 'Volume'),
                     countTo: kg,
                     format: (v) => '${formatVolume(v)} kg',
                   ),
@@ -496,7 +550,10 @@ class _SummaryPageState extends State<SummaryPage> {
               runSpacing: Space.xs,
               children: [
                 Pill(
-                  'Týden ${week.workouts}/${state.weekGoal}',
+                  tr(
+                    'Týden ${week.workouts}/${state.weekGoal}',
+                    'Week ${week.workouts}/${state.weekGoal}',
+                  ),
                   icon: weekDone
                       ? Icons.check_circle_rounded
                       : Icons.date_range_rounded,
@@ -539,7 +596,7 @@ class _CoachPanel extends StatelessWidget {
           ),
           if (targets.isNotEmpty) ...[
             const SizedBox(height: Space.m),
-            Text('Příště', style: text.labelMedium),
+            Text(tr('Příště', 'Next time'), style: text.labelMedium),
             for (final t in targets)
               Padding(
                 padding: const EdgeInsets.only(top: Space.xs),
@@ -596,7 +653,7 @@ class _NextPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Další trénink', style: text.labelMedium),
+                Text(tr('Další trénink', 'Next workout'), style: text.labelMedium),
                 Text(day.name, style: text.titleMedium),
                 if (detail != null) ...[
                   const SizedBox(height: 2),
@@ -634,8 +691,11 @@ class _RecordsPanel extends StatelessWidget {
               Expanded(
                 child: Text(
                   records.length == 1
-                      ? 'Nový osobní rekord'
-                      : 'Nové osobní rekordy: ${records.length}',
+                      ? tr('Nový osobní rekord', 'New personal record')
+                      : tr(
+                          'Nové osobní rekordy: ${records.length}',
+                          'New personal records: ${records.length}',
+                        ),
                   style: text.titleMedium,
                 ),
               ),
@@ -718,10 +778,10 @@ class _BadgesPanel extends StatelessWidget {
           if (main.isNotEmpty) ...[
             Text(
               !fresh
-                  ? 'Odznaky z tohoto tréninku'
+                  ? tr('Odznaky z tohoto tréninku', 'Badges from this workout')
                   : main.length == 1
-                  ? 'Nový odznak'
-                  : 'Nové odznaky (${main.length})',
+                  ? tr('Nový odznak', 'New badge')
+                  : tr('Nové odznaky (${main.length})', 'New badges (${main.length})'),
               style: text.titleMedium,
             ),
             const SizedBox(height: Space.m),
@@ -764,7 +824,7 @@ class _BadgesPanel extends StatelessWidget {
                   runSpacing: Space.xs,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text('Bonus', style: text.labelMedium),
+                    Text(tr('Bonus', 'Bonus'), style: text.labelMedium),
                     for (final b in bonus)
                       Pill(b.badge.title, icon: Icons.bolt_rounded),
                   ],
@@ -778,11 +838,11 @@ class _BadgesPanel extends StatelessWidget {
 }
 
 String trendLabel(Trend t) => switch (t) {
-  Trend.better => 'Lepší než minule',
-  Trend.same => 'Stejně jako minule',
-  Trend.worse => 'Slabší než minule',
-  Trend.added => 'Poprvé',
-  Trend.missing => 'Bez pracovní série',
+  Trend.better => tr('Lepší než minule', 'Better than last time'),
+  Trend.same => tr('Stejně jako minule', 'Same as last time'),
+  Trend.worse => tr('Slabší než minule', 'Weaker than last time'),
+  Trend.added => tr('Poprvé', 'First time'),
+  Trend.missing => tr('Bez pracovní série', 'No working sets'),
 };
 
 class TrendIcon extends StatelessWidget {
@@ -797,19 +857,19 @@ class TrendIcon extends StatelessWidget {
         Icons.arrow_upward_rounded,
         size: 18,
         color: p.positive,
-        semanticLabel: 'lepší',
+        semanticLabel: tr('lepší', 'better'),
       ),
       Trend.worse => Icon(
         Icons.arrow_downward_rounded,
         size: 18,
         color: p.negative,
-        semanticLabel: 'slabší',
+        semanticLabel: tr('slabší', 'weaker'),
       ),
       Trend.same => Icon(
         Icons.drag_handle_rounded,
         size: 18,
         color: p.tertiaryLabel,
-        semanticLabel: 'stejně',
+        semanticLabel: tr('stejně', 'same'),
       ),
       _ => const SizedBox(width: 18),
     };
@@ -887,7 +947,10 @@ class _ComparisonPanel extends StatelessWidget {
                     child: Text(
                       c.sets[i].last == null
                           ? ''
-                          : 'minule ${setLabel(type, c.sets[i].last!)}',
+                          : tr(
+                              'minule ${setLabel(type, c.sets[i].last!)}',
+                              'last ${setLabel(type, c.sets[i].last!)}',
+                            ),
                       style: numbers?.copyWith(color: p.secondaryLabel),
                     ),
                   ),
@@ -897,7 +960,10 @@ class _ComparisonPanel extends StatelessWidget {
           if (warmups > 0)
             Padding(
               padding: const EdgeInsets.only(top: Space.xs),
-              child: Text('Rozcvička: ${setsLabel(warmups)}', style: muted),
+              child: Text(
+                tr('Rozcvička: ${setsLabel(warmups)}', 'Warm-up: ${setsLabel(warmups)}'),
+                style: muted,
+              ),
             ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: Space.m),
@@ -905,15 +971,22 @@ class _ComparisonPanel extends StatelessWidget {
           ),
           Text(
             last == null
-                ? 'Objem ${volumeLabel(type, c.volumeToday)}'
-                : 'Objem ${volumeLabel(type, c.volumeToday)} '
-                      '(${delta(c.volumeDelta)})',
+                ? tr(
+                    'Objem ${volumeLabel(type, c.volumeToday)}',
+                    'Volume ${volumeLabel(type, c.volumeToday)}',
+                  )
+                : tr(
+                    'Objem ${volumeLabel(type, c.volumeToday)} '
+                    '(${delta(c.volumeDelta)})',
+                    'Volume ${volumeLabel(type, c.volumeToday)} '
+                    '(${delta(c.volumeDelta)})',
+                  ),
             style: numbers,
           ),
           if (type == ExerciseType.weighted && c.bestToday != null)
             Text(
-              'Odhad 1RM ${oneRm(c.bestToday!)}'
-              '${c.bestLast == null ? '' : ' (minule ${oneRm(c.bestLast!)})'}',
+              '${tr('Odhad 1RM ${oneRm(c.bestToday!)}', 'Estimated 1RM ${oneRm(c.bestToday!)}')}'
+              '${c.bestLast == null ? '' : tr(' (minule ${oneRm(c.bestLast!)})', ' (last ${oneRm(c.bestLast!)})')}',
               style: numbers,
             ),
           if (entry.note.isNotEmpty) ...[

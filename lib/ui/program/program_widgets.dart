@@ -37,7 +37,16 @@ String planLabel(PlannedExercise p) => p.repMin == p.repMax
     : '${p.sets}× ${p.repMin}–${p.repMax}';
 
 /// „1× týdně", „3× týdně".
-String perWeekLabel(int n) => '$n× týdně';
+String perWeekLabel(int n) => tr('$n× týdně', '$n× a week');
+
+/// [programSummary] is shared and Czech-only; add the English counts here.
+String programSummaryLabel(SplitTemplate program) {
+  if (!isEnglish) return programSummary(program);
+  final days = program.days.length;
+  final exercises = program.days.fold(0, (n, d) => n + d.exercises.length);
+  return '$days ${days == 1 ? 'day' : 'days'} · '
+      '$exercises ${exercises == 1 ? 'exercise' : 'exercises'}';
+}
 
 /// Číslo s tlačítky − a + (44 pt), pro série, opakování i frekvenci.
 class StepperControl extends StatelessWidget {
@@ -85,7 +94,7 @@ class StepperControl extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(label, style: text.bodyLarge)),
-        button(Icons.remove_rounded, 'Méně', value - 1, value > min),
+        button(Icons.remove_rounded, tr('Méně', 'Less'), value - 1, value > min),
         SizedBox(
           width: 48,
           child: Semantics(
@@ -103,7 +112,7 @@ class StepperControl extends StatelessWidget {
             ),
           ),
         ),
-        button(Icons.add_rounded, 'Víc', value + 1, value < max),
+        button(Icons.add_rounded, tr('Víc', 'More'), value + 1, value < max),
       ],
     );
   }
@@ -119,7 +128,13 @@ class FrequencyPanel extends StatelessWidget {
       await save();
     } catch (_) {
       if (context.mounted) {
-        showToast(context, 'Frekvenci se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Frekvenci se nepodařilo uložit. Zkus to znovu.',
+            'Could not save the frequency. Try again.',
+          ),
+        );
       }
     }
   }
@@ -136,7 +151,7 @@ class FrequencyPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           StepperControl(
-            label: 'Tréninků týdně',
+            label: tr('Tréninků týdně', 'Workouts per week'),
             value: goal,
             min: 1,
             max: 7,
@@ -147,7 +162,7 @@ class FrequencyPanel extends StatelessWidget {
                 : (n) => _save(context, () => state.setFrequency(perWeek: n)),
           ),
           const SizedBox(height: Space.l),
-          Text('Dny tréninku', style: text.labelMedium),
+          Text(tr('Dny tréninku', 'Training days'), style: text.labelMedium),
           const SizedBox(height: Space.s),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -164,10 +179,19 @@ class FrequencyPanel extends StatelessWidget {
           const SizedBox(height: Space.m),
           Text(
             days.isNotEmpty
-                ? 'Připomínky a plán jen v tyto dny. Trénink navíc se počítá taky.'
+                ? tr(
+                    'Připomínky a plán jen v tyto dny. Trénink navíc se počítá taky.',
+                    'Reminders and plan only on these days. Extra workouts still count.',
+                  )
                 : fromProgram
-                ? 'Podle programu. Vyber dny, nebo nech plán rozložit do týdne.'
-                : 'Vyber dny, nebo nech plán rozložit do týdne.',
+                ? tr(
+                    'Podle programu. Vyber dny, nebo nech plán rozložit do týdne.',
+                    'From your program. Pick days, or let the plan spread across the week.',
+                  )
+                : tr(
+                    'Vyber dny, nebo nech plán rozložit do týdne.',
+                    'Pick days, or let the plan spread across the week.',
+                  ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
         ],
@@ -247,7 +271,7 @@ class ProgramDayPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Den ${index + 1}',
+              tr('Den ${index + 1}', 'Day ${index + 1}'),
               style: text.labelMedium?.copyWith(
                 color: p.accent,
                 fontWeight: FontWeight.w600,

@@ -69,11 +69,11 @@ class ExerciseDetailPage extends StatelessWidget {
                   ),
                 Text(
                   [
-                    exercise.muscle,
+                    muscleLabel(exercise.muscle),
                     exercise.equipment.label,
                     type == ExerciseType.bodyweight
-                        ? 'vlastní váha'
-                        : 's váhou',
+                        ? tr('vlastní váha', 'bodyweight')
+                        : tr('s váhou', 'weighted'),
                   ].join(' · '),
                   style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
                 ),
@@ -82,17 +82,20 @@ class ExerciseDetailPage extends StatelessWidget {
           ),
           ..._about(context, exercise),
           if (sessions.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.show_chart_rounded,
-              title: 'Zatím bez záznamu',
-              message: 'Tenhle cvik zatím nemáš v historii.',
+              title: tr('Zatím bez záznamu', 'No records yet'),
+              message: tr(
+                'Tenhle cvik zatím nemáš v historii.',
+                'This exercise is not in your history yet.',
+              ),
             ),
           if (kinds.isNotEmpty)
             HeroCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Osobní rekordy', style: text.titleMedium),
+                  Text(tr('Osobní rekordy', 'Personal records'), style: text.titleMedium),
                   const SizedBox(height: Space.m),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +124,7 @@ class ExerciseDetailPage extends StatelessWidget {
               ),
             ),
           if (_nextPrTarget(type, records, last) case final target?) ...[
-            const SectionHeader('Další PR cíl'),
+            SectionHeader(tr('Další PR cíl', 'Next PR target')),
             Panel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,18 +146,18 @@ class ExerciseDetailPage extends StatelessWidget {
           ],
           if (records[RecordKind.bestE1rm] case final best?
               when hasStrengthStandard(exerciseId)) ...[
-            const SectionHeader('Úroveň síly'),
+            SectionHeader(tr('Úroveň síly', 'Strength level')),
             _StrengthCard(state, exerciseId, best.value),
           ],
           if (records[RecordKind.bestE1rm] case final best?) ...[
-            const SectionHeader('Kalkulačka 1RM'),
+            SectionHeader(tr('Kalkulačka 1RM', '1RM calculator')),
             _RepTable(best.value),
           ],
           if (points.length >= 2) ...[
             SectionHeader(
               type == ExerciseType.weighted
-                  ? 'Odhad 1RM v čase'
-                  : 'Max opakování v čase',
+                  ? tr('Odhad 1RM v čase', 'Estimated 1RM over time')
+                  : tr('Max opakování v čase', 'Max reps over time'),
             ),
             Panel(
               padding: const EdgeInsets.fromLTRB(
@@ -167,21 +170,25 @@ class ExerciseDetailPage extends StatelessWidget {
             ),
           ],
           if (comparison != null && previous != null) ...[
-            const SectionHeader('Poslední proti předchozímu'),
+            SectionHeader(tr('Poslední proti předchozímu', 'Last vs previous')),
             Panel(
               child: Text(
                 [
                   trendLabel(comparison.overall),
                   if (comparison.bestToday != null)
-                    'nejlepší série ${setLabel(type, comparison.bestToday!)}'
-                        '${comparison.bestLast == null ? '' : ' (předtím ${setLabel(type, comparison.bestLast!)})'}',
+                    tr(
+                      'nejlepší série ${setLabel(type, comparison.bestToday!)}'
+                      '${comparison.bestLast == null ? '' : ' (předtím ${setLabel(type, comparison.bestLast!)})'}',
+                      'best set ${setLabel(type, comparison.bestToday!)}'
+                      '${comparison.bestLast == null ? '' : ' (before ${setLabel(type, comparison.bestLast!)})'}',
+                    ),
                 ].join(' · '),
                 style: text.bodyMedium?.copyWith(fontFeatures: tabular),
               ),
             ),
           ],
           if (sessions.isNotEmpty) ...[
-            const SectionHeader('Historie'),
+            SectionHeader(tr('Historie', 'History')),
             GroupedSection(
               children: [
                 for (final s in sessions.reversed)
@@ -235,26 +242,26 @@ class ExerciseDetailPage extends StatelessWidget {
         ),
       if (anatomy != null)
         GroupedSection(
-          header: 'Svaly',
+          header: tr('Svaly', 'Muscles'),
           children: [
             GroupedRow(
               icon: Icons.bolt_rounded,
               iconColor: p.accent,
               title: heads(anatomy.primary),
-              subtitle: 'Hlavně posiluje',
+              subtitle: tr('Hlavně posiluje', 'Main target'),
             ),
             if (anatomy.secondary.isNotEmpty)
               GroupedRow(
                 icon: Icons.add_rounded,
                 iconColor: p.secondaryLabel,
                 title: heads(anatomy.secondary),
-                subtitle: 'Pomáhají',
+                subtitle: tr('Pomáhají', 'Assist'),
               ),
           ],
         ),
       if (technique != null) ...[
         GroupedSection(
-          header: 'Technika',
+          header: tr('Technika', 'Technique'),
           children: [
             for (var i = 0; i < technique.steps.length; i++)
               GroupedRow(
@@ -264,7 +271,7 @@ class ExerciseDetailPage extends StatelessWidget {
           ],
         ),
         GroupedSection(
-          header: 'Časté chyby',
+          header: tr('Časté chyby', 'Common mistakes'),
           children: [
             for (final m in technique.mistakes)
               GroupedRow(
@@ -277,8 +284,11 @@ class ExerciseDetailPage extends StatelessWidget {
       ],
       if (alternatives.isNotEmpty)
         GroupedSection(
-          header: 'Alternativy',
-          footer: 'Když je stroj obsazený nebo cvik nesedí.',
+          header: tr('Alternativy', 'Alternatives'),
+          footer: tr(
+            'Když je stroj obsazený nebo cvik nesedí.',
+            'When the machine is taken or the exercise does not suit you.',
+          ),
           children: [
             for (final a in alternatives)
               GroupedRow(
@@ -328,9 +338,15 @@ _NextPr? _nextPrTarget(
     final current = records[RecordKind.maxReps]?.value.round() ?? bestSet.reps;
     final target = current + 1;
     return _NextPr(
-      '$target opakování',
-      'Tvůj aktuální rekord je $current opakování. Přidej 1 čisté opakování se stejnou technikou.',
-      'Zkus to na dalším čerstvém tréninku, ideálně po 1-2 dnech odpočinku.',
+      tr('$target opakování', '$target reps'),
+      tr(
+        'Tvůj aktuální rekord je $current opakování. Přidej 1 čisté opakování se stejnou technikou.',
+        'Your current record is $current reps. Add 1 clean rep with the same technique.',
+      ),
+      tr(
+        'Zkus to na dalším čerstvém tréninku, ideálně po 1-2 dnech odpočinku.',
+        'Try it in your next fresh workout, ideally after 1-2 rest days.',
+      ),
     );
   }
 
@@ -341,8 +357,14 @@ _NextPr? _nextPrTarget(
   final rounded = (nextWeight * 4).round() / 4;
   return _NextPr(
     '${formatKg(rounded)} kg × $r',
-    'Nebo nech ${formatKg(w)} kg a přidej +1 opakování. Malé kroky drží progres konzistentní.',
-    'Zkus další PR pokus, až bude série cítit lehce a spánek/regenerace budou v pohodě (obvykle za 1-2 tréninky).',
+    tr(
+      'Nebo nech ${formatKg(w)} kg a přidej +1 opakování. Malé kroky drží progres konzistentní.',
+      'Or keep ${formatKg(w)} kg and add +1 rep. Small steps keep progress consistent.',
+    ),
+    tr(
+      'Zkus další PR pokus, až bude série cítit lehce a spánek/regenerace budou v pohodě (obvykle za 1-2 tréninky).',
+      'Try the next PR attempt when the set feels light and sleep/recovery are on point (usually in 1-2 workouts).',
+    ),
   );
 }
 
@@ -355,14 +377,17 @@ class _RepTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GroupedSection(
-    footer:
-        'Odhad z tvé nejlepší série: ${formatKg(oneRm.roundToDouble())} kg '
-        'na jedno opakování. Ber to jako orientaci, ne jako cíl na každý trénink.',
+    footer: tr(
+      'Odhad z tvé nejlepší série: ${formatKg(oneRm.roundToDouble())} kg '
+      'na jedno opakování. Ber to jako orientaci, ne jako cíl na každý trénink.',
+      'Estimate from your best set: ${formatKg(oneRm.roundToDouble())} kg '
+      'for one rep. Treat it as a guide, not a target for every workout.',
+    ),
     children: [
       for (final r in reps)
         if (weightForReps(oneRm, r) > 0)
           GroupedRow(
-            title: '$r opakování',
+            title: tr('$r opakování', '$r reps'),
             value: '${formatKg(weightForReps(oneRm, r))} kg',
             chevron: false,
           ),
@@ -409,10 +434,14 @@ class _ProgressChart extends StatelessWidget {
     final pad = (maxY - minY) * 0.15 + 1;
     return Semantics(
       container: true,
-      label:
-          'Graf progresu, ${points.length} tréninků, '
-          'od ${formatKg(points.first.value.roundToDouble())} '
-          'do ${formatKg(points.last.value.roundToDouble())}',
+      label: tr(
+        'Graf progresu, ${points.length} tréninků, '
+        'od ${formatKg(points.first.value.roundToDouble())} '
+        'do ${formatKg(points.last.value.roundToDouble())}',
+        'Progress chart, ${points.length} workouts, '
+        'from ${formatKg(points.first.value.roundToDouble())} '
+        'to ${formatKg(points.last.value.roundToDouble())}',
+      ),
       child: LineChart(
         LineChartData(
           minY: (minY - pad).clamp(0, double.infinity),
@@ -505,22 +534,34 @@ class _StrengthCard extends StatelessWidget {
         children: [
           if (bodyweight == null)
             Text(
-              'Zapiš si tělesnou váhu a uvidíš svou úroveň síly '
-              'vůči vlastní váze.',
+              tr(
+                'Zapiš si tělesnou váhu a uvidíš svou úroveň síly '
+                'vůči vlastní váze.',
+                'Log your body weight to see your strength level '
+                'relative to your own weight.',
+              ),
               style: text.bodyMedium,
             )
           else if (level == null)
             Text(
-              'Vyber tabulku, se kterou se porovnáš.',
+              tr(
+                'Vyber tabulku, se kterou se porovnáš.',
+                'Pick a table to compare against.',
+              ),
               style: text.bodyMedium,
             )
           else ...[
             Text(level.label, style: text.titleLarge),
             const SizedBox(height: 2),
             Text(
-              '1RM ${formatKg(oneRm.roundToDouble())} kg = '
-              '${level.ratio.toStringAsFixed(2).replaceAll('.', ',')}× '
-              'tělesné váhy',
+              tr(
+                '1RM ${formatKg(oneRm.roundToDouble())} kg = '
+                '${level.ratio.toStringAsFixed(2).replaceAll('.', ',')}× '
+                'tělesné váhy',
+                '1RM ${formatKg(oneRm.roundToDouble())} kg = '
+                '${level.ratio.toStringAsFixed(2)}× '
+                'body weight',
+              ),
               style: text.bodySmall?.copyWith(
                 color: p.secondaryLabel,
                 fontFeatures: tabular,
@@ -532,15 +573,18 @@ class _StrengthCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: level.progress,
                 minHeight: 8,
-                semanticsLabel: 'Postup k další úrovni',
+                semanticsLabel: tr('Postup k další úrovni', 'Progress to the next level'),
               ),
             ),
             const SizedBox(height: Space.s),
             Text(
               level.toNext == null
-                  ? 'Nejvyšší úroveň. Klobouk dolů.'
-                  : 'Do úrovně ${level.nextLabel} chybí '
-                        '${formatKg(level.toNext!.ceilToDouble())} kg na 1RM.',
+                  ? tr('Nejvyšší úroveň. Klobouk dolů.', 'Top level. Hats off.')
+                  : tr(
+                      'Do úrovně ${level.nextLabel} chybí '
+                      '${formatKg(level.toNext!.ceilToDouble())} kg na 1RM.',
+                      '${formatKg(level.toNext!.ceilToDouble())} kg on 1RM to reach ${level.nextLabel}.',
+                    ),
               style: text.bodySmall,
             ),
           ],

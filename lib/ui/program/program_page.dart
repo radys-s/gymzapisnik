@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 
 import '../../coach/plan_quiz.dart';
 import '../../coach/splits.dart';
@@ -36,7 +37,13 @@ class ProgramPage extends StatelessWidget {
       await state.setSplit(null);
     } catch (_) {
       if (context.mounted) {
-        showToast(context, 'Změnu se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Změnu se nepodařilo uložit. Zkus to znovu.',
+            'Could not save the change. Try again.',
+          ),
+        );
       }
     }
   }
@@ -55,7 +62,7 @@ class ProgramPage extends StatelessWidget {
           ? Icon(Icons.check_rounded, color: p.accent)
           : const SizedBox.shrink();
       return LargeTitlePage(
-        title: 'Program',
+        title: tr('Program', 'Program'),
         children: [
           _CurrentCard(
             state: state,
@@ -63,10 +70,13 @@ class ProgramPage extends StatelessWidget {
             onOpen: current == null ? null : () => _open(context, current),
             onCreate: () => _create(context),
           ),
-          const SectionHeader('Doporučeno pro tebe'),
+          SectionHeader(tr('Doporučeno pro tebe', 'Recommended for you')),
           GroupedSection(
             footer: answers == null
-                ? 'Odpověz na čtyři otázky a doporučení sedne přesně tobě.'
+                ? tr(
+                    'Odpověz na čtyři otázky a doporučení sedne přesně tobě.',
+                    'Answer four questions and the recommendation will fit you exactly.',
+                  )
                 : rec.why,
             children: [
               if (recSplit != null)
@@ -81,7 +91,9 @@ class ProgramPage extends StatelessWidget {
                 ),
               GroupedRow(
                 leading: Icon(Icons.tune_rounded, color: p.accent),
-                title: answers == null ? 'Vyplnit dotazník' : 'Změnit plán',
+                title: answers == null
+                    ? tr('Vyplnit dotazník', 'Fill in the quiz')
+                    : tr('Změnit plán', 'Change plan'),
                 chevron: true,
                 onTap: () => Navigator.push(
                   context,
@@ -90,35 +102,41 @@ class ProgramPage extends StatelessWidget {
               ),
             ],
           ),
-          const SectionHeader('Frekvence'),
+          SectionHeader(tr('Frekvence', 'Frequency')),
           FrequencyPanel(state),
-          const SectionHeader('Moje programy'),
+          SectionHeader(tr('Moje programy', 'My programs')),
           GroupedSection(
             footer: mine.isEmpty
-                ? 'Slož si vlastní dny, třeba ramena a triceps dohromady.'
+                ? tr(
+                    'Slož si vlastní dny, třeba ramena a triceps dohromady.',
+                    'Build your own days, e.g. shoulders and triceps together.',
+                  )
                 : null,
             children: [
               for (final t in mine)
                 GroupedRow(
                   title: t.name,
-                  subtitle: programSummary(t),
+                  subtitle: programSummaryLabel(t),
                   trailing: check(t),
                   chevron: true,
                   onTap: () => _open(context, t),
                 ),
               GroupedRow(
                 leading: Icon(Icons.add_rounded, color: p.accent),
-                title: 'Vytvořit vlastní program',
+                title: tr('Vytvořit vlastní program', 'Create custom program'),
                 chevron: false,
                 onTap: () => _create(context),
               ),
             ],
           ),
-          const SectionHeader('Hotové programy'),
+          SectionHeader(tr('Hotové programy', 'Ready-made programs')),
           GroupedSection(
-            footer:
-                'Hotový program jde upravit: vznikne z něj tvůj vlastní a '
-                'originál zůstane.',
+            footer: tr(
+              'Hotový program jde upravit: vznikne z něj tvůj vlastní a '
+              'originál zůstane.',
+              'You can edit a ready-made program: it becomes your own copy '
+              'and the original stays.',
+            ),
             children: [
               for (final t in [...styleTemplates, ...splitTemplates])
                 GroupedRow(
@@ -133,10 +151,13 @@ class ProgramPage extends StatelessWidget {
             ],
           ),
           GroupedSection(
-            footer: 'Cviky si skládáš až při tréninku, bez dnů na řadě.',
+            footer: tr(
+              'Cviky si skládáš až při tréninku, bez dnů na řadě.',
+              'You pick exercises during the workout, no days in a queue.',
+            ),
             children: [
               GroupedRow(
-                title: 'Volné tréninky',
+                title: tr('Volné tréninky', 'Free workouts'),
                 trailing: current == null
                     ? Icon(Icons.check_rounded, color: p.accent)
                     : null,
@@ -177,20 +198,27 @@ class _CurrentCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Aktuální program',
+          tr('Aktuální program', 'Current program'),
           style: text.labelMedium?.copyWith(
             color: p.accent,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 2),
-        Text(program?.name ?? 'Volné tréninky', style: text.headlineSmall),
+        Text(
+          program?.name ?? tr('Volné tréninky', 'Free workouts'),
+          style: text.headlineSmall,
+        ),
         const SizedBox(height: 2),
         Text(
           program == null
-              ? 'Žádné dny na řadě. Vyber hotový program, nebo si slož '
-                    'vlastní.'
-              : '${programSummary(program)} · ${perWeekLabel(state.weekGoal)}',
+              ? tr(
+                  'Žádné dny na řadě. Vyber hotový program, nebo si slož '
+                  'vlastní.',
+                  'No days in a queue. Pick a ready-made program, or build '
+                  'your own.',
+                )
+              : '${programSummaryLabel(program)} · ${perWeekLabel(state.weekGoal)}',
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
         ),
         if (program != null) ...[
@@ -202,7 +230,10 @@ class _CurrentCard extends StatelessWidget {
               for (var i = 0; i < program.days.length; i++)
                 Pill(
                   i == next % program.days.length
-                      ? 'Na řadě: ${program.days[i].name}'
+                      ? tr(
+                          'Na řadě: ${program.days[i].name}',
+                          'Next: ${program.days[i].name}',
+                        )
                       : program.days[i].name,
                   color: i == next % program.days.length
                       ? p.accent
@@ -211,11 +242,14 @@ class _CurrentCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Space.l),
-          SecondaryButton('Zobrazit dny a cviky', onPressed: onOpen),
+          SecondaryButton(
+            tr('Zobrazit dny a cviky', 'Show days and exercises'),
+            onPressed: onOpen,
+          ),
         ] else ...[
           const SizedBox(height: Space.l),
           PrimaryButton(
-            'Vytvořit vlastní program',
+            tr('Vytvořit vlastní program', 'Create custom program'),
             icon: Icons.add_rounded,
             onPressed: onCreate,
           ),

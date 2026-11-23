@@ -85,17 +85,23 @@ class _SessionStrip extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, 8),
           child: Row(
             children: [
-              cell('ČAS', _Elapsed(workout.startedAt, style: value)),
-              cell('OBJEM', Text('${formatKg(volume)} kg', style: value)),
+              cell(tr('ČAS', 'TIME'), _Elapsed(workout.startedAt, style: value)),
               cell(
-                'SÉRIE',
+                tr('OBJEM', 'VOLUME'),
+                Text('${formatKg(volume)} kg', style: value),
+              ),
+              cell(
+                tr('SÉRIE', 'SETS'),
                 Text('${done.length}/${working.length}', style: value),
               ),
             ],
           ),
         ),
         Semantics(
-          label: 'Hotovo ${done.length} z ${working.length} sérií',
+          label: tr(
+            'Hotovo ${done.length} z ${working.length} sérií',
+            '${done.length} of ${working.length} sets done',
+          ),
           child: TweenAnimationBuilder<double>(
             tween: Tween(end: progress),
             duration: Motion.of(context, Motion.quick),
@@ -184,8 +190,11 @@ class _RestBarState extends State<_RestBar> {
     final over = -left.inSeconds;
     final text = finished
         ? over < 1
-              ? 'Pauza hotová'
-              : 'Pauza hotová · +${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')}'
+              ? tr('Pauza hotová', 'Rest done')
+              : tr(
+                  'Pauza hotová · +${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')}',
+                  'Rest done · +${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')}',
+                )
         : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
     Widget chip(String label, VoidCallback onTap) => Padding(
       padding: const EdgeInsets.only(left: 4),
@@ -249,7 +258,9 @@ class _RestBarState extends State<_RestBar> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             text,
-                            semanticsLabel: finished ? text : 'Pauza $text',
+                            semanticsLabel: finished
+                                ? text
+                                : tr('Pauza $text', 'Rest $text'),
                             maxLines: 1,
                             style: finished
                                 ? Theme.of(context).textTheme.titleMedium
@@ -286,7 +297,7 @@ class _RestBarState extends State<_RestBar> {
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
                           child: IconButton(
-                            tooltip: 'Přeskočit',
+                            tooltip: tr('Přeskočit', 'Skip'),
                             onPressed: widget.state.skipRest,
                             style: IconButton.styleFrom(
                               foregroundColor: chipFg,
@@ -301,7 +312,7 @@ class _RestBarState extends State<_RestBar> {
                         )
                       else
                         chip(
-                          finished ? 'Zavřít' : 'Přeskočit',
+                          finished ? tr('Zavřít', 'Close') : tr('Přeskočit', 'Skip'),
                           widget.state.skipRest,
                         ),
                     ],

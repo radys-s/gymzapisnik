@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/stats.dart';
 import '../../domain/strength.dart';
 import '../../state/app_state.dart';
@@ -46,26 +47,32 @@ class ConsistencyCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('PRAVIDELNOST', style: text.labelSmall),
+                    Text(tr('PRAVIDELNOST', 'CONSISTENCY'), style: text.labelSmall),
                     const SizedBox(height: 2),
                     Text(
-                      '${days.length} ${_days(days.length)} za $weeks týdnů',
+                      tr(
+                        '${days.length} ${_days(days.length)} za $weeks týdnů',
+                        '${days.length} ${days.length == 1 ? 'workout' : 'workouts'} in $weeks weeks',
+                      ),
                       style: text.titleMedium,
                     ),
                   ],
                 ),
               ),
               Text(
-                '$activeWeeks/$weeks týdnů',
+                tr('$activeWeeks/$weeks týdnů', '$activeWeeks/$weeks weeks'),
                 style: text.labelMedium?.copyWith(fontFeatures: tabular),
               ),
             ],
           ),
           const SizedBox(height: Space.m),
           Semantics(
-            label:
-                'Kalendář posledních $weeks týdnů, '
-                'odcvičeno ${days.length} dní',
+            label: tr(
+              'Kalendář posledních $weeks týdnů, '
+              'odcvičeno ${days.length} dní',
+              'Calendar of the last $weeks weeks, '
+              '${days.length} days trained',
+            ),
             excludeSemantics: true,
             child: LayoutBuilder(
               builder: (context, box) {
@@ -102,7 +109,7 @@ class ConsistencyCard extends StatelessWidget {
             children: [
               Text(_month(first), style: text.labelSmall),
               const Spacer(),
-              Text('dnes', style: text.labelSmall),
+              Text(tr('dnes', 'today'), style: text.labelSmall),
             ],
           ),
         ],
@@ -143,7 +150,22 @@ class ConsistencyCard extends StatelessWidget {
     'listopad',
     'prosinec',
   ];
-  static String _month(DateTime d) => _months[d.month - 1];
+  static const _monthsEn = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  static String _month(DateTime d) =>
+      isEnglish ? _monthsEn[d.month - 1] : _months[d.month - 1];
 }
 
 /// Úroveň síly ve čtyřech základních cvicích (dřep, bench, mrtvý tah,
@@ -173,20 +195,31 @@ class StrengthLevelsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('ÚROVEŇ SÍLY', style: text.labelSmall),
+          Text(tr('ÚROVEŇ SÍLY', 'STRENGTH LEVEL'), style: text.labelSmall),
           const SizedBox(height: 2),
           Text(
             bodyweight == null
-                ? 'Zapiš tělesnou váhu a uvidíš svou úroveň'
-                : 'Odhad 1RM vůči tělesné váze '
-                      '${formatKg(bodyweight)} kg',
+                ? tr(
+                    'Zapiš tělesnou váhu a uvidíš svou úroveň',
+                    'Log your body weight to see your level',
+                  )
+                : tr(
+                    'Odhad 1RM vůči tělesné váze '
+                    '${formatKg(bodyweight)} kg',
+                    'Estimated 1RM vs body weight '
+                    '${formatKg(bodyweight)} kg',
+                  ),
             style: text.bodySmall,
           ),
           const SizedBox(height: Space.m),
           if (rows.isEmpty)
             Text(
-              'Zacvič dřep, bench, mrtvý tah nebo tlak nad hlavu a ukáže '
-              'se tvůj stupeň: od začátečníka po elitu.',
+              tr(
+                'Zacvič dřep, bench, mrtvý tah nebo tlak nad hlavu a ukáže '
+                'se tvůj stupeň: od začátečníka po elitu.',
+                'Train squat, bench, deadlift or overhead press and your '
+                'level will show: from beginner to elite.',
+              ),
               style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             )
           else
@@ -251,7 +284,9 @@ class _LiftRow extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Semantics(
-            label: l == null ? '$name, úroveň neznámá' : '$name, ${l.label}',
+            label: l == null
+                ? tr('$name, úroveň neznámá', '$name, level unknown')
+                : '$name, ${l.label}',
             excludeSemantics: true,
             child: Row(
               children: [

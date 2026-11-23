@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/tokens.dart';
+import '../widgets/labels.dart';
 import 'launcher.dart';
 
 /// Lišta běžícího tréninku nad spodní navigací (jako v Hevy): čas, aktuální
@@ -27,7 +29,9 @@ class ActiveWorkoutBar extends StatelessWidget {
         (n, e) => n + e.sets.where((s) => s.done).length,
       );
       final detail = current == null
-          ? (active.exercises.isEmpty ? 'Přidej první cvik' : 'Vše hotovo')
+          ? (active.exercises.isEmpty
+                ? tr('Přidej první cvik', 'Add your first exercise')
+                : tr('Vše hotovo', 'All done'))
           : state.exercise(current.exerciseId).name;
       // Lišta nesmí při velkém písmu sebrat půl obrazovky.
       return MediaQuery.withClampedTextScaling(
@@ -113,14 +117,21 @@ class _BarState extends State<_Bar> {
     final text = Theme.of(context).textTheme;
     final clock = _clock();
     final resting = _restLeft() != null;
-    final detail = resting ? 'Pauza · ${widget.detail}' : widget.detail;
+    final detail = resting
+        ? tr('Pauza · ${widget.detail}', 'Rest · ${widget.detail}')
+        : widget.detail;
     final minutes = DateTime.now().difference(widget.start).inMinutes;
-    final time = resting ? 'pauza $clock' : '$minutes min';
+    final time = resting
+        ? tr('pauza $clock', 'rest $clock')
+        : tr('$minutes min', '$minutes min');
     return Semantics(
       button: true,
-      label:
-          'Běžící trénink ${widget.title}, $time, '
-          '${widget.detail}, ${widget.done} sérií hotovo. Pokračovat',
+      label: tr(
+        'Běžící trénink ${widget.title}, $time, '
+            '${widget.detail}, ${setsLabel(widget.done)} hotovo. Pokračovat',
+        'Workout in progress ${widget.title}, $time, '
+            '${widget.detail}, ${setsLabel(widget.done)} done. Continue',
+      ),
       excludeSemantics: true,
       child: Material(
         color: p.elevated,

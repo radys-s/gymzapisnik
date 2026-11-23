@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
@@ -38,7 +39,7 @@ Future<void> showShareImage(
   BuildContext context, {
   required String fileName,
   required Widget child,
-  String button = 'Sdílet obrázek',
+  String? button,
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
@@ -49,13 +50,13 @@ Future<void> showShareImage(
 
 class ShareImageSheet extends StatefulWidget {
   final String fileName;
-  final String button;
+  final String? button;
   final Widget child;
   const ShareImageSheet({
     super.key,
     required this.fileName,
     required this.child,
-    this.button = 'Sdílet obrázek',
+    this.button,
   });
 
   @override
@@ -94,7 +95,12 @@ class _ShareImageSheetState extends State<ShareImageSheet> {
         ),
       );
     } catch (_) {
-      if (mounted) showToast(context, 'Obrázek se nepodařilo sdílet.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Obrázek se nepodařilo sdílet.', 'Could not share the image.'),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -117,7 +123,7 @@ class _ShareImageSheetState extends State<ShareImageSheet> {
           ),
           const SizedBox(height: Space.l),
           PrimaryButton(
-            widget.button,
+            widget.button ?? tr('Sdílet obrázek', 'Share image'),
             icon: Icons.ios_share_rounded,
             busy: _busy,
             onPressed: _share,
@@ -192,7 +198,7 @@ class ShareCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              'GYM ZÁPISNÍK',
+                              tr('GYM ZÁPISNÍK', 'GYM LOG'),
                               maxLines: 1,
                               overflow: TextOverflow.clip,
                               style: white.copyWith(
@@ -204,7 +210,7 @@ class ShareCard extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            'TRÉNINK Č. $number',
+                            tr('TRÉNINK Č. $number', 'WORKOUT #$number'),
                             style: white.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -224,7 +230,7 @@ class ShareCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'zvednuto celkem',
+                        tr('zvednuto celkem', 'total lifted'),
                         style: white.copyWith(fontSize: 12, color: _muted),
                       ),
                       const SizedBox(height: 14),
@@ -253,12 +259,16 @@ class ShareCard extends StatelessWidget {
                         child: Row(
                           children: [
                             if (duration != null)
-                              _stat(figure, durationLabel(duration), 'délka'),
-                            _stat(figure, '$sets', 'série'),
+                              _stat(
+                                figure,
+                                durationLabel(duration),
+                                tr('délka', 'duration'),
+                              ),
+                            _stat(figure, '$sets', tr('série', 'sets')),
                             _stat(
                               figure,
                               '${workout.exercises.length}',
-                              'cviků',
+                              tr('cviků', 'exercises'),
                             ),
                           ],
                         ),
@@ -302,8 +312,11 @@ class ShareCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 records == 1
-                                    ? 'Nový osobní rekord'
-                                    : 'Nové osobní rekordy: $records',
+                                    ? tr('Nový osobní rekord', 'New personal record')
+                                    : tr(
+                                        'Nové osobní rekordy: $records',
+                                        'New personal records: $records',
+                                      ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: white.copyWith(
