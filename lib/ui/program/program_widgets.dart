@@ -1,22 +1,35 @@
 import 'package:flutter/material.dart';
 
 import '../../coach/splits.dart';
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
 
 /// Zkratky dnů v týdnu (index 0 = pondělí).
-const weekdayShort = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
-const weekdayLong = [
-  'pondělí',
-  'úterý',
-  'středa',
-  'čtvrtek',
-  'pátek',
-  'sobota',
-  'neděle',
-];
+List<String> get weekdayShort => isEnglish
+    ? const ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+    : const ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+List<String> get weekdayLong => isEnglish
+    ? const [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ]
+    : const [
+        'pondělí',
+        'úterý',
+        'středa',
+        'čtvrtek',
+        'pátek',
+        'sobota',
+        'neděle',
+      ];
 
 /// „3× 8–12" (série × rozsah opakování).
 String planLabel(PlannedExercise p) => p.repMin == p.repMax

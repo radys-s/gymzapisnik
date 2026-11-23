@@ -25,7 +25,7 @@ const _machineGear = {
 /// Cviky na stroje, které v posilovně podle typu můžou být, po partiích.
 Map<String, List<Exercise>> gymMachinesByMuscle(TrainingPlace place) {
   final out = <String, List<Exercise>>{};
-  for (final e in builtInExercises) {
+  for (final e in catalogExercises) {
     if (!_machineGear.contains(e.equipment) || !place.allows(e.equipment)) {
       continue;
     }
@@ -63,7 +63,7 @@ class _MyGymPageState extends State<MyGymPage> {
       } else {
         final result = await state.trainer.recognizeMachine(
           jpeg,
-          builtInExercises,
+          catalogExercises,
         );
         switch (result) {
           case AiError(message: final m):

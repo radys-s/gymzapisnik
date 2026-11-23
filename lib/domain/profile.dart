@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import 'profile_keys.dart';
 import 'strength.dart';
 
@@ -157,11 +158,8 @@ class Profile {
   /// Uživatel viděl upozornění, kam jde fotka pro AI.
   bool get aiNoticeAccepted => extra[ProfileKey.aiNotice] == true;
 
-  /// Preferred UI language code: cs, en, sk. Exercises remain English.
-  String get appLanguage {
-    final v = extra[ProfileKey.language];
-    return v is String && const {'cs', 'en', 'sk'}.contains(v) ? v : 'cs';
-  }
+  /// UI language. Retired Slovak falls back to Czech.
+  AppLang get appLanguage => AppLang.parse(extra[ProfileKey.language]);
 
   /// Nezletilý bez souhlasu zákonného zástupce souhlas udělit nemůže.
   Profile acceptConsent({

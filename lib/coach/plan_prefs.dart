@@ -209,7 +209,7 @@ Exercise? replacementFor(
   bool ok(Exercise e) =>
       !taken.contains(e.id) &&
       exerciseAllowed(e, place, avoid, unavailable: unavailable);
-  final pool = builtInExercises.where(ok).toList();
+  final pool = catalogExercises.where(ok).toList();
   return pool.where((e) => primaryHead(e.id) == head).firstOrNull ??
       pool.where((e) {
         final h = primaryHead(e.id);

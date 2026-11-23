@@ -2,6 +2,7 @@
 /// Čistý Dart bez Flutteru.
 library;
 
+import '../core/i18n.dart';
 import '../domain/anatomy.dart';
 import '../domain/catalog.dart';
 import '../domain/models.dart';
@@ -24,6 +25,40 @@ enum PlanGoal {
       values.where((g) => g.name == v).firstOrNull ?? muscle;
 }
 
+/// How the recommended plan is built. `null` in [PlanAnswers] = answers
+/// saved before styles existed (the original mapping).
+enum PlanStyle {
+  science,
+  oldSchool,
+  strength;
+
+  String get label => switch (this) {
+    science => tr('Vědecký přístup', 'Science-based'),
+    oldSchool => tr('Old school', 'Old school'),
+    strength => tr('Síla', 'Strength'),
+  };
+
+  String get hint => switch (this) {
+    science => tr(
+      'Každý sval 2× týdně, cviky v protažení, 1–2 opakování v záloze. '
+          'U každého cviku zdroj.',
+      'Every muscle twice a week, exercises that load the stretch, '
+          '1–2 reps in reserve. A source for every exercise.',
+    ),
+    oldSchool => tr(
+      'Těžké základy, 5×5 nebo bro split. Jednoduché a osvědčené.',
+      'Heavy basics, 5×5 or a bro split. Simple and proven.',
+    ),
+    strength => tr(
+      'Dřep, bench, mrtvý tah. Málo opakování, dlouhé pauzy.',
+      'Squat, bench, deadlift. Low reps, long rests.',
+    ),
+  };
+
+  static PlanStyle? tryParse(Object? v) =>
+      values.where((s) => s.name == v).firstOrNull;
+}
+
 enum PlanLevel {
   beginner('Začínám', 'Do roka pravidelného cvičení'),
   advanced('Pokročilý', 'Cvičím déle než rok');
@@ -43,6 +78,9 @@ final _builtInIds = [for (final e in builtInExercises) e.id];
 
 class PlanAnswers {
   final PlanGoal goal;
+
+  /// Style of the recommended plan; `null` for older saved answers.
+  final PlanStyle? style;
 
   /// Kolikrát týdně chce cvičit (2–6).
   final int days;
@@ -73,6 +111,7 @@ class PlanAnswers {
 
   const PlanAnswers({
     this.goal = PlanGoal.muscle,
+    this.style,
     this.days = 3,
     this.experience = Experience.quarter,
     this.minutes = 60,
@@ -105,6 +144,7 @@ class PlanAnswers {
 
   PlanAnswers copyWith({
     PlanGoal? goal,
+    PlanStyle? style,
     int? days,
     Experience? experience,
     int? minutes,
@@ -116,6 +156,7 @@ class PlanAnswers {
     Set<String>? present,
   }) => PlanAnswers(
     goal: goal ?? this.goal,
+    style: style ?? this.style,
     days: days ?? this.days,
     experience: experience ?? this.experience,
     minutes: minutes ?? this.minutes,
@@ -139,6 +180,7 @@ class PlanAnswers {
     required WeightGoal? weightGoal,
   }) => PlanAnswers(
     goal: goal,
+    style: style,
     days: days,
     experience: experience,
     minutes: minutes,
@@ -159,6 +201,7 @@ class PlanAnswers {
 
   Map<String, dynamic> toJson() => {
     'goal': goal.name,
+    'style': ?style?.name,
     'days': days,
     // Starší verze aplikace čtou jen úroveň.
     'level': level.name,
@@ -194,6 +237,7 @@ class PlanAnswers {
     final year = DateTime.now().year;
     return PlanAnswers(
       goal: PlanGoal.parse(json['goal']),
+      style: PlanStyle.tryParse(json['style']),
       days: days.toInt().clamp(2, 6),
       experience:
           Experience.tryParse(json['experience']) ??
@@ -254,7 +298,102 @@ int recommendedCount(int minutes, PlanLevel level) {
 /// aspoň 2 tréninky týdně, kde to počet dnů dovolí.
 PlanRecommendation recommendPlan(PlanAnswers a) {
   final days = a.days.clamp(2, 6);
-  final (id, why) = switch (days) {
+  final (id, why) = switch (a.style) {
+    PlanStyle.science => _science(a, days),
+    PlanStyle.oldSchool => _oldSchool(days),
+    PlanStyle.strength => _strength(days),
+    null => _classic(a, days),
+  };
+  return PlanRecommendation(
+    splitId: id,
+    why: why,
+    perWeek: days,
+    exercises: recommendedCount(a.minutes, a.level),
+    restSeconds: switch ((a.style, a.goal)) {
+      (PlanStyle.strength, _) => 180,
+      (_, PlanGoal.strength) => 180,
+      (_, PlanGoal.muscle) => 120,
+      (_, PlanGoal.fitness) => 90,
+    },
+  );
+}
+
+(String, String) _science(PlanAnswers a, int days) => switch (days) {
+  <= 3 => (
+    'science_full_body',
+    tr(
+      'Celé tělo při každém tréninku: každý sval dostane 2–3 podněty '
+          'týdně, což vychází v metaanalýzách líp než 1×.',
+      'Full body every session: each muscle gets 2–3 sessions a week, '
+          'which beats once a week in meta-analyses.',
+    ),
+  ),
+  4 || 5 when a.level == PlanLevel.beginner || days == 4 => (
+    'science_upper_lower',
+    tr(
+      'Horní a dolní polovina střídavě: každý sval 2× týdně a mezi '
+          'tréninky čas na regeneraci.',
+      'Upper and lower body in turn: every muscle twice a week with '
+          'time to recover in between.',
+    ),
+  ),
+  _ => (
+    'science_ppl',
+    tr(
+      'Push / Pull / Legs dokola: každý sval skoro 2× týdně a dost '
+          'sérií na partii pro pokročilé.',
+      'Push / Pull / Legs on repeat: every muscle almost twice a week '
+          'and enough sets per muscle for advanced lifters.',
+    ),
+  ),
+};
+
+(String, String) _oldSchool(int days) => switch (days) {
+  <= 3 => (
+    'basics_5x5',
+    tr(
+      'Tři těžké základy, 5 sérií po 5. Každý trénink přidáš kousek váhy.',
+      'Three heavy basics, 5 sets of 5. Add a little weight every session.',
+    ),
+  ),
+  4 || 5 => (
+    'bro_split',
+    tr(
+      'Každý den jedna partie a pořádná dávka sérií. Dny jdou dokola.',
+      'One muscle group a day and plenty of sets. Days rotate.',
+    ),
+  ),
+  _ => (
+    'arnold',
+    tr(
+      'Arnold split dvakrát týdně: hrudník se zády, ramena s pažemi, nohy.',
+      'Arnold split twice a week: chest and back, shoulders and arms, legs.',
+    ),
+  ),
+};
+
+(String, String) _strength(int days) => switch (days) {
+  <= 3 => (
+    'strength_sbd',
+    tr(
+      'Dřep, bench a mrtvý tah několikrát týdně: těžké dny po 3–5 '
+          'opakováních, lehčí na objem.',
+      'Squat, bench and deadlift several times a week: heavy days of '
+          '3–5 reps, lighter ones for volume.',
+    ),
+  ),
+  _ => (
+    'strength_upper_lower',
+    tr(
+      'Horní a dolní polovina střídavě, každý hlavní cvik 2× týdně.',
+      'Upper and lower body in turn, each main lift twice a week.',
+    ),
+  ),
+};
+
+/// Mapping used before plan styles existed.
+(String, String) _classic(PlanAnswers a, int days) {
+  return switch (days) {
     2 => (
       'full_body_3',
       'Při 2 trénincích týdně je nejlepší celé tělo pokaždé: '
@@ -291,17 +430,6 @@ PlanRecommendation recommendPlan(PlanAnswers a) {
           'skoro 2 tréninky týdně.',
     ),
   };
-  return PlanRecommendation(
-    splitId: id,
-    why: why,
-    perWeek: days,
-    exercises: recommendedCount(a.minutes, a.level),
-    restSeconds: switch (a.goal) {
-      PlanGoal.strength => 180,
-      PlanGoal.muscle => 120,
-      PlanGoal.fitness => 90,
-    },
-  );
 }
 
 /// Den programu upravený na [count] cviků: delší se zkrátí (cviky jsou

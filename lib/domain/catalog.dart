@@ -22,6 +22,12 @@ const muscleGroups = [
   'Ostatní',
 ];
 
+/// Catalog exercises to offer in lists and plans (no hidden duplicates).
+final List<Exercise> catalogExercises = [
+  for (final e in builtInExercises)
+    if (!e.hidden) e,
+];
+
 /// Vestavěný katalog cviků. ID se nesmí měnit (jsou v historii).
 /// Název nese vybavení v závorce jako v Hevy: „Dřep (osa)“.
 const builtInExercises = <Exercise>[
@@ -224,12 +230,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'chest_supported_row',
-    name: 'Chest-Supported Machine Row',
+    name: 'Chest-Supported Dumbbell Row',
     nameCs: 'Přítahy s oporou hrudníku (jednoručky)',
     muscle: 'Záda',
     equipment: Equipment.dumbbell,
     pattern: 'row',
     aliases: [
+      'Chest-Supported Machine Row',
       'chest-supported row',
       'chest supported row',
       'incline dumbbell row',
@@ -254,7 +261,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'shoulder_press',
-    name: 'Shoulder Press',
+    name: 'Machine Shoulder Press',
     nameCs: 'Tlak na ramena (stroj)',
     muscle: 'Ramena',
     equipment: Equipment.machine,
@@ -342,7 +349,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'dips',
-    name: 'Dips',
+    name: 'Triceps Dips',
     nameCs: 'Kliky na bradlech (vlastní váha)',
     muscle: 'Paže',
     type: ExerciseType.bodyweight,
@@ -358,7 +365,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'ab_crunch',
-    name: 'Ab Crunch',
+    name: 'Ab Crunch Machine',
     nameCs: 'Zkracovačky (stroj)',
     muscle: 'Střed těla',
     equipment: Equipment.machine,
@@ -497,7 +504,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'dumbbell_row',
-    name: 'One-Arm Dumbbell Row',
+    name: 'Single-Arm Dumbbell Row',
     nameCs: 'Přítah jednoručky v předklonu (jednoručky)',
     muscle: 'Záda',
     equipment: Equipment.dumbbell,
@@ -511,12 +518,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'close_grip_pulldown',
-    name: 'Close Grip Pulldown',
+    name: 'Close-Grip Pulldown',
     nameCs: 'Stahování úzkým úchopem (kladka)',
     muscle: 'Záda',
     equipment: Equipment.cable,
     pattern: 'pulldown',
     aliases: [
+      'Close Grip Pulldown',
       'close-grip lat pulldown',
       'close grip lat pulldown',
       'v-bar pulldown',
@@ -641,12 +649,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'overhead_triceps_extension',
-    name: 'Overhead Dumbbell Triceps Extension',
+    name: 'Cable Overhead Triceps Extension',
     nameCs: 'Tricepsový tlak nad hlavou (kladka)',
     muscle: 'Paže',
     equipment: Equipment.cable,
     pattern: 'triceps_ext',
     aliases: [
+      'Overhead Dumbbell Triceps Extension',
       'triceps extension',
       'overhead triceps extension',
       'overhead cable extension',
@@ -711,7 +720,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'low_to_high_cable_fly',
-    name: 'Low To High Cable Fly',
+    name: 'Low-to-High Cable Fly',
     nameCs: 'Rozpažování zespodu nahoru (kladka)',
     muscle: 'Hrudník',
     equipment: Equipment.cable,
@@ -809,12 +818,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'smith_incline_press',
-    name: 'Smith Incline Press',
+    name: 'Smith Machine Incline Press',
     nameCs: 'Šikmý tlak (multipress)',
     muscle: 'Hrudník',
     equipment: Equipment.smith,
     pattern: 'push_incline',
     aliases: [
+      'Smith Incline Press',
       'incline bench press',
       'smith machine incline bench press',
       'incline smith press',
@@ -912,12 +922,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'machine_pulldown',
-    name: 'Machine Pulldown',
+    name: 'Machine Lat Pulldown',
     nameCs: 'Stahování (stroj)',
     muscle: 'Záda',
     equipment: Equipment.machine,
     pattern: 'pulldown',
     aliases: [
+      'Machine Pulldown',
       'lat pulldown',
       'machine lat pulldown',
       'lat pulldown machine',
@@ -927,12 +938,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'single_arm_pulldown',
-    name: 'Single Arm Pulldown',
+    name: 'Single-Arm Pulldown',
     nameCs: 'Stahování jednoruč (kladka)',
     muscle: 'Záda',
     equipment: Equipment.cable,
     pattern: 'pulldown',
     aliases: [
+      'Single Arm Pulldown',
       'single arm lat pulldown',
       'one arm pulldown',
       'Stahování jednoruč (kladka)',
@@ -1147,7 +1159,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'dumbbell_rdl',
-    name: 'Dumbbell RDL',
+    name: 'Dumbbell Romanian Deadlift',
     nameCs: 'Rumunský mrtvý tah (jednoručky)',
     muscle: 'Nohy',
     equipment: Equipment.dumbbell,
@@ -1233,7 +1245,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'air_squat',
-    name: 'Air Squat',
+    name: 'Bodyweight Squat',
     nameCs: 'Dřep (vlastní váha)',
     muscle: 'Nohy',
     type: ExerciseType.bodyweight,
@@ -1279,7 +1291,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'glute_bridge',
-    name: 'Glute Bridge',
+    name: 'Barbell Glute Bridge',
     nameCs: 'Hýžďový most (osa)',
     muscle: 'Nohy',
     equipment: Equipment.barbell,
@@ -1330,7 +1342,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'smith_calf_raise',
-    name: 'Smith Calf Raise',
+    name: 'Smith Machine Calf Raise',
     nameCs: 'Výpony (multipress)',
     muscle: 'Nohy',
     equipment: Equipment.smith,
@@ -1344,7 +1356,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'single_leg_calf_raise',
-    name: 'Single Leg Calf Raise',
+    name: 'Single-Leg Calf Raise',
     nameCs: 'Výpony na jedné noze (jednoručky)',
     muscle: 'Nohy',
     equipment: Equipment.dumbbell,
@@ -1366,12 +1378,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'smith_shoulder_press',
-    name: 'Smith Shoulder Press',
+    name: 'Smith Machine Shoulder Press',
     nameCs: 'Tlak na ramena (multipress)',
     muscle: 'Ramena',
     equipment: Equipment.smith,
     pattern: 'push_vertical',
     aliases: [
+      'Smith Shoulder Press',
       'shoulder press',
       'smith machine shoulder press',
       'smith overhead press',
@@ -1398,7 +1411,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'front_raise',
-    name: 'Front Raise',
+    name: 'Dumbbell Front Raise',
     nameCs: 'Předpažování (jednoručky)',
     muscle: 'Ramena',
     equipment: Equipment.dumbbell,
@@ -1547,12 +1560,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'dumbbell_overhead_extension',
-    name: 'Dumbbell Overhead Extension',
+    name: 'Dumbbell Overhead Triceps Extension',
     nameCs: 'Tricepsový tlak za hlavou (jednoručky)',
     muscle: 'Paže',
     equipment: Equipment.dumbbell,
     pattern: 'triceps_ext',
     aliases: [
+      'Dumbbell Overhead Extension',
       'triceps extension',
       'dumbbell overhead triceps extension',
       'dumbbell triceps extension',
@@ -1617,12 +1631,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'farmers_walk',
-    name: 'Farmer’s Walk',
+    name: "Farmer's Walk",
     nameCs: 'Farmářská chůze (jednoručky)',
     muscle: 'Paže',
     equipment: Equipment.dumbbell,
     pattern: 'carry',
     aliases: [
+      'Farmer’s Walk',
       "farmer's walk",
       'farmer walk',
       'farmers walk',
@@ -1690,7 +1705,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'captains_chair',
-    name: 'Captains Chair',
+    name: "Captain's Chair Knee Raise",
     nameCs: 'Zvedání nohou v opoře (stroj)',
     muscle: 'Střed těla',
     type: ExerciseType.bodyweight,
@@ -1721,7 +1736,7 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'russian_twist',
-    name: 'Russian Twist',
+    name: 'Plate Russian Twist',
     nameCs: 'Ruský twist (kotouč)',
     muscle: 'Střed těla',
     equipment: Equipment.plate,
@@ -1860,6 +1875,7 @@ const builtInExercises = <Exercise>[
     equipment: Equipment.dumbbell,
     pattern: 'pull_horizontal',
     aliases: ['incline dumbbell row', 'chest supported db row'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'machine_lat_pulldown',
@@ -1869,6 +1885,7 @@ const builtInExercises = <Exercise>[
     equipment: Equipment.machine,
     pattern: 'pull_vertical',
     aliases: ['lat pulldown machine'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'dumbbell_deadlift',
@@ -1962,12 +1979,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'lying_leg_curl_machine',
-    name: 'Lying Leg Curl Machine',
+    name: 'Lying Leg Curl',
     nameCs: 'Zakopávání vleže na stroji',
     muscle: 'Nohy',
     equipment: Equipment.machine,
     pattern: 'leg_curl',
-    aliases: ['lying leg curl'],
+    aliases: ['Lying Leg Curl Machine', 'lying leg curl'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'hip_extension_machine',
@@ -1980,30 +1998,33 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'adductor_machine',
-    name: 'Adductor Machine',
+    name: 'Hip Adduction Machine',
     nameCs: 'Přitahovače na stroji',
     muscle: 'Nohy',
     equipment: Equipment.machine,
     pattern: 'leg_press',
-    aliases: ['adductor', 'inner thigh machine'],
+    aliases: ['Adductor Machine', 'adductor', 'inner thigh machine'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'abductor_machine',
-    name: 'Abductor Machine',
+    name: 'Hip Abduction Machine',
     nameCs: 'Odtahovače na stroji',
     muscle: 'Nohy',
     equipment: Equipment.machine,
     pattern: 'leg_press',
-    aliases: ['abductor', 'outer thigh machine'],
+    aliases: ['Abductor Machine', 'abductor', 'outer thigh machine'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'leg_press_calf_raise',
-    name: 'Leg Press Calf Raise',
+    name: 'Calf Press',
     nameCs: 'Výpony na leg pressu',
     muscle: 'Nohy',
     equipment: Equipment.machine,
     pattern: 'calf',
-    aliases: ['calf press leg press'],
+    aliases: ['Leg Press Calf Raise', 'calf press leg press'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'split_squat',
@@ -2022,6 +2043,7 @@ const builtInExercises = <Exercise>[
     equipment: Equipment.cable,
     pattern: 'hinge',
     aliases: ['pull through'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'bodyweight_squat',
@@ -2032,6 +2054,7 @@ const builtInExercises = <Exercise>[
     type: ExerciseType.bodyweight,
     pattern: 'squat',
     aliases: ['air squat'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'wall_sit',
@@ -2091,6 +2114,7 @@ const builtInExercises = <Exercise>[
     equipment: Equipment.barbell,
     pattern: 'hinge',
     aliases: ['barbell glute bridge'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'kettlebell_goblet_squat',
@@ -2103,12 +2127,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'smith_machine_squat',
-    name: 'Smith Machine Back Squat',
+    name: 'Smith Machine Squat',
     nameCs: 'Dřep ve Smithově stroji',
     muscle: 'Nohy',
     equipment: Equipment.smith,
     pattern: 'squat',
-    aliases: ['smith squat'],
+    aliases: ['Smith Machine Back Squat', 'smith squat'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'leg_extension_single',
@@ -2121,30 +2146,38 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'seated_calf_raise_machine',
-    name: 'Seated Calf Raise Machine',
+    name: 'Seated Calf Raise',
     nameCs: 'Výpony v sedě na stroji',
     muscle: 'Nohy',
     equipment: Equipment.machine,
     pattern: 'calf',
-    aliases: ['seated calf machine'],
+    aliases: ['Seated Calf Raise Machine', 'seated calf machine'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'seated_dumbbell_press',
-    name: 'Seated Dumbbell Shoulder Press',
+    name: 'Dumbbell Shoulder Press',
     nameCs: 'Tlaky s jednoručkami v sedě',
     muscle: 'Ramena',
     equipment: Equipment.dumbbell,
     pattern: 'push_overhead',
-    aliases: ['seated db shoulder press'],
+    aliases: ['Seated Dumbbell Shoulder Press', 'seated db shoulder press'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'standing_barbell_press',
-    name: 'Standing Barbell Overhead Press',
+    name: 'Overhead Press',
     nameCs: 'Tlaky s osou nad hlavu ve stoje',
     muscle: 'Ramena',
     equipment: Equipment.barbell,
     pattern: 'push_overhead',
-    aliases: ['ohp', 'overhead press', 'military press'],
+    aliases: [
+      'Standing Barbell Overhead Press',
+      'ohp',
+      'overhead press',
+      'military press',
+    ],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'seated_barbell_press',
@@ -2172,6 +2205,7 @@ const builtInExercises = <Exercise>[
     equipment: Equipment.dumbbell,
     pattern: 'raise',
     aliases: ['front raise'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'cable_upright_row',
@@ -2193,12 +2227,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'machine_reverse_fly',
-    name: 'Machine Reverse Fly',
+    name: 'Reverse Pec Deck',
     nameCs: 'Zadní delty na stroji',
     muscle: 'Ramena',
     equipment: Equipment.machine,
     pattern: 'fly',
-    aliases: ['reverse fly machine'],
+    aliases: ['Machine Reverse Fly', 'reverse fly machine'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'rope_face_pull',
@@ -2321,13 +2356,14 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'bench_dip',
-    name: 'Bench Dip',
+    name: 'Bench Dips',
     nameCs: 'Dipy na lavici',
     muscle: 'Paže',
     equipment: Equipment.bodyweight,
     type: ExerciseType.bodyweight,
     pattern: 'push_flat',
-    aliases: ['bench dips'],
+    aliases: ['Bench Dip', 'bench dips'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'dead_bug',
@@ -2371,12 +2407,13 @@ const builtInExercises = <Exercise>[
   ),
   Exercise(
     id: 'farmer_carry',
-    name: 'Farmer Carry',
+    name: "Farmer's Walk",
     nameCs: 'Chůze farmáře',
     muscle: 'Střed těla',
     equipment: Equipment.dumbbell,
     pattern: 'carry',
-    aliases: ['farmers carry', 'farmer walk'],
+    aliases: ['Farmer Carry', 'farmers carry', 'farmer walk'],
+    extra: {'hidden': true},
   ),
   Exercise(
     id: 'suitcase_carry',

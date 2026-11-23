@@ -1,3 +1,4 @@
+import '../../core/i18n.dart';
 import '../../coach/plan_quiz.dart' show TrainingPlace;
 import 'my_gym_page.dart';
 
@@ -436,15 +437,9 @@ class SettingsPage extends StatelessWidget {
             children: [
               GroupedRow(
                 icon: Icons.language_rounded,
-                title: 'Jazyk aplikace',
-                subtitle: 'Názvy cviků zůstávají v angličtině',
-                value:
-                    const {
-                      'cs': 'Čeština',
-                      'en': 'English',
-                      'sk': 'Slovenčina',
-                    }[state.profile.appLanguage] ??
-                    'Čeština',
+                title: tr('Jazyk', 'Language'),
+                subtitle: 'Čeština · English',
+                value: state.profile.appLanguage.native,
                 onTap: () => _pickLanguage(context),
               ),
               if (feedbackContact.isNotEmpty)
@@ -515,11 +510,6 @@ class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _pickLanguage(BuildContext context) async {
-    const options = [
-      ('cs', 'Čeština'),
-      ('en', 'English'),
-      ('sk', 'Slovenčina'),
-    ];
     final current = state.profile.appLanguage;
     await showModalBottomSheet<void>(
       context: context,
@@ -530,15 +520,14 @@ class SettingsPage extends StatelessWidget {
           children: [
             ListTile(
               title: Text(
-                'Jazyk aplikace',
+                tr('Jazyk', 'Language'),
                 style: Theme.of(ctx).textTheme.titleMedium,
               ),
-              subtitle: const Text('Exercise names stay in English'),
             ),
-            for (final opt in options)
+            for (final lang in AppLang.values)
               ListTile(
-                title: Text(opt.$2),
-                trailing: opt.$1 == current
+                title: Text(lang.native),
+                trailing: lang == current
                     ? Icon(
                         Icons.check_rounded,
                         color: Theme.of(ctx).colorScheme.primary,
@@ -546,7 +535,7 @@ class SettingsPage extends StatelessWidget {
                     : null,
                 onTap: () async {
                   Navigator.pop(ctx);
-                  if (opt.$1 != current) await state.setAppLanguage(opt.$1);
+                  if (lang != current) await state.setAppLanguage(lang);
                 },
               ),
             const SizedBox(height: Space.s),

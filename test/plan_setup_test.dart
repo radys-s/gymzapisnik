@@ -75,13 +75,18 @@ void main() {
     await _open(tester, state);
 
     // Bez uvítání: rovnou první otázka, s počtem otázek včetně zaměření.
-    expect(find.text('Co chceš hlavně?'), findsOneWidget);
-    expect(find.bySemanticsLabel('Otázka 1 ze 7'), findsOneWidget);
+    expect(find.text('Jak chceš trénovat?'), findsOneWidget);
+    expect(find.bySemanticsLabel('Otázka 1 z 8'), findsOneWidget);
     expect(find.text('Přeskočit'), findsNothing);
 
+    await _pick(tester, find.text(PlanStyle.oldSchool.label));
     await _pick(tester, find.text(PlanGoal.strength.label));
     await _pick(tester, find.text(Experience.values.first.label));
-    expect(find.text('Kolik času máš?'), findsOneWidget);
+    expect(find.text('Kdy cvičíš?'), findsOneWidget);
+    for (final d in ['Po', 'Čt']) {
+      await tester.tap(find.text(d));
+      await tester.pump();
+    }
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _pick(tester, find.text(TrainingPlace.gym.label));
     await _tapAndSave(tester, find.text('Nic mě nebolí').hitTestable());
@@ -104,8 +109,10 @@ void main() {
 
     // Poslední otázka plán uloží a ukáže, i s cestou k vlastnímu.
     expect(find.text('Plán je hotový'), findsOneWidget);
-    expect(find.text('Složím si vlastní'), findsOneWidget);
+    expect(find.text('Upravím si ho sám'), findsOneWidget);
     expect(state.planAnswers?.goal, PlanGoal.strength);
+    expect(state.planAnswers?.style, PlanStyle.oldSchool);
+    expect(state.profile.splitId, 'basics_5x5');
     expect(state.planAnswers?.focus, {focus});
     expect(state.planAnswers?.favorites, {favorite});
 
@@ -124,6 +131,6 @@ void main() {
     await tester.tap(find.byTooltip('Zpět'));
     await tester.pumpAndSettle();
     expect(find.text('Otevřít'), findsOneWidget);
-    expect(find.text('Co chceš hlavně?'), findsNothing);
+    expect(find.text('Jak chceš trénovat?'), findsNothing);
   });
 }

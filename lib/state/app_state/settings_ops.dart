@@ -46,13 +46,8 @@ extension SettingsOps on AppState {
   );
 
   /// Preferred UI language (cs/en/sk). Exercises remain in English.
-  Future<void> setAppLanguage(String code) => _updateProfile(
-    (p) => p.withExtra({
-      ProfileKey.language: const {'cs', 'en', 'sk'}.contains(code)
-          ? code
-          : 'cs',
-    }),
-  );
+  Future<void> setAppLanguage(AppLang lang) =>
+      _updateProfile((p) => p.withExtra({ProfileKey.language: lang.name}));
 
   Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
       _updateProfile(

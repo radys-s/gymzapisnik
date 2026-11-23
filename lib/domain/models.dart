@@ -64,6 +64,9 @@ class Exercise {
   final String pattern;
   final Map<String, dynamic> extra;
 
+  /// Duplicate kept only for old history; lists and plans skip it.
+  bool get hidden => extra['hidden'] == true;
+
   const Exercise({
     required this.id,
     required this.name,

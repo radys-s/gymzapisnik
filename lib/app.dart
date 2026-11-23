@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'coach/tips.dart';
+import 'core/i18n.dart';
 import 'state/app_state.dart';
 import 'ui/widgets/keyboard_done_bar.dart';
 import 'ui/home/home_page.dart';
@@ -28,10 +29,17 @@ class GymApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: state,
-    builder: (context, _) => appFrame(
-      home: state.profile.ready ? AppShell(state) : OnboardingPage(state),
-      locale: Locale(state.profile.appLanguage),
-    ),
+    builder: (context, _) {
+      final lang = appLang = state.profile.appLanguage;
+      // Texts are picked in build, so a new language rebuilds everything.
+      return appFrame(
+        home: KeyedSubtree(
+          key: ValueKey(lang),
+          child: state.profile.ready ? AppShell(state) : OnboardingPage(state),
+        ),
+        locale: Locale(lang.name),
+      );
+    },
   );
 }
 
@@ -43,7 +51,7 @@ MaterialApp appFrame({required Widget home, Locale locale = _czech}) =>
       theme: buildTheme(),
       themeMode: ThemeMode.dark,
       locale: locale,
-      supportedLocales: const [Locale('cs'), Locale('en'), Locale('sk')],
+      supportedLocales: const [Locale('cs'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (_, child) => KeyboardDoneBar(child: child!),
       home: home,

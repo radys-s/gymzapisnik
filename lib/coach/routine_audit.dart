@@ -101,7 +101,7 @@ String? suggestFor(
   bool Function(Exercise e)? allowed,
 }) {
   String? fallback;
-  for (final e in builtInExercises) {
+  for (final e in catalogExercises) {
     if (taken.contains(e.id)) continue;
     if (allowed != null && !allowed(e)) continue;
     final a = anatomyOf(e.id);

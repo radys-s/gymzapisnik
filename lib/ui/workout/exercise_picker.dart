@@ -166,7 +166,7 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       } else {
         final result = await widget.state.trainer.recognizeMachine(
           jpeg,
-          builtInExercises,
+          catalogExercises,
         );
         if (!mounted || request != scanId) return;
         switch (result) {

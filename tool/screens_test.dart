@@ -155,6 +155,8 @@ void main() {
   _screens('first run', (tester) async {
     final state = await _state(tester);
     await _pump(tester, state);
+    await _shot(tester, 'language');
+    await _tap(tester, find.text('Čeština'));
     await _shot(tester, 'welcome');
     await _tap(tester, find.text('Začít'));
     await _shot(tester, 'consent');
@@ -162,15 +164,21 @@ void main() {
     await _tap(tester, find.text('Je mi 18 let nebo víc'));
     await _shot(tester, 'consent-filled');
     await _save(tester, find.text('Pokračovat'));
+    await _shot(tester, 'path');
+    await _pick(tester, find.text('Vědecký přístup'));
     await _shot(tester, 'goal');
     await _pick(tester, find.text('Svaly'));
     await _shot(tester, 'experience');
     await _pick(tester, find.text('Půl roku'));
-    await _tap(tester, find.text('4×'));
+    await _shot(tester, 'schedule-empty');
+    for (final d in ['Po', 'St', 'Pá']) {
+      await _tap(tester, find.text(d));
+    }
+    await _tap(tester, find.text('60'));
     await _shot(tester, 'schedule');
     await _tap(tester, find.text('Pokračovat'));
     await _shot(tester, 'gym');
-    await _pick(tester, find.text('Velké fitko'));
+    await _pick(tester, find.text('Velké komerční fitko'));
     await _tap(tester, find.text('Kolena'));
     await _shot(tester, 'pain');
     await _save(tester, find.text('Pokračovat'));

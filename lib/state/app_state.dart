@@ -21,6 +21,7 @@ import '../coach/recovery.dart';
 import '../coach/streak.dart';
 import '../coach/tips.dart';
 import '../core/diagnostics.dart';
+import '../core/i18n.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
@@ -224,7 +225,7 @@ class AppState extends ChangeNotifier {
   });
 
   /// Všechny cviky: vlastní + katalog.
-  List<Exercise> get allExercises => [...customExercises, ...builtInExercises];
+  List<Exercise> get allExercises => [...customExercises, ...catalogExercises];
 
   /// Cvik podle ID; neznámé ID (např. smazaný vlastní cvik) dostane
   /// náhradní záznam, aby historie dál fungovala.

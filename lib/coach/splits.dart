@@ -368,7 +368,7 @@ class _FocusPool {
     // Vybrané cviky partie, pak ostatní z katalogu na její hlavy.
     candidates.addAll([
       ...curated.keys,
-      for (final e in builtInExercises)
+      for (final e in catalogExercises)
         if (!curated.containsKey(e.id) &&
             heads.contains(anatomyOf(e.id)?.primary.first))
           e.id,
@@ -571,8 +571,187 @@ final List<SplitTemplate> splitTemplates = [
   ),
 ];
 
+PlannedExercise _x(String id, int sets, int repMin, int repMax) =>
+    PlannedExercise(id, sets: sets, repMin: repMin, repMax: repMax);
+
+/// Plans for the three styles of the plan quiz. Science-based plans pick
+/// exercises that load the muscle in the stretched position (see
+/// `evidence.dart`) and hit every muscle at least twice a week.
+final List<SplitTemplate> styleTemplates = [
+  SplitTemplate(
+    id: 'science_full_body',
+    name: 'Full body (science-based)',
+    description:
+        'Celé tělo 2–3× týdně, cviky s důrazem na protažení svalu, '
+        '1–2 opakování v záloze.',
+    perWeek: 3,
+    days: [
+      SplitDay('Full body A', [
+        _x('squat', 3, 6, 10),
+        _x('incline_dumbbell_press', 3, 8, 12),
+        _x('chest_supported_row', 3, 8, 12),
+        _x('seated_leg_curl', 3, 10, 15),
+        _x('overhead_triceps_extension', 2, 10, 15),
+        _x('cable_lateral_raise', 3, 12, 20),
+      ]),
+      SplitDay('Full body B', [
+        _x('romanian_deadlift', 3, 6, 10),
+        _x('bench_press', 3, 6, 10),
+        _x('lat_pulldown', 3, 8, 12),
+        _x('leg_extension', 3, 10, 15),
+        _x('incline_dumbbell_curl', 2, 10, 15),
+        _x('calf_raise', 3, 10, 15),
+      ]),
+    ],
+  ),
+  SplitTemplate(
+    id: 'science_upper_lower',
+    name: 'Upper / Lower (science-based)',
+    description:
+        'Horní a dolní polovina střídavě, každý sval 2× týdně, cviky '
+        's důrazem na protažení.',
+    perWeek: 4,
+    days: [
+      SplitDay('Upper', [
+        _x('bench_press', 3, 6, 10),
+        _x('chest_supported_row', 3, 8, 12),
+        _x('incline_dumbbell_press', 3, 8, 12),
+        _x('lat_pulldown', 3, 8, 12),
+        _x('cable_lateral_raise', 3, 12, 20),
+        _x('overhead_triceps_extension', 2, 10, 15),
+        _x('bayesian_curl', 2, 10, 15),
+      ]),
+      SplitDay('Lower', [
+        _x('squat', 3, 6, 10),
+        _x('romanian_deadlift', 3, 8, 12),
+        _x('seated_leg_curl', 3, 10, 15),
+        _x('leg_extension', 3, 10, 15),
+        _x('calf_raise', 4, 10, 15),
+      ]),
+    ],
+  ),
+  SplitTemplate(
+    id: 'science_ppl',
+    name: 'Push / Pull / Legs (science-based)',
+    description:
+        'Tlaky, tahy a nohy dokola, 5–6× týdně. Každý sval skoro 2× '
+        'týdně s velkým objemem.',
+    perWeek: 6,
+    days: [
+      SplitDay('Push', [
+        _x('bench_press', 3, 6, 10),
+        _x('incline_dumbbell_press', 3, 8, 12),
+        _x('cable_fly', 2, 10, 15),
+        _x('cable_lateral_raise', 3, 12, 20),
+        _x('overhead_triceps_extension', 3, 10, 15),
+      ]),
+      SplitDay('Pull', [
+        _x('lat_pulldown', 3, 8, 12),
+        _x('chest_supported_row', 3, 8, 12),
+        _x('reverse_pec_deck', 3, 12, 20),
+        _x('bayesian_curl', 3, 10, 15),
+        _x('incline_dumbbell_curl', 2, 10, 15),
+      ]),
+      SplitDay('Legs', [
+        _x('squat', 3, 6, 10),
+        _x('romanian_deadlift', 3, 8, 12),
+        _x('seated_leg_curl', 3, 10, 15),
+        _x('leg_extension', 3, 10, 15),
+        _x('calf_raise', 4, 10, 15),
+      ]),
+    ],
+  ),
+  SplitTemplate(
+    id: 'basics_5x5',
+    name: 'Old school 5×5',
+    description:
+        'Dva tréninky dokola, těžké základy 5 sérií po 5. Když dáš '
+        'všech 5×5, příště přidej váhu.',
+    perWeek: 3,
+    days: [
+      SplitDay('A', [
+        _x('squat', 5, 5, 5),
+        _x('bench_press', 5, 5, 5),
+        _x('barbell_row', 5, 5, 5),
+      ]),
+      SplitDay('B', [
+        _x('squat', 5, 5, 5),
+        _x('overhead_press', 5, 5, 5),
+        _x('deadlift', 1, 5, 5),
+      ]),
+    ],
+  ),
+  SplitTemplate(
+    id: 'strength_sbd',
+    name: 'Strength: squat, bench, deadlift',
+    description:
+        'Tři hlavní cviky v různé intenzitě. Těžké série po 3–5, '
+        'objemové po 6–8, pauzy 3 minuty.',
+    perWeek: 3,
+    days: [
+      SplitDay('Těžký dřep', [
+        _x('squat', 5, 3, 5),
+        _x('bench_press', 4, 6, 8),
+        _x('barbell_row', 3, 6, 8),
+        _x('back_extension', 3, 8, 12),
+      ]),
+      SplitDay('Těžký bench', [
+        _x('bench_press', 5, 3, 5),
+        _x('deadlift', 3, 3, 5),
+        _x('pull_up', 3, 5, 8),
+        _x('overhead_press', 3, 6, 8),
+      ]),
+      SplitDay('Těžký mrtvý tah', [
+        _x('deadlift', 4, 2, 4),
+        _x('squat', 3, 6, 8),
+        _x('close_grip_bench', 3, 6, 8),
+        _x('dumbbell_row', 3, 8, 10),
+      ]),
+    ],
+  ),
+  SplitTemplate(
+    id: 'strength_upper_lower',
+    name: 'Strength: upper / lower',
+    description:
+        'Horní a dolní polovina střídavě, hlavní cvik těžce a doplňky '
+        'na slabá místa.',
+    perWeek: 4,
+    days: [
+      SplitDay('Horní těžce', [
+        _x('bench_press', 5, 3, 5),
+        _x('barbell_row', 4, 5, 8),
+        _x('overhead_press', 3, 5, 8),
+        _x('chin_up', 3, 5, 8),
+      ]),
+      SplitDay('Dolní těžce', [
+        _x('squat', 5, 3, 5),
+        _x('romanian_deadlift', 3, 6, 8),
+        _x('leg_press', 3, 8, 10),
+        _x('hanging_leg_raise', 3, 8, 12),
+      ]),
+      SplitDay('Horní objem', [
+        _x('close_grip_bench', 4, 6, 8),
+        _x('pull_up', 4, 6, 10),
+        _x('dumbbell_shoulder_press', 3, 8, 10),
+        _x('dumbbell_row', 3, 8, 10),
+        _x('triceps_pushdown', 3, 10, 12),
+      ]),
+      SplitDay('Dolní objem', [
+        _x('deadlift', 4, 3, 5),
+        _x('front_squat', 3, 6, 8),
+        _x('leg_curl', 3, 8, 12),
+        _x('back_extension', 3, 8, 12),
+      ]),
+    ],
+  ),
+];
+
 /// Hotová šablona nebo vlastní program podle ID.
 SplitTemplate? findSplit(
   String? id, [
   Iterable<SplitTemplate> custom = const [],
-]) => [...custom, ...splitTemplates].where((t) => t.id == id).firstOrNull;
+]) => [
+  ...custom,
+  ...splitTemplates,
+  ...styleTemplates,
+].where((t) => t.id == id).firstOrNull;
