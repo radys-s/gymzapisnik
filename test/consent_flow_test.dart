@@ -419,7 +419,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('RADA'), findsOneWidget);
-    expect(find.text(trainingTips.first), findsOneWidget);
+    expect(find.text(trainingTips().first), findsOneWidget);
     expect(find.text('Trénink'), findsNothing);
     // Po minimální době aplikace sama naběhne.
     await tester.pump(const Duration(seconds: 2));
@@ -431,7 +431,7 @@ void main() {
       AppLoader(
         open: () async => state,
         minShow: const Duration(seconds: 30),
-        tipSeed: trainingTips.length,
+        tipSeed: trainingTips().length,
       ),
     );
     await tester.pump(const Duration(milliseconds: 300));

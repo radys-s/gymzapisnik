@@ -25,20 +25,20 @@ WorkoutExercise _ex(String id, int done, {int warmup = 0, int open = 0}) =>
 void main() {
   test('tips cycle through advice and motivation', () {
     expect(tipAt(0).kind, 'Rada');
-    expect(tipAt(0).text, trainingTips.first);
-    expect(tipAt(trainingTips.length).kind, 'Motivace');
-    final total = trainingTips.length + motivationLines.length;
+    expect(tipAt(0).text, trainingTips().first);
+    expect(tipAt(trainingTips().length).kind, 'Motivace');
+    final total = trainingTips().length + motivationLines().length;
     expect(tipAt(total).text, tipAt(0).text);
     expect(tipAt(-1).text, isNotEmpty);
     // Dávkování bílkovin jen pro dospělé.
-    final all = trainingTips.length + motivationLines.length;
+    final all = trainingTips().length + motivationLines().length;
     final minor = {for (var i = 0; i < all; i++) tipAt(i).text};
-    expect(minor.intersection(adultTips.toSet()), isEmpty);
+    expect(minor.intersection(adultTips().toSet()), isEmpty);
     final adult = {
-      for (var i = 0; i < all + adultTips.length; i++)
+      for (var i = 0; i < all + adultTips().length; i++)
         tipAt(i, adult: true).text,
     };
-    expect(adult, containsAll(adultTips));
+    expect(adult, containsAll(adultTips()));
   });
 
   test('weekly hard sets count working sets per group, last 7 days', () {
