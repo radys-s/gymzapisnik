@@ -13,13 +13,30 @@ import 'tips.dart';
 export 'plan_prefs.dart';
 
 enum PlanGoal {
-  muscle('Svaly', 'Víc svalů a lepší postava'),
-  strength('Síla', 'Zvednout víc v hlavních cvicích'),
-  fitness('Kondice', 'Cítit se líp a mít víc energie');
+  muscle,
+  strength,
+  fitness;
 
-  final String label;
-  final String hint;
-  const PlanGoal(this.label, this.hint);
+  String get label => switch (this) {
+    muscle => tr('Svaly', 'Muscle'),
+    strength => tr('Síla', 'Strength'),
+    fitness => tr('Kondice', 'Fitness'),
+  };
+
+  String get hint => switch (this) {
+    muscle => tr(
+      'Víc svalů a lepší postava',
+      'More muscle and a better physique',
+    ),
+    strength => tr(
+      'Zvednout víc v hlavních cvicích',
+      'Lift more on the main lifts',
+    ),
+    fitness => tr(
+      'Cítit se líp a mít víc energie',
+      'Feel better and have more energy',
+    ),
+  };
 
   static PlanGoal parse(Object? v) =>
       values.where((g) => g.name == v).firstOrNull ?? muscle;
@@ -60,12 +77,21 @@ enum PlanStyle {
 }
 
 enum PlanLevel {
-  beginner('Začínám', 'Do roka pravidelného cvičení'),
-  advanced('Pokročilý', 'Cvičím déle než rok');
+  beginner,
+  advanced;
 
-  final String label;
-  final String hint;
-  const PlanLevel(this.label, this.hint);
+  String get label => switch (this) {
+    beginner => tr('Začínám', 'Beginner'),
+    advanced => tr('Pokročilý', 'Advanced'),
+  };
+
+  String get hint => switch (this) {
+    beginner => tr(
+      'Do roka pravidelného cvičení',
+      'Under a year of regular training',
+    ),
+    advanced => tr('Cvičím déle než rok', 'Training for more than a year'),
+  };
 
   static PlanLevel parse(Object? v) =>
       values.where((l) => l.name == v).firstOrNull ?? beginner;

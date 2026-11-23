@@ -230,7 +230,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final raw = _kg.text.trim().replaceAll(',', '.');
     final kg = raw.isEmpty ? null : double.tryParse(raw);
     if (raw.isNotEmpty && (kg == null || !validBodyWeight(kg))) {
-      showToast(context, 'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.');
+      showToast(
+        context,
+        tr(
+          'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.',
+          'Enter weight in kg, e.g. 72.5. Or leave it empty.',
+        ),
+      );
       return false;
     }
     setState(() => busy = true);
@@ -251,7 +257,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
       return true;
     } catch (_) {
       if (mounted) {
-        showToast(context, 'Plán se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Plán se nepodařilo uložit. Zkus to znovu.',
+            'The plan could not be saved. Try again.',
+          ),
+        );
       }
       return false;
     } finally {
@@ -309,7 +321,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       } catch (_) {
         if (!mounted) return;
         setState(() => busy = false);
-        showToast(context, 'Uložení se nezdařilo. Zkus to znovu.');
+        showToast(
+          context,
+          tr('Uložení se nezdařilo. Zkus to znovu.', 'Save failed. Try again.'),
+        );
       }
       return;
     }
@@ -321,7 +336,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ..showSnackBar(
         SnackBar(
           content: Text(
-            name == null ? 'Plán je uložený.' : 'Program $name je nastavený.',
+            name == null
+                ? tr('Plán je uložený.', 'Plan is saved.')
+                : tr('Program $name je nastavený.', 'Program $name is set.'),
           ),
         ),
       );
@@ -332,7 +349,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final next = {...days};
     if (!next.remove(d)) {
       if (next.length >= 6) {
-        showToast(context, 'Aspoň jeden den v týdnu nech na odpočinek.');
+        showToast(
+          context,
+          tr(
+            'Aspoň jeden den v týdnu nech na odpočinek.',
+            'Leave at least one rest day in the week.',
+          ),
+        );
         return;
       }
       next.add(d);
@@ -447,11 +470,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
       if (!ok && mounted) {
         showToast(
           context,
-          'Bez povolení oznámení připomínky nepřijdou. Zapneš je v Nastavení.',
+          tr(
+            'Bez povolení oznámení připomínky nepřijdou. Zapneš je v Nastavení.',
+            'Without notification permission, reminders will not arrive. You can enable them in Settings.',
+          ),
         );
       }
     } catch (_) {
-      if (mounted) showToast(context, 'Připomínku se nepodařilo nastavit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr(
+            'Připomínku se nepodařilo nastavit.',
+            'Could not set the reminder.',
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => busy = false);
@@ -514,7 +548,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           const Center(child: AppMark(size: 96)),
           const SizedBox(height: Space.l),
           Text(
-            'Gym zápisník',
+            tr('Gym zápisník', 'Gym Log'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
@@ -533,7 +567,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               leading: _LangBadge(lang),
               label: lang.native,
               hint: lang == AppLang.cs
-                  ? 'Aplikace bude česky'
+                  ? tr('Aplikace bude česky', 'The app will be in Czech')
                   : 'The app will be in English',
               selected: false,
               onTap: () => _pickLanguage(lang),
@@ -846,7 +880,7 @@ class _Focus extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Partie', style: text.titleMedium),
+        Text(tr('Partie', 'Muscle groups'), style: text.titleMedium),
         const SizedBox(height: Space.s),
         chips([
           for (final f in focusChoices)
@@ -858,7 +892,10 @@ class _Focus extends StatelessWidget {
             ),
         ]),
         const SizedBox(height: Space.xl),
-        Text('Oblíbené cviky', style: text.titleMedium),
+        Text(
+          tr('Oblíbené cviky', 'Favorite exercises'),
+          style: text.titleMedium,
+        ),
         const SizedBox(height: Space.s),
         chips([
           for (final id in favoriteChoices)

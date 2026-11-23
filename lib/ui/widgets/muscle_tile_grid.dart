@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../coach/splits.dart';
+import '../../core/i18n.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../home/body_map.dart';
+
+String _focusName(String id, String fallback) => switch (id) {
+  'chest' => tr('Hrudník', 'Chest'),
+  'back' => tr('Záda', 'Back'),
+  'legs' => tr('Nohy', 'Legs'),
+  'glutes' => tr('Hýždě', 'Glutes'),
+  'shoulders' => tr('Ramena', 'Shoulders'),
+  'biceps' => tr('Biceps', 'Biceps'),
+  'triceps' => tr('Triceps', 'Triceps'),
+  'calves' => tr('Lýtka', 'Calves'),
+  'core' => tr('Břicho', 'Abs'),
+  _ => fallback,
+};
 
 /// Výběr partií jako mřížka 3 × 3 stejně velkých dlaždic s výřezem
 /// postavy. Výběr mění jen barvy uvnitř dlaždice, nikdy její velikost,
@@ -40,7 +54,7 @@ class MuscleTileGrid extends StatelessWidget {
               child: _Tile(
                 key: ValueKey('muscle-${f.id}'),
                 id: f.id,
-                name: f.name,
+                name: _focusName(f.id, f.name),
                 caption: caption?.call(f.id),
                 selected: selected.contains(f.id),
                 onTap: () => onToggle(f.id),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -36,31 +37,31 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
       final active = state.active;
       final today = state.todaySplitDay;
       return LargeTitlePage(
-        title: 'Trénink',
+        title: tr('Trénink', 'Training'),
         children: [
           if (active != null)
             PrimaryButton(
-              'Pokračovat: ${active.name}',
+              tr('Pokračovat: ${active.name}', 'Continue: ${active.name}'),
               icon: Icons.play_arrow_rounded,
               busy: starting,
               onPressed: () => runWorkout(() async {}),
             )
           else
             PrimaryButton(
-              'Začít prázdný trénink',
+              tr('Začít prázdný trénink', 'Start empty workout'),
               icon: Icons.add_rounded,
               busy: starting,
               onPressed: () => runWorkout(state.startWorkout),
             ),
           const SizedBox(height: Space.s),
           SecondaryButton(
-            'Sestavit podle partií',
+            tr('Sestavit podle partií', 'Build by muscle groups'),
             icon: Icons.tune_rounded,
             onPressed: active == null ? buildWorkout : null,
           ),
           SectionHeader(
-            'Moje rutiny',
-            action: split == null ? null : 'Upravit',
+            tr('Moje rutiny', 'My routines'),
+            action: split == null ? null : tr('Upravit', 'Edit'),
             onAction: split == null ? null : () => _push(ProgramPage(state)),
           ),
           if (split == null)
@@ -69,8 +70,11 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
                 GroupedRow(
                   icon: Icons.auto_awesome_rounded,
                   iconColor: p.accent,
-                  title: 'Sestavit plán na míru',
-                  subtitle: 'Pár otázek a rutiny jsou hotové',
+                  title: tr('Sestavit plán na míru', 'Build a tailored plan'),
+                  subtitle: tr(
+                    'Pár otázek a rutiny jsou hotové',
+                    'A few questions and your routines are ready',
+                  ),
                   onTap: () => _push(PlanSetupPage(state)),
                 ),
               ],
@@ -88,26 +92,31 @@ class _TrainingPageState extends State<TrainingPage> with WorkoutLauncher {
                       : null,
                 ),
               ),
-          const SectionHeader('Prozkoumat'),
+          SectionHeader(tr('Prozkoumat', 'Explore')),
           GroupedSection(
             dividerIndent: 58,
             children: [
               GroupedRow(
                 icon: Icons.view_list_rounded,
-                title: 'Hotové programy',
-                subtitle: split == null ? null : 'Teď: ${split.name}',
+                title: tr('Hotové programy', 'Ready-made programs'),
+                subtitle: split == null
+                    ? null
+                    : tr('Teď: ${split.name}', 'Now: ${split.name}'),
                 onTap: () => _push(ProgramPage(state)),
               ),
               GroupedRow(
                 icon: Icons.quiz_outlined,
-                title: 'Plán podle dotazníku',
-                subtitle: 'Cíl, čas a vybavení',
+                title: tr('Plán podle dotazníku', 'Plan from quiz'),
+                subtitle: tr(
+                  'Cíl, čas a vybavení',
+                  'Goal, time, and equipment',
+                ),
                 onTap: () => _push(PlanSetupPage(state)),
               ),
             ],
           ),
           if (state.workouts.isNotEmpty && active == null) ...[
-            const SectionHeader('Regenerace svalů'),
+            SectionHeader(tr('Regenerace svalů', 'Muscle recovery')),
             RecoveryPanel(
               state: state,
               now: widget.now(),
@@ -144,7 +153,12 @@ class _RoutineCard extends StatelessWidget {
     ];
     final preview =
         names.take(3).join(', ') +
-        (names.length > 3 ? ' a další ${names.length - 3}' : '');
+        (names.length > 3
+            ? tr(
+                ' a další ${names.length - 3}',
+                ' and ${names.length - 3} more',
+              )
+            : '');
     final minutes = workoutMinutes(day.exercises.fold(0, (n, e) => n + e.sets));
     return Panel(
       onTap: onStart,
@@ -173,7 +187,7 @@ class _RoutineCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'DNES',
+                    tr('DNES', 'TODAY'),
                     style: text.labelSmall?.copyWith(color: p.accent),
                   ),
                 ),
@@ -207,7 +221,7 @@ class _RoutineCard extends StatelessWidget {
               textStyle: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             icon: const Icon(Icons.play_arrow_rounded, size: 20),
-            label: Text('Začít ${day.name}'),
+            label: Text(tr('Začít ${day.name}', 'Start ${day.name}')),
           ),
         ],
       ),

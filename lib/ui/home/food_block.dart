@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -30,10 +31,10 @@ class HomeFoodBlock extends StatelessWidget {
           : (value / target).clamp(0.0, 1.0);
       final left = target == null ? null : (target - value).round();
       final leftText = left == null
-          ? 'bez cíle'
+          ? tr('bez cíle', 'no target')
           : left > 0
-          ? 'zbývá $left $unit'
-          : 'cíl splněn';
+          ? tr('zbývá $left $unit', '$left $unit left')
+          : tr('cíl splněn', 'goal reached');
       return Expanded(
         child: Semantics(
           label:
@@ -108,9 +109,14 @@ class HomeFoodBlock extends StatelessWidget {
             children: [
               Icon(Icons.restaurant_rounded, size: 20, color: p.accent),
               const SizedBox(width: Space.s),
-              Expanded(child: Text('Jídlo dnes', style: text.titleMedium)),
+              Expanded(
+                child: Text(
+                  tr('Jídlo dnes', 'Food today'),
+                  style: text.titleMedium,
+                ),
+              ),
               IconButton(
-                tooltip: 'Čárový kód',
+                tooltip: tr('Čárový kód', 'Barcode'),
                 color: p.secondaryLabel,
                 icon: const Icon(Icons.qr_code_scanner_rounded),
                 onPressed: () => barcodeFlow(context, state, key),
@@ -121,7 +127,7 @@ class HomeFoodBlock extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => NutritionPage(state)),
                 ),
                 icon: const Icon(Icons.add_rounded, size: 20),
-                label: const Text('Přidat'),
+                label: Text(tr('Přidat', 'Add')),
               ),
             ],
           ),
@@ -130,16 +136,26 @@ class HomeFoodBlock extends StatelessWidget {
             padding: const EdgeInsets.only(right: Space.s),
             child: Row(
               children: [
-                stat('Kalorie', totals.kcal, kcalTarget, 'kcal'),
+                stat(
+                  tr('Kalorie', 'Calories'),
+                  totals.kcal,
+                  kcalTarget,
+                  'kcal',
+                ),
                 const SizedBox(width: Space.xl),
-                stat('Bílkoviny', totals.protein, proteinTarget, 'g'),
+                stat(
+                  tr('Bílkoviny', 'Protein'),
+                  totals.protein,
+                  proteinTarget,
+                  'g',
+                ),
               ],
             ),
           ),
           if (quick.isNotEmpty) ...[
             const SizedBox(height: Space.m),
             Text(
-              'Rychlé přidání',
+              tr('Rychlé přidání', 'Quick add'),
               style: text.labelLarge?.copyWith(color: p.secondaryLabel),
             ),
             const SizedBox(height: Space.s),
@@ -154,7 +170,10 @@ class HomeFoodBlock extends StatelessWidget {
                       constraints: const BoxConstraints(maxWidth: 160),
                       child: Text(f.name, overflow: TextOverflow.ellipsis),
                     ),
-                    tooltip: 'Přidat znovu: ${f.name}, ${amountLabel(f)}',
+                    tooltip: tr(
+                      'Přidat znovu: ${f.name}, ${amountLabel(f)}',
+                      'Add again: ${f.name}, ${amountLabel(f)}',
+                    ),
                     onPressed: () => quickAddFood(context, state, f, key),
                   ),
               ],

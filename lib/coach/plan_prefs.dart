@@ -3,6 +3,7 @@
 /// Čistý Dart bez Flutteru.
 library;
 
+import '../core/i18n.dart';
 import '../domain/anatomy.dart';
 import '../domain/catalog.dart';
 import '../domain/models.dart';
@@ -12,19 +13,52 @@ import 'tips.dart';
 /// Jak dlouho už pravidelně cvičí. Rozlišuje víc než jen začátečník
 /// a pokročilý: první měsíce rostou váhy rychle, po letech pomalu.
 enum Experience {
-  fresh('Teprve začínám', 'Necvičím, nebo jen pár týdnů', 0),
-  quarter('Čtvrt roku', 'Cviky znám, technika se usazuje', 3),
-  half('Půl roku', 'Cvičím pravidelně, váhy pořád rostou', 6),
-  year('Rok', 'Mám své váhy, zlepšuju se pomaleji', 12),
-  two('Dva roky', 'Vím, co mi sedí, pokrok je pomalý', 24),
-  more('Víc než dva roky', 'Zkušený, hledám další posun', 36);
-
-  final String label;
-  final String hint;
+  fresh(0),
+  quarter(3),
+  half(6),
+  year(12),
+  two(24),
+  more(36);
 
   /// Přibližná délka cvičení v měsících.
   final int months;
-  const Experience(this.label, this.hint, this.months);
+  const Experience(this.months);
+
+  String get label => switch (this) {
+    fresh => tr('Teprve začínám', 'Just starting'),
+    quarter => tr('Čtvrt roku', '3 months'),
+    half => tr('Půl roku', '6 months'),
+    year => tr('Rok', '1 year'),
+    two => tr('Dva roky', '2 years'),
+    more => tr('Víc než dva roky', 'More than 2 years'),
+  };
+
+  String get hint => switch (this) {
+    fresh => tr(
+      'Necvičím, nebo jen pár týdnů',
+      'Not training, or just a few weeks',
+    ),
+    quarter => tr(
+      'Cviky znám, technika se usazuje',
+      'Know the exercises, dialing in form',
+    ),
+    half => tr(
+      'Cvičím pravidelně, váhy pořád rostou',
+      'Training regularly, weights still going up',
+    ),
+    year => tr(
+      'Mám své váhy, zlepšuju se pomaleji',
+      'Have my numbers, progress is slower',
+    ),
+    two => tr(
+      'Vím, co mi sedí, pokrok je pomalý',
+      'Know what works, progress is slow',
+    ),
+    more => tr(
+      'Zkušený, hledám další posun',
+      'Experienced, looking for the next step',
+    ),
+  };
 
   static Experience? tryParse(Object? v) =>
       values.where((e) => e.name == v).firstOrNull;
@@ -32,20 +66,36 @@ enum Experience {
 
 /// Kde cvičí: určuje, jaké vybavení plán smí použít.
 enum TrainingPlace {
-  gym(
-    'Velké komerční fitko',
-    'Suncity, Okragon, Extrifit, Form Factory — většina strojů i volných vah',
-  ),
-  smallGym(
-    'Menší / hotelové fitko',
-    'Osa, jednoručky, kladky a základní stroje',
-  ),
-  home('Doma s činkami', 'Jednoručky, kettlebell, gumy a lavička'),
-  bodyweight('Jen vlastní váha', 'Bez vybavení, nanejvýš guma');
+  gym,
+  smallGym,
+  home,
+  bodyweight;
 
-  final String label;
-  final String hint;
-  const TrainingPlace(this.label, this.hint);
+  String get label => switch (this) {
+    gym => tr('Velké komerční fitko', 'Big commercial gym'),
+    smallGym => tr('Menší / hotelové fitko', 'Small / hotel gym'),
+    home => tr('Doma s činkami', 'Home with weights'),
+    bodyweight => tr('Jen vlastní váha', 'Bodyweight only'),
+  };
+
+  String get hint => switch (this) {
+    gym => tr(
+      'Suncity, Okragon, Extrifit, Form Factory — většina strojů i volných vah',
+      'Most machines and free weights',
+    ),
+    smallGym => tr(
+      'Osa, jednoručky, kladky a základní stroje',
+      'Barbell, dumbbells, cables, and basic machines',
+    ),
+    home => tr(
+      'Jednoručky, kettlebell, gumy a lavička',
+      'Dumbbells, kettlebell, bands, and a bench',
+    ),
+    bodyweight => tr(
+      'Bez vybavení, nanejvýš guma',
+      'No equipment, maybe a band',
+    ),
+  };
 
   static TrainingPlace parse(Object? v) =>
       values.where((p) => p.name == v).firstOrNull ?? gym;
@@ -72,21 +122,19 @@ enum TrainingPlace {
 
 /// Kloub, který bolí nebo se má šetřit.
 enum Joint {
-  knees('Kolena', {'squat', 'sumo_squat', 'lunge', 'step_up', 'leg_ext'}),
-  lowerBack('Spodní záda', {
-    'hinge',
-    'good_morning',
-    'row_bent',
-    'swing',
-    'back_ext',
-  }),
-  shoulders('Ramena', {'push_vertical', 'dip', 'bench_dip', 'upright_row'});
-
-  final String label;
+  knees({'squat', 'sumo_squat', 'lunge', 'step_up', 'leg_ext'}),
+  lowerBack({'hinge', 'good_morning', 'row_bent', 'swing', 'back_ext'}),
+  shoulders({'push_vertical', 'dip', 'bench_dip', 'upright_row'});
 
   /// Pohybové vzory, které kloub nejvíc zatěžují.
   final Set<String> patterns;
-  const Joint(this.label, this.patterns);
+  const Joint(this.patterns);
+
+  String get label => switch (this) {
+    knees => tr('Kolena', 'Knees'),
+    lowerBack => tr('Spodní záda', 'Lower back'),
+    shoulders => tr('Ramena', 'Shoulders'),
+  };
 
   static Set<Joint> parseAll(Object? v) => {
     if (v is List)
@@ -103,11 +151,13 @@ enum Joint {
 
 /// Pohlaví pro odhad energie; nepovinné.
 enum Sex {
-  male('Muž'),
-  female('Žena');
+  male,
+  female;
 
-  final String label;
-  const Sex(this.label);
+  String get label => switch (this) {
+    male => tr('Muž', 'Male'),
+    female => tr('Žena', 'Female'),
+  };
 
   static Sex? tryParse(Object? v) =>
       values.where((s) => s.name == v).firstOrNull;
@@ -115,15 +165,19 @@ enum Sex {
 
 /// Co chce dělat s tělesnou váhou; mění kalorický cíl.
 enum WeightGoal {
-  lose('Shodit', -400),
-  keep('Udržet', 0),
-  gain('Nabrat', 250);
-
-  final String label;
+  lose(-400),
+  keep(0),
+  gain(250);
 
   /// Kolik kcal denně přidat k udržovacímu příjmu.
   final int kcal;
-  const WeightGoal(this.label, this.kcal);
+  const WeightGoal(this.kcal);
+
+  String get label => switch (this) {
+    lose => tr('Shodit', 'Lose'),
+    keep => tr('Udržet', 'Maintain'),
+    gain => tr('Nabrat', 'Gain'),
+  };
 
   static WeightGoal? tryParse(Object? v) =>
       values.where((g) => g.name == v).firstOrNull;

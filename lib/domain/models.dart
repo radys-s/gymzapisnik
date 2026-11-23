@@ -4,6 +4,8 @@
 /// uložení zachovají (data z novější verze aplikace se neztratí).
 library;
 
+import '../core/i18n.dart';
+
 enum ExerciseType {
   /// Váha × opakování.
   weighted,
@@ -17,19 +19,29 @@ enum ExerciseType {
 
 /// Vybavení cviku. Název v katalogu ho nese v závorce: „Dřep (osa)“.
 enum Equipment {
-  barbell('osa'),
-  dumbbell('jednoručky'),
-  machine('stroj'),
-  cable('kladka'),
-  smith('multipress'),
-  bodyweight('vlastní váha'),
-  kettlebell('kettlebell'),
-  band('guma'),
-  plate('kotouč'),
-  other('jiné');
+  barbell,
+  dumbbell,
+  machine,
+  cable,
+  smith,
+  bodyweight,
+  kettlebell,
+  band,
+  plate,
+  other;
 
-  final String label;
-  const Equipment(this.label);
+  String get label => switch (this) {
+    barbell => tr('osa', 'barbell'),
+    dumbbell => tr('jednoručky', 'dumbbells'),
+    machine => tr('stroj', 'machine'),
+    cable => tr('kladka', 'cable'),
+    smith => tr('multipress', 'Smith machine'),
+    bodyweight => tr('vlastní váha', 'bodyweight'),
+    kettlebell => tr('kettlebell', 'kettlebell'),
+    band => tr('guma', 'band'),
+    plate => tr('kotouč', 'plate'),
+    other => tr('jiné', 'other'),
+  };
 
   static Equipment parse(Object? value) =>
       values.firstWhere((e) => e.name == value, orElse: () => other);
@@ -124,14 +136,19 @@ class Exercise {
 
 /// Druh pracovní série. Rozcvička má vlastní příznak [SetEntry.warmup].
 enum SetKind {
-  normal('', 'Pracovní série'),
-  drop('D', 'Drop série'),
-  failure('S', 'Do selhání');
+  normal(''),
+  drop('D'),
+  failure('S');
 
   /// Písmeno na odznaku místo čísla série.
   final String badge;
-  final String label;
-  const SetKind(this.badge, this.label);
+  const SetKind(this.badge);
+
+  String get label => switch (this) {
+    normal => tr('Pracovní série', 'Working set'),
+    drop => tr('Drop série', 'Drop set'),
+    failure => tr('Do selhání', 'To failure'),
+  };
 
   static SetKind parse(Object? v) =>
       values.where((k) => k.name == v).firstOrNull ?? normal;

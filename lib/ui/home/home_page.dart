@@ -6,6 +6,7 @@ import '../../coach/missions.dart';
 import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
@@ -81,15 +82,21 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           'application/json',
         );
       } catch (_) {
-        message = 'Zálohu se nepodařilo uložit. Zkus to znovu.';
+        message = tr(
+          'Zálohu se nepodařilo uložit. Zkus to znovu.',
+          'Could not save backup. Try again.',
+        );
         return;
       }
       if (!saved) return;
-      message = 'Uloženo: $name';
+      message = tr('Uloženo: $name', 'Saved: $name');
       try {
         await state.markBackedUp();
       } catch (_) {
-        message = 'Soubor $name je uložený, připomínka ale zůstane.';
+        message = tr(
+          'Soubor $name je uložený, připomínka ale zůstane.',
+          'File $name is saved, but the reminder will remain.',
+        );
       }
     } finally {
       if (mounted) setState(() => _savingBackup = false);
@@ -112,7 +119,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
         title: greeting(now),
         actions: [
           IconButton(
-            tooltip: 'Trenér',
+            tooltip: tr('Trenér', 'Coach'),
             icon: const Icon(Icons.forum_outlined),
             onPressed: () => _push(_trainer()),
           ),
@@ -136,12 +143,16 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Ulož si zálohu',
+                            tr('Ulož si zálohu', 'Save a backup'),
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Text(
-                            'Data jsou jen v tomto zařízení. Jedno klepnutí '
-                            'uloží všechno do souboru.',
+                            tr(
+                              'Data jsou jen v tomto zařízení. Jedno klepnutí '
+                                  'uloží všechno do souboru.',
+                              'Data is only on this device. One tap saves '
+                                  'everything to a file.',
+                            ),
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: context.palette.secondaryLabel,
@@ -190,8 +201,8 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           const SizedBox(height: Space.m),
           if (recent.isNotEmpty) ...[
             SectionHeader(
-              'Historie',
-              action: 'Vše',
+              tr('Historie', 'History'),
+              action: tr('Vše', 'All'),
               onAction: () => _push(HistoryPage(state)),
             ),
             GroupedSection(
@@ -261,13 +272,16 @@ class _TodayCard extends StatelessWidget {
           padding: EdgeInsets.only(bottom: Space.xs),
           child: Align(alignment: Alignment.centerLeft, child: LiveTag()),
         ),
-        _Eyebrow('Rozepsaný trénink', color: p.accent),
+        _Eyebrow(
+          tr('Rozepsaný trénink', 'Workout in progress'),
+          color: p.accent,
+        ),
         Text(active.name, style: text.headlineSmall),
         const SizedBox(height: 2),
         _Elapsed(start: active.startedAt, sets: sets),
         const SizedBox(height: Space.l),
         PrimaryButton(
-          'Pokračovat v tréninku',
+          tr('Pokračovat v tréninku', 'Continue workout'),
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() async {}),
@@ -289,11 +303,14 @@ class _TodayCard extends StatelessWidget {
           : null;
       final String when;
       if (!nextUp) {
-        when = 'Dnes';
+        when = tr('Dnes', 'Today');
       } else if (next == null) {
-        when = 'Příště';
+        when = tr('Příště', 'Next');
       } else {
-        when = 'Příště · ${weekdayLong[next - 1]}';
+        when = tr(
+          'Příště · ${weekdayLong[next - 1]}',
+          'Next · ${weekdayLong[next - 1]}',
+        );
       }
       final scope =
           '${exercisesLabel(plan.length)} · '
@@ -307,22 +324,29 @@ class _TodayCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Eyebrow(
-                    '$when · ${split.name} · den '
-                    '${dayIndex % split.days.length + 1}/${split.days.length}',
+                    tr(
+                      '$when · ${split.name} · den '
+                          '${dayIndex % split.days.length + 1}/${split.days.length}',
+                      '$when · ${split.name} · day '
+                          '${dayIndex % split.days.length + 1}/${split.days.length}',
+                    ),
                   ),
                   Text(day.name, style: text.headlineMedium),
                 ],
               ),
             ),
             PopupMenuButton<int>(
-              tooltip: 'Jiný den nebo program',
+              tooltip: tr('Jiný den nebo program', 'Another day or program'),
               icon: Icon(Icons.more_horiz, color: p.secondaryLabel),
               onSelected: (i) => i < 0 ? onProgram() : onPickDay(i),
               itemBuilder: (_) => [
                 for (var i = 0; i < split.days.length; i++)
                   PopupMenuItem(value: i, child: Text(split.days[i].name)),
                 const PopupMenuDivider(),
-                const PopupMenuItem(value: -1, child: Text('Změnit program')),
+                PopupMenuItem(
+                  value: -1,
+                  child: Text(tr('Změnit program', 'Change program')),
+                ),
               ],
             ),
           ],
@@ -363,7 +387,10 @@ class _TodayCard extends StatelessWidget {
             ),
           ),
         if (plan.length > 5)
-          Text('a další ${plan.length - 5}', style: text.bodySmall),
+          Text(
+            tr('a další ${plan.length - 5}', 'and ${plan.length - 5} more'),
+            style: text.bodySmall,
+          ),
         const SizedBox(height: Space.s),
         // Rozsah tréninku a vedlejší volba na jednom řádku.
         Row(
@@ -384,13 +411,15 @@ class _TodayCard extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 textStyle: text.titleSmall,
               ),
-              child: const Text('Jiný trénink'),
+              child: Text(tr('Jiný trénink', 'Another workout')),
             ),
           ],
         ),
         const SizedBox(height: Space.xs),
         PrimaryButton(
-          nextUp ? 'Bonusový trénink' : 'Začít ${day.name}',
+          nextUp
+              ? tr('Bonusový trénink', 'Bonus workout')
+              : tr('Začít ${day.name}', 'Start ${day.name}'),
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
@@ -402,19 +431,26 @@ class _TodayCard extends StatelessWidget {
       final r = recommendPlan(answers ?? const PlanAnswers());
       final pick = findSplit(r.splitId);
       children.addAll([
-        _Eyebrow('Vyber si plán', color: p.accent),
-        Text(pick?.name ?? 'Program', style: text.headlineSmall),
+        _Eyebrow(tr('Vyber si plán', 'Pick a plan'), color: p.accent),
+        Text(pick?.name ?? tr('Program', 'Program'), style: text.headlineSmall),
         const SizedBox(height: 2),
         Text(
           answers == null
-              ? 'Program ti řekne, co který den cvičit, a hlídá postup '
-                    'vah. Odpověz na čtyři otázky, nebo začni tímhle.'
+              ? tr(
+                  'Program ti řekne, co který den cvičit, a hlídá postup '
+                      'vah. Odpověz na čtyři otázky, nebo začni tímhle.',
+                  'A program tells you what to train each day and tracks '
+                      'weight progression. Answer four questions, or start with this one.',
+                )
               : r.why,
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
         ),
         const SizedBox(height: Space.l),
         PrimaryButton(
-          'Použít ${pick?.name ?? 'program'}',
+          tr(
+            'Použít ${pick?.name ?? 'program'}',
+            'Use ${pick?.name ?? 'program'}',
+          ),
           icon: Icons.check_rounded,
           busy: busy,
           onPressed: () => onUsePlan(answers),
@@ -426,12 +462,14 @@ class _TodayCard extends StatelessWidget {
             TextButton(
               onPressed: busy ? null : onQuiz,
               child: Text(
-                answers == null ? 'Vybrat podle sebe' : 'Změnit odpovědi',
+                answers == null
+                    ? tr('Vybrat podle sebe', 'Pick for myself')
+                    : tr('Změnit odpovědi', 'Change answers'),
               ),
             ),
             TextButton(
               onPressed: busy ? null : () => onStart(state.startWorkout),
-              child: const Text('Volný trénink'),
+              child: Text(tr('Volný trénink', 'Free workout')),
             ),
           ],
         ),
@@ -578,8 +616,12 @@ class _ElapsedState extends State<_Elapsed> {
 
   @override
   Widget build(BuildContext context) => Text(
-    'Běží ${durationLabel(DateTime.now().difference(widget.start))} · '
-    '${setsLabel(widget.sets)} hotovo',
+    tr(
+      'Běží ${durationLabel(DateTime.now().difference(widget.start))} · '
+          '${setsLabel(widget.sets)} hotovo',
+      'Running ${durationLabel(DateTime.now().difference(widget.start))} · '
+          '${setsLabel(widget.sets)} done',
+    ),
     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
       color: context.palette.secondaryLabel,
       fontFeatures: tabular,
@@ -623,20 +665,26 @@ class _WeekStrip extends StatelessWidget {
     };
     final planned = state.profile.trainingDays ?? const <int>[];
     final streak = state.streak(now);
-    const letters = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    final letters = weekdayShort;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
             Text(
-              'TENTO TÝDEN · ${trained.length}/${state.weekGoal}',
+              tr(
+                'TENTO TÝDEN · ${trained.length}/${state.weekGoal}',
+                'THIS WEEK · ${trained.length}/${state.weekGoal}',
+              ),
               style: text.labelSmall,
             ),
             const Spacer(),
             if (streak.weeks > 0)
               Semantics(
-                label: 'Série ${streak.weeks} týdnů v řadě',
+                label: tr(
+                  'Série ${streak.weeks} týdnů v řadě',
+                  '${streak.weeks}-week streak',
+                ),
                 excludeSemantics: true,
                 child: Row(
                   children: [
@@ -647,11 +695,14 @@ class _WeekStrip extends StatelessWidget {
                     ),
                     const SizedBox(width: 2),
                     Text(
-                      '${streak.weeks} ${streak.weeks == 1
-                          ? 'týden'
-                          : streak.weeks < 5
-                          ? 'týdny'
-                          : 'týdnů'}',
+                      tr(
+                        '${streak.weeks} ${streak.weeks == 1
+                            ? 'týden'
+                            : streak.weeks < 5
+                            ? 'týdny'
+                            : 'týdnů'}',
+                        '${streak.weeks} ${streak.weeks == 1 ? 'week' : 'weeks'}',
+                      ),
                       style: text.labelMedium?.copyWith(
                         color: p.label,
                         fontWeight: FontWeight.w700,
@@ -712,11 +763,11 @@ class _DayDot extends StatelessWidget {
     return Semantics(
       label:
           '$letter $day.${done
-              ? ', odcvičeno'
+              ? tr(', odcvičeno', ', done')
               : planned
-              ? ', plánovaný trénink'
+              ? tr(', plánovaný trénink', ', planned workout')
               : ''}'
-          '${today ? ', dnes' : ''}',
+          '${today ? tr(', dnes', ', today') : ''}',
       excludeSemantics: true,
       child: Column(
         children: [

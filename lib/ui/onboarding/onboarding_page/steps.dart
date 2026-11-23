@@ -168,18 +168,21 @@ class _Body extends StatelessWidget {
         const SizedBox(height: Space.xl),
         Row(
           children: [
-            field(kg, 'Váha', '72,5', 'kg', decimal: true),
+            field(kg, tr('Váha', 'Weight'), '72,5', 'kg', decimal: true),
             const SizedBox(width: Space.s),
-            field(height, 'Výška', '180', 'cm'),
+            field(height, tr('Výška', 'Height'), '180', 'cm'),
             const SizedBox(width: Space.s),
-            field(year, 'Rok narození', '2008', ''),
+            field(year, tr('Rok narození', 'Birth year'), '2008', ''),
           ],
         ),
         if (goalAllowed) ...[
           const SizedBox(height: Space.xxl),
           Padding(
             padding: const EdgeInsets.only(bottom: Space.s),
-            child: Text('S váhou chci', style: text.titleMedium),
+            child: Text(
+              tr('S váhou chci', 'Weight goal'),
+              style: text.titleMedium,
+            ),
           ),
           TileRow(
             children: [
@@ -225,17 +228,20 @@ class _ReminderStepState extends State<_ReminderStep> {
     final text = Theme.of(context).textTheme;
     return QuestionScaffold(
       tone: Tone.coach,
-      title: 'Připomenu ti trénink?',
-      why:
-          'Jen v tréninkové dny a jen když ještě nemáš hotovo. Vypneš to '
-          'kdykoli v Nastavení.',
-      action: 'Zapnout připomínky',
+      title: tr('Připomenu ti trénink?', 'Remind you to train?'),
+      why: tr(
+        'Jen v tréninkové dny a jen když ještě nemáš hotovo. Vypneš to '
+            'kdykoli v Nastavení.',
+        'Only on training days and only if you have not finished yet. '
+            'You can turn it off anytime in Settings.',
+      ),
+      action: tr('Zapnout připomínky', 'Turn on reminders'),
       busy: widget.busy,
       onBack: widget.onBack,
       onNext: () => widget.onEnable(hour * 60),
       secondary: TextButton(
         onPressed: widget.busy ? null : widget.onSkip,
-        child: const Text('Teď ne'),
+        child: Text(tr('Teď ne', 'Not now')),
       ),
       child: StaggerColumn(
         children: [
@@ -247,7 +253,10 @@ class _ReminderStepState extends State<_ReminderStep> {
             ),
           ),
           const SizedBox(height: Space.xl),
-          Text('Kdy ti to nejvíc sedí?', style: text.titleMedium),
+          Text(
+            tr('Kdy ti to nejvíc sedí?', 'What time works best?'),
+            style: text.titleMedium,
+          ),
           const SizedBox(height: Space.m),
           TileRow(
             children: [
@@ -255,7 +264,7 @@ class _ReminderStepState extends State<_ReminderStep> {
                 ChoiceTile(
                   label: '$h',
                   hint: ':00',
-                  spoken: '$h hodin',
+                  spoken: tr('$h hodin', '$h o\'clock'),
                   selected: h == hour,
                   onTap: () => setState(() => hour = h),
                 ),
@@ -271,17 +280,24 @@ class _ReminderStepState extends State<_ReminderStep> {
 class _Value extends StatelessWidget {
   const _Value();
 
-  static const _points = [
-    (Icons.today_rounded, 'Každý den víš, co cvičit', 'Plán podle tvého času'),
+  static List<(IconData, String, String)> get _points => [
+    (
+      Icons.today_rounded,
+      tr('Každý den víš, co cvičit', 'Know what to train every day'),
+      tr('Plán podle tvého času', 'A plan that fits your time'),
+    ),
     (
       Icons.trending_up_rounded,
-      'Váhy se předvyplní samy',
-      'Potvrdíš sérii a vidíš, jak sílíš',
+      tr('Váhy se předvyplní samy', 'Weights fill in automatically'),
+      tr(
+        'Potvrdíš sérii a vidíš, jak sílíš',
+        'Confirm a set and see yourself get stronger',
+      ),
     ),
     (
       Icons.lock_outline_rounded,
-      'Bez účtu a bez reklam',
-      'Tréninky zůstávají v telefonu',
+      tr('Bez účtu a bez reklam', 'No account and no ads'),
+      tr('Tréninky zůstávají v telefonu', 'Workouts stay on your phone'),
     ),
   ];
 
@@ -300,7 +316,7 @@ class _Value extends StatelessWidget {
             container: true,
             header: true,
             child: Text(
-              'Gym zápisník',
+              tr('Gym zápisník', 'Gym Log'),
               style: text.headlineLarge,
               textAlign: TextAlign.center,
             ),
@@ -310,7 +326,10 @@ class _Value extends StatelessWidget {
         Reveal(
           index: 2,
           child: Text(
-            'Trenér do kapsy: řekne, co dnes, a hlídá, jak rosteš.',
+            tr(
+              'Trenér do kapsy: řekne, co dnes, a hlídá, jak rosteš.',
+              'A pocket coach: tells you what to do today and tracks your growth.',
+            ),
             textAlign: TextAlign.center,
             style: text.bodyLarge?.copyWith(color: p.secondaryLabel),
           ),
@@ -372,7 +391,7 @@ class _PlanReveal extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Plán je hotový',
+              tr('Plán je hotový', 'Your plan is ready'),
               style: text.labelLarge?.copyWith(
                 color: p.accent,
                 fontWeight: FontWeight.w600,
@@ -383,7 +402,7 @@ class _PlanReveal extends StatelessWidget {
               container: true,
               header: true,
               child: Text(
-                split?.name ?? 'Tvůj program',
+                split?.name ?? tr('Tvůj program', 'Your program'),
                 style: text.headlineLarge,
               ),
             ),
@@ -401,8 +420,10 @@ class _PlanReveal extends StatelessWidget {
         ),
         Panel(
           child: Semantics(
-            label:
-                'Trénink v ${[for (final d in week) weekdayLong[d - 1]].join(', ')}',
+            label: tr(
+              'Trénink v ${[for (final d in week) weekdayLong[d - 1]].join(', ')}',
+              'Training on ${[for (final d in week) weekdayLong[d - 1]].join(', ')}',
+            ),
             child: ExcludeSemantics(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -423,7 +444,13 @@ class _PlanReveal extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('První trénink · ${first.name}', style: text.titleMedium),
+                Text(
+                  tr(
+                    'První trénink · ${first.name}',
+                    'First workout · ${first.name}',
+                  ),
+                  style: text.titleMedium,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${exercisesLabel(first.exercises.length)} · ~'
@@ -456,7 +483,10 @@ class _PlanReveal extends StatelessWidget {
                   ),
                 const SizedBox(height: Space.xs),
                 Text(
-                  'Váhy ti při prvním tréninku navrhnu podle cviku.',
+                  tr(
+                    'Váhy ti při prvním tréninku navrhnu podle cviku.',
+                    'I will suggest weights for your first workout based on the exercise.',
+                  ),
                   style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                 ),
               ],

@@ -46,7 +46,7 @@ class GymApp extends StatelessWidget {
 /// Shared app frame: theme, locale, and keyboard helpers.
 MaterialApp appFrame({required Widget home, Locale locale = _czech}) =>
     MaterialApp(
-      title: 'Gym zápisník',
+      title: tr('Gym zápisník', 'Gym Log'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       themeMode: ThemeMode.dark,
@@ -111,29 +111,30 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     widget.state.setLastTab(i);
   }
 
-  static const _items = [
+  List<({IconData icon, IconData active, String label, Tone tone})>
+  get _items => [
     (
       icon: Icons.home_outlined,
       active: Icons.home_rounded,
-      label: 'Domů',
+      label: tr('Domů', 'Home'),
       tone: Tone.training,
     ),
     (
       icon: Icons.fitness_center_outlined,
       active: Icons.fitness_center,
-      label: 'Trénink',
+      label: tr('Trénink', 'Training'),
       tone: Tone.training,
     ),
     (
       icon: Icons.restaurant_outlined,
       active: Icons.restaurant_rounded,
-      label: 'Strava',
+      label: tr('Strava', 'Nutrition'),
       tone: Tone.food,
     ),
     (
       icon: Icons.insights_outlined,
       active: Icons.insights_rounded,
-      label: 'Pokrok',
+      label: tr('Pokrok', 'Progress'),
       tone: Tone.progress,
     ),
   ];
@@ -437,7 +438,7 @@ class _BootScreenState extends State<BootScreen> {
     return Scaffold(
       body: Semantics(
         button: widget.onSkip != null,
-        label: widget.onSkip != null ? 'Přeskočit' : null,
+        label: widget.onSkip != null ? tr('Přeskočit', 'Skip') : null,
         onTap: widget.onSkip,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -497,7 +498,7 @@ class _BootScreenState extends State<BootScreen> {
                   duration: Motion.of(context, Motion.quick),
                   child: Semantics(
                     container: true,
-                    label: 'Načítám',
+                    label: tr('Načítám', 'Loading'),
                     child: SizedBox.square(
                       dimension: 22,
                       child: CircularProgressIndicator(
@@ -564,15 +565,23 @@ class _StartupErrorPageState extends State<StartupErrorPage> {
                         ),
                         const SizedBox(height: Space.xl),
                         Text(
-                          'Aplikaci se nepodařilo spustit',
+                          tr(
+                            'Aplikaci se nepodařilo spustit',
+                            "The app couldn't start",
+                          ),
                           style: text.headlineSmall,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: Space.m),
                         Text(
-                          'Zkus to znovu. Když to nepomůže, zavři aplikaci '
-                          'úplně a otevři ji znovu. Zálohu ze souboru pak '
-                          'obnovíš v Nastavení.',
+                          tr(
+                            'Zkus to znovu. Když to nepomůže, zavři aplikaci '
+                                'úplně a otevři ji znovu. Zálohu ze souboru pak '
+                                'obnovíš v Nastavení.',
+                            'Try again. If that does not help, close the app '
+                                'completely and reopen it. You can restore a '
+                                'file backup in Settings.',
+                          ),
                           style: text.bodyLarge?.copyWith(
                             color: p.secondaryLabel,
                           ),
@@ -589,7 +598,11 @@ class _StartupErrorPageState extends State<StartupErrorPage> {
                   ),
                 ),
               ),
-              PrimaryButton('Zkusit znovu', busy: retrying, onPressed: _retry),
+              PrimaryButton(
+                tr('Zkusit znovu', 'Try again'),
+                busy: retrying,
+                onPressed: _retry,
+              ),
             ],
           ),
         ),

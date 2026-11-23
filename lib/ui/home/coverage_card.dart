@@ -2,9 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../../coach/routine_audit.dart' show weeklyRange;
 import '../../coach/splits.dart';
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+
+String _focusName(String id, String fallback) => switch (id) {
+  'chest' => tr('Hrudník', 'Chest'),
+  'back' => tr('Záda', 'Back'),
+  'legs' => tr('Nohy', 'Legs'),
+  'shoulders' => tr('Ramena', 'Shoulders'),
+  'biceps' => tr('Biceps', 'Biceps'),
+  'triceps' => tr('Triceps', 'Triceps'),
+  'core' => tr('Břicho', 'Core'),
+  'glutes' => tr('Hýždě', 'Glutes'),
+  'calves' => tr('Lýtka', 'Calves'),
+  _ => fallback,
+};
 
 /// Partie tento týden: odcvičené série proti doporučenému rozsahu.
 class CoverageCard extends StatelessWidget {
@@ -24,9 +38,15 @@ class CoverageCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Partie tento týden', style: text.titleMedium),
           Text(
-            'Přímé série; vedlejší cvik se počítá napůl.',
+            tr('Partie tento týden', 'Muscle groups this week'),
+            style: text.titleMedium,
+          ),
+          Text(
+            tr(
+              'Přímé série; vedlejší cvik se počítá napůl.',
+              'Direct sets; a secondary exercise counts as half.',
+            ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
           const SizedBox(height: Space.m),
@@ -35,15 +55,17 @@ class CoverageCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: Space.s),
                 child: Semantics(
-                  label:
-                      '${f.name}: ${n(sets[f.id] ?? 0)} sérií z doporučených $low až $high',
+                  label: tr(
+                    '${_focusName(f.id, f.name)}: ${n(sets[f.id] ?? 0)} sérií z doporučených $low až $high',
+                    '${_focusName(f.id, f.name)}: ${n(sets[f.id] ?? 0)} sets of $low to $high recommended',
+                  ),
                   excludeSemantics: true,
                   child: Row(
                     children: [
                       SizedBox(
                         width: 96,
                         child: Text(
-                          f.name,
+                          _focusName(f.id, f.name),
                           style: text.bodyMedium,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

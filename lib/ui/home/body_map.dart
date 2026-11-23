@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../coach/recovery.dart';
+import '../../core/i18n.dart';
 import '../design/tokens.dart';
 
 /// Oranžová pro partie, které ještě regenerují.
@@ -157,9 +158,9 @@ class BodyMap extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          figure('Zepředu', _front),
+          figure(tr('Zepředu', 'Front'), _front),
           const SizedBox(width: Space.l),
-          figure('Zezadu', _back, silent: _front.keys.toSet()),
+          figure(tr('Zezadu', 'Back'), _back, silent: _front.keys.toSet()),
         ],
       ),
     );
