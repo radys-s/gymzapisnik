@@ -104,8 +104,9 @@ class DiagnosticsPage extends StatelessWidget {
                 await Clipboard.setData(
                   ClipboardData(text: Diagnostics.report(version: appVersion)),
                 );
-                if (context.mounted)
+                if (context.mounted) {
                   showToast(context, tr('Zkopírováno.', 'Copied.'));
+                }
               },
             ),
             const SizedBox(height: Space.s),

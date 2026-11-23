@@ -66,11 +66,12 @@ class SettingsPage extends StatelessWidget {
         _toast(context, tr('Uloženo: $name', 'Saved: $name'));
       }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _toast(
           context,
           tr('Soubor se nepodařilo uložit: $e', 'Could not save file: $e'),
         );
+      }
     }
   }
 
@@ -79,11 +80,12 @@ class SettingsPage extends StatelessWidget {
     try {
       source = await files.pickText(const ['json']);
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _toast(
           context,
           tr('Soubor se nepodařilo otevřít: $e', 'Could not open file: $e'),
         );
+      }
       return;
     }
     if (source == null || !context.mounted) return;
@@ -93,10 +95,13 @@ class SettingsPage extends StatelessWidget {
         _toast(context, 'Obnoveno: ${workoutsLabel(count)}.');
       }
     } on FormatException catch (e) {
-      if (context.mounted) _toast(context, e.message);
+      if (context.mounted) {
+        _toast(context, e.message);
+      }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _toast(context, tr('Obnova se nezdařila: $e', 'Restore failed: $e'));
+      }
     }
   }
 
@@ -105,11 +110,12 @@ class SettingsPage extends StatelessWidget {
     try {
       source = await files.pickText(const ['csv']);
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _toast(
           context,
           tr('Soubor se nepodařilo otevřít: $e', 'Could not open file: $e'),
         );
+      }
       return;
     }
     if (source == null || !context.mounted) return;
@@ -130,10 +136,13 @@ class SettingsPage extends StatelessWidget {
         );
       }
     } on FormatException catch (e) {
-      if (context.mounted) _toast(context, e.message);
+      if (context.mounted) {
+        _toast(context, e.message);
+      }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _toast(context, tr('Import se nezdařil: $e', 'Import failed: $e'));
+      }
     }
   }
 
