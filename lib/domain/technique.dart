@@ -1831,4 +1831,553 @@ const Map<String, Technique> techniques = {
       'Příliš velký rozsah na úkor kontroly.',
     ],
   ),
+  'decline_dumbbell_press': (
+    steps: [
+      'Zahákni nohy za polštáře, lehni si na negativní lavici, jednoručky u spodního hrudníku.',
+      'Spouštěj jednoručky pod kontrolou ke spodní části hrudníku, lokty asi 45° od těla.',
+      'Vytlač nahoru nad hrudník, lopatky drž stažené k sobě.',
+    ],
+    mistakes: [
+      'Nezajištěné nohy a klouzání po lavici.',
+      'Odrážení jednoruček od hrudníku.',
+    ],
+  ),
+  'dumbbell_squeeze_press': (
+    steps: [
+      'Lehni si na lavici, jednoručky u hrudníku a mačkej je k sobě.',
+      'Tlač jednoručky nahoru a po celou dobu je drž přitisknuté k sobě.',
+      'Spouštěj pomalu k hrudníku, tlak mezi jednoručkami nepovol.',
+    ],
+    mistakes: [
+      'Povolení tlaku mezi jednoručkami.',
+      'Lokty roztažené do stran v pravém úhlu.',
+    ],
+  ),
+  'weighted_dips': (
+    steps: [
+      'Zavěs zátěž na opasek, uchop bradla a vytlač se do horní polohy.',
+      'Mírně se předkloň a spouštěj se, dokud nejsou ramena pod úrovní loktů.',
+      'Vytlač se nahoru, lopatky drž stažené a pohyb kontroluj.',
+    ],
+    mistakes: [
+      'Příliš hluboké spouštění na úkor ramen.',
+      'Houpání zátěže a trhaný pohyb.',
+    ],
+  ),
+  'machine_fly': (
+    steps: [
+      'Sedák nastav tak, aby madla byla ve výšce hrudníku, záda opři o opěradlo.',
+      'Lokty lehce pokrčené, stahuj madla před sebe obloukem.',
+      'Uprostřed krátce stiskni hrudník a pomalu se vrať do protažení.',
+    ],
+    mistakes: [
+      'Ohýbání loktů, z cviku se stane tlak.',
+      'Trhání závaží a hrbení ramen.',
+    ],
+  ),
+  'cable_crossover_low': (
+    steps: [
+      'Kladky dole, uchop madla, krok dopředu a mírný předklon.',
+      'Lokty lehce pokrčené, táhni ruce obloukem nahoru před sebe.',
+      'Nahoře ruce spoj před horní částí hrudníku a pomalu se vrať.',
+    ],
+    mistakes: [
+      'Tahání pažemi místo hrudníku.',
+      'Příliš velká váha a houpání trupem.',
+    ],
+  ),
+  'meadows_row': (
+    steps: [
+      'Postav se bokem k ose v landminu, uchop konec osy jednou rukou.',
+      'Předkloň se s rovnými zády, osa visí pod hrudníkem.',
+      'Přitáhni konec osy k boku, loket těsně kolem těla, a pomalu spusť.',
+    ],
+    mistakes: ['Rotace trupu a vytáčení ramen.', 'Kulatá záda v předklonu.'],
+  ),
+  'seal_row': (
+    steps: [
+      'Lehni si břichem na vyvýšenou lavici, osa leží pod ní.',
+      'Uchop osu širokým úchopem a přitáhni ji k spodku lavice.',
+      'Spouštěj pomalu až do propnutí paží, trup drž na lavici.',
+    ],
+    mistakes: [
+      'Zvedání hrudníku z lavice a švihání.',
+      'Krátký pohyb jen v horní části.',
+    ],
+  ),
+  'kroc_row': (
+    steps: [
+      'Opři se jednou rukou o lavici, v druhé drž těžkou jednoručku.',
+      'Záda rovná, přitáhni jednoručku k boku, loket jde kolem těla.',
+      'Spouštěj pod kontrolou, vysoké opakování s klidným tempem.',
+    ],
+    mistakes: ['Vytáčení trupu místo tahu zád.', 'Kulatá záda a trhání váhy.'],
+  ),
+  'cable_pullover': (
+    steps: [
+      'Lehni si na lavici hlavou ke kladce, uchop madlo nad hlavou.',
+      'Paže téměř propnuté, táhni madlo obloukem nad sebe směrem k bokům.',
+      'U stehen krátce zastav a pomalu se vrať do protažení.',
+    ],
+    mistakes: [
+      'Ohýbání loktů, z cviku se stane stahování.',
+      'Prohýbání beder a zvedání zadku z lavice.',
+    ],
+  ),
+  'wide_grip_seated_row': (
+    steps: [
+      'Sedni si, uchop madlo širokým úchopem, záda rovná a hrudník vytažený.',
+      'Táhni madlo k horní části břicha, lokty drž vysoko od těla.',
+      'Vzadu stáhni lopatky k sobě a pomalu se vrať.',
+    ],
+    mistakes: [
+      'Houpání trupem a záklon při tahu.',
+      'Pokrčená záda a ramena u uší.',
+    ],
+  ),
+  'assisted_pull_up': (
+    steps: [
+      'Nastav dopomoc tak, aby šlo udělat 6–10 čistých opakování.',
+      'Uchop hrazdu, vis s propnutými pažemi a přitáhni bradu nad hrazdu.',
+      'Spouštěj se pomalu až do úplného visu.',
+    ],
+    mistakes: [
+      'Kopání nohama a švihání.',
+      'Krátký pohyb bez úplného visu dole.',
+    ],
+  ),
+  'weighted_pull_up': (
+    steps: [
+      'Zavěs zátěž na opasek, uchop hrazdu nadhmatem na šířku ramen.',
+      'Z visu přitáhni bradu nad hrazdu, hrudník táhni k hrazdě.',
+      'Spouštěj se pod kontrolou až do propnutí paží.',
+    ],
+    mistakes: [
+      'Houpání zátěže a kopání nohama.',
+      'Nedotažení brady nad hrazdu.',
+    ],
+  ),
+  'neutral_grip_pull_up': (
+    steps: [
+      'Uchop madla neutrálním úchopem, dlaně směřují k sobě.',
+      'Z visu se přitáhni, lokty drž blízko těla, hrudník táhni k madlům.',
+      'Spouštěj se pomalu až do úplného visu.',
+    ],
+    mistakes: [
+      'Kopání nohama a trhaný pohyb.',
+      'Krátký pohyb bez protažení dole.',
+    ],
+  ),
+  'snatch_grip_deadlift': (
+    steps: [
+      'Osa nad středem chodidla, uchop ji širokým trhačským úchopem.',
+      'Boky jdi níž než u klasického mrtvého tahu, záda a horní část zad pevná.',
+      'Tlač zem nohama a táhni osu těsně kolem nohou až do stoje.',
+    ],
+    mistakes: ['Kulatá záda při odlepení osy.', 'Osa se oddaluje od těla.'],
+  ),
+  'deficit_deadlift': (
+    steps: [
+      'Postav se na nízký stupínek (2–5 cm), osa nad středem chodidla.',
+      'Uchop osu, boky níž, záda rovná a střed těla zpevněný.',
+      'Vytlač se z podložky, osa klouže těsně kolem nohou.',
+    ],
+    mistakes: [
+      'Kulatá záda v hlubší výchozí poloze.',
+      'Příliš vysoký stupínek a ztráta rovných zad.',
+    ],
+  ),
+  'reverse_hyperextension': (
+    steps: [
+      'Lehni si břichem na stroj, boky na hranu polštáře, uchop madla.',
+      'Zvedej nohy až do linie trupu, pohyb jde z hýždí.',
+      'Spouštěj pomalu, bedra drž v neutrální poloze.',
+    ],
+    mistakes: [
+      'Prohýbání beder nad linii trupu.',
+      'Švihání nohama místo kontrolovaného tahu.',
+    ],
+  ),
+  'sissy_squat': (
+    steps: [
+      'Uchop se opory, postav se na špičky a zpevni střed těla.',
+      'Kolena tlač dopředu, trup zakláněj dozadu v jedné linii s nohama.',
+      'Jdi dolů, dokud cítíš tah ve stehnech, a vrať se nahoru.',
+    ],
+    mistakes: [
+      'Ohýbání v bocích, trup jde dopředu.',
+      'Paty se pokládají na zem.',
+    ],
+  ),
+  'reverse_nordic': (
+    steps: [
+      'Kleč, kotníky měj zafixované za oporu nebo pod lavicí.',
+      'Trup drž v jedné linii s koleny a pomalu se zakláněj dozadu.',
+      'Jdi, dokud udržíš napětí ve stehnech, a vrať se zpět.',
+    ],
+    mistakes: [
+      'Ohýbání v bocích a sedání si na paty.',
+      'Příliš rychlé padání dozadu.',
+    ],
+  ),
+  'box_squat': (
+    steps: [
+      'Bednu nastav do hloubky dřepu, osa na trapézech, stoj o něco dál.',
+      'Posílej boky dozadu a usedni na bednu bez houpání.',
+      'Krátce zastav a vytlač se nahoru celým chodidlem.',
+    ],
+    mistakes: ['Dosedání s rázem a uvolnění napětí.', 'Kolena padají dovnitř.'],
+  ),
+  'pause_squat': (
+    steps: [
+      'Osa na trapézech, jdi dolů jako u běžného dřepu.',
+      'Dole na 2–3 sekundy zastav, napětí v trupu nepovol.',
+      'Vytlač se nahoru bez houpání a odrazu.',
+    ],
+    mistakes: [
+      'Uvolnění břicha a zad v pauze.',
+      'Odraz z dolní polohy místo tahu.',
+    ],
+  ),
+  'safety_bar_squat': (
+    steps: [
+      'Uchop madla bezpečnostní osy, osa leží na trapézech, tělo vzpřímené.',
+      'Jdi dolů s koleny ve směru špiček, trup drž co nejvíc vzpřímený.',
+      'Vytlač se nahoru celým chodidlem, madla tlač dopředu.',
+    ],
+    mistakes: ['Nadměrné předklánění trupu.', 'Kolena padají dovnitř.'],
+  ),
+  'zercher_squat': (
+    steps: [
+      'Osu uchop do ohbí loktů před tělem, lokty drž u těla.',
+      'Zpevni břicho a jdi dolů s trupem vzpřímeným.',
+      'Vytlač se nahoru, osu drž pevně v loktech celou sérii.',
+    ],
+    mistakes: ['Kulatá záda a povolený střed těla.', 'Osa se vyklání z loktů.'],
+  ),
+  'cossack_squat': (
+    steps: [
+      'Stoj široko, špičky mírně ven, ruce před sebou.',
+      'Přenášej váhu na jednu nohu a jdi do hlubokého dřepu na ní.',
+      'Druhá noha zůstává propnutá, pata na zemi, a vrať se do středu.',
+    ],
+    mistakes: [
+      'Zvedání paty propnuté nohy.',
+      'Kulatá záda a padání kolen dovnitř.',
+    ],
+  ),
+  'curtsy_lunge': (
+    steps: [
+      'Uchop jednoručky, stůj vzpřímeně a zpevni střed těla.',
+      'Kroč jednou nohou šikmo dozadu za druhou a jdi kolenem k zemi.',
+      'Vytlač se přední nohou zpět, koleno drž ve směru špičky.',
+    ],
+    mistakes: [
+      'Koleno přední nohy padá dovnitř.',
+      'Předklánění trupu a ztráta rovnováhy.',
+    ],
+  ),
+  'single_leg_press': (
+    steps: [
+      'Nastav menší váhu, jednu nohu dej doprostřed plošiny.',
+      'Spouštěj plošinu pod kontrolou, koleno ve směru špičky.',
+      'Vytlač patou, koleno na konci nezamykej, boky drž na sedáku.',
+    ],
+    mistakes: [
+      'Zvedání zadku ze sedáku.',
+      'Příliš velká váha a koleno padající dovnitř.',
+    ],
+  ),
+  'glute_ham_raise': (
+    steps: [
+      'Kleč na GHD stroj, kotníky zafixuj za polštáře.',
+      'Trup drž rovný a pomalu se spouštěj dopředu k zemi.',
+      'Zadními stehny se vytáhni zpět do výchozí polohy.',
+    ],
+    mistakes: [
+      'Ohýbání v bocích místo rovného trupu.',
+      'Příliš rychlé padání dopředu.',
+    ],
+  ),
+  'frog_pump': (
+    steps: [
+      'Lehni si, chodidla spoj k sobě, kolena nech padnout do stran.',
+      'Jednoručku polož na boky a zvedej pánev krátkým pohybem.',
+      'Nahoře stáhni hýždě a pomalu se vrať.',
+    ],
+    mistakes: [
+      'Prohýbání beder místo tahu hýždí.',
+      'Příliš dlouhý pohyb a ztráta napětí.',
+    ],
+  ),
+  'smith_hip_thrust': (
+    steps: [
+      'Záda opři o lavici, osu multipresu s polštářem polož na boky.',
+      'Chodidla na šířku boků, vytlač pánev nahoru do linie trupu.',
+      'Nahoře stáhni hýždě, bradu drž u hrudníku a pomalu se vrať.',
+    ],
+    mistakes: [
+      'Prohýbání beder v horní poloze.',
+      'Zvedání patek a posouvání chodidel.',
+    ],
+  ),
+  'single_leg_hip_thrust': (
+    steps: [
+      'Záda opři o lavici, jednu nohu dej na zem, druhou zvedni.',
+      'Vytlač pánev nahoru do linie trupu, boky drž rovně.',
+      'Nahoře stáhni hýždě a pomalu se vrať, pak nohy vystřídej.',
+    ],
+    mistakes: [
+      'Klesání boků na stranu volné nohy.',
+      'Prohýbání beder místo tahu hýždí.',
+    ],
+  ),
+  'donkey_calf_raise': (
+    steps: [
+      'Předkloň se v bocích, opři se o madla, zátěž na spodku zad.',
+      'Špičky na hranu stupínku, kolena téměř propnutá.',
+      'Vytlač se co nejvýš na špičky a pomalu spusť paty do protažení.',
+    ],
+    mistakes: [
+      'Pérování bez zastavení nahoře.',
+      'Ohýbání kolen a malý rozsah.',
+    ],
+  ),
+  'sled_push': (
+    steps: [
+      'Opři se do saní, trup v mírném předklonu, paže propnuté nebo pokrčené.',
+      'Tlač saně krátkými výbušnými kroky, celé chodidlo na zemi.',
+      'Dýchej plynule a drž napětí v trupu po celou dráhu.',
+    ],
+    mistakes: [
+      'Zvedání patek a běh na špičkách.',
+      'Kulatá záda a ztráta tlaku do saní.',
+    ],
+  ),
+  'y_raise': (
+    steps: [
+      'Lehni si břichem na šikmou lavici, jednoručky pod rameny.',
+      'Zvedej paže šikmo nahoru do tvaru Y, palce směřují vzhůru.',
+      'Nahoře krátce zastav a pomalu spusť, lopatky drž stažené dolů.',
+    ],
+    mistakes: ['Zvedání ramen k uším.', 'Švihání a prohýbání beder.'],
+  ),
+  'lean_away_lateral_raise': (
+    steps: [
+      'Kladka dole, uchop madlo vzdálenější rukou a chyť se sloupku.',
+      'Zakloň se od sloupku a upažuj madlo do strany do výšky ramen.',
+      'Spouštěj pomalu, trup drž v záklonu bez houpání.',
+    ],
+    mistakes: [
+      'Houpání trupem a tahání zád.',
+      'Pokrčené lokty a zkrácený rozsah.',
+    ],
+  ),
+  'cable_y_raise': (
+    steps: [
+      'Kladka dole, uchop madla oběma rukama před tělem.',
+      'Zvedej paže šikmo nahoru do tvaru Y, palce vzhůru.',
+      'Nahoře zastav a pomalu spusť, ramena drž dole.',
+    ],
+    mistakes: ['Zvedání ramen k uším.', 'Prohýbání beder a švihání.'],
+  ),
+  'behind_the_neck_press': (
+    steps: [
+      'Osu spusť za hlavu na úroveň uší, lokty pod osou.',
+      'Vytlač osu nahoru, hlavu drž neutrálně, pohyb bez trhání.',
+      'Spouštěj pomalu, cvik vynech při bolesti nebo ztuhlých ramenou.',
+    ],
+    mistakes: [
+      'Příliš hluboké spouštění za hlavu.',
+      'Vysunutí hlavy dopředu a kulatá záda.',
+    ],
+  ),
+  'z_press': (
+    steps: [
+      'Sedni si na zem s propnutýma nohama, osu drž na ramenou.',
+      'Zpevni břicho a vytlač osu nahoru bez záklonu trupu.',
+      'Spouštěj pomalu na ramena, trup drž kolmo k zemi.',
+    ],
+    mistakes: [
+      'Záklon trupu a pomoc nohou.',
+      'Povolený střed těla a kulatá záda.',
+    ],
+  ),
+  'dumbbell_upright_row': (
+    steps: [
+      'Jednoručky před stehny, stůj vzpřímeně a zpevni střed těla.',
+      'Táhni jednoručky podél těla nahoru, lokty vedou pohyb.',
+      'Zvedej jen do výšky hrudníku a pomalu spusť.',
+    ],
+    mistakes: [
+      'Tahání až k bradě a vysoko zvednuté lokty.',
+      'Houpání trupem a trhaný pohyb.',
+    ],
+  ),
+  'machine_rear_delt_row': (
+    steps: [
+      'Opři se hrudníkem o polštář, uchop madla širokým úchopem.',
+      'Táhni lokty do stran ve výšce ramen, lopatky stáhni k sobě.',
+      'Vracej pomalu do protažení zadních delt.',
+    ],
+    mistakes: [
+      'Tahání loktů dolů k tělu místo do stran.',
+      'Zvedání ramen k uším a švihání.',
+    ],
+  ),
+  'spider_curl': (
+    steps: [
+      'Lehni si břichem na šikmou lavici, paže visí kolmo k zemi.',
+      'Zdvihni jednoručky bez pohnutí loktů, nahoře stáhni biceps.',
+      'Spouštěj pomalu až do propnutí.',
+    ],
+    mistakes: ['Zvedání loktů od lavice.', 'Švihání a zkrácený rozsah.'],
+  ),
+  'drag_curl': (
+    steps: [
+      'Osu uchop na šířku boků, drž ji před stehny.',
+      'Táhni osu těsně podél trupu nahoru, lokty posílej dozadu.',
+      'Zvedej do spodní části hrudníku a pomalu spusť podél těla.',
+    ],
+    mistakes: [
+      'Vyklánění loktů dopředu jako u běžného zdvihu.',
+      'Houpání trupem a oddálení osy od těla.',
+    ],
+  ),
+  'zottman_curl': (
+    steps: [
+      'Zdvihni jednoručky podhmatem jako u běžného bicepsového zdvihu.',
+      'Nahoře otoč dlaně dolů a spouštěj pomalu nadhmatem.',
+      'Dole otoč dlaně zpět vzhůru a opakuj.',
+    ],
+    mistakes: [
+      'Rychlé spouštění bez kontroly.',
+      'Rotace předloktí už při zdvihu nahoru.',
+    ],
+  ),
+  'cable_preacher_curl': (
+    steps: [
+      'Nastav Scottovu lavici ke kladce, paže opři o polštář.',
+      'Zdvihni madlo bez zvedání loktů, nahoře stáhni biceps.',
+      'Spouštěj pomalu, napětí kladky drž po celý rozsah.',
+    ],
+    mistakes: ['Zvedání loktů z polštáře.', 'Odraz závaží v dolní poloze.'],
+  ),
+  'jm_press': (
+    steps: [
+      'Lehni si, osu uchop úzkým úchopem nad hrudníkem.',
+      'Spouštěj osu k bradě, lokty nech jít mírně dopředu.',
+      'Vytlač osu zpět nahoru, pohyb je mezi tlakem a francouzským tlakem.',
+    ],
+    mistakes: [
+      'Lokty roztažené do stran.',
+      'Spouštění osy na hrudník místo k bradě.',
+    ],
+  ),
+  'tate_press': (
+    steps: [
+      'Lehni si na lavici, jednoručky drž nad hrudníkem, dlaně k sobě.',
+      'Lokty drž do stran a spouštěj jednoručky k hrudníku ohnutím loktů.',
+      'Propni lokty a vrať jednoručky nad hrudník.',
+    ],
+    mistakes: [
+      'Spouštění jednoruček k bokům místo k hrudníku.',
+      'Příliš velká váha a trhaný pohyb.',
+    ],
+  ),
+  'ez_bar_overhead_extension': (
+    steps: [
+      'Uchop EZ osu úzkým úchopem a zvedni ji nad hlavu.',
+      'Lokty drž u hlavy a spouštěj osu za hlavu ohnutím loktů.',
+      'Propni lokty a vrať osu nad hlavu, horní část paží drž nehybně.',
+    ],
+    mistakes: ['Rozjíždění loktů do stran.', 'Prohýbání beder a pomoc trupem.'],
+  ),
+  'rope_pushdown': (
+    steps: [
+      'Kladka nahoře, uchop lano, lokty drž u těla.',
+      'Stahuj lano dolů a na konci ho roztáhni od sebe.',
+      'Vracej pomalu, horní část paží drž nehybně.',
+    ],
+    mistakes: [
+      'Lokty se posouvají dopředu a dozadu.',
+      'Houpání trupem a trhaný pohyb.',
+    ],
+  ),
+  'single_arm_pushdown': (
+    steps: [
+      'Kladka nahoře, uchop madlo jednou rukou, loket drž u těla.',
+      'Stahuj madlo dolů až do propnutí a krátce stáhni triceps.',
+      'Vracej pomalu, trup drž bez houpání.',
+    ],
+    mistakes: ['Pomoc trupem a vytáčení ramen.', 'Loket se oddaluje od těla.'],
+  ),
+  'reverse_grip_pushdown': (
+    steps: [
+      'Kladka nahoře, uchop madlo podhmatem, dlaně vzhůru.',
+      'Lokty drž u těla a stahuj madlo dolů až do propnutí.',
+      'Vracej pomalu, horní část paží drž nehybně.',
+    ],
+    mistakes: [
+      'Vytáčení loktů a pomoc trupem.',
+      'Příliš velká váha a trhaný pohyb.',
+    ],
+  ),
+  'sit_up': (
+    steps: [
+      'Lehni si, kolena pokrčená, chodidla na zemi, ruce na hrudníku.',
+      'Zvedej trup až k stehen, pohyb veď břichem, ne hlavou.',
+      'Spouštěj se pomalu zpět na zem.',
+    ],
+    mistakes: ['Tahání hlavy rukama.', 'Trhaný pohyb a odraz od země.'],
+  ),
+  'decline_sit_up': (
+    steps: [
+      'Zahákni nohy za polštáře a lehni si na negativní lavici.',
+      'Zvedej trup až k stehen, ruce drž na hrudníku.',
+      'Spouštěj se pomalu, hlavu drž v prodloužení páteře.',
+    ],
+    mistakes: [
+      'Tahání hlavy rukama za krkem.',
+      'Trhaný pohyb a odraz od lavice.',
+    ],
+  ),
+  'v_up': (
+    steps: [
+      'Lehni si na záda, paže natáhni za hlavu, nohy propnuté.',
+      'Současně zvedej trup i nohy a dotkni se rukama špiček.',
+      'Spouštěj obě části těla pomalu zpět, bedra drž na zemi.',
+    ],
+    mistakes: [
+      'Ohýbání kolen a zkrácený rozsah.',
+      'Trhaný pohyb a dopad beder na zem.',
+    ],
+  ),
+  'pallof_press': (
+    steps: [
+      'Kladka ve výšce hrudníku, stůj bokem ke stroji, madlo u hrudníku.',
+      'Vytlač madlo před sebe a odolávej rotaci trupu.',
+      'Vydrž 2–3 sekundy a vrať madlo k hrudníku, pak strany vystřídej.',
+    ],
+    mistakes: [
+      'Rotace trupu směrem ke kladce.',
+      'Příliš velká váha a povolený střed těla.',
+    ],
+  ),
+  'hanging_windshield_wiper': (
+    steps: [
+      'Vis na hrazdě, nohy zvedni do výšky boků nebo výš.',
+      'Otáčej propnuté nohy ze strany na stranu jako stěrače.',
+      'Pohyb veď břichem, trup drž stabilní a pomalu se vrať.',
+    ],
+    mistakes: ['Houpání a rotace celého těla.', 'Pokrčené nohy a malý rozsah.'],
+  ),
+  'weighted_crunch': (
+    steps: [
+      'Lehni si, talíř drž na hrudníku, kolena pokrčená.',
+      'Zvedej lopatky ze země výdechem, bedra drž na zemi.',
+      'Spouštěj pomalu do protažení břicha.',
+    ],
+    mistakes: ['Tahání hlavy a krku.', 'Zvedání beder ze země.'],
+  ),
 };

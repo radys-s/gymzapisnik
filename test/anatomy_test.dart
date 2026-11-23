@@ -122,7 +122,7 @@ void main() {
     expect(buildDay([], 4).exercises, isEmpty);
     expect(buildDay(['chest'], 0).exercises, isEmpty);
     // Víc lýtkových cviků katalog nemá.
-    final calfCount = builtInExercises
+    final calfCount = catalogExercises
         .where(
           (e) => anatomyOf(e.id)!.primary.any(focusHeads['calves']!.contains),
         )

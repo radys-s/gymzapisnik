@@ -12,7 +12,7 @@ void main() {
   });
 
   test('visible exercise names are unique and Title Case', () {
-    const connectors = {'to', 'of', 'and', 'with', 'on', 'in'};
+    const connectors = {'to', 'of', 'and', 'with', 'on', 'in', 'the'};
     final wordPattern = RegExp(r"[A-Za-z]+(?:'[A-Za-z]+)?");
     final seen = <String>{};
     for (final e in builtInExercises) {

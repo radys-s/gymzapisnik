@@ -740,6 +740,198 @@ const exerciseAnatomy = <String, ExerciseAnatomy>{
   'cable_pallof_rotation': ExerciseAnatomy(['obliques', 'abs']),
   'ab_rollout_barbell': ExerciseAnatomy(['abs'], secondary: ['obliques']),
   'russian_twist_bodyweight': ExerciseAnatomy(['obliques', 'abs']),
+  'decline_dumbbell_press': ExerciseAnatomy(
+    ['chest_mid'],
+    secondary: ['triceps_lateral', 'delt_front'],
+    compound: _c,
+  ),
+  'dumbbell_squeeze_press': ExerciseAnatomy(
+    ['chest_mid'],
+    secondary: ['triceps_lateral'],
+    compound: _c,
+  ),
+  'weighted_dips': ExerciseAnatomy(
+    ['chest_mid'],
+    secondary: ['triceps_lateral', 'delt_front'],
+    compound: _c,
+  ),
+  'machine_fly': ExerciseAnatomy(['chest_mid'], secondary: ['delt_front']),
+  'cable_crossover_low': ExerciseAnatomy(
+    ['chest_upper'],
+    secondary: ['delt_front'],
+  ),
+  'meadows_row': ExerciseAnatomy(
+    ['lats'],
+    secondary: ['upper_back', 'biceps_long'],
+    compound: _c,
+  ),
+  'seal_row': ExerciseAnatomy(
+    ['upper_back'],
+    secondary: ['lats', 'delt_rear'],
+    compound: _c,
+  ),
+  'kroc_row': ExerciseAnatomy(
+    ['lats'],
+    secondary: ['upper_back', 'forearms'],
+    compound: _c,
+  ),
+  'cable_pullover': ExerciseAnatomy(['lats'], secondary: ['triceps_long']),
+  'wide_grip_seated_row': ExerciseAnatomy(
+    ['upper_back'],
+    secondary: ['delt_rear', 'lats'],
+    compound: _c,
+  ),
+  'assisted_pull_up': ExerciseAnatomy(
+    ['lats'],
+    secondary: ['biceps_long', 'upper_back'],
+    compound: _c,
+  ),
+  'weighted_pull_up': ExerciseAnatomy(
+    ['lats'],
+    secondary: ['biceps_long', 'upper_back'],
+    compound: _c,
+  ),
+  'neutral_grip_pull_up': ExerciseAnatomy(
+    ['lats'],
+    secondary: ['brachialis', 'upper_back'],
+    compound: _c,
+  ),
+  'snatch_grip_deadlift': ExerciseAnatomy(
+    ['lower_back'],
+    secondary: ['glutes', 'hamstrings', 'upper_back'],
+    compound: _c,
+  ),
+  'deficit_deadlift': ExerciseAnatomy(
+    ['lower_back'],
+    secondary: ['glutes', 'quads', 'hamstrings'],
+    compound: _c,
+  ),
+  // Záda: hlavní hlava musí být zádová, hýždě zůstávají jako druhá hlavní.
+  'reverse_hyperextension': ExerciseAnatomy(
+    ['lower_back', 'glutes'],
+    secondary: ['hamstrings'],
+  ),
+  'sissy_squat': ExerciseAnatomy(['quads']),
+  'reverse_nordic': ExerciseAnatomy(['quads']),
+  'box_squat': ExerciseAnatomy(
+    ['quads'],
+    secondary: ['glutes', 'adductors'],
+    compound: _c,
+  ),
+  'pause_squat': ExerciseAnatomy(
+    ['quads'],
+    secondary: ['glutes', 'adductors'],
+    compound: _c,
+  ),
+  'safety_bar_squat': ExerciseAnatomy(
+    ['quads'],
+    secondary: ['glutes', 'upper_back'],
+    compound: _c,
+  ),
+  'zercher_squat': ExerciseAnatomy(
+    ['quads'],
+    secondary: ['glutes', 'abs'],
+    compound: _c,
+  ),
+  'cossack_squat': ExerciseAnatomy(
+    ['adductors'],
+    secondary: ['quads', 'glutes'],
+    compound: _c,
+  ),
+  'curtsy_lunge': ExerciseAnatomy(
+    ['glutes_med'],
+    secondary: ['quads', 'glutes'],
+    compound: _c,
+  ),
+  'single_leg_press': ExerciseAnatomy(
+    ['quads'],
+    secondary: ['glutes'],
+    compound: _c,
+  ),
+  'glute_ham_raise': ExerciseAnatomy(
+    ['hamstrings'],
+    secondary: ['glutes', 'calves_gastro'],
+  ),
+  'frog_pump': ExerciseAnatomy(['glutes']),
+  'smith_hip_thrust': ExerciseAnatomy(
+    ['glutes'],
+    secondary: ['hamstrings'],
+    compound: _c,
+  ),
+  'single_leg_hip_thrust': ExerciseAnatomy(
+    ['glutes'],
+    secondary: ['hamstrings'],
+    compound: _c,
+  ),
+  'donkey_calf_raise': ExerciseAnatomy(
+    ['calves_gastro'],
+    secondary: ['calves_soleus'],
+  ),
+  'sled_push': ExerciseAnatomy(
+    ['quads'],
+    secondary: ['glutes', 'calves_gastro'],
+    compound: _c,
+  ),
+  'y_raise': ExerciseAnatomy(['delt_side'], secondary: ['upper_back']),
+  'lean_away_lateral_raise': ExerciseAnatomy(['delt_side']),
+  'cable_y_raise': ExerciseAnatomy(['delt_side'], secondary: ['upper_back']),
+  'behind_the_neck_press': ExerciseAnatomy(
+    ['delt_front'],
+    secondary: ['delt_side', 'triceps_lateral'],
+    compound: _c,
+  ),
+  'z_press': ExerciseAnatomy(
+    ['delt_front'],
+    secondary: ['triceps_lateral', 'abs'],
+    compound: _c,
+  ),
+  'dumbbell_upright_row': ExerciseAnatomy(
+    ['delt_side'],
+    secondary: ['upper_back'],
+    compound: _c,
+  ),
+  'machine_rear_delt_row': ExerciseAnatomy(
+    ['delt_rear'],
+    secondary: ['upper_back'],
+  ),
+  'spider_curl': ExerciseAnatomy(['biceps_short'], secondary: ['brachialis']),
+  'drag_curl': ExerciseAnatomy(['biceps_long'], secondary: ['brachialis']),
+  'zottman_curl': ExerciseAnatomy(
+    ['brachialis'],
+    secondary: ['forearms', 'biceps_long'],
+  ),
+  'cable_preacher_curl': ExerciseAnatomy(
+    ['biceps_short'],
+    secondary: ['brachialis'],
+  ),
+  'jm_press': ExerciseAnatomy(
+    ['triceps_lateral'],
+    secondary: ['triceps_long', 'chest_mid'],
+    compound: _c,
+  ),
+  'tate_press': ExerciseAnatomy(['triceps_lateral']),
+  'ez_bar_overhead_extension': ExerciseAnatomy(
+    ['triceps_long'],
+    secondary: ['triceps_lateral'],
+  ),
+  'rope_pushdown': ExerciseAnatomy(
+    ['triceps_lateral'],
+    secondary: ['triceps_long'],
+  ),
+  'single_arm_pushdown': ExerciseAnatomy(['triceps_lateral']),
+  'reverse_grip_pushdown': ExerciseAnatomy(
+    ['triceps_lateral'],
+    secondary: ['forearms'],
+  ),
+  'sit_up': ExerciseAnatomy(['abs'], secondary: ['abs_lower']),
+  'decline_sit_up': ExerciseAnatomy(['abs'], secondary: ['abs_lower']),
+  'v_up': ExerciseAnatomy(['abs'], secondary: ['abs_lower']),
+  'pallof_press': ExerciseAnatomy(['obliques'], secondary: ['abs']),
+  'hanging_windshield_wiper': ExerciseAnatomy(
+    ['obliques'],
+    secondary: ['abs_lower'],
+  ),
+  'weighted_crunch': ExerciseAnatomy(['abs']),
 };
 
 ExerciseAnatomy? anatomyOf(String exerciseId) => exerciseAnatomy[exerciseId];
