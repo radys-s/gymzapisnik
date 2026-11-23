@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
+import '../../domain/anatomy.dart';
 import '../../domain/catalog.dart';
 import '../../domain/models.dart';
 import '../../domain/movement.dart';
@@ -41,6 +44,7 @@ class ExerciseThumb extends StatelessWidget {
                   1,
                   FigureColors.of(p),
                   thumb: true,
+                  work: bodyPartsOf(exerciseId).work,
                 ),
               ),
       ),
@@ -58,15 +62,37 @@ class ExerciseAnimation extends StatefulWidget {
   State<ExerciseAnimation> createState() => _ExerciseAnimationState();
 }
 
+/// One rep: lift (0.9 s), hold (0.3 s), slow lowering (1.6 s), pause.
+const _rep = Duration(milliseconds: 3200);
+const _reps = 3;
+
+/// Rep phase boundaries as fractions of [_rep].
+const _liftEnd = 0.28, _holdEnd = 0.38, _lowerEnd = 0.88;
+
+/// Pose (0 start, 1 end) at rep progress [x].
+double _repPose(double x) {
+  if (x < _liftEnd) return Curves.easeOutCubic.transform(x / _liftEnd);
+  if (x < _holdEnd) return 1;
+  if (x < _lowerEnd) {
+    return 1 -
+        Curves.easeInOut.transform((x - _holdEnd) / (_lowerEnd - _holdEnd));
+  }
+  return 0;
+}
+
+String _phase(double x) => x < _liftEnd
+    ? tr('Zaber', 'Lift')
+    : x < _holdEnd
+    ? tr('Zpevni', 'Squeeze')
+    : x < _lowerEnd
+    ? tr('Pomalu zpět · 2–3 s', 'Lower slowly · 2–3 s')
+    : tr('Nádech', 'Breathe');
+
 class _ExerciseAnimationState extends State<ExerciseAnimation>
     with SingleTickerProviderStateMixin {
   late final _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  );
-  late final _t = CurvedAnimation(
-    parent: _controller,
-    curve: Curves.easeInOutCubic,
+    duration: _rep * _reps,
   );
 
   @override
@@ -81,41 +107,73 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
   }
 
   bool _played = false;
-  int _run = 0;
 
-  /// Pohyb třikrát tam a dvakrát zpět, pak figurka stojí v konečné
-  /// poloze. Nekonečná smyčka by rušila při čtení techniky.
+  /// Three slow reps, then the figure rests in the end pose. An endless
+  /// loop would distract while reading the technique.
   void _play() {
     _played = true;
+    _controller.stop();
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.value = 1;
       return;
     }
-    // Starý běh se při přehrání znovu zruší; jeho konec už nic nenastaví.
-    final run = ++_run;
-    _controller.stop();
-    _controller.value = 0;
-    _controller.repeat(reverse: true, count: 5).whenCompleteOrCancel(() {
-      if (mounted && run == _run) _controller.value = 1;
-    });
+    _controller.forward(from: 0);
   }
 
   @override
   void dispose() {
-    _t.dispose();
     _controller.dispose();
     super.dispose();
   }
 
+  bool get _running => _controller.isAnimating;
+
+  /// Rep progress 0–1 within the current rep.
+  double get _x => (_controller.value * _reps) % 1;
+
+  /// Pose for the painter; after the last rep the end pose stays.
+  double get _pose => !_running && _controller.value >= 1 ? 1 : _repPose(_x);
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final text = Theme.of(context).textTheme;
     final movement = movementFor(widget.exercise.pattern);
+    final parts = bodyPartsOf(widget.exercise.id);
+    final colors = FigureColors.of(p);
+    FigurePainter painter(double t, {bool ghost = false, bool thumb = false}) =>
+        FigurePainter(
+          movement,
+          widget.exercise.equipment,
+          t,
+          colors,
+          work: parts.work,
+          help: parts.help,
+          ghost: ghost,
+          thumb: thumb,
+        );
+    Widget frame(String label, double t) => Expanded(
+      child: Column(
+        children: [
+          SizedBox(
+            height: 64,
+            child: CustomPaint(painter: painter(t), size: Size.infinite),
+          ),
+          Text(
+            label,
+            style: text.labelSmall?.copyWith(color: p.secondaryLabel),
+          ),
+        ],
+      ),
+    );
     return Semantics(
-      label: 'Figurka ukazuje pohyb cviku ${widget.exercise.name}',
+      label: tr(
+        'Figurka ukazuje pohyb cviku ${widget.exercise.name}',
+        'Figure showing the movement of ${widget.exercise.name}',
+      ),
       image: true,
       button: true,
-      hint: 'Klepnutím přehraješ pohyb znovu',
+      hint: tr('Klepnutím přehraješ pohyb znovu', 'Tap to replay'),
       onTap: _play,
       child: GestureDetector(
         excludeFromSemantics: true,
@@ -123,7 +181,7 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
         child: Container(
           decoration: ShapeDecoration(color: p.grouped, shape: p.cardShape()),
           padding: const EdgeInsets.all(Space.m),
-          constraints: const BoxConstraints(maxHeight: 280),
+          constraints: const BoxConstraints(maxHeight: 360),
           child: Column(
             children: [
               Expanded(
@@ -132,14 +190,25 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
                     Positioned.fill(
                       child: RepaintBoundary(
                         child: AnimatedBuilder(
-                          animation: _t,
-                          builder: (_, _) => CustomPaint(
-                            painter: FigurePainter(
-                              movement,
-                              widget.exercise.equipment,
-                              _t.value,
-                              FigureColors.of(p),
-                            ),
+                          animation: _controller,
+                          builder: (_, _) =>
+                              CustomPaint(painter: painter(_pose, ghost: true)),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      child: AnimatedBuilder(
+                        animation: _controller,
+                        builder: (_, _) => Text(
+                          _running
+                              ? '${tr('Opakování', 'Rep')} '
+                                    '${(_controller.value * _reps).floor() + 1}/$_reps'
+                              : tr('Klepni pro přehrání', 'Tap to replay'),
+                          style: text.labelSmall?.copyWith(
+                            color: p.secondaryLabel,
+                            fontFeatures: tabular,
                           ),
                         ),
                       ),
@@ -158,17 +227,19 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
               ),
               const SizedBox(height: 6),
               AnimatedBuilder(
-                animation: _t,
-                builder: (_, _) {
-                  final phase = _t.value < 0.5
-                      ? 'Zvednout → zpevnit'
-                      : 'Pomalu → zpět';
-                  return Text(
-                    '$phase · klepnutím přehraješ znovu',
-                    style: Theme.of(context).textTheme.labelSmall
-                        ?.copyWith(color: p.secondaryLabel),
-                  );
-                },
+                animation: _controller,
+                builder: (_, _) => Text(
+                  _running ? _phase(_x) : ' ',
+                  style: text.titleSmall?.copyWith(color: p.accent),
+                ),
+              ),
+              const SizedBox(height: Space.s),
+              Row(
+                children: [
+                  frame(tr('Začátek', 'Start'), 0),
+                  frame(tr('Konec', 'End'), 1),
+                  Expanded(child: _Legend(work: parts.work.isNotEmpty)),
+                ],
               ),
             ],
           ),
@@ -178,9 +249,54 @@ class _ExerciseAnimationState extends State<ExerciseAnimation>
   }
 }
 
+/// What the orange means.
+class _Legend extends StatelessWidget {
+  final bool work;
+  const _Legend({required this.work});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final style = Theme.of(context).textTheme.labelSmall
+        ?.copyWith(color: p.secondaryLabel);
+    Widget row(Color c, String label) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Flexible(child: Text(label, style: style)),
+      ],
+    );
+    if (!work) return const SizedBox.shrink();
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        row(p.accent, tr('Pracuje', 'Works')),
+        const SizedBox(height: 4),
+        row(Color.lerp(p.label, p.accent, 0.5)!, tr('Pomáhá', 'Helps')),
+      ],
+    );
+  }
+}
+
 class FigureColors {
   final Color body, far, prop, gear, floor;
-  const FigureColors(this.body, this.far, this.prop, this.gear, this.floor);
+
+  /// Working muscles; helpers get a mix of this and the body colour.
+  final Color work;
+  const FigureColors(
+    this.body,
+    this.far,
+    this.prop,
+    this.gear,
+    this.floor, {
+    this.work = const Color(0xFFFF6B2C),
+  });
 
   @override
   bool operator ==(Object other) =>
@@ -189,17 +305,60 @@ class FigureColors {
       other.far == far &&
       other.prop == prop &&
       other.gear == gear &&
-      other.floor == floor;
+      other.floor == floor &&
+      other.work == work;
 
   @override
-  int get hashCode => Object.hash(body, far, prop, gear, floor);
+  int get hashCode => Object.hash(body, far, prop, gear, floor, work);
 
+  /// Equipment is neutral so the accent marks only the working muscles.
   factory FigureColors.of(AppPalette p) => FigureColors(
     p.label,
     p.tertiaryLabel,
-    p.secondaryLabel.withValues(alpha: 0.55),
-    p.accent,
+    p.secondaryLabel.withValues(alpha: 0.45),
+    p.secondaryLabel,
     p.separator,
+    work: p.accent,
+  );
+}
+
+/// Body parts the figure can light up.
+enum BodyPart {
+  chest,
+  back,
+  core,
+  shoulders,
+  upperArms,
+  forearms,
+  glutes,
+  thighs,
+  calves,
+}
+
+BodyPart _partOf(String head) => switch (head) {
+  'chest_upper' || 'chest_mid' => BodyPart.chest,
+  'lats' || 'upper_back' || 'lower_back' => BodyPart.back,
+  'abs' || 'abs_lower' || 'obliques' => BodyPart.core,
+  'delt_front' || 'delt_side' || 'delt_rear' => BodyPart.shoulders,
+  'forearms' => BodyPart.forearms,
+  'glutes' || 'glutes_med' => BodyPart.glutes,
+  'quads' || 'hamstrings' || 'adductors' => BodyPart.thighs,
+  'calves_gastro' || 'calves_soleus' => BodyPart.calves,
+  _ => BodyPart.upperArms,
+};
+
+/// Working and helping body parts of a catalog exercise (empty for
+/// custom exercises without anatomy).
+({Set<BodyPart> work, Set<BodyPart> help}) bodyPartsOf(String exerciseId) {
+  final a = anatomyOf(exerciseId);
+  if (a == null) return (work: const {}, help: const {});
+  final work = {for (final h in a.primary) _partOf(h)};
+  return (
+    work: work,
+    help: {
+      for (final h in a.secondary)
+        if (!work.contains(_partOf(h))) _partOf(h),
+    },
   );
 }
 
@@ -333,12 +492,21 @@ class FigurePainter extends CustomPainter {
   /// Malý náhled: silnější čáry, bez podlahy.
   final bool thumb;
 
+  /// Body parts drawn in the accent (working) or half accent (helping).
+  final Set<BodyPart> work, help;
+
+  /// Faint start pose behind the figure: shows the range of motion.
+  final bool ghost;
+
   FigurePainter(
     this.movement,
     this.equipment,
     this.t,
     this.colors, {
     this.thumb = false,
+    this.work = const {},
+    this.help = const {},
+    this.ghost = false,
   });
 
   /// Výřez, do kterého se vejdou obě polohy, aby figurka při pohybu
@@ -376,7 +544,9 @@ class FigurePainter extends CustomPainter {
     // Hlava je kruh, ne bod; okraj na čáry a náčiní.
     r = r.inflate(thumb ? 9 : 12);
     // Stejné měřítko napříč cviky: aspoň 100 × 100 bodů.
-    final w = math.max(r.width, 100.0), h = math.max(r.height, 100.0);
+    // Detail view fills its frame; thumbs keep one scale across exercises.
+    final side = thumb ? 100.0 : 72.0;
+    final w = math.max(r.width, side), h = math.max(r.height, side);
     return Rect.fromCenter(center: r.center, width: w, height: h);
   }
 
@@ -399,7 +569,6 @@ class FigurePainter extends CustomPainter {
       ..strokeWidth = width
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    final fill = Paint()..color = colors.body;
     Offset o(Pt p) => Offset(p.x, p.y);
     void line(Pt a, Pt b, Paint p) => canvas.drawLine(o(a), o(b), p);
 
@@ -412,35 +581,132 @@ class FigurePainter extends CustomPainter {
     }
     _props(canvas, j, stroke, w);
 
-    final body = stroke(colors.body, w);
-    final far = stroke(colors.far, w);
-    void limb((Pt, Pt, Pt) l, Paint p) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(l.$1.x, l.$1.y)
-          ..lineTo(l.$2.x, l.$2.y)
-          ..lineTo(l.$3.x, l.$3.y),
-        p,
+    if (ghost && !thumb) _body(canvas, _solve(movement, 0), w, faint: true);
+    _body(canvas, j, w);
+    _gear(canvas, j, stroke, w);
+    // Near arms over the gear, so the hand grips the bar.
+    _arms(canvas, j, w, near: true);
+    canvas.restore();
+  }
+
+  /// Colour of a body part: working, helping or plain.
+  Color _tone(BodyPart part, {bool far = false, bool faint = false}) {
+    if (faint) return colors.far.withValues(alpha: 0.22);
+    final base = far ? colors.far : colors.body;
+    final hot = far ? Color.lerp(colors.far, colors.work, 0.6)! : colors.work;
+    if (work.contains(part)) return hot;
+    if (help.contains(part)) return Color.lerp(base, hot, 0.5)!;
+    return base;
+  }
+
+  void _seg(Canvas canvas, Pt a, Pt b, double width, Color c) =>
+      canvas.drawLine(
+        Offset(a.x, a.y),
+        Offset(b.x, b.y),
+        Paint()
+          ..color = c
+          ..strokeWidth = width
+          ..strokeCap = StrokeCap.round,
+      );
+
+  /// Tapered limbs and a thick torso. Thumbnails keep thinner volumes.
+  double get _k => thumb ? 0.75 : 1.0;
+
+  void _leg(Canvas canvas, (Pt, Pt, Pt) l, double w, bool far, bool faint) {
+    _seg(
+      canvas,
+      l.$1,
+      l.$2,
+      w * 1.55 * _k,
+      _tone(BodyPart.thighs, far: far, faint: faint),
+    );
+    _seg(
+      canvas,
+      l.$2,
+      l.$3,
+      w * 1.15 * _k,
+      _tone(BodyPart.calves, far: far, faint: faint),
+    );
+  }
+
+  void _arm(Canvas canvas, (Pt, Pt, Pt) a, double w, bool far, bool faint) {
+    _seg(
+      canvas,
+      a.$1,
+      a.$2,
+      w * 1.2 * _k,
+      _tone(BodyPart.upperArms, far: far, faint: faint),
+    );
+    _seg(
+      canvas,
+      a.$2,
+      a.$3,
+      w * 0.95 * _k,
+      _tone(BodyPart.forearms, far: far, faint: faint),
+    );
+  }
+
+  void _arms(Canvas canvas, _Joints j, double w, {required bool near}) {
+    for (var i = 0; i < j.arms.length; i++) {
+      if (i != j.farArm) _arm(canvas, j.arms[i], w, false, false);
+    }
+  }
+
+  void _body(Canvas canvas, _Joints j, double w, {bool faint = false}) {
+    if (j.farLeg != null) _leg(canvas, j.legs[j.farLeg!], w, true, faint);
+    if (j.farArm != null) _arm(canvas, j.arms[j.farArm!], w, true, faint);
+    for (var i = 0; i < j.legs.length; i++) {
+      if (i != j.farLeg) _leg(canvas, j.legs[i], w, false, faint);
+    }
+    final torso = w * 2.1 * _k;
+    final mid = Pt.lerp(j.hip, j.shoulder, 0.45);
+    if (movement.view == FigureView.front) {
+      _seg(
+        canvas,
+        j.legs[0].$1,
+        j.legs[1].$1,
+        torso * 0.8,
+        _tone(BodyPart.glutes, faint: faint),
+      );
+      _seg(
+        canvas,
+        j.arms[0].$1,
+        j.arms[1].$1,
+        torso * 0.75,
+        _tone(BodyPart.shoulders, faint: faint),
       );
     }
-
-    // Vzdálenější končetiny pod tělem.
-    if (j.farLeg != null) limb(j.legs[j.farLeg!], far);
-    if (j.farArm != null) limb(j.arms[j.farArm!], far);
-    for (var i = 0; i < j.legs.length; i++) {
-      if (i != j.farLeg) limb(j.legs[i], body);
+    _seg(canvas, j.hip, mid, torso, _tone(BodyPart.core, faint: faint));
+    final upper = work.contains(BodyPart.chest) || work.contains(BodyPart.back)
+        ? BodyPart.chest
+        : help.contains(BodyPart.back)
+        ? BodyPart.back
+        : BodyPart.chest;
+    _seg(canvas, mid, j.shoulder, torso, _tone(upper, faint: faint));
+    if (movement.view == FigureView.side) {
+      // Glutes and delts as round joints, lit when they work.
+      Paint dot(BodyPart p) => Paint()..color = _tone(p, faint: faint);
+      canvas.drawCircle(
+        Offset(j.hip.x, j.hip.y),
+        torso * 0.55,
+        dot(BodyPart.glutes),
+      );
+      canvas.drawCircle(
+        Offset(j.shoulder.x, j.shoulder.y),
+        torso * 0.52,
+        dot(BodyPart.shoulders),
+      );
     }
-    if (movement.view == FigureView.front) {
-      line(j.legs[0].$1, j.legs[1].$1, body);
-      line(j.arms[0].$1, j.arms[1].$1, body);
+    canvas.drawCircle(
+      Offset(j.head.x, j.head.y),
+      7.0 * (thumb ? 0.9 : 1),
+      Paint()..color = faint ? colors.far.withValues(alpha: 0.22) : colors.body,
+    );
+    if (faint) {
+      for (var i = 0; i < j.arms.length; i++) {
+        _arm(canvas, j.arms[i], w, false, true);
+      }
     }
-    line(j.hip, j.shoulder, body);
-    canvas.drawCircle(o(j.head), 6.5, fill);
-    _gear(canvas, j, stroke, w);
-    for (var i = 0; i < j.arms.length; i++) {
-      if (i != j.farArm) limb(j.arms[i], body);
-    }
-    canvas.restore();
   }
 
   void _props(
@@ -577,10 +843,11 @@ class FigurePainter extends CustomPainter {
             );
           }
         } else {
-          // Ze strany je osa vidět z čela: kotouč.
+          // From the side the bar is seen end-on: a plate with a hub.
           final c = hands.first;
-          canvas.drawCircle(o(c), 9, stroke(colors.gear, w * 0.6));
-          canvas.drawCircle(o(c), w * 0.45, gear);
+          canvas.drawCircle(o(c), 10, gear);
+          canvas.drawCircle(o(c), 7, Paint()..color = colors.floor);
+          canvas.drawCircle(o(c), w * 0.5, gear);
         }
       case Equipment.dumbbell:
         for (final h in hands.take(front ? 2 : 1)) {
@@ -615,5 +882,8 @@ class FigurePainter extends CustomPainter {
       old.t != t ||
       old.movement != movement ||
       old.equipment != equipment ||
-      old.colors != colors;
+      old.colors != colors ||
+      old.ghost != ghost ||
+      !setEquals(old.work, work) ||
+      !setEquals(old.help, help);
 }

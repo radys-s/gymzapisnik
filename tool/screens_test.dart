@@ -16,6 +16,7 @@ import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/exercises/exercise_detail_page.dart';
 import 'package:gymzapisnik/ui/program/program_editor_page.dart';
 import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 
@@ -185,6 +186,21 @@ void main() {
     await _shot(tester, 'plan');
   });
 
+  _screens('exercise detail', (tester) async {
+    final state = await _state(tester);
+    for (final id in ['bench_press', 'overhead_triceps_extension', 'squat']) {
+      await _pump(tester, state, home: ExerciseDetailPage(state, id));
+      // Mid rep: lowering phase of the first rep.
+      await tester.pump(const Duration(milliseconds: 1800));
+      await _shot(tester, 'detail-$id');
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      await _shot(tester, 'detail-$id-2');
+    }
+  });
+
   _screens('own program', (tester) async {
     final state = await _state(tester);
     await tester.runAsync(() => state.applyPlan(const PlanAnswers()));
@@ -313,7 +329,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
     }
-    final bench = find.text('Bench press (osa)');
+    final bench = find.text('Barbell Bench Press');
     if (bench.evaluate().isNotEmpty) {
       await tester.ensureVisible(bench.first);
       await tester.pump(const Duration(milliseconds: 300));

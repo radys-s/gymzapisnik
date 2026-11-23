@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../coach/evidence.dart';
+import '../../core/i18n.dart';
 import '../../core/format.dart';
 import '../../core/text.dart';
 import '../../domain/anatomy.dart';
@@ -47,7 +49,11 @@ class ExerciseDetailPage extends StatelessWidget {
           if (records[kind] != null) kind,
       ];
       final csName = exercise.nameCs.trim();
-      final showCs = csName.isNotEmpty && fold(csName) != fold(exercise.name);
+      // English name is the title; the Czech UI adds the Czech one.
+      final showCs =
+          !isEnglish &&
+          csName.isNotEmpty &&
+          fold(csName) != fold(exercise.name);
       return LargeTitlePage(
         title: exercise.name,
         children: [
@@ -59,13 +65,7 @@ class ExerciseDetailPage extends StatelessWidget {
                 if (showCs)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      'Česky: $csName',
-                      style: text.titleSmall?.copyWith(
-                        color: p.label,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    child: Text(csName, style: text.titleMedium),
                   ),
                 Text(
                   [
@@ -208,7 +208,6 @@ class ExerciseDetailPage extends StatelessWidget {
   /// Jak cvik vypadá, co posiluje, jak ho dělat a čím ho nahradit.
   List<Widget> _about(BuildContext context, Exercise exercise) {
     final p = context.palette;
-    final text = Theme.of(context).textTheme;
     final anatomy = anatomyOf(exercise.id);
     final technique = techniqueOf(exercise.id);
     final alternatives = [
@@ -217,59 +216,21 @@ class ExerciseDetailPage extends StatelessWidget {
     ].take(5).toList();
     String heads(List<String> ids) =>
         ids.map((id) => headById(id)?.name).nonNulls.join(', ');
-    final cues = _scienceCues(exercise);
     return [
       if (exercise.pattern.isNotEmpty) ...[
-        Panel(
-          padding: const EdgeInsets.all(Space.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.play_circle_outline_rounded, color: p.accent),
-                  const SizedBox(width: 8),
-                  Flexible(child: Text('Demo pohybu', style: text.titleMedium)),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Sleduj tempo a rozsah. Ovládej excentrickou fázi, udrž napětí v cílovém svalu.',
-                style: text.bodySmall?.copyWith(color: p.secondaryLabel),
-              ),
-              const SizedBox(height: Space.m),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(Radii.card),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: p.fill,
-                    border: Border.all(
-                      color: p.separator.withValues(alpha: 0.4),
-                    ),
-                    borderRadius: BorderRadius.circular(Radii.card),
-                  ),
-                  child: SizedBox(
-                    height: 220,
-                    child: Center(child: ExerciseAnimation(exercise)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        SizedBox(height: 340, child: ExerciseAnimation(exercise)),
         const SizedBox(height: Space.l),
       ],
-      if (cues.isNotEmpty)
+      if (evidenceFor(exercise.id) case final ev?)
         GroupedSection(
-          header: 'Tipy k technice',
-          footer: 'Obecné principy techniky — přizpůsob je své mobilitě a vybavení.',
+          header: tr('Proč tento cvik', 'Why this exercise'),
+          footer: tr('Zdroj: ${ev.source}', 'Source: ${ev.source}'),
           children: [
-            for (final cue in cues)
-              GroupedRow(
-                icon: Icons.science_outlined,
-                iconColor: p.accent,
-                title: cue,
-              ),
+            GroupedRow(
+              icon: Icons.science_outlined,
+              iconColor: p.accent,
+              title: ev.text,
+            ),
           ],
         ),
       if (anatomy != null)
@@ -337,67 +298,6 @@ class ExerciseDetailPage extends StatelessWidget {
   }
 }
 
-List<String> _scienceCues(Exercise e) {
-  final cues = <String>[];
-  final p = e.pattern;
-  if (p.contains('squat') || p == 'leg_press') {
-    cues.addAll([
-      'Drž celé chodidlo na zemi a kontroluj kolena ve směru prstů.',
-      'Dýchej do břicha a zpevni trup před repem (brace).',
-      'Zvol rozsah, který zvládneš bez ztráty neutrální páteře.',
-    ]);
-  } else if (p.contains('hinge') || p == 'deadlift') {
-    cues.addAll([
-      'Začni pohyb kyčlemi dozadu, činka/držadla blízko těla.',
-      'Udrž neutrální páteř a pevný trup po celou sérii.',
-      'Poháněj zvednutí hýžděmi, ne přetáčením zad.',
-    ]);
-  } else if (p.contains('push')) {
-    cues.addAll([
-      'Stáhni lopatky a udrž stabilní ramena před tlakem.',
-      'Kontroluj excentriku a tlač přes plný, bezbolestný rozsah.',
-      'Zápěstí drž neutrálně, lokty ve směru, který sedí kloubu.',
-    ]);
-  } else if (p.contains('pull') || p == 'row') {
-    cues.addAll([
-      'Začni stahnutím lopatek, pak táhni lokty.',
-      'Nehoupej trupem; kontroluj návrat do plného protažení.',
-      'Vyber váhu, která umožní plný rozsah bez švihů.',
-    ]);
-  } else if (p == 'fly' || p.contains('raise')) {
-    cues.addAll([
-      'Použij váhu, která dovolí kontrolu bez švihu.',
-      'Drž mírné ohnutí loktů a napětí v cílovém svalu.',
-      'Zastav v pozici, kde ještě držíš techniku a ramena v pohodě.',
-    ]);
-  } else if (p.contains('curl')) {
-    cues.addAll([
-      'Fixuj lokty u těla a eliminuj švih.',
-      'Kontroluj dolní fázi 2-3 s pro větší mechanické napětí.',
-      'Plně extenduj bez ztráty napětí v bicepsu.',
-    ]);
-  } else if (p.contains('triceps')) {
-    cues.addAll([
-      'Lokty drž stabilně; pohyb jde hlavně z loketního kloubu.',
-      'Plně extenduj, ale nepropružuj loket.',
-      'Kontroluj návrat, nenech váhu spadnout.',
-    ]);
-  } else if (p == 'core') {
-    cues.addAll([
-      'Dýchej a drž žebra stažená, neprohýbej bedra.',
-      'Pohybuj se kontrolovaně, kvalita > počet opakování.',
-      'Zastav sérii, když technika začíná padat.',
-    ]);
-  } else {
-    cues.addAll([
-      'Zahřej se specificky a zvol váhu pro čistou techniku.',
-      'Kontroluj excentrickou fázi a plný bezbolestný rozsah.',
-      'Zapisuj série pravidelně - progres vidíš jen z dat.',
-    ]);
-  }
-  return cues;
-}
-
 class _NextPr {
   final String title;
   final String detail;
@@ -446,7 +346,6 @@ _NextPr? _nextPrTarget(
   );
 }
 
-/// Číslo kroku techniky v kroužku.
 /// Kolik naložit na 3–12 opakování podle nejlepšího odhadu 1RM.
 class _RepTable extends StatelessWidget {
   final double oneRm;
@@ -471,6 +370,7 @@ class _RepTable extends StatelessWidget {
   );
 }
 
+/// Číslo kroku techniky v kroužku.
 class _StepNumber extends StatelessWidget {
   final int n;
   const _StepNumber(this.n);

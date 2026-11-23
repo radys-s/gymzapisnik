@@ -11,7 +11,7 @@ const _colors = FigureColors(
   Color(0xFFE4E4E7),
   Color(0xFF6E6E76),
   Color(0x889A9AA2),
-  Color(0xFF76B900),
+  Color(0xFF9A9AA2),
   Color(0xFF26262A),
 );
 
@@ -60,6 +60,9 @@ void main() {
         e.equipment,
         t,
         _colors,
+        work: bodyPartsOf(e.id).work,
+        help: bodyPartsOf(e.id).help,
+        ghost: true,
       ).paint(canvas, const Size(cell, cell - 22));
       final tp = TextPainter(
         text: TextSpan(
