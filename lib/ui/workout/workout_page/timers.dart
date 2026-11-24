@@ -91,11 +91,11 @@ class _SessionStrip extends StatelessWidget {
               ),
               cell(
                 tr('OBJEM', 'VOLUME'),
-                Text('${formatKg(volume)} kg', style: value),
+                AnimatedLabel('${formatKg(volume)} kg', style: value),
               ),
               cell(
                 tr('SÉRIE', 'SETS'),
-                Text('${done.length}/${working.length}', style: value),
+                AnimatedLabel('${done.length}/${working.length}', style: value),
               ),
             ],
           ),
@@ -248,23 +248,29 @@ class _RestBarState extends State<_RestBar> {
                       MediaQuery.textScalerOf(context).scale(1) > 1.2;
                   return Row(
                     children: [
-                      Icon(
-                        finished
-                            ? Icons.check_circle_rounded
-                            : Icons.timer_outlined,
-                        color: finished ? fg : p.accent,
+                      PopSelect(
+                        selected: finished,
+                        child: AnimatedSwitcher(
+                          duration: Motion.of(context, Motion.quick),
+                          child: Icon(
+                            finished
+                                ? Icons.check_circle_rounded
+                                : Icons.timer_outlined,
+                            key: ValueKey(finished),
+                            color: finished ? fg : p.accent,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
-                          child: Text(
+                          child: AnimatedLabel(
                             text,
                             semanticsLabel: finished
                                 ? text
                                 : tr('Pauza $text', 'Rest $text'),
-                            maxLines: 1,
                             style: finished
                                 ? Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(

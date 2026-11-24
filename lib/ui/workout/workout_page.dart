@@ -703,9 +703,14 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 ),
               ],
             ),
-            bottomNavigationBar: state.restEndsAt == null
-                ? null
-                : _RestBar(state: state, endsAt: state.restEndsAt!),
+            bottomNavigationBar: AnimatedSize(
+              duration: Motion.of(context, Motion.quick),
+              curve: Motion.curve,
+              alignment: Alignment.bottomCenter,
+              child: state.restEndsAt == null
+                  ? const SizedBox.shrink()
+                  : _RestBar(state: state, endsAt: state.restEndsAt!),
+            ),
           ),
         ),
       );

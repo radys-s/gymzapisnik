@@ -315,10 +315,10 @@ void main() {
     await _shot(tester, 'workout');
     final checks = find.bySemanticsLabel('Potvrdit sérii');
     if (checks.evaluate().isNotEmpty) {
-      await tester.tap(checks.first, warnIfMissed: false);
-      await tester.pump(const Duration(milliseconds: 600));
-      await tester.tap(checks.at(1), warnIfMissed: false);
-      await tester.pump(const Duration(milliseconds: 600));
+      await _save(tester, checks.first);
+      // The confirmed row leaves this finder; its first match is now
+      // the next set. Wait for persistence before capturing the totals.
+      await _save(tester, checks.first);
     }
     await _shot(tester, 'workout-rest');
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));

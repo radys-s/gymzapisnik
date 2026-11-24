@@ -26,6 +26,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   late final Workout draft = widget.workout.copy();
   late final name = TextEditingController(text: draft.name);
   late final note = TextEditingController(text: draft.note);
+  final _invalidSets = <SetEntry>{};
   bool saving = false;
   bool allowExit = false;
   bool leaving = false;
@@ -34,7 +35,8 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
     final current = draft.copy()
       ..name = name.text
       ..note = note.text;
-    return jsonEncode(current.toJson()) != jsonEncode(widget.workout.toJson());
+    return _invalidSets.isNotEmpty ||
+        jsonEncode(current.toJson()) != jsonEncode(widget.workout.toJson());
   }
 
   @override
@@ -86,7 +88,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   }
 
   Future<void> _save() async {
-    if (saving) return;
+    if (saving || _invalidSets.isNotEmpty) return;
     setState(() => saving = true);
     draft
       ..name = name.text
@@ -113,7 +115,10 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   void _removeExercise(WorkoutExercise entry) {
     final index = draft.exercises.indexOf(entry);
     if (index < 0) return;
-    setState(() => draft.exercises.removeAt(index));
+    setState(() {
+      _invalidSets.removeAll(entry.sets);
+      draft.exercises.removeAt(index);
+    });
     showUndo(
       context,
       tr(
@@ -135,7 +140,10 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   void _removeSet(WorkoutExercise entry, SetEntry set) {
     final index = entry.sets.indexOf(set);
     if (index < 0) return;
-    setState(() => entry.sets.removeAt(index));
+    setState(() {
+      _invalidSets.remove(set);
+      entry.sets.removeAt(index);
+    });
     showUndo(context, tr('Série smazána.', 'Set deleted.'), () {
       if (!mounted || entry.sets.contains(set)) return;
       setState(() => entry.sets.insert(index.clamp(0, entry.sets.length), set));
@@ -156,7 +164,9 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
           title: Text(tr('Upravit trénink', 'Edit workout')),
           actions: [
             TextButton(
-              onPressed: saving || !dirty ? null : _save,
+              onPressed: saving || !dirty || _invalidSets.isNotEmpty
+                  ? null
+                  : _save,
               child: saving
                   ? const SizedBox.square(
                       dimension: 18,
@@ -249,7 +259,11 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
                             entry.sets.take(i).where((s) => !s.warmup).length +
                                 1,
                           ),
-                          onChanged: _changed,
+                          onChanged: (valid) => setState(() {
+                            valid
+                                ? _invalidSets.remove(set)
+                                : _invalidSets.add(set);
+                          }),
                           onType: (v) => setState(() {
                             set
                               ..warmup = v == 'warmup'
@@ -290,7 +304,7 @@ class _EditSetRow extends StatefulWidget {
   final String label;
   final ValueChanged<String> onType;
   final VoidCallback onRemove;
-  final VoidCallback onChanged;
+  final ValueChanged<bool> onChanged;
   const _EditSetRow({
     super.key,
     required this.set,
@@ -321,6 +335,23 @@ class _EditSetRowState extends State<_EditSetRow> {
     super.dispose();
   }
 
+  String? _problem(String raw, {required bool decimal}) {
+    if (raw.trim().isEmpty) return null;
+    if (decimal) {
+      final v = parseNum(raw);
+      return v != null && v >= 0
+          ? null
+          : tr('Zadej váhu od 0 kg.', 'Enter a weight of 0 kg or more.');
+    }
+    final v = int.tryParse(raw.trim());
+    return v != null && v >= 0 && v <= 999
+        ? null
+        : tr(
+            'Zadej celé opakování od 0 do 999.',
+            'Enter whole reps between 0 and 999.',
+          );
+  }
+
   Widget _field(
     TextEditingController c,
     String hint,
@@ -338,12 +369,12 @@ class _EditSetRowState extends State<_EditSetRow> {
               ?.copyWith(fontFeatures: tabular),
           keyboardType: TextInputType.numberWithOptions(decimal: decimal),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
-            ),
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,-]')),
           ],
           decoration: InputDecoration(
             hintText: hint,
+            errorText: _problem(c.text, decimal: decimal),
+            errorMaxLines: 3,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: Space.s,
@@ -351,10 +382,16 @@ class _EditSetRowState extends State<_EditSetRow> {
             ),
           ),
           onChanged: (_) {
-            widget.set
-              ..weight = parseNum(weight.text) ?? 0
-              ..reps = int.tryParse(reps.text) ?? 0;
-            widget.onChanged();
+            final valid =
+                _problem(weight.text, decimal: true) == null &&
+                _problem(reps.text, decimal: false) == null;
+            if (valid) {
+              widget.set
+                ..weight = parseNum(weight.text) ?? 0
+                ..reps = int.tryParse(reps.text.trim()) ?? 0;
+            }
+            setState(() {});
+            widget.onChanged(valid);
           },
         ),
       ),

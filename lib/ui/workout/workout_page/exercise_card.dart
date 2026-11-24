@@ -47,7 +47,14 @@ class _ExerciseCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AnimatedSize(
+    duration: Motion.of(context, Motion.base),
+    curve: Motion.curve,
+    alignment: Alignment.topCenter,
+    child: _content(context),
+  );
+
+  Widget _content(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final exercise = state.exercise(entry.exerciseId);

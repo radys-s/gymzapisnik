@@ -78,7 +78,25 @@ class AmbientBuilder extends StatefulWidget {
   State<AmbientBuilder> createState() => _AmbientBuilderState();
 }
 
-class _AmbientBuilderState extends State<AmbientBuilder> {
+class _AmbientBuilderState extends State<AmbientBuilder>
+    with WidgetsBindingObserver {
+  bool _foreground = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _sync(_foreground && Ambient.on(context));
+    setState(() {});
+  }
+
   bool _listening = false;
   int _step = -1;
 
@@ -101,11 +119,12 @@ class _AmbientBuilderState extends State<AmbientBuilder> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _sync(Ambient.on(context));
+    _sync(_foreground && Ambient.on(context));
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sync(false);
     super.dispose();
   }

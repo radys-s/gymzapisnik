@@ -90,6 +90,10 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!Motion.on(context)) {
+      _delay?.cancel();
+      _c.value = 1;
+    }
     if (_started) return;
     _started = true;
     if (!Motion.on(context) || (widget.skip?.value ?? false)) {
@@ -228,7 +232,10 @@ class _PressScaleState extends State<PressScale> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled || !Motion.on(context)) return widget.child;
+    if (!widget.enabled || !Motion.on(context)) {
+      _down = false;
+      return widget.child;
+    }
     return Listener(
       onPointerDown: (_) => _set(true),
       onPointerUp: (_) => _set(false),
@@ -325,6 +332,12 @@ class _PopSelectState extends State<PopSelect>
   ]).animate(_c);
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!Motion.on(context)) _c.value = 1;
+  }
+
+  @override
   void didUpdateWidget(PopSelect old) {
     super.didUpdateWidget(old);
     if (widget.selected && !old.selected && Motion.on(context)) {
@@ -371,6 +384,12 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
   );
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!Motion.on(context)) _c.value = 1;
+  }
+
+  @override
   void didUpdateWidget(FadeIndexedStack old) {
     super.didUpdateWidget(old);
     if (widget.index != old.index && Motion.on(context)) {
@@ -400,3 +419,43 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
 
 /// Značky pro sdílené přechody (Hero) – jedna funkce, ať se nerozejdou.
 String heroTag(String kind, Object id) => 'hero:$kind:$id';
+
+/// A changing value slides and fades into place. Screen readers receive
+/// only the current value, never the outgoing transition copy.
+class AnimatedLabel extends StatelessWidget {
+  final String value;
+  final TextStyle? style;
+  final String? semanticsLabel;
+  const AnimatedLabel(this.value, {super.key, this.style, this.semanticsLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Text(value, key: ValueKey(value), style: style, maxLines: 1);
+    return Semantics(
+      label: semanticsLabel ?? value,
+      excludeSemantics: true,
+      child: !Motion.on(context)
+          ? child
+          : AnimatedSwitcher(
+              duration: Motion.quick,
+              switchInCurve: Motion.curve,
+              switchOutCurve: Curves.easeIn,
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.centerLeft,
+                children: [...previous, ?current],
+              ),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.18),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: child,
+            ),
+    );
+  }
+}

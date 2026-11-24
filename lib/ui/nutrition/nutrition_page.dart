@@ -9,6 +9,7 @@ import '../../state/app_state.dart';
 import '../bodyweight/bodyweight_page.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
+import '../design/motion.dart';
 import '../settings/settings_button.dart';
 import 'barcode_dialog.dart';
 import 'food_form.dart';
@@ -803,12 +804,15 @@ class _RingLegend extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            left > 0
-                ? tr('zbývá ${_n(left)} $unit', '${_n(left)} $unit left')
-                : tr('cíl splněn', 'goal reached'),
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: left > 0 ? p.secondaryLabel : p.positive),
+          PopSelect(
+            selected: left <= 0,
+            child: AnimatedLabel(
+              left > 0
+                  ? tr('zbývá ${_n(left)} $unit', '${_n(left)} $unit left')
+                  : tr('cíl splněn', 'goal reached'),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: left > 0 ? p.secondaryLabel : p.positive),
+            ),
           ),
         ],
       ),
