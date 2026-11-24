@@ -60,7 +60,6 @@ enum _S {
   experience,
   schedule,
   gym,
-  pain,
   body,
   focus,
   reveal,
@@ -75,7 +74,6 @@ const _questions = {
   _S.experience,
   _S.schedule,
   _S.gym,
-  _S.pain,
   _S.body,
   _S.focus,
 };
@@ -121,7 +119,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (!own) _S.experience,
     _S.schedule,
     _S.gym,
-    if (!own) _S.pain,
     if (setup && !own) ...[_S.body, _S.focus],
     _S.reveal,
     if (!setup && reminders) _S.reminder,
@@ -828,36 +825,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 answered.add(s);
                 plan = plan.copyWith(place: g);
               }),
-            ),
-        ],
-      ),
-    ),
-    _S.pain => _question(
-      s: s,
-      title: tr('Bolí tě něco?', 'Anything hurt?'),
-      why: tr(
-        'Cviky, které bolavý kloub zatěžují, vyměním za šetrnější '
-            'na stejný sval. Vybrat můžeš víc.',
-        'Exercises that load a sore joint get swapped for gentler ones on '
-            'the same muscle. Pick as many as apply.',
-      ),
-      action: plan.avoid.isEmpty
-          ? tr('Nic mě nebolí', 'Nothing hurts')
-          : tr('Pokračovat', 'Continue'),
-      onNext: () => _forward(s),
-      tone: Tone.progress,
-      child: StaggerColumn(
-        gap: Space.s,
-        children: [
-          for (final j in Joint.values)
-            ChoiceCard(
-              icon: _jointIcon(j),
-              label: j.label,
-              hint: _jointHint(j),
-              multi: true,
-              selected: plan.avoid.contains(j),
-              onTap: () =>
-                  _changePlan(plan.copyWith(avoid: _toggle(plan.avoid, j))),
             ),
         ],
       ),

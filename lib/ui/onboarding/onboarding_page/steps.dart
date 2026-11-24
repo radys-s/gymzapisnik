@@ -15,27 +15,6 @@ IconData placeIcon(TrainingPlace p) => switch (p) {
   TrainingPlace.bodyweight => Icons.accessibility_new_rounded,
 };
 
-IconData _jointIcon(Joint j) => switch (j) {
-  Joint.knees => Icons.directions_walk_rounded,
-  Joint.lowerBack => Icons.airline_seat_recline_normal_rounded,
-  Joint.shoulders => Icons.sports_handball_rounded,
-};
-
-String _jointHint(Joint j) => switch (j) {
-  Joint.knees => tr(
-    'Méně hlubokých dřepů a výpadů',
-    'Fewer deep squats and lunges',
-  ),
-  Joint.lowerBack => tr(
-    'Bez mrtvých tahů a předklonů s osou',
-    'No deadlifts or bent-over barbell work',
-  ),
-  Joint.shoulders => tr(
-    'Bez tlaků nad hlavu a kliků na bradlech',
-    'No overhead presses or dips',
-  ),
-};
-
 IconData _styleIcon(PlanStyle s) => switch (s) {
   PlanStyle.science => Icons.science_outlined,
   PlanStyle.oldSchool => Icons.fitness_center_rounded,

@@ -47,9 +47,7 @@ Future<void> _pick(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-/// Stav uprostřed úvodu: souhlas je daný a úvod pokračuje krokem [step]
-/// (0 uvítání, 1 souhlas, 2 cíl, 3 zkušenost, 4 čas, 5 posilovna,
-/// 6 bolest, 7 hotový plán).
+/// Resume onboarding at the saved flow position after consent.
 Future<void> _midway(AppState state, int step) => state.acceptConsent(
   adult: true,
   guardianConsent: false,
@@ -125,10 +123,8 @@ void main() {
     // Picking a gym waits: a machine list is offered, then Continue.
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
 
-    expect(find.text('Bolí tě něco?'), findsOneWidget);
-    await tester.tap(find.text('Kolena'));
-    await tester.pump();
-    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
+    expect(find.text('Bolí tě něco?'), findsNothing);
+    expect(find.text('Plán je hotový'), findsOneWidget);
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 200)),
     );
@@ -140,13 +136,7 @@ void main() {
     expect(state.planAnswers?.days, 4);
     expect(state.planAnswers?.experience, Experience.year);
     expect(state.planAnswers?.place, TrainingPlace.home);
-    expect(state.planAnswers?.avoid, {Joint.knees});
-    for (final d in state.split!.days) {
-      for (final e in d.exercises) {
-        expect(e.exerciseId, isNot(contains('squat')), reason: d.name);
-      }
-    }
-
+    expect(state.planAnswers?.avoid, isEmpty);
     expect(find.text('Něco o tobě'), findsNothing);
     expect(find.text('Plán je hotový'), findsOneWidget);
     expect(find.text('Upper / Lower (science-based)'), findsOneWidget);
@@ -257,7 +247,6 @@ void main() {
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _pick(tester, find.text('Velké komerční fitko'));
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
-    await _tapAndSave(tester, find.text('Nic mě nebolí'));
     // Přeskoč volitelné kroky (tělo, zaměření) až na hotový plán.
     for (var i = 0; i < 4; i++) {
       await tester.runAsync(

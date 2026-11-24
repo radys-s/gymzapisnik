@@ -77,7 +77,7 @@ void main() {
 
     // Bez uvítání: rovnou první otázka, s počtem otázek včetně zaměření.
     expect(find.text('Jak chceš trénovat?'), findsOneWidget);
-    expect(find.bySemanticsLabel('Otázka 1 z 8'), findsOneWidget);
+    expect(find.bySemanticsLabel('Otázka 1 ze 7'), findsOneWidget);
     expect(find.text('Přeskočit'), findsNothing);
 
     await _pick(tester, find.text(PlanStyle.oldSchool.label));
@@ -100,7 +100,6 @@ void main() {
     await tester.tapAt(const Offset(200, 20));
     await tester.pumpAndSettle();
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
-    await _tapAndSave(tester, find.text('Nic mě nebolí').hitTestable());
     expect(find.text('Něco o tobě'), findsOneWidget);
     await _tapAndSave(tester, find.text('Doplním později'));
 

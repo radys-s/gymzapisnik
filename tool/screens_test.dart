@@ -192,9 +192,6 @@ void main() {
     await tester.tapAt(const Offset(200, 20));
     await tester.pumpAndSettle();
     await _tap(tester, find.text('Pokračovat'));
-    await _tap(tester, find.text('Kolena'));
-    await _shot(tester, 'pain');
-    await _save(tester, find.text('Pokračovat'));
     await _shot(tester, 'plan');
   });
 

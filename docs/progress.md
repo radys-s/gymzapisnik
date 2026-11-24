@@ -88,3 +88,9 @@
 - Verification: targeted analyzer clean; figure/catalog and exercise-screen tests pass (5 tests); workout screenshot tour passes and renders 8 screens. Inspected the full catalog contact sheet and exercise detail screenshot. Independent read-only review approved the rendering changes before the label correction.
 - Delivery: source committed on the redesign branch. The previously published phone preview predates this final illustration polish; its hosted bundle has not been updated in this pass.
 - Next: hands-on feedback on the existing phone preview, then refresh the hosted bundle with any requested revisions.
+
+## 2026-11-24 — Remove the pain question
+
+- Removed the pain-selection screen from onboarding and plan setup following user feedback. Gym selection now leads directly to the generated plan in onboarding; later plan setup continues with the optional body and focus steps.
+- Removed unused question helpers, adjusted the progress count, and updated the flow tests and screenshot tour. Existing saved exercise exclusions remain supported.
+- Verification: targeted analyzer clean; first-run screenshot tour reaches the plan without the removed step.
