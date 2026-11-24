@@ -178,7 +178,15 @@ extension CoachOps on AppState {
 
     final last = finishedNewestFirst(workouts).firstOrNull;
     final days = profile.trainingDays;
-    const short = ['po', 'út', 'st', 'čt', 'pá', 'so', 'ne'];
+    final short = [
+      tr('po', 'Mon'),
+      tr('út', 'Tue'),
+      tr('st', 'Wed'),
+      tr('čt', 'Thu'),
+      tr('pá', 'Fri'),
+      tr('so', 'Sat'),
+      tr('ne', 'Sun'),
+    ];
     return CoachFacts(
       mission: mission(at),
       program: s?.name,
@@ -378,7 +386,11 @@ extension CoachOps on AppState {
 
   /// Ohodnotí dokončený trénink; `null` hodnocení smaže.
   Future<void> rateWorkout(Workout workout, WorkoutRating? rating) async {
-    if (!workout.finished) throw StateError('Trénink není dokončený.');
+    if (!workout.finished) {
+      throw StateError(
+        tr('Trénink není dokončený.', 'The workout is not finished.'),
+      );
+    }
     final edited = workout.copy();
     if (rating == null) {
       edited.extra.remove(ratingKey);
@@ -498,8 +510,11 @@ extension CoachOps on AppState {
         final existing = await store.raw(data['id'] as String);
         if ((existing != null && existing['kind'] != kind) ||
             data['id'] == active?.id) {
-          throw const FormatException(
-            'Záloha obsahuje kolidující ID. Nic nebylo obnoveno.',
+          throw FormatException(
+            tr(
+              'Záloha obsahuje kolidující ID. Nic nebylo obnoveno.',
+              'The backup contains conflicting IDs. Nothing was restored.',
+            ),
           );
         }
       }

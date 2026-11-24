@@ -312,7 +312,10 @@ class ShareCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 records == 1
-                                    ? tr('Nový osobní rekord', 'New personal record')
+                                    ? tr(
+                                        'Nový osobní rekord',
+                                        'New personal record',
+                                      )
                                     : tr(
                                         'Nové osobní rekordy: $records',
                                         'New personal records: $records',

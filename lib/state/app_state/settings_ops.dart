@@ -192,7 +192,9 @@ extension SettingsOps on AppState {
       values: entry.values,
     );
     if (error != null) return error;
-    if (parseDayKey(entry.day) == null) return 'Neplatný den.';
+    if (parseDayKey(entry.day) == null) {
+      return tr('Neplatný den.', 'Invalid day.');
+    }
     await _enqueue(() => store.put(Kinds.food, entry.toJson()));
     foods = [
       entry,

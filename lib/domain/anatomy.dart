@@ -63,7 +63,12 @@ const muscleHeads = <MuscleHead>[
   MuscleHead('delt_front', 'Přední delt', 'Ramena', 'Front delt'),
   MuscleHead('delt_side', 'Boční delt', 'Ramena', 'Side delt'),
   MuscleHead('delt_rear', 'Zadní delt', 'Ramena', 'Rear delt'),
-  MuscleHead('biceps_long', 'Biceps – dlouhá hlava', 'Paže', 'Biceps – long head'),
+  MuscleHead(
+    'biceps_long',
+    'Biceps – dlouhá hlava',
+    'Paže',
+    'Biceps – long head',
+  ),
   MuscleHead(
     'biceps_short',
     'Biceps – krátká hlava',

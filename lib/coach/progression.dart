@@ -13,6 +13,7 @@ library;
 
 import 'dart:math' as math;
 
+import '../core/i18n.dart';
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/stats.dart';
@@ -90,12 +91,23 @@ Suggestion suggest(
       reps: plan.repMin,
       sets: plan.sets,
       reason: type != ExerciseType.weighted
-          ? 'Poprvé: udělej $range opakování v sérii.'
+          ? tr(
+              'Poprvé: udělej $range opakování v sérii.',
+              'First time: do $range reps in each set.',
+            )
           : load == null
-          ? 'Poprvé: zvol váhu, se kterou dáš $range opakování '
-                's 1–2 v rezervě.'
-          : 'Poprvé: začni na ${load.label} a udělej $range opakování. '
-                'Jde to lehce? V další sérii přidej.',
+          ? tr(
+              'Poprvé: zvol váhu, se kterou dáš $range opakování '
+                  's 1–2 v rezervě.',
+              'First time: pick a weight you can do for $range reps '
+                  'with 1–2 in reserve.',
+            )
+          : tr(
+              'Poprvé: začni na ${load.label} a udělej $range opakování. '
+                  'Jde to lehce? V další sérii přidej.',
+              'First time: start at ${load.label} and do $range reps. '
+                  'Too easy? Add weight in the next set.',
+            ),
     );
   }
 
@@ -120,9 +132,12 @@ Suggestion suggest(
         weight: back,
         reps: plan.repMin,
         sets: plan.sets,
-        reason:
-            'Po lehčím tréninku zpět na ${_kg(back)} kg s čerstvou silou, '
-            'začni na ${plan.repMin} opakováních.',
+        reason: tr(
+          'Po lehčím tréninku zpět na ${_kg(back)} kg s čerstvou silou, '
+              'začni na ${plan.repMin} opakováních.',
+          'After a lighter session, return to ${_kg(back)} kg with fresh '
+              'strength and start at ${plan.repMin} reps.',
+        ),
       );
     }
   }
@@ -142,9 +157,13 @@ Suggestion suggest(
         weight: lighter,
         reps: plan.repMax,
         sets: plan.sets,
-        reason:
-            'Dvakrát po sobě bez posunu, dej si lehčí trénink: ${_kg(lighter)} kg '
-            '(−10 %). Příště se vrátíš na ${_kg(topWeight)} kg s čerstvou silou.',
+        reason: tr(
+          'Dvakrát po sobě bez posunu, dej si lehčí trénink: ${_kg(lighter)} kg '
+              '(−10 %). Příště se vrátíš na ${_kg(topWeight)} kg s čerstvou silou.',
+          'No progress twice in a row — take a lighter workout: '
+              '${_kg(lighter)} kg (−10 %). Next time return to ${_kg(topWeight)} kg '
+              'with fresh strength.',
+        ),
       );
     }
   }
@@ -159,9 +178,16 @@ Suggestion suggest(
       reps: target,
       sets: plan.sets,
       reason: minReps >= plan.repMax
-          ? 'Zvládáš ${plan.repMax}+ opakování, zkus přidat zátěž '
-                'nebo těžší variantu.'
-          : 'Minule nejméně $minReps opakování, zkus $target v každé sérii.',
+          ? tr(
+              'Zvládáš ${plan.repMax}+ opakování, zkus přidat zátěž '
+                  'nebo těžší variantu.',
+              'You can do ${plan.repMax}+ reps — try more weight or a '
+                  'harder variation.',
+            )
+          : tr(
+              'Minule nejméně $minReps opakování, zkus $target v každé sérii.',
+              'Last time at least $minReps reps — try $target in every set.',
+            ),
     );
   }
 
@@ -184,9 +210,12 @@ Suggestion suggest(
       weight: topWeight,
       reps: plan.repMax,
       sets: plan.sets,
-      reason:
-          'Minule to bylo na hraně. Zopakuj ${_kg(topWeight)} kg × '
-          '${plan.repMax} s čistou technikou, váhu přidáš příště.',
+      reason: tr(
+        'Minule to bylo na hraně. Zopakuj ${_kg(topWeight)} kg × '
+            '${plan.repMax} s čistou technikou, váhu přidáš příště.',
+        'Last time was a grind. Repeat ${_kg(topWeight)} kg × '
+            '${plan.repMax} with clean form; add weight next time.',
+      ),
     );
   }
   if (allAtTop || easyNearTop) {
@@ -196,16 +225,25 @@ Suggestion suggest(
         : increment;
     final next = topWeight + step;
     final why = easyNearTop && !allAtTop
-        ? 'Minule lehké s rezervou na ${_kg(topWeight)} kg'
-        : 'Minule ${atTop.length}× ${plan.repMax}+ na ${_kg(topWeight)} kg';
+        ? tr(
+            'Minule lehké s rezervou na ${_kg(topWeight)} kg',
+            'Last time light with reps in reserve at ${_kg(topWeight)} kg',
+          )
+        : tr(
+            'Minule ${atTop.length}× ${plan.repMax}+ na ${_kg(topWeight)} kg',
+            'Last time ${atTop.length}× ${plan.repMax}+ at ${_kg(topWeight)} kg',
+          );
     return Suggestion(
       kind: SuggestionKind.increase,
       weight: next,
       reps: plan.repMin,
       sets: plan.sets,
       reason:
-          '$why, přidej ${_kg(step)} kg a začni na ${plan.repMin} opakováních.'
-          '${proteinLow ? ' Krok je menší: bílkovin jíš pod cíl.' : ''}',
+          '$why'
+          '${tr(', přidej ', ', add ')}${_kg(step)} kg'
+          '${tr(' a začni na ', ' and start at ')}${plan.repMin}'
+          '${tr(' opakováních.', ' reps.')}'
+          '${proteinLow ? tr(' Krok je menší: bílkovin jíš pod cíl.', ' The step is smaller: you are below your protein target.') : ''}',
     );
   }
   final target = (minReps + 1).clamp(plan.repMin, plan.repMax);
@@ -214,9 +252,12 @@ Suggestion suggest(
     weight: topWeight,
     reps: target,
     sets: plan.sets,
-    reason:
-        'Drž ${_kg(topWeight)} kg a zkus $target opakování v každé sérii. '
-        'Až dáš ${plan.sets}× ${plan.repMax}, přidáš váhu.',
+    reason: tr(
+      'Drž ${_kg(topWeight)} kg a zkus $target opakování v každé sérii. '
+          'Až dáš ${plan.sets}× ${plan.repMax}, přidáš váhu.',
+      'Keep ${_kg(topWeight)} kg and try $target reps in every set. '
+          'Once you hit ${plan.sets}× ${plan.repMax}, add weight.',
+    ),
   );
 }
 

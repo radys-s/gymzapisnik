@@ -168,7 +168,12 @@ class Profile {
     required DateTime now,
   }) {
     if (!adult && !guardianConsent) {
-      throw ArgumentError('Nezletilý potřebuje souhlas zákonného zástupce.');
+      throw ArgumentError(
+        tr(
+          'Nezletilý potřebuje souhlas zákonného zástupce.',
+          'A minor needs parental consent.',
+        ),
+      );
     }
     return Profile(
       consentVersion: currentConsentVersion,

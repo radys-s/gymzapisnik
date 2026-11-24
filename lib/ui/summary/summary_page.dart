@@ -653,7 +653,10 @@ class _NextPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tr('Další trénink', 'Next workout'), style: text.labelMedium),
+                Text(
+                  tr('Další trénink', 'Next workout'),
+                  style: text.labelMedium,
+                ),
                 Text(day.name, style: text.titleMedium),
                 if (detail != null) ...[
                   const SizedBox(height: 2),
@@ -781,7 +784,10 @@ class _BadgesPanel extends StatelessWidget {
                   ? tr('Odznaky z tohoto tréninku', 'Badges from this workout')
                   : main.length == 1
                   ? tr('Nový odznak', 'New badge')
-                  : tr('Nové odznaky (${main.length})', 'New badges (${main.length})'),
+                  : tr(
+                      'Nové odznaky (${main.length})',
+                      'New badges (${main.length})',
+                    ),
               style: text.titleMedium,
             ),
             const SizedBox(height: Space.m),
@@ -961,7 +967,10 @@ class _ComparisonPanel extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: Space.xs),
               child: Text(
-                tr('Rozcvička: ${setsLabel(warmups)}', 'Warm-up: ${setsLabel(warmups)}'),
+                tr(
+                  'Rozcvička: ${setsLabel(warmups)}',
+                  'Warm-up: ${setsLabel(warmups)}',
+                ),
                 style: muted,
               ),
             ),
@@ -977,9 +986,9 @@ class _ComparisonPanel extends StatelessWidget {
                   )
                 : tr(
                     'Objem ${volumeLabel(type, c.volumeToday)} '
-                    '(${delta(c.volumeDelta)})',
+                        '(${delta(c.volumeDelta)})',
                     'Volume ${volumeLabel(type, c.volumeToday)} '
-                    '(${delta(c.volumeDelta)})',
+                        '(${delta(c.volumeDelta)})',
                   ),
             style: numbers,
           ),

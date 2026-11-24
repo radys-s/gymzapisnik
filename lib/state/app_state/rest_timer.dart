@@ -127,7 +127,9 @@ extension RestTimerOps on AppState {
     DateTime? now,
   }) async {
     final workout = active;
-    if (workout == null) return (workout: null, error: 'Žádný trénink.');
+    if (workout == null) {
+      return (workout: null, error: tr('Žádný trénink.', 'No workout.'));
+    }
     final done = workout.copy()
       ..extra.remove(AppState._restKey)
       ..extra.remove(AppState._restStartKey);
@@ -137,7 +139,13 @@ extension RestTimerOps on AppState {
           e..sets = e.sets.where((s) => s.done && s.reps > 0).toList(),
     ];
     if (!done.exercises.any((e) => e.countedSets.isNotEmpty)) {
-      return (workout: null, error: 'Potvrď aspoň jednu pracovní sérii.');
+      return (
+        workout: null,
+        error: tr(
+          'Potvrď aspoň jednu pracovní sérii.',
+          'Confirm at least one working set.',
+        ),
+      );
     }
     final finished = Workout.fromJson({
       ...done.toJson(),
@@ -160,7 +168,10 @@ extension RestTimerOps on AppState {
       _changed();
       return (
         workout: null,
-        error: 'Trénink se nepodařilo uložit. Zkus dokončení znovu. Pokud chyba trvá, aplikaci nezavírej.',
+        error: tr(
+          'Trénink se nepodařilo uložit. Zkus dokončení znovu. Pokud chyba trvá, aplikaci nezavírej.',
+          'Could not save the workout. Try finishing again. If the error persists, do not close the app.',
+        ),
       );
     }
     workouts = [finished, ...workouts.where((w) => w.id != finished.id)]

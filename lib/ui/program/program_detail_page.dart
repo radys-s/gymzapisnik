@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/i18n.dart';
 
 import '../../coach/splits.dart';
@@ -34,21 +35,24 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
     }
   }
 
-  Future<void> _use(SplitTemplate program) => _guard(() async {
-    await state.setSplit(program.id);
-    if (mounted) {
-      showToast(
-        context,
-        tr(
-          'Program ${program.name} je aktivní.',
-          '${program.name} is now active.',
-        ),
-      );
-    }
-  }, tr(
-    'Program se nepodařilo zvolit. Zkus to znovu.',
-    'Could not select the program. Try again.',
-  ));
+  Future<void> _use(SplitTemplate program) => _guard(
+    () async {
+      await state.setSplit(program.id);
+      if (mounted) {
+        showToast(
+          context,
+          tr(
+            'Program ${program.name} je aktivní.',
+            '${program.name} is now active.',
+          ),
+        );
+      }
+    },
+    tr(
+      'Program se nepodařilo zvolit. Zkus to znovu.',
+      'Could not select the program. Try again.',
+    ),
+  );
 
   bool _editing = false;
 
@@ -83,21 +87,24 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
       title: tr('Smazat program?', 'Delete program?'),
       message: tr(
         'Program ${program.name} zmizí. Odcvičené tréninky zůstanou '
-        'v historii.',
+            'v historii.',
         'Program ${program.name} will be removed. Logged workouts stay '
-        'in history.',
+            'in history.',
       ),
       confirm: tr('Smazat', 'Delete'),
       destructive: true,
     );
     if (!ok || !mounted) return;
-    await _guard(() async {
-      await state.deleteProgram(program.id);
-      if (mounted) Navigator.pop(context);
-    }, tr(
-      'Program se nepodařilo smazat. Zkus to znovu.',
-      'Could not delete the program. Try again.',
-    ));
+    await _guard(
+      () async {
+        await state.deleteProgram(program.id);
+        if (mounted) Navigator.pop(context);
+      },
+      tr(
+        'Program se nepodařilo smazat. Zkus to znovu.',
+        'Could not delete the program. Try again.',
+      ),
+    );
   }
 
   @override
@@ -129,7 +136,10 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
                       const SizedBox(width: Space.s),
                       Flexible(
                         child: Text(
-                          tr('Tento program používáš', 'You\'re using this program'),
+                          tr(
+                            'Tento program používáš',
+                            'You\'re using this program',
+                          ),
                           style: text.titleSmall,
                         ),
                       ),

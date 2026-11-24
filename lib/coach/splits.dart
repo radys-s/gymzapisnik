@@ -4,6 +4,7 @@
 /// opakování pro dvojitou progresi (viz `progression.dart`).
 library;
 
+import '../core/i18n.dart';
 import '../domain/anatomy.dart';
 import '../domain/catalog.dart';
 
@@ -151,30 +152,58 @@ const maxCustomPrograms = 20;
 
 /// Česká chyba, nebo `null`, když je program v pořádku.
 String? programError(SplitTemplate program) {
-  if (program.name.trim().isEmpty) return 'Pojmenuj program.';
+  if (program.name.trim().isEmpty)
+    return tr('Pojmenuj program.', 'Name the program.');
   if (program.name.trim().length > maxNameLength) {
-    return 'Název programu je moc dlouhý.';
+    return tr('Název programu je moc dlouhý.', 'The program name is too long.');
   }
   if (program.perWeek < 1 || program.perWeek > 7) {
-    return 'Frekvence musí být 1–7× týdně.';
+    return tr(
+      'Frekvence musí být 1–7× týdně.',
+      'Frequency must be 1–7× per week.',
+    );
   }
-  if (program.days.isEmpty) return 'Přidej aspoň jeden den.';
+  if (program.days.isEmpty)
+    return tr('Přidej aspoň jeden den.', 'Add at least one day.');
   if (program.days.length > maxProgramDays) {
-    return 'Program může mít nejvýš $maxProgramDays dní.';
+    return tr(
+      'Program může mít nejvýš $maxProgramDays dní.',
+      'A program can have at most $maxProgramDays days.',
+    );
   }
   for (final day in program.days) {
     final name = day.name.trim();
-    if (name.isEmpty) return 'Každý den potřebuje název.';
-    if (name.length > maxNameLength) return 'Název dne „$name“ je moc dlouhý.';
-    if (day.exercises.isEmpty) return 'Den „$name“ nemá žádný cvik.';
+    if (name.isEmpty)
+      return tr('Každý den potřebuje název.', 'Every day needs a name.');
+    if (name.length > maxNameLength)
+      return tr(
+        'Název dne „$name“ je moc dlouhý.',
+        'The name of day “$name” is too long.',
+      );
+    if (day.exercises.isEmpty)
+      return tr(
+        'Den „$name“ nemá žádný cvik.',
+        'Day “$name” has no exercises.',
+      );
     if (day.exercises.length > maxDayExercises) {
-      return 'Den „$name“ má víc než $maxDayExercises cviků.';
+      return tr(
+        'Den „$name“ má víc než $maxDayExercises cviků.',
+        'Day “$name” has more than $maxDayExercises exercises.',
+      );
     }
     for (final e in day.exercises) {
-      if (e.exerciseId.trim().isEmpty) return 'Den „$name“ má cvik bez názvu.';
-      if (e.sets < 1 || e.sets > 10) return 'Počet sérií musí být 1–10.';
+      if (e.exerciseId.trim().isEmpty)
+        return tr(
+          'Den „$name“ má cvik bez názvu.',
+          'Day “$name” has an exercise without a name.',
+        );
+      if (e.sets < 1 || e.sets > 10)
+        return tr('Počet sérií musí být 1–10.', 'Sets must be 1–10.');
       if (e.repMin < 1 || e.repMax > 50 || e.repMin > e.repMax) {
-        return 'Opakování musí být 1–50, od menšího čísla k většímu.';
+        return tr(
+          'Opakování musí být 1–50, od menšího čísla k většímu.',
+          'Reps must be 1–50, from the lower number to the higher one.',
+        );
       }
     }
   }
@@ -185,10 +214,14 @@ String? programError(SplitTemplate program) {
 String programSummary(SplitTemplate program) {
   final days = program.days.length;
   final exercises = program.days.fold(0, (n, d) => n + d.exercises.length);
-  final dayWord = days == 1 ? 'den' : (days < 5 ? 'dny' : 'dní');
+  final dayWord = days == 1
+      ? tr('den', 'day')
+      : (days < 5 ? tr('dny', 'days') : tr('dní', 'days'));
   final exWord = exercises == 1
-      ? 'cvik'
-      : (exercises >= 2 && exercises <= 4 ? 'cviky' : 'cviků');
+      ? tr('cvik', 'exercise')
+      : (exercises >= 2 && exercises <= 4
+            ? tr('cviky', 'exercises')
+            : tr('cviků', 'exercises'));
   return '$days $dayWord · $exercises $exWord';
 }
 
@@ -204,34 +237,34 @@ class DayFocus {
 }
 
 /// Partie v pořadí od velkých k malým (těžké cviky jdou první).
-final List<DayFocus> dayFocuses = [
-  DayFocus('chest', 'Hrudník', 'hrudník', [
+List<DayFocus> get dayFocuses => [
+  DayFocus('chest', tr('Hrudník', 'Chest'), tr('hrudník', 'chest'), [
     _h('bench_press'),
     _m('incline_dumbbell_press'),
     _m('chest_press_machine'),
     _m('cable_fly'),
     _m('pec_deck'),
   ]),
-  DayFocus('back', 'Záda', 'záda', [
+  DayFocus('back', tr('Záda', 'Back'), tr('záda', 'back'), [
     _h('barbell_row'),
     _m('lat_pulldown'),
     _m('seated_row'),
     _m('dumbbell_row'),
     _m('close_grip_pulldown'),
   ]),
-  DayFocus('legs', 'Nohy', 'nohy', [
+  DayFocus('legs', tr('Nohy', 'Legs'), tr('nohy', 'legs'), [
     _h('squat'),
     _m('romanian_deadlift'),
     _m('leg_press'),
     _m('leg_curl'),
     _m('leg_extension'),
   ]),
-  DayFocus('glutes', 'Hýždě', 'hýždě', [
+  DayFocus('glutes', tr('Hýždě', 'Glutes'), tr('hýždě', 'glutes'), [
     _h('hip_thrust'),
     _m('bulgarian_split_squat'),
     _m('walking_lunge'),
   ]),
-  DayFocus('shoulders', 'Ramena', 'ramena', [
+  DayFocus('shoulders', tr('Ramena', 'Shoulders'), tr('ramena', 'shoulders'), [
     _h('overhead_press'),
     _l('lateral_raise'),
     _m('dumbbell_shoulder_press'),
@@ -250,11 +283,11 @@ final List<DayFocus> dayFocuses = [
     _m('skull_crusher'),
     _m('dips'),
   ]),
-  DayFocus('calves', 'Lýtka', 'lýtka', [
+  DayFocus('calves', tr('Lýtka', 'Calves'), tr('lýtka', 'calves'), [
     _l('calf_raise', sets: 4),
     _l('seated_calf_raise'),
   ]),
-  DayFocus('core', 'Břicho', 'břicho', [
+  DayFocus('core', tr('Břicho', 'Core'), tr('břicho', 'core'), [
     _l('cable_crunch'),
     _l('hanging_leg_raise'),
   ]),
@@ -278,10 +311,13 @@ String _dayName(List<DayFocus> chosen) {
   final names = [chosen.first.name, for (final f in chosen.skip(1)) f.inner];
   var name = names.length == 1
       ? names.single
-      : '${names.sublist(0, names.length - 1).join(', ')} a ${names.last}';
+      : '${names.sublist(0, names.length - 1).join(', ')}'
+            '${tr(' a ', ' and ')}${names.last}';
   // Moc partií: krátký název, ať projde validací.
   if (name.length > maxNameLength) {
-    name = '${chosen.first.name} a ${chosen.length - 1} další';
+    name =
+        '${chosen.first.name}${tr(' a ', ' and ')}${chosen.length - 1} '
+        '${tr('další', 'more')}';
   }
   return name;
 }
@@ -424,11 +460,14 @@ PlannedExercise _m(String id, {int sets = 3}) =>
 PlannedExercise _l(String id, {int sets = 3}) =>
     PlannedExercise(id, sets: sets, repMin: 12, repMax: 15);
 
-final List<SplitTemplate> splitTemplates = [
+List<SplitTemplate> get splitTemplates => [
   SplitTemplate(
     id: 'full_body_3',
     name: 'Full body 3×',
-    description: 'Celé tělo třikrát týdně. Nejlepší start pro začátečníky a pro málo času.',
+    description: tr(
+      'Celé tělo třikrát týdně. Nejlepší start pro začátečníky a pro málo času.',
+      'Full body three times a week. The best start for beginners or when short on time.',
+    ),
     perWeek: 3,
     days: [
       SplitDay('Full body A', [
@@ -450,7 +489,10 @@ final List<SplitTemplate> splitTemplates = [
   SplitTemplate(
     id: 'upper_lower',
     name: 'Upper / Lower',
-    description: 'Horní a dolní polovina těla střídavě, 4× týdně. Každá partie 2× týdně.',
+    description: tr(
+      'Horní a dolní polovina těla střídavě, 4× týdně. Každá partie 2× týdně.',
+      'Upper and lower body alternately, 4× a week. Each muscle group 2× a week.',
+    ),
     perWeek: 4,
     days: [
       SplitDay('Upper', [
@@ -473,7 +515,10 @@ final List<SplitTemplate> splitTemplates = [
   SplitTemplate(
     id: 'ppl',
     name: 'Push / Pull / Legs',
-    description: 'Tlaky, tahy a nohy dokola. 3× týdně (každá partie 1×) nebo 6× pro pokročilé.',
+    description: tr(
+      'Tlaky, tahy a nohy dokola. 3× týdně (každá partie 1×) nebo 6× pro pokročilé.',
+      'Push, pull and legs in rotation. 3× a week (each group 1×) or 6× for advanced lifters.',
+    ),
     perWeek: 3,
     days: [
       SplitDay('Push', [
@@ -502,25 +547,27 @@ final List<SplitTemplate> splitTemplates = [
   SplitTemplate(
     id: 'arnold',
     name: 'Arnold split',
-    description:
-        'Hrudník + záda, ramena + paže, nohy. Náročnější, pro pokročilé.',
+    description: tr(
+      'Hrudník + záda, ramena + paže, nohy. Náročnější, pro pokročilé.',
+      'Chest + back, shoulders + arms, legs. More demanding, for advanced lifters.',
+    ),
     perWeek: 3,
     days: [
-      SplitDay('Hrudník a záda', [
+      SplitDay(tr('Hrudník a záda', 'Chest and back'), [
         _h('bench_press'),
         _m('barbell_row'),
         _m('incline_dumbbell_press'),
         _m('lat_pulldown'),
         _m('cable_fly'),
       ]),
-      SplitDay('Ramena a paže', [
+      SplitDay(tr('Ramena a paže', 'Shoulders and arms'), [
         _h('overhead_press'),
         _l('lateral_raise'),
         _m('barbell_curl'),
         _m('skull_crusher'),
         _m('hammer_curl'),
       ]),
-      SplitDay('Nohy', [
+      SplitDay(tr('Nohy', 'Legs'), [
         _h('squat'),
         _m('romanian_deadlift'),
         _m('leg_extension'),
@@ -532,35 +579,38 @@ final List<SplitTemplate> splitTemplates = [
   SplitTemplate(
     id: 'bro_split',
     name: 'Bro split',
-    description: 'Každý den jedna partie, 5× týdně. Velký objem na partii, ale jen 1× týdně.',
+    description: tr(
+      'Každý den jedna partie, 5× týdně. Velký objem na partii, ale jen 1× týdně.',
+      'One muscle group per day, 5× a week. High volume per group, but only 1× a week.',
+    ),
     perWeek: 5,
     days: [
-      SplitDay('Hrudník', [
+      SplitDay(tr('Hrudník', 'Chest'), [
         _h('bench_press'),
         _m('incline_dumbbell_press'),
         _m('chest_press_machine'),
         _m('cable_fly'),
       ]),
-      SplitDay('Záda', [
+      SplitDay(tr('Záda', 'Back'), [
         _h('deadlift'),
         _m('lat_pulldown'),
         _m('barbell_row'),
         _m('seated_row'),
       ]),
-      SplitDay('Ramena', [
+      SplitDay(tr('Ramena', 'Shoulders'), [
         _h('overhead_press'),
         _l('lateral_raise', sets: 4),
         _l('reverse_pec_deck'),
         _l('face_pull'),
       ]),
-      SplitDay('Nohy', [
+      SplitDay(tr('Nohy', 'Legs'), [
         _h('squat'),
         _m('leg_press'),
         _m('leg_curl'),
         _m('leg_extension'),
         _l('calf_raise', sets: 4),
       ]),
-      SplitDay('Paže', [
+      SplitDay(tr('Paže', 'Arms'), [
         _m('barbell_curl'),
         _m('skull_crusher'),
         _m('hammer_curl'),
@@ -577,13 +627,16 @@ PlannedExercise _x(String id, int sets, int repMin, int repMax) =>
 /// Plans for the three styles of the plan quiz. Science-based plans pick
 /// exercises that load the muscle in the stretched position (see
 /// `evidence.dart`) and hit every muscle at least twice a week.
-final List<SplitTemplate> styleTemplates = [
+List<SplitTemplate> get styleTemplates => [
   SplitTemplate(
     id: 'science_full_body',
     name: 'Full body (science-based)',
-    description:
-        'Celé tělo 2–3× týdně, cviky s důrazem na protažení svalu, '
-        '1–2 opakování v záloze.',
+    description: tr(
+      'Celé tělo 2–3× týdně, cviky s důrazem na protažení svalu, '
+          '1–2 opakování v záloze.',
+      'Full body 2–3× a week, exercises emphasizing the stretched position, '
+          '1–2 reps in reserve.',
+    ),
     perWeek: 3,
     days: [
       SplitDay('Full body A', [
@@ -607,9 +660,12 @@ final List<SplitTemplate> styleTemplates = [
   SplitTemplate(
     id: 'science_upper_lower',
     name: 'Upper / Lower (science-based)',
-    description:
-        'Horní a dolní polovina střídavě, každý sval 2× týdně, cviky '
-        's důrazem na protažení.',
+    description: tr(
+      'Horní a dolní polovina střídavě, každý sval 2× týdně, cviky '
+          's důrazem na protažení.',
+      'Upper and lower body alternately, every muscle 2× a week, exercises '
+          'emphasizing the stretch.',
+    ),
     perWeek: 4,
     days: [
       SplitDay('Upper', [
@@ -633,9 +689,12 @@ final List<SplitTemplate> styleTemplates = [
   SplitTemplate(
     id: 'science_ppl',
     name: 'Push / Pull / Legs (science-based)',
-    description:
-        'Tlaky, tahy a nohy dokola, 5–6× týdně. Každý sval skoro 2× '
-        'týdně s velkým objemem.',
+    description: tr(
+      'Tlaky, tahy a nohy dokola, 5–6× týdně. Každý sval skoro 2× '
+          'týdně s velkým objemem.',
+      'Push, pull and legs in rotation, 5–6× a week. Every muscle almost 2× '
+          'a week with high volume.',
+    ),
     perWeek: 6,
     days: [
       SplitDay('Push', [
@@ -664,9 +723,12 @@ final List<SplitTemplate> styleTemplates = [
   SplitTemplate(
     id: 'basics_5x5',
     name: 'Old school 5×5',
-    description:
-        'Dva tréninky dokola, těžké základy 5 sérií po 5. Když dáš '
-        'všech 5×5, příště přidej váhu.',
+    description: tr(
+      'Dva tréninky dokola, těžké základy 5 sérií po 5. Když dáš '
+          'všech 5×5, příště přidej váhu.',
+      'Two workouts in rotation, heavy basics 5 sets of 5. Once you hit all '
+          '5×5, add weight next time.',
+    ),
     perWeek: 3,
     days: [
       SplitDay('A', [
@@ -684,24 +746,27 @@ final List<SplitTemplate> styleTemplates = [
   SplitTemplate(
     id: 'strength_sbd',
     name: 'Strength: squat, bench, deadlift',
-    description:
-        'Tři hlavní cviky v různé intenzitě. Těžké série po 3–5, '
-        'objemové po 6–8, pauzy 3 minuty.',
+    description: tr(
+      'Tři hlavní cviky v různé intenzitě. Těžké série po 3–5, '
+          'objemové po 6–8, pauzy 3 minuty.',
+      'The three main lifts at different intensities. Heavy sets of 3–5, '
+          'volume sets of 6–8, 3-minute rests.',
+    ),
     perWeek: 3,
     days: [
-      SplitDay('Těžký dřep', [
+      SplitDay(tr('Těžký dřep', 'Heavy squat'), [
         _x('squat', 5, 3, 5),
         _x('bench_press', 4, 6, 8),
         _x('barbell_row', 3, 6, 8),
         _x('back_extension', 3, 8, 12),
       ]),
-      SplitDay('Těžký bench', [
+      SplitDay(tr('Těžký bench', 'Heavy bench'), [
         _x('bench_press', 5, 3, 5),
         _x('deadlift', 3, 3, 5),
         _x('pull_up', 3, 5, 8),
         _x('overhead_press', 3, 6, 8),
       ]),
-      SplitDay('Těžký mrtvý tah', [
+      SplitDay(tr('Těžký mrtvý tah', 'Heavy deadlift'), [
         _x('deadlift', 4, 2, 4),
         _x('squat', 3, 6, 8),
         _x('close_grip_bench', 3, 6, 8),
@@ -712,31 +777,34 @@ final List<SplitTemplate> styleTemplates = [
   SplitTemplate(
     id: 'strength_upper_lower',
     name: 'Strength: upper / lower',
-    description:
-        'Horní a dolní polovina střídavě, hlavní cvik těžce a doplňky '
-        'na slabá místa.',
+    description: tr(
+      'Horní a dolní polovina střídavě, hlavní cvik těžce a doplňky '
+          'na slabá místa.',
+      'Upper and lower body alternately, the main lift heavy and accessories '
+          'for weak spots.',
+    ),
     perWeek: 4,
     days: [
-      SplitDay('Horní těžce', [
+      SplitDay(tr('Horní těžce', 'Upper heavy'), [
         _x('bench_press', 5, 3, 5),
         _x('barbell_row', 4, 5, 8),
         _x('overhead_press', 3, 5, 8),
         _x('chin_up', 3, 5, 8),
       ]),
-      SplitDay('Dolní těžce', [
+      SplitDay(tr('Dolní těžce', 'Lower heavy'), [
         _x('squat', 5, 3, 5),
         _x('romanian_deadlift', 3, 6, 8),
         _x('leg_press', 3, 8, 10),
         _x('hanging_leg_raise', 3, 8, 12),
       ]),
-      SplitDay('Horní objem', [
+      SplitDay(tr('Horní objem', 'Upper volume'), [
         _x('close_grip_bench', 4, 6, 8),
         _x('pull_up', 4, 6, 10),
         _x('dumbbell_shoulder_press', 3, 8, 10),
         _x('dumbbell_row', 3, 8, 10),
         _x('triceps_pushdown', 3, 10, 12),
       ]),
-      SplitDay('Dolní objem', [
+      SplitDay(tr('Dolní objem', 'Lower volume'), [
         _x('deadlift', 4, 3, 5),
         _x('front_squat', 3, 6, 8),
         _x('leg_curl', 3, 8, 12),

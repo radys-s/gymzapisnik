@@ -231,7 +231,11 @@ class AppState extends ChangeNotifier {
   /// náhradní záznam, aby historie dál fungovala.
   Exercise exercise(String id) =>
       findExercise(id, customExercises) ??
-      Exercise(id: id, name: 'Neznámý cvik', muscle: 'Ostatní');
+      Exercise(
+        id: id,
+        name: tr('Neznámý cvik', 'Unknown exercise'),
+        muscle: 'Ostatní',
+      );
 
   ExerciseType typeOf(String id) => exercise(id).type;
 
@@ -241,7 +245,9 @@ class AppState extends ChangeNotifier {
     required ExerciseType type,
   }) async {
     final trimmed = name.trim();
-    if (trimmed.isEmpty) throw ArgumentError('Zadej název cviku.');
+    if (trimmed.isEmpty) {
+      throw ArgumentError(tr('Zadej název cviku.', 'Enter an exercise name.'));
+    }
     final exercise = Exercise(
       id: 'custom_${newId()}',
       name: trimmed,
@@ -279,14 +285,14 @@ class AppState extends ChangeNotifier {
   /// ve které vznikla, a v testech s falešným časem by fronta nikdy nedoběhla.
   Future<void>? _writes;
   Future<({Workout? workout, String? error})>? _finishing;
-  static const _weekdays = [
-    'pondělí',
-    'úterý',
-    'středa',
-    'čtvrtek',
-    'pátek',
-    'sobota',
-    'neděle',
+  static List<String> get _weekdays => [
+    tr('pondělí', 'Monday'),
+    tr('úterý', 'Tuesday'),
+    tr('středa', 'Wednesday'),
+    tr('čtvrtek', 'Thursday'),
+    tr('pátek', 'Friday'),
+    tr('sobota', 'Saturday'),
+    tr('neděle', 'Sunday'),
   ];
   List<Workout>? _badgesOf;
   List<Exercise>? _badgesExercises;

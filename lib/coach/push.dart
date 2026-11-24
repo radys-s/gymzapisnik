@@ -2,6 +2,7 @@
 /// váhy, rady co s tím a týdenní cíl. Čistý Dart bez Flutteru.
 library;
 
+import '../core/i18n.dart';
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/profile_keys.dart';
@@ -12,14 +13,27 @@ import 'weeks.dart';
 /// Jak těžký byl trénink. Ukládá se do `Workout.extra['rating']`
 /// a mění, jak rychle kouč přidává váhu.
 enum WorkoutRating {
-  easy('Lehký', 'Měl jsem rezervu'),
-  good('Akorát', 'Zabralo to, ale šlo to'),
-  hard('Těžký', 'Poslední série na doraz'),
-  limit('Na hraně', 'Víc už by nešlo');
+  easy,
+  good,
+  hard,
+  limit;
 
-  final String label;
-  final String hint;
-  const WorkoutRating(this.label, this.hint);
+  String get label => switch (this) {
+    WorkoutRating.easy => tr('Lehký', 'Easy'),
+    WorkoutRating.good => tr('Akorát', 'Just right'),
+    WorkoutRating.hard => tr('Těžký', 'Hard'),
+    WorkoutRating.limit => tr('Na hraně', 'At the limit'),
+  };
+
+  String get hint => switch (this) {
+    WorkoutRating.easy => tr('Měl jsem rezervu', 'I had something left'),
+    WorkoutRating.good => tr(
+      'Zabralo to, ale šlo to',
+      'It was hard but doable',
+    ),
+    WorkoutRating.hard => tr('Poslední série na doraz', 'Last set to failure'),
+    WorkoutRating.limit => tr('Víc už by nešlo', 'Could not do any more'),
+  };
 
   static WorkoutRating? tryParse(Object? v) =>
       values.where((r) => r.name == v).firstOrNull;
@@ -158,35 +172,85 @@ List<String> plateauTips(
   final lighter = (p.topWeight * 0.9 / increment).round() * increment;
   return [
     if (proteinLow(protein))
-      'Jíš v průměru ${protein!.average.round()} g bílkovin z '
-          '${protein.target.round()} g. Bez nich síla neroste, '
-          'dobij je dřív, než budeš měnit trénink.',
+      tr(
+        'Jíš v průměru ${protein!.average.round()} g bílkovin z '
+            '${protein.target.round()} g. Bez nich síla neroste, '
+            'dobij je dřív, než budeš měnit trénink.',
+        'You average ${protein.average.round()} g of protein out of '
+            '${protein.target.round()} g. Without it strength will not grow, '
+            'so fix that before changing your training.',
+      ),
     if (lastRating == WorkoutRating.limit || lastRating == WorkoutRating.hard)
-      'Jedeš na doraz. Dej si lehčí týden: ${_kg(lighter)} kg (−10 %) na '
-          'všechny série, pak zpět na ${_kg(p.topWeight)} kg.'
+      tr(
+        'Jedeš na doraz. Dej si lehčí týden: ${_kg(lighter)} kg (−10 %) na '
+            'všechny série, pak zpět na ${_kg(p.topWeight)} kg.',
+        'You are going all out. Take a lighter week: ${_kg(lighter)} kg '
+            '(−10 %) on all sets, then back to ${_kg(p.topWeight)} kg.',
+      )
     else
-      'Dej si jeden lehčí trénink: ${_kg(lighter)} kg (−10 %). Odpočaté '
-          'tělo pak rekord zvedne snáz.',
-    'Přidávej menší kroky: 1,25 kg místo ${_kg(increment)} kg. '
-        'Malé kotouče se sčítají.',
-    'Změň rozsah: tři týdny 4–6 opakování s těžší váhou, pak se vrať '
-        'k obvyklému rozsahu.',
+      tr(
+        'Dej si jeden lehčí trénink: ${_kg(lighter)} kg (−10 %). Odpočaté '
+            'tělo pak rekord zvedne snáz.',
+        'Do one lighter workout: ${_kg(lighter)} kg (−10 %). A rested body '
+            'will hit the record more easily.',
+      ),
+    tr(
+      'Přidávej menší kroky: 1,25 kg místo ${_kg(increment)} kg. '
+          'Malé kotouče se sčítají.',
+      'Use smaller steps: 1.25 kg instead of ${_kg(increment)} kg. '
+          'Small plates add up.',
+    ),
+    tr(
+      'Změň rozsah: tři týdny 4–6 opakování s těžší váhou, pak se vrať '
+          'k obvyklému rozsahu.',
+      'Change the rep range: three weeks of 4–6 reps with a heavier weight, '
+          'then return to your usual range.',
+    ),
     if (p.perWeek < 1.5)
-      'Zařaď cvik dvakrát týdně místo jednou, ať má sval víc podnětů.',
-    'Mezi těžkými sériemi pauza 3 minuty a spánek aspoň 7 hodin.',
+      tr(
+        'Zařaď cvik dvakrát týdně místo jednou, ať má sval víc podnětů.',
+        'Do the exercise twice a week instead of once to give the muscle '
+            'more stimulus.',
+      ),
+    tr(
+      'Mezi těžkými sériemi pauza 3 minuty a spánek aspoň 7 hodin.',
+      'Rest 3 minutes between heavy sets and sleep at least 7 hours.',
+    ),
   ];
 }
 
 /// Na co se tento týden tlačí.
 enum FocusKind {
-  strength('Síla v cviku', 'Zvednout víc v jednom cviku'),
-  consistency('Pravidelnost', 'Nevynechat ani jeden trénink'),
-  volume('Objem', 'Víc sérií než minulý týden'),
-  protein('Bílkoviny', 'Trefit cíl bílkovin aspoň 5 dní');
+  strength,
+  consistency,
+  volume,
+  protein;
 
-  final String label;
-  final String hint;
-  const FocusKind(this.label, this.hint);
+  String get label => switch (this) {
+    FocusKind.strength => tr('Síla v cviku', 'Strength in one lift'),
+    FocusKind.consistency => tr('Pravidelnost', 'Consistency'),
+    FocusKind.volume => tr('Objem', 'Volume'),
+    FocusKind.protein => tr('Bílkoviny', 'Protein'),
+  };
+
+  String get hint => switch (this) {
+    FocusKind.strength => tr(
+      'Zvednout víc v jednom cviku',
+      'Lift more in one exercise',
+    ),
+    FocusKind.consistency => tr(
+      'Nevynechat ani jeden trénink',
+      'Do not miss a workout',
+    ),
+    FocusKind.volume => tr(
+      'Víc sérií než minulý týden',
+      'More sets than last week',
+    ),
+    FocusKind.protein => tr(
+      'Trefit cíl bílkovin aspoň 5 dní',
+      'Hit your protein goal at least 5 days',
+    ),
+  };
 
   static FocusKind? tryParse(Object? v) =>
       values.where((k) => k.name == v).firstOrNull;
@@ -292,8 +356,14 @@ FocusProgress focusProgress(
           value > 0 ? (value * 1.025 * 2).ceil() / 2 : 1,
           'kg 1RM',
           value > 0
-              ? 'První měření v cviku $name je zapsané. Příští týden ho překonáš.'
-              : 'Zacvič $name a zapiš série, ať je od čeho se odrazit.',
+              ? tr(
+                  'První měření v cviku $name je zapsané. Příští týden ho překonáš.',
+                  'The first measurement for $name is logged. Beat it next week.',
+                )
+              : tr(
+                  'Zacvič $name a zapiš série, ať je od čeho se odrazit.',
+                  'Train $name and log your sets so there is a baseline.',
+                ),
         );
       }
       // Cíl +2,5 %: v týdnu reálné, a přesto je potřeba zabrat.
@@ -303,12 +373,23 @@ FocusProgress focusProgress(
         target,
         'kg 1RM',
         value >= target
-            ? 'Cíl v cviku $name splněný. Takhle se roste.'
+            ? tr(
+                'Cíl v cviku $name splněný. Takhle se roste.',
+                'Goal for $name reached. This is how you grow.',
+              )
             : value > 0
-            ? 'Do cíle chybí ${_kg(target - value)} kg odhadu maxima. '
-                  'Příště přidej opakování nebo malý kotouč.'
-            : 'Tento týden jdeš po síle v cviku $name. '
-                  'Cíl je ${_kg(target)} kg odhadu maxima.',
+            ? tr(
+                'Do cíle chybí ${_kg(target - value)} kg odhadu maxima. '
+                    'Příště přidej opakování nebo malý kotouč.',
+                'You are ${_kg(target - value)} kg short of the estimated max. '
+                    'Add a rep or a small plate next time.',
+              )
+            : tr(
+                'Tento týden jdeš po síle v cviku $name. '
+                    'Cíl je ${_kg(target)} kg odhadu maxima.',
+                'This week you are going for strength in $name. '
+                    'The goal is ${_kg(target)} kg estimated max.',
+              ),
       );
     case FocusKind.consistency:
       final done = workouts.where(inWeek).length;
@@ -316,14 +397,25 @@ FocusProgress focusProgress(
       return FocusProgress(
         done.toDouble(),
         weekGoal.toDouble(),
-        'tréninky',
+        tr('tréninky', 'workouts'),
         missing <= 0
-            ? 'Všechny tréninky týdne hotové. Přesně tohle dělá výsledky.'
+            ? tr(
+                'Všechny tréninky týdne hotové. Přesně tohle dělá výsledky.',
+                'All workouts for the week are done. That is what gets results.',
+              )
             : missing > left
-            ? 'Zbývá ${_count(missing, 'trénink', 'tréninky', 'tréninků')} '
-                  'a jen ${_count(left, 'den', 'dny', 'dní')}. Zvládni, co jde.'
-            : 'Zbývá ${_count(missing, 'trénink', 'tréninky', 'tréninků')}. '
-                  'Nevynechej.',
+            ? tr(
+                'Zbývá ${_count(missing, 'trénink', 'tréninky', 'tréninků')} '
+                    'a jen ${_count(left, 'den', 'dny', 'dní')}. Zvládni, co jde.',
+                '${_count(missing, 'workout', 'workouts', 'workouts')} left '
+                    'and only ${_count(left, 'day', 'days', 'days')}. Do what you can.',
+              )
+            : tr(
+                'Zbývá ${_count(missing, 'trénink', 'tréninky', 'tréninků')}. '
+                    'Nevynechej.',
+                '${_count(missing, 'workout', 'workouts', 'workouts')} left. '
+                    'Do not skip.',
+              ),
       );
     case FocusKind.volume:
       int setsIn(DateTime from) {
@@ -344,11 +436,18 @@ FocusProgress focusProgress(
       return FocusProgress(
         value.toDouble(),
         target.toDouble(),
-        'sérií',
+        tr('sérií', 'sets'),
         value >= target
-            ? 'Objem nad minulým týdnem. Hlídej spánek a jídlo.'
-            : 'Ještě ${_count(target - value, 'série', 'série', 'sérií')} do cíle. '
-                  'Přidej jednu sérii ke hlavním cvikům.',
+            ? tr(
+                'Objem nad minulým týdnem. Hlídej spánek a jídlo.',
+                'Volume above last week. Watch your sleep and food.',
+              )
+            : tr(
+                'Ještě ${_count(target - value, 'série', 'série', 'sérií')} do cíle. '
+                    'Přidej jednu sérii ke hlavním cvikům.',
+                '${_count(target - value, 'set', 'sets', 'sets')} to go. '
+                    'Add one set to the main lifts.',
+              ),
       );
     case FocusKind.protein:
       const target = 5;
@@ -356,14 +455,25 @@ FocusProgress focusProgress(
       return FocusProgress(
         proteinDays.toDouble(),
         target.toDouble(),
-        'dní',
+        tr('dní', 'days'),
         missing <= 0
-            ? 'Bílkoviny trefené. Svaly mají z čeho růst.'
+            ? tr(
+                'Bílkoviny trefené. Svaly mají z čeho růst.',
+                'Protein goal hit. Your muscles have what they need to grow.',
+              )
             : missing > left
-            ? 'Na $target dní to tento týden nevyjde, ale každý trefený '
-                  'den se počítá.'
-            : 'Ještě ${_count(missing, 'den', 'dny', 'dní')} s cílem '
-                  'bílkovin. Zapisuj jídlo.',
+            ? tr(
+                'Na $target dní to tento týden nevyjde, ale každý trefený '
+                    'den se počítá.',
+                'You will not hit $target days this week, but every day '
+                    'you hit still counts.',
+              )
+            : tr(
+                'Ještě ${_count(missing, 'den', 'dny', 'dní')} s cílem '
+                    'bílkovin. Zapisuj jídlo.',
+                '${_count(missing, 'day', 'days', 'days')} more with your '
+                    'protein goal. Keep logging food.',
+              ),
       );
   }
 }

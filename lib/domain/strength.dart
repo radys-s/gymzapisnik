@@ -5,26 +5,30 @@
 /// k soutěžnímu hodnocení.
 library;
 
+import '../core/i18n.dart';
+
 /// Tabulka, se kterou se porovnává.
 enum StrengthStandard {
-  men('Muži'),
-  women('Ženy');
+  men,
+  women;
 
-  final String label;
-  const StrengthStandard(this.label);
+  String get label => switch (this) {
+    men => tr('Muži', 'Men'),
+    women => tr('Ženy', 'Women'),
+  };
 
   static StrengthStandard? parse(Object? v) =>
       values.where((s) => s.name == v).firstOrNull;
 }
 
 /// Názvy úrovní; první hranice z tabulky otevírá „Začátečník“.
-const strengthLevels = [
-  'Začínáš',
-  'Začátečník',
-  'Mírně pokročilý',
-  'Pokročilý',
-  'Velmi pokročilý',
-  'Elita',
+List<String> get strengthLevels => [
+  tr('Začínáš', 'Just starting'),
+  tr('Začátečník', 'Beginner'),
+  tr('Mírně pokročilý', 'Novice'),
+  tr('Pokročilý', 'Intermediate'),
+  tr('Velmi pokročilý', 'Advanced'),
+  tr('Elita', 'Elite'),
 ];
 
 /// Hranice (násobky tělesné váhy) pro úrovně 1–5.

@@ -4,6 +4,8 @@
 /// proto jedno od druhého rozlišují a neukazují chybějící jako nulu.
 library;
 
+import '../core/i18n.dart';
+
 /// Energie a makroživiny. Vztahují se k [FoodBasis] záznamu.
 class Nutrition {
   final double? kcal;
@@ -235,23 +237,48 @@ String? validateFood({
   required FoodBasis basis,
   required Nutrition values,
 }) {
-  if (name.trim().isEmpty) return 'Zadej název jídla.';
-  if (name.trim().length > 120) return 'Název je příliš dlouhý.';
-  if (amount == null || amount <= 0) return 'Zadej množství větší než nula.';
+  if (name.trim().isEmpty) {
+    return tr('Zadej název jídla.', 'Enter a food name.');
+  }
+  if (name.trim().length > 120) {
+    return tr('Název je příliš dlouhý.', 'The name is too long.');
+  }
+  if (amount == null || amount <= 0) {
+    return tr('Zadej množství větší než nula.', 'Enter an amount above zero.');
+  }
   if (amount > (basis == FoodBasis.per100 ? 10000 : 1000)) {
-    return 'Množství vypadá jako překlep.';
+    return tr(
+      'Množství vypadá jako překlep.',
+      'That amount looks like a typo.',
+    );
   }
   if (values.isEmpty) {
-    return 'Vyplň alespoň jednu hodnotu (energii nebo makro).';
+    return tr(
+      'Vyplň alespoň jednu hodnotu (energii nebo makro).',
+      'Fill in at least one value (calories or macros).',
+    );
   }
   final macroMax = basis == FoodBasis.per100 ? 100.0 : 1000.0;
-  if ((values.kcal ?? 0) > 10000) return 'Energie vypadá jako překlep.';
+  if ((values.kcal ?? 0) > 10000) {
+    return tr(
+      'Energie vypadá jako překlep.',
+      'That calorie count looks like a typo.',
+    );
+  }
   for (final m in [values.protein, values.carbs, values.fat]) {
-    if ((m ?? 0) > macroMax) return 'Makroživiny vypadají jako překlep.';
+    if ((m ?? 0) > macroMax) {
+      return tr(
+        'Makroživiny vypadají jako překlep.',
+        'Those macros look like a typo.',
+      );
+    }
   }
   if (basis == FoodBasis.per100 &&
       (values.protein ?? 0) + (values.carbs ?? 0) + (values.fat ?? 0) > 100.5) {
-    return 'Na 100 g nemůže být víc než 100 g živin dohromady.';
+    return tr(
+      'Na 100 g nemůže být víc než 100 g živin dohromady.',
+      '100 g cannot contain more than 100 g of nutrients.',
+    );
   }
   return null;
 }

@@ -92,7 +92,10 @@ class _ReorderSheet extends StatelessWidget {
                     title: Text(exercise.name),
                     subtitle: Text(
                       done.isEmpty
-                          ? tr('Zatím bez potvrzené série', 'No confirmed sets yet')
+                          ? tr(
+                              'Zatím bez potvrzené série',
+                              'No confirmed sets yet',
+                            )
                           : tr(
                               'Hotovo ${done.length} z $working',
                               'Done ${done.length} of $working',
@@ -170,9 +173,9 @@ class _LastDeltaRow extends StatelessWidget {
           : tr('zatím $change', '$change so far');
       headline = tr(
         '$sign proti minule ($lastLabel) · '
-        'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}',
+            'objem ${_kg(d.nowVolume)} z ${_kg(d.lastVolume)}',
         '$sign vs last ($lastLabel) · '
-        'volume ${_kg(d.nowVolume)} of ${_kg(d.lastVolume)}',
+            'volume ${_kg(d.nowVolume)} of ${_kg(d.lastVolume)}',
       );
     }
     return Padding(

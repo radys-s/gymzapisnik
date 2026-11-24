@@ -81,7 +81,10 @@ class _PlatesSheetState extends State<PlatesSheet> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
             ],
             decoration: InputDecoration(
-              labelText: tr('Celková váha včetně osy', 'Total weight including bar'),
+              labelText: tr(
+                'Celková váha včetně osy',
+                'Total weight including bar',
+              ),
               suffixText: 'kg',
             ),
             onChanged: (_) => setState(() {}),

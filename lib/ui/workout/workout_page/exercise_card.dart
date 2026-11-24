@@ -95,7 +95,10 @@ class _ExerciseCard extends StatelessWidget {
                             child: Semantics(
                               container: true,
                               header: true,
-                              hint: tr('Otevře techniku cviku', 'Opens exercise technique'),
+                              hint: tr(
+                                'Otevře techniku cviku',
+                                'Opens exercise technique',
+                              ),
                               child: Text(
                                 exercise.name,
                                 style: text.titleMedium?.copyWith(
@@ -139,7 +142,10 @@ class _ExerciseCard extends StatelessWidget {
                       child: Text(
                         pinned == null
                             ? tr('Připnout poznámku', 'Pin note')
-                            : tr('Upravit připnutou poznámku', 'Edit pinned note'),
+                            : tr(
+                                'Upravit připnutou poznámku',
+                                'Edit pinned note',
+                              ),
                       ),
                     ),
                     PopupMenuItem(
@@ -181,7 +187,10 @@ class _ExerciseCard extends StatelessWidget {
                       PopupMenuItem(
                         value: 'superset',
                         child: Text(
-                          tr('Supersérie s dalším cvikem', 'Superset with next exercise'),
+                          tr(
+                            'Supersérie s dalším cvikem',
+                            'Superset with next exercise',
+                          ),
                         ),
                       ),
                     if (slot != null)
@@ -270,10 +279,7 @@ class _ExerciseCard extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(tr('MINULE', 'PREVIOUS')),
-                      ),
+                      Expanded(flex: 3, child: Text(tr('MINULE', 'PREVIOUS'))),
                       Expanded(
                         flex: 3,
                         child: Text(

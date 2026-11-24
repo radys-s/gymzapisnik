@@ -94,7 +94,12 @@ class StepperControl extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(label, style: text.bodyLarge)),
-        button(Icons.remove_rounded, tr('Méně', 'Less'), value - 1, value > min),
+        button(
+          Icons.remove_rounded,
+          tr('Méně', 'Less'),
+          value - 1,
+          value > min,
+        ),
         SizedBox(
           width: 48,
           child: Semantics(

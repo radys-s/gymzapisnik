@@ -19,10 +19,7 @@ String rpeHint(double rpe) {
   final rir = 10 - rpe;
   if (rir <= 0) return tr('Na maximum, nic v zásobě', 'All out, nothing left');
   if (rir >= 4) {
-    return tr(
-      'Lehké, 4 a víc opakování v zásobě',
-      'Easy, 4+ reps in the tank',
-    );
+    return tr('Lehké, 4 a víc opakování v zásobě', 'Easy, 4+ reps in the tank');
   }
   if (rir == rir.roundToDouble()) {
     final n = rir.toStringAsFixed(0);

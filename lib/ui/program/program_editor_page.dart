@@ -182,14 +182,15 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
         'Day ${day.name.text.trim()} removed.',
       ),
       () {
-      if (!mounted || _days.contains(day)) return;
-      // Vrátí se za původního souseda, i když se mezitím pořadí změnilo.
-      final after = before == null ? -1 : _days.indexOf(before);
-      setState(() {
-        _removed.remove(day);
-        _days.insert(before == null || after < 0 ? 0 : after + 1, day);
-      });
-    });
+        if (!mounted || _days.contains(day)) return;
+        // Vrátí se za původního souseda, i když se mezitím pořadí změnilo.
+        final after = before == null ? -1 : _days.indexOf(before);
+        setState(() {
+          _removed.remove(day);
+          _days.insert(before == null || after < 0 ? 0 : after + 1, day);
+        });
+      },
+    );
   }
 
   void _moveDay(_DayDraft day, int by) {
@@ -471,9 +472,9 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
                       child: Text(
                         tr(
                           'Přidej první den. Cviky ti navrhnu podle partií, '
-                          'nebo si je vybereš sám ze seznamu.',
+                              'nebo si je vybereš sám ze seznamu.',
                           'Add your first day. I\'ll suggest exercises by '
-                          'muscle group, or you can pick them from the list.',
+                              'muscle group, or you can pick them from the list.',
                         ),
                         style: text.bodyMedium?.copyWith(
                           color: p.secondaryLabel,
@@ -513,9 +514,9 @@ class _ProgramEditorPageState extends State<ProgramEditorPage> {
           Text(
             tr(
               'Dny jdou za sebou dokola: po posledním zase první. '
-              'Kdy cvičíš, nastavíš ve Frekvenci.',
+                  'Kdy cvičíš, nastavíš ve Frekvenci.',
               'Days cycle in order: after the last comes the first. '
-              'Set when you train in Frequency.',
+                  'Set when you train in Frequency.',
             ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
@@ -619,8 +620,14 @@ class _DayCard extends StatelessWidget {
                 textCapitalization: TextCapitalization.sentences,
                 style: text.titleMedium,
                 decoration: InputDecoration(
-                  labelText: tr('Název dne ${index + 1}', 'Day ${index + 1} name'),
-                  hintText: tr('Třeba Ramena a triceps', 'e.g. Shoulders and triceps'),
+                  labelText: tr(
+                    'Název dne ${index + 1}',
+                    'Day ${index + 1} name',
+                  ),
+                  hintText: tr(
+                    'Třeba Ramena a triceps',
+                    'e.g. Shoulders and triceps',
+                  ),
                   counterText: '',
                 ),
               ),
@@ -814,9 +821,9 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                       ? Text(
                           tr(
                             'Otevřu seznam všech cviků. Vybereš jich, kolik '
-                            'chceš, a den pak pojmenuješ.',
+                                'chceš, a den pak pojmenuješ.',
                             'Opens the full exercise list. Pick as many as '
-                            'you want, then name the day.',
+                                'you want, then name the day.',
                           ),
                           style: text.bodyMedium?.copyWith(
                             color: p.secondaryLabel,
@@ -828,9 +835,9 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                             Text(
                               tr(
                                 'Co ten den procvičíš? Klidně víc partií '
-                                'najednou.',
+                                    'najednou.',
                                 'What will you train that day? Feel free to '
-                                'pick several muscle groups.',
+                                    'pick several muscle groups.',
                               ),
                               style: text.bodyMedium?.copyWith(
                                 color: p.secondaryLabel,
@@ -873,7 +880,10 @@ class _AddDaySheetState extends State<_AddDaySheet> {
                   _picked.isEmpty
                       ? tr('Vyber partie', 'Pick muscle groups')
                       : kept.isEmpty
-                      ? tr('Nech aspoň jeden cvik', 'Keep at least one exercise')
+                      ? tr(
+                          'Nech aspoň jeden cvik',
+                          'Keep at least one exercise',
+                        )
                       : tr(
                           'Přidat den · ${_count(kept.length)}',
                           'Add day · ${_count(kept.length)}',
@@ -1191,7 +1201,10 @@ class _ExerciseSheetState extends State<_ExerciseSheet> {
               children: [
                 GroupedRow(
                   icon: Icons.swap_horiz_rounded,
-                  title: tr('Nahradit jiným cvikem', 'Replace with another exercise'),
+                  title: tr(
+                    'Nahradit jiným cvikem',
+                    'Replace with another exercise',
+                  ),
                   onTap: () => popOnce(context, 'replace'),
                 ),
                 if (widget.canUp)

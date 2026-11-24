@@ -125,9 +125,9 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
             header: tr('Fotka stroje', 'Machine photo'),
             footer: tr(
               'Vyfoť celý stroj nebo činku zboku. AI navrhne cviky '
-              'z katalogu, vybereš si sám.',
+                  'z katalogu, vybereš si sám.',
               'Photograph the whole machine or a dumbbell from the side. '
-              'AI suggests exercises from the catalog; you pick.',
+                  'AI suggests exercises from the catalog; you pick.',
             ),
             children: [
               GroupedRow(
@@ -187,9 +187,9 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
               when value.matches.isEmpty && value.machine == null:
             problem = tr(
               'Na fotce jsem stroj nepoznal. Zkus fotku z větší dálky, '
-              'nebo cvik najdi v seznamu.',
+                  'nebo cvik najdi v seznamu.',
               "I couldn't recognize the machine in the photo. Try a photo "
-              'from farther away, or find the exercise in the list.',
+                  'from farther away, or find the exercise in the list.',
             );
           case AiOk(:final value):
             found = value;
@@ -352,11 +352,17 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
                         )
                       : Icon(Icons.photo_camera_rounded, color: p.accent),
                   title: scanning
-                      ? tr('Hledám cvik podle fotky…', 'Finding exercise from photo…')
+                      ? tr(
+                          'Hledám cvik podle fotky…',
+                          'Finding exercise from photo…',
+                        )
                       : tr('Vyfotit stroj', 'Photograph a machine'),
                   subtitle: scanning
                       ? tr('Klepnutím hledání zrušíš', 'Tap to cancel')
-                      : tr('AI podle fotky navrhne cvik', 'AI suggests an exercise from the photo'),
+                      : tr(
+                          'AI podle fotky navrhne cvik',
+                          'AI suggests an exercise from the photo',
+                        ),
                   chevron: false,
                   onTap: _photo,
                 ),
@@ -530,9 +536,9 @@ class _MachineSheet extends StatelessWidget {
               : tr('Na fotce: $machine', 'In the photo: $machine'),
           footer: tr(
             'AI se může splést. Když tu cvik není, najdi ho v seznamu '
-            'nebo si ho přidej jako vlastní.',
+                'nebo si ho přidej jako vlastní.',
             'AI can be wrong. If the exercise is not here, find it in the '
-            'list or add it as a custom one.',
+                'list or add it as a custom one.',
           ),
           children: [
             for (final m in result.matches)

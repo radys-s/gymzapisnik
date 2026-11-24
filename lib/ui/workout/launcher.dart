@@ -158,7 +158,9 @@ mixin WorkoutLauncher<T extends StatefulWidget> on State<T> {
               ),
               ListTile(
                 leading: const Icon(Icons.tune_rounded),
-                title: Text(tr('Sestavit podle partií', 'Build by muscle groups')),
+                title: Text(
+                  tr('Sestavit podle partií', 'Build by muscle groups'),
+                ),
                 subtitle: Text(
                   tr(
                     'Vybereš svaly, cviky navrhne aplikace',

@@ -339,7 +339,10 @@ class _SetRowState extends State<_SetRow> {
                               Icons.emoji_events_rounded,
                               size: 18,
                               color: p.gold,
-                              semanticLabel: tr('Osobní rekord', 'Personal record'),
+                              semanticLabel: tr(
+                                'Osobní rekord',
+                                'Personal record',
+                              ),
                             )
                           : Text(
                               widget.label,
@@ -362,7 +365,10 @@ class _SetRowState extends State<_SetRow> {
                 container: true,
                 button: canCopy,
                 hint: canCopy
-                    ? tr('Opíše hodnoty z minula', 'Copies values from last time')
+                    ? tr(
+                        'Opíše hodnoty z minula',
+                        'Copies values from last time',
+                      )
                     : null,
                 onTap: canCopy ? () => _copyPrevious(prev) : null,
                 child: InkWell(

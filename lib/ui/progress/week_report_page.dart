@@ -237,10 +237,7 @@ class _Delta extends StatelessWidget {
           ? tr('stejně jako minulý týden', 'same as last week')
           : v > 0
           ? tr('o $v % víc než minulý týden', '$v% more than last week')
-          : tr(
-              'o ${-v} % méně než minulý týden',
-              '${-v}% less than last week',
-            ),
+          : tr('o ${-v} % méně než minulý týden', '${-v}% less than last week'),
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -724,7 +721,10 @@ class _Muscles extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 96,
-                    child: Text(_focusName(f.id, f.name), style: text.bodyMedium),
+                    child: Text(
+                      _focusName(f.id, f.name),
+                      style: text.bodyMedium,
+                    ),
                   ),
                   Expanded(
                     child: ClipRRect(
@@ -790,7 +790,10 @@ class LastWeekCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(tr('Minulý týden', 'Last week'), style: text.titleMedium),
+                  Text(
+                    tr('Minulý týden', 'Last week'),
+                    style: text.titleMedium,
+                  ),
                   Text(
                     [
                       workoutsLabel(r.workouts),

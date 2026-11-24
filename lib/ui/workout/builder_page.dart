@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/i18n.dart';
 
 import '../../coach/plan_quiz.dart';
@@ -73,7 +74,14 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
     ].isNotEmpty;
     if (duplicate) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr('Tenhle cvik už v tréninku je.', 'That exercise is already in the workout.'))),
+        SnackBar(
+          content: Text(
+            tr(
+              'Tenhle cvik už v tréninku je.',
+              'That exercise is already in the workout.',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -156,8 +164,14 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
             SectionHeader(current.name),
             GroupedSection(
               footer: short
-                  ? tr('Pro zvolené partie víc různých cviků nemám.', 'No more different exercises for the selected groups.')
-                  : tr('Klepnutím cvik vyměníš za jiný na stejnou hlavu svalu.', 'Tap an exercise to swap it for another targeting the same head.'),
+                  ? tr(
+                      'Pro zvolené partie víc různých cviků nemám.',
+                      'No more different exercises for the selected groups.',
+                    )
+                  : tr(
+                      'Klepnutím cvik vyměníš za jiný na stejnou hlavu svalu.',
+                      'Tap an exercise to swap it for another targeting the same head.',
+                    ),
               children: [
                 for (var i = 0; i < current.exercises.length; i++)
                   GroupedRow(
@@ -183,8 +197,14 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
               padding: const EdgeInsets.only(top: Space.xxl),
               child: EmptyState(
                 icon: Icons.accessibility_new_rounded,
-                title: tr('Vyber aspoň jednu partii', 'Pick at least one muscle group'),
-                message: tr('Třeba Hrudník a Triceps, nebo jen Nohy.', 'For example Chest and Triceps, or just Legs.'),
+                title: tr(
+                  'Vyber aspoň jednu partii',
+                  'Pick at least one muscle group',
+                ),
+                message: tr(
+                  'Třeba Hrudník a Triceps, nebo jen Nohy.',
+                  'For example Chest and Triceps, or just Legs.',
+                ),
               ),
             ),
         ],

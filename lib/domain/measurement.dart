@@ -1,24 +1,47 @@
 /// Část těla, kterou měříme krejčovským metrem. Čistý Dart bez Flutteru.
+library;
+
+import '../core/i18n.dart';
+
 enum BodyPart {
-  waist('Pas'),
-  chest('Hrudník'),
-  arm('Paže'),
-  forearm('Předloktí'),
-  thigh('Stehno'),
-  calf('Lýtko'),
-  hips('Boky'),
-  neck('Krk');
+  waist,
+  chest,
+  arm,
+  forearm,
+  thigh,
+  calf,
+  hips,
+  neck;
 
-  final String label;
+  String get label => switch (this) {
+    waist => tr('Pas', 'Waist'),
+    chest => tr('Hrudník', 'Chest'),
+    arm => tr('Paže', 'Arm'),
+    forearm => tr('Předloktí', 'Forearm'),
+    thigh => tr('Stehno', 'Thigh'),
+    calf => tr('Lýtko', 'Calf'),
+    hips => tr('Boky', 'Hips'),
+    neck => tr('Krk', 'Neck'),
+  };
 
-  const BodyPart(this.label);
+  /// Czech name as stored by older versions, independent of the UI language.
+  String get storedLabel => switch (this) {
+    waist => 'Pas',
+    chest => 'Hrudník',
+    arm => 'Paže',
+    forearm => 'Předloktí',
+    thigh => 'Stehno',
+    calf => 'Lýtko',
+    hips => 'Boky',
+    neck => 'Krk',
+  };
 
   /// Načte část těla z uložené hodnoty; neznámou vrátí `null`.
   static BodyPart? parse(Object? v) {
     if (v is BodyPart) return v;
     if (v is! String) return null;
     for (final part in values) {
-      if (part.name == v || part.label == v) return part;
+      if (part.name == v || part.storedLabel == v) return part;
     }
     return null;
   }
@@ -41,7 +64,7 @@ class Measurement {
   factory Measurement.fromJson(Map<String, dynamic> json) {
     final part = BodyPart.parse(json['part']);
     if (part == null) {
-      throw const FormatException('Neznámá část těla.');
+      throw FormatException(tr('Neznámá část těla.', 'Unknown body part.'));
     }
     return Measurement(
       id: json['id'] as String,

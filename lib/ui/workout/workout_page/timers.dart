@@ -85,7 +85,10 @@ class _SessionStrip extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, 8),
           child: Row(
             children: [
-              cell(tr('ČAS', 'TIME'), _Elapsed(workout.startedAt, style: value)),
+              cell(
+                tr('ČAS', 'TIME'),
+                _Elapsed(workout.startedAt, style: value),
+              ),
               cell(
                 tr('OBJEM', 'VOLUME'),
                 Text('${formatKg(volume)} kg', style: value),
@@ -312,7 +315,9 @@ class _RestBarState extends State<_RestBar> {
                         )
                       else
                         chip(
-                          finished ? tr('Zavřít', 'Close') : tr('Přeskočit', 'Skip'),
+                          finished
+                              ? tr('Zavřít', 'Close')
+                              : tr('Přeskočit', 'Skip'),
                           widget.state.skipRest,
                         ),
                     ],

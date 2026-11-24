@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/i18n.dart';
 
 import '../../coach/plan_quiz.dart';
@@ -133,9 +134,9 @@ class ProgramPage extends StatelessWidget {
           GroupedSection(
             footer: tr(
               'Hotový program jde upravit: vznikne z něj tvůj vlastní a '
-              'originál zůstane.',
+                  'originál zůstane.',
               'You can edit a ready-made program: it becomes your own copy '
-              'and the original stays.',
+                  'and the original stays.',
             ),
             children: [
               for (final t in [...styleTemplates, ...splitTemplates])
@@ -214,9 +215,9 @@ class _CurrentCard extends StatelessWidget {
           program == null
               ? tr(
                   'Žádné dny na řadě. Vyber hotový program, nebo si slož '
-                  'vlastní.',
+                      'vlastní.',
                   'No days in a queue. Pick a ready-made program, or build '
-                  'your own.',
+                      'your own.',
                 )
               : '${programSummaryLabel(program)} · ${perWeekLabel(state.weekGoal)}',
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),

@@ -295,13 +295,18 @@ class Workout {
 
   factory Workout.fromJson(Map<String, dynamic> json) => Workout(
     id: json['id'] as String,
-    name: json['name'] as String? ?? 'Trénink',
+    name: json['name'] as String? ?? tr('Trénink', 'Workout'),
     // Bez začátku se vezme konec; bez obou trénink nedává smysl (jinak by
     // spadl do roku 1970) a načítání záznam přeskočí.
     startedAt:
         _date(json['startedAt']) ??
         _date(json['finishedAt']) ??
-        (throw const FormatException('Trénink bez platného začátku.')),
+        (throw FormatException(
+          tr(
+            'Trénink bez platného začátku.',
+            'Workout without a valid start time.',
+          ),
+        )),
     finishedAt: _date(json['finishedAt']),
     note: json['note'] as String? ?? '',
     exercises: [

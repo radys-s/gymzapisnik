@@ -422,38 +422,66 @@ PlanRecommendation recommendPlan(PlanAnswers a) {
   return switch (days) {
     2 => (
       'full_body_3',
-      'Při 2 trénincích týdně je nejlepší celé tělo pokaždé: '
-          'každá partie tak dostane 2 tréninky.',
+      tr(
+        'Při 2 trénincích týdně je nejlepší celé tělo pokaždé: '
+            'každá partie tak dostane 2 tréninky.',
+        'With 2 workouts a week, full body every time is best: '
+            'each muscle group gets 2 workouts.',
+      ),
     ),
     3 when a.level == PlanLevel.advanced && a.goal == PlanGoal.muscle => (
       'ppl',
-      'Tlaky, tahy a nohy: víc cviků na partii, '
-          'což pokročilým pomáhá dál růst.',
+      tr(
+        'Tlaky, tahy a nohy: víc cviků na partii, '
+            'což pokročilým pomáhá dál růst.',
+        'Push, pull and legs: more exercises per muscle group, '
+            'which helps advanced trainees keep growing.',
+      ),
     ),
     3 => (
       'full_body_3',
-      'Celé tělo 3× týdně: každá partie 3 tréninky týdně '
-          'a hlavní cviky se rychle naučíš.',
+      tr(
+        'Celé tělo 3× týdně: každá partie 3 tréninky týdně '
+            'a hlavní cviky se rychle naučíš.',
+        'Full body 3× a week: each muscle group gets 3 workouts a week '
+            'and you learn the main lifts quickly.',
+      ),
     ),
     4 => (
       'upper_lower',
-      'Horní a dolní polovina střídavě: každá partie 2× týdně '
-          'a mezi tréninky dost odpočinku.',
+      tr(
+        'Horní a dolní polovina střídavě: každá partie 2× týdně '
+            'a mezi tréninky dost odpočinku.',
+        'Upper and lower body in turn: each muscle group 2× a week '
+            'with plenty of rest between workouts.',
+      ),
     ),
     5 when a.level == PlanLevel.beginner => (
       'upper_lower',
-      'Upper / Lower dokola i 5× týdně: každá partie 2–3× týdně, '
-          'pro začátek nejbezpečnější.',
+      tr(
+        'Upper / Lower dokola i 5× týdně: každá partie 2–3× týdně, '
+            'pro začátek nejbezpečnější.',
+        'Upper / Lower on repeat even 5× a week: each muscle group 2–3× a '
+            'week, the safest option for beginners.',
+      ),
     ),
     6 when a.level == PlanLevel.advanced && a.goal == PlanGoal.muscle => (
       'arnold',
-      'Arnold split dvakrát za týden: každá partie 2×, '
-          'velký objem pro pokročilé.',
+      tr(
+        'Arnold split dvakrát za týden: každá partie 2×, '
+            'velký objem pro pokročilé.',
+        'Arnold split twice a week: each muscle group 2×, '
+            'high volume for advanced trainees.',
+      ),
     ),
     _ => (
       'ppl',
-      'Push / Pull / Legs dokola: při $days dnech má každá partie '
-          'skoro 2 tréninky týdně.',
+      tr(
+        'Push / Pull / Legs dokola: při $days dnech má každá partie '
+            'skoro 2 tréninky týdně.',
+        'Push / Pull / Legs on repeat: with $days days each muscle group '
+            'gets almost 2 workouts a week.',
+      ),
     ),
   };
 }

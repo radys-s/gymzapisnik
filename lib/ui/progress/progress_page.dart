@@ -84,7 +84,10 @@ class ProgressPage extends StatelessWidget {
                   countTo: sets.toDouble(),
                   format: (v) => '${v.round()}',
                 ),
-                StatTile('$unlocked / ${badges.length}', tr('odznaků', 'badges')),
+                StatTile(
+                  '$unlocked / ${badges.length}',
+                  tr('odznaků', 'badges'),
+                ),
               ],
             ),
           ),
@@ -185,9 +188,9 @@ class ProgressPage extends StatelessWidget {
             ? null
             : tr(
                 'Rekord: ${state.exercise(record.exerciseId).name} '
-                '${recordLabel(record.kind, record.value)}',
+                    '${recordLabel(record.kind, record.value)}',
                 'Record: ${state.exercise(record.exerciseId).name} '
-                '${recordLabel(record.kind, record.value)}',
+                    '${recordLabel(record.kind, record.value)}',
               ),
         onTap: () => push(ExercisesPage(state)),
       ),
@@ -222,7 +225,10 @@ class ProgressPage extends StatelessWidget {
       GroupedRow(
         icon: Icons.lightbulb_outline_rounded,
         title: tr('Rady pro růst svalů', 'Muscle growth tips'),
-        subtitle: tr('Objem, technika, jídlo, spánek', 'Volume, technique, food, sleep'),
+        subtitle: tr(
+          'Objem, technika, jídlo, spánek',
+          'Volume, technique, food, sleep',
+        ),
         onTap: () => push(GrowthPage(state, now: now)),
       ),
       GroupedRow(
@@ -260,16 +266,19 @@ class _Empty extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tr('Pokrok začne prvním tréninkem', 'Progress starts with your first workout'),
+                  tr(
+                    'Pokrok začne prvním tréninkem',
+                    'Progress starts with your first workout',
+                  ),
                   style: text.titleMedium,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   tr(
                     'Po každém tréninku tu přibudou rekordy, křivka síly '
-                    'a odznaky.',
+                        'a odznaky.',
                     'After each workout, records, the strength curve '
-                    'and badges appear here.',
+                        'and badges appear here.',
                   ),
                   style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
                 ),
@@ -316,11 +325,46 @@ class _Rank {
 _Rank _trainingRank(int workouts, int sets, int badges, int badgesTotal) {
   final score = workouts * 10 + sets + badges * 25;
   final tiers = [
-    (0, tr('Nováček', 'Newcomer'), tr('Buduješ základ. Hlavní je pravidelnost.', 'Building the base. Consistency is what matters.')),
-    (120, tr('Pravidelný', 'Regular'), tr('Základ sedí. Přidávej objem a kvalitu sérií.', 'The base is solid. Add volume and set quality.')),
-    (300, tr('Dříč', 'Grinder'), tr('Pravidelnost se mění ve výkon. Drž progres.', 'Consistency is turning into performance. Keep progressing.')),
-    (600, tr('Atlet', 'Athlete'), tr('Silná rutina. Teď hraj o rekordy a kvalitu.', 'A strong routine. Now play for records and quality.')),
-    (1000, tr('Elita', 'Elite'), tr('Špička pravidelnosti. Sbírej čisté rekordy.', 'The top of consistency. Collect clean records.')),
+    (
+      0,
+      tr('Nováček', 'Newcomer'),
+      tr(
+        'Buduješ základ. Hlavní je pravidelnost.',
+        'Building the base. Consistency is what matters.',
+      ),
+    ),
+    (
+      120,
+      tr('Pravidelný', 'Regular'),
+      tr(
+        'Základ sedí. Přidávej objem a kvalitu sérií.',
+        'The base is solid. Add volume and set quality.',
+      ),
+    ),
+    (
+      300,
+      tr('Dříč', 'Grinder'),
+      tr(
+        'Pravidelnost se mění ve výkon. Drž progres.',
+        'Consistency is turning into performance. Keep progressing.',
+      ),
+    ),
+    (
+      600,
+      tr('Atlet', 'Athlete'),
+      tr(
+        'Silná rutina. Teď hraj o rekordy a kvalitu.',
+        'A strong routine. Now play for records and quality.',
+      ),
+    ),
+    (
+      1000,
+      tr('Elita', 'Elite'),
+      tr(
+        'Špička pravidelnosti. Sbírej čisté rekordy.',
+        'The top of consistency. Collect clean records.',
+      ),
+    ),
   ];
   var idx = 0;
   for (var i = 0; i < tiers.length; i++) {
@@ -490,7 +534,10 @@ class _NextPrCard extends StatelessWidget {
             children: [
               Icon(Icons.track_changes_rounded, color: p.accent),
               const SizedBox(width: 8),
-              Text(tr('Další PR cíle', 'Next PR targets'), style: text.titleMedium),
+              Text(
+                tr('Další PR cíle', 'Next PR targets'),
+                style: text.titleMedium,
+              ),
             ],
           ),
           const SizedBox(height: Space.s),

@@ -78,7 +78,10 @@ class _WorkoutPageState extends State<WorkoutPage> {
               for (final s in [0, 60, 90, 120, 150, 180, 240])
                 GroupedRow(
                   title: s == 0
-                      ? tr('Výchozí (${restLabel(base)})', 'Default (${restLabel(base)})')
+                      ? tr(
+                          'Výchozí (${restLabel(base)})',
+                          'Default (${restLabel(base)})',
+                        )
                       : restLabel(s),
                   trailing: (s == 0 ? own == null : own == s)
                       ? Icon(Icons.check_rounded, color: sheet.palette.accent)
@@ -334,9 +337,14 @@ class _WorkoutPageState extends State<WorkoutPage> {
       showUndo(context, tr('Série smazána', 'Set deleted'), () async {
         try {
           final ok = await state.restoreSet(entry, set, index, sets: sets);
-          if (!ok) _snack(tr('Sérii už nejde vrátit.', 'Can\'t restore the set anymore.'));
+          if (!ok)
+            _snack(
+              tr('Sérii už nejde vrátit.', 'Can\'t restore the set anymore.'),
+            );
         } catch (_) {
-          _snack(tr('Sérii se nepodařilo vrátit.', 'Could not restore the set.'));
+          _snack(
+            tr('Sérii se nepodařilo vrátit.', 'Could not restore the set.'),
+          );
         }
       });
     } catch (_) {
@@ -448,22 +456,22 @@ class _WorkoutPageState extends State<WorkoutPage> {
           final added = await state.addWarmups(entry);
           _snack(switch (added) {
             null => tr(
-                'Rozcvička už je potvrzená, nebo chybí pracovní váha.',
-                'Warm-up already confirmed, or working weight is missing.',
-              ),
+              'Rozcvička už je potvrzená, nebo chybí pracovní váha.',
+              'Warm-up already confirmed, or working weight is missing.',
+            ),
             0 => tr(
-                'Na takhle lehkou váhu rozcvička není potřeba.',
-                'No warm-up needed for this light a weight.',
-              ),
+              'Na takhle lehkou váhu rozcvička není potřeba.',
+              'No warm-up needed for this light a weight.',
+            ),
             1 => tr('Přidána 1 rozcvičovací série.', 'Added 1 warm-up set.'),
             final n when n < 5 => tr(
-                'Přidány $n rozcvičovací série.',
-                'Added $n warm-up sets.',
-              ),
+              'Přidány $n rozcvičovací série.',
+              'Added $n warm-up sets.',
+            ),
             final n => tr(
-                'Přidáno $n rozcvičovacích sérií.',
-                'Added $n warm-up sets.',
-              ),
+              'Přidáno $n rozcvičovacích sérií.',
+              'Added $n warm-up sets.',
+            ),
           });
         } catch (_) {
           _snack(
@@ -599,7 +607,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
                       ),
                     ),
                     child: Text(
-                      _busy ? tr('Ukládám…', 'Saving…') : tr('Dokončit', 'Finish'),
+                      _busy
+                          ? tr('Ukládám…', 'Saving…')
+                          : tr('Dokončit', 'Finish'),
                     ),
                   ),
                 ),

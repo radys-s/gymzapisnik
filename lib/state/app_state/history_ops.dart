@@ -5,9 +5,13 @@ extension HistoryOps on AppState {
   /// Uloží upravený dokončený trénink. Ponechá jen vyplněné série a cviky,
   /// které nějakou mají; bez pracovní série úpravu odmítne.
   Future<String?> updateWorkout(Workout edited) async {
-    if (!edited.finished) return 'Trénink není dokončený.';
+    if (!edited.finished) {
+      return tr('Trénink není dokončený.', 'The workout is not finished.');
+    }
     final cleaned = edited.copy()
-      ..name = edited.name.trim().isEmpty ? 'Trénink' : edited.name.trim()
+      ..name = edited.name.trim().isEmpty
+          ? tr('Trénink', 'Workout')
+          : edited.name.trim()
       ..note = edited.note.trim();
     cleaned.exercises = [
       for (final e in cleaned.exercises)
@@ -19,7 +23,10 @@ extension HistoryOps on AppState {
             ],
     ];
     if (!cleaned.exercises.any((e) => e.countedSets.isNotEmpty)) {
-      return 'Trénink musí mít aspoň jednu pracovní sérii.';
+      return tr(
+        'Trénink musí mít aspoň jednu pracovní sérii.',
+        'A workout needs at least one working set.',
+      );
     }
     await _enqueue(() => store.put(Kinds.workout, cleaned.toJson()));
     workouts = [for (final w in workouts) w.id == cleaned.id ? cleaned : w]

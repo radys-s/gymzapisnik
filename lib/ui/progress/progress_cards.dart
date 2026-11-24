@@ -47,7 +47,10 @@ class ConsistencyCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(tr('PRAVIDELNOST', 'CONSISTENCY'), style: text.labelSmall),
+                    Text(
+                      tr('PRAVIDELNOST', 'CONSISTENCY'),
+                      style: text.labelSmall,
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       tr(
@@ -69,9 +72,9 @@ class ConsistencyCard extends StatelessWidget {
           Semantics(
             label: tr(
               'Kalendář posledních $weeks týdnů, '
-              'odcvičeno ${days.length} dní',
+                  'odcvičeno ${days.length} dní',
               'Calendar of the last $weeks weeks, '
-              '${days.length} days trained',
+                  '${days.length} days trained',
             ),
             excludeSemantics: true,
             child: LayoutBuilder(
@@ -205,9 +208,9 @@ class StrengthLevelsCard extends StatelessWidget {
                   )
                 : tr(
                     'Odhad 1RM vůči tělesné váze '
-                    '${formatKg(bodyweight)} kg',
+                        '${formatKg(bodyweight)} kg',
                     'Estimated 1RM vs body weight '
-                    '${formatKg(bodyweight)} kg',
+                        '${formatKg(bodyweight)} kg',
                   ),
             style: text.bodySmall,
           ),
@@ -216,9 +219,9 @@ class StrengthLevelsCard extends StatelessWidget {
             Text(
               tr(
                 'Zacvič dřep, bench, mrtvý tah nebo tlak nad hlavu a ukáže '
-                'se tvůj stupeň: od začátečníka po elitu.',
+                    'se tvůj stupeň: od začátečníka po elitu.',
                 'Train squat, bench, deadlift or overhead press and your '
-                'level will show: from beginner to elite.',
+                    'level will show: from beginner to elite.',
               ),
               style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             )

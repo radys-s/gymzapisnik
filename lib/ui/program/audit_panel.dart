@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/i18n.dart';
 
 import '../../coach/routine_audit.dart';
@@ -58,7 +59,7 @@ class AuditPanel extends StatelessWidget {
                             ? tr('Kontrola: bez mezer', 'Check: no gaps')
                             : tr(
                                 'Kontrola: $gaps '
-                                '${gaps == 1 ? 'mezera' : (gaps < 5 ? 'mezery' : 'mezer')}',
+                                    '${gaps == 1 ? 'mezera' : (gaps < 5 ? 'mezery' : 'mezer')}',
                                 'Check: $gaps ${gaps == 1 ? 'gap' : 'gaps'}',
                               ),
                         style: text.titleSmall,
