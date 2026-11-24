@@ -72,3 +72,11 @@
 - Exercises: 33 English names made consistent, 17 duplicates hidden from lists (ids kept for history), 45 exercises got a matching movement. The figure got volume, working muscles in the accent (helpers half-tone, equipment neutral), a faint start pose, three slow reps with phase labels and start/end frames.
 - Declined: copying scraped photos from free-exercise-db/wrkout (their maintainer says he does not own the image copyright); used only as pose reference.
 - Next: English for the remaining screens and technique texts, 54 new exercises, review, IPA.
+
+## 2026-11-24 — Phone preview of the whole redesign
+
+- What: built the release web app with CanvasKit bundled (`--no-web-resources-cdn`, relative `<base href="./">`) and published it inside a phone frame as a private claude.ai artifact (https://claude.ai/artifact/21ui45gtzW9tYi7c6u3R6u) with a "what changed / try this" column. Fixed the last 8 analyzer infos (curly braces in `splits.dart` and `workout_page.dart`).
+- Why: Tomáš asked for a page with a phone emulator to try the app and dictate feedback after the long redesign run.
+- Numbers: bundle 22 MB in 40 files after dropping skwasm/wimp renderers and debug symbols; build 60 s. Served locally from a sub-path, the build boots to the language picker in headless Chromium.
+- Not verified: storage and the AI proxy inside the claude.ai frame itself (no browser access to claude.ai from the hub).
+- Next: Tomáš's feedback on the preview.

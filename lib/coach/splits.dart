@@ -152,8 +152,9 @@ const maxCustomPrograms = 20;
 
 /// Česká chyba, nebo `null`, když je program v pořádku.
 String? programError(SplitTemplate program) {
-  if (program.name.trim().isEmpty)
+  if (program.name.trim().isEmpty) {
     return tr('Pojmenuj program.', 'Name the program.');
+  }
   if (program.name.trim().length > maxNameLength) {
     return tr('Název programu je moc dlouhý.', 'The program name is too long.');
   }
@@ -163,8 +164,9 @@ String? programError(SplitTemplate program) {
       'Frequency must be 1–7× per week.',
     );
   }
-  if (program.days.isEmpty)
+  if (program.days.isEmpty) {
     return tr('Přidej aspoň jeden den.', 'Add at least one day.');
+  }
   if (program.days.length > maxProgramDays) {
     return tr(
       'Program může mít nejvýš $maxProgramDays dní.',
@@ -173,18 +175,21 @@ String? programError(SplitTemplate program) {
   }
   for (final day in program.days) {
     final name = day.name.trim();
-    if (name.isEmpty)
+    if (name.isEmpty) {
       return tr('Každý den potřebuje název.', 'Every day needs a name.');
-    if (name.length > maxNameLength)
+    }
+    if (name.length > maxNameLength) {
       return tr(
         'Název dne „$name“ je moc dlouhý.',
         'The name of day “$name” is too long.',
       );
-    if (day.exercises.isEmpty)
+    }
+    if (day.exercises.isEmpty) {
       return tr(
         'Den „$name“ nemá žádný cvik.',
         'Day “$name” has no exercises.',
       );
+    }
     if (day.exercises.length > maxDayExercises) {
       return tr(
         'Den „$name“ má víc než $maxDayExercises cviků.',
@@ -192,13 +197,15 @@ String? programError(SplitTemplate program) {
       );
     }
     for (final e in day.exercises) {
-      if (e.exerciseId.trim().isEmpty)
+      if (e.exerciseId.trim().isEmpty) {
         return tr(
           'Den „$name“ má cvik bez názvu.',
           'Day “$name” has an exercise without a name.',
         );
-      if (e.sets < 1 || e.sets > 10)
+      }
+      if (e.sets < 1 || e.sets > 10) {
         return tr('Počet sérií musí být 1–10.', 'Sets must be 1–10.');
+      }
       if (e.repMin < 1 || e.repMax > 50 || e.repMin > e.repMax) {
         return tr(
           'Opakování musí být 1–50, od menšího čísla k většímu.',

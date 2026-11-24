@@ -337,10 +337,11 @@ class _WorkoutPageState extends State<WorkoutPage> {
       showUndo(context, tr('Série smazána', 'Set deleted'), () async {
         try {
           final ok = await state.restoreSet(entry, set, index, sets: sets);
-          if (!ok)
+          if (!ok) {
             _snack(
               tr('Sérii už nejde vrátit.', 'Can\'t restore the set anymore.'),
             );
+          }
         } catch (_) {
           _snack(
             tr('Sérii se nepodařilo vrátit.', 'Could not restore the set.'),
