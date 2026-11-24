@@ -73,6 +73,16 @@ void main() {
     tester,
   ) async {
     final state = await _fresh(tester);
+    await tester.runAsync(
+      () => state.applyPlan(
+        const PlanAnswers().withBody(
+          sex: Sex.male,
+          heightCm: 180,
+          birthYear: 1990,
+          weightGoal: WeightGoal.keep,
+        ),
+      ),
+    );
     await _open(tester, state);
 
     // Bez uvítání: rovnou první otázka, s počtem otázek včetně zaměření.
@@ -120,6 +130,11 @@ void main() {
     // Poslední otázka plán uloží a ukáže, i s cestou k vlastnímu.
     expect(find.text('Plán je hotový'), findsOneWidget);
     expect(find.text('Upravím si ho sám'), findsOneWidget);
+    // Choosing Later must preserve existing nutrition profile details.
+    expect(state.planAnswers?.sex, Sex.male);
+    expect(state.planAnswers?.heightCm, 180);
+    expect(state.planAnswers?.birthYear, 1990);
+    expect(state.planAnswers?.weightGoal, WeightGoal.keep);
     expect(state.planAnswers?.goal, PlanGoal.strength);
     expect(state.planAnswers?.style, PlanStyle.oldSchool);
     expect(state.planAnswers?.unavailable, contains(id));

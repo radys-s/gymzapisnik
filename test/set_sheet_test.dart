@@ -91,7 +91,17 @@ void main() {
     expect(find.textContaining('Oprav váhu'), findsOneWidget);
     // Nečitelná váha se neuloží jako 0, zůstane poslední platná.
     expect(bench.sets[1].weight, 1200);
+    await tester.enterText(sheetField(0), '-5');
+    await tester.pump();
+    expect(bench.sets[1].weight, 1200);
     await tester.enterText(sheetField(0), '62,5');
+    await tester.enterText(sheetField(1), '-2');
+    await tester.pump();
+    expect(bench.sets[1].reps, 7);
+    // Pasted decimal reps must not silently turn 8.5 into 85 reps.
+    await tester.enterText(sheetField(1), '8.5');
+    await tester.pump();
+    expect(bench.sets[1].reps, 7);
     await tester.enterText(sheetField(1), '1500');
     await tester.pump();
     expect(find.textContaining('do 999'), findsOneWidget);
@@ -247,7 +257,7 @@ void main() {
     });
     await tester.pumpAndSettle();
     expect(find.byType(SetSheet), findsOneWidget);
-    expect(find.textContaining('Váha není číslo'), findsOneWidget);
+    expect(find.textContaining('Váha musí být číslo od 0'), findsOneWidget);
     expect(bench.sets[1].done, isFalse);
   });
 

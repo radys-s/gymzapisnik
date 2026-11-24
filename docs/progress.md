@@ -94,3 +94,12 @@
 - Removed the pain-selection screen from onboarding and plan setup following user feedback. Gym selection now leads directly to the generated plan in onboarding; later plan setup continues with the optional body and focus steps.
 - Removed unused question helpers, adjusted the progress count, and updated the flow tests and screenshot tour. Existing saved exercise exclusions remain supported.
 - Verification: targeted analyzer clean; first-run screenshot tour reaches the plan without the removed step.
+
+## 2026-11-24 — Follow-up audit: preserve profile and numeric input
+
+- Fixed Later in plan setup deleting saved sex, height, birth year and weight goal. It now discards only edits in that step and restores saved body details, including the weight field.
+- Fixed set input silently stripping minus signs (pasted -5 became 5) and decimal separators from reps (8.5 became 85). Keep these characters visible, reject invalid/negative values before persistence, and prevent steppers from replacing negative input. Existing draft values remain intact until input is corrected.
+- Translated the body-step validation toast for English users.
+- Evidence: added regression assertions failed before both fixes; body/profile flow and consent suites pass (15 tests), set editor passes (9). Baseline checks of active workout, backups, history and English onboarding also passed (37 including the set suite). Targeted analyzer clean.
+- Independent read-only audits: schedule-loss claim is blocked by the required schedule selection before save; draft-body claim does not apply because the body step is only offered in setup, which intentionally initializes from saved planAnswers rather than planDraft. Neither warranted changing persistence.
+- Next: continue the audit with nutrition and program editing; refresh the hosted preview after the source fixes are collected. This pass does not establish that the entire app is bug-free.

@@ -106,13 +106,14 @@ class _SetSheetState extends State<SetSheet> {
   String? _invalid() {
     final w = weight.text.trim();
     final r = reps.text.trim();
+    final weightValue = w.isEmpty ? 0.0 : parseNum(w);
     final repsValue = r.isEmpty ? 0 : int.tryParse(r);
-    return w.isNotEmpty && parseNum(w) == null
+    return weightValue == null || weightValue < 0
         ? tr(
-            'Váha není číslo. Oprav ji, jinak se neuloží.',
-            'Weight is not a number. Fix it or it won\'t be saved.',
+            'Váha musí být číslo od 0. Oprav ji, jinak se neuloží.',
+            'Weight must be a number of 0 or more. Fix it or it won\'t be saved.',
           )
-        : repsValue == null || repsValue > 999
+        : repsValue == null || repsValue < 0 || repsValue > 999
         ? tr(
             'Opakování musí být číslo do 999.',
             'Reps must be a number up to 999.',
@@ -193,7 +194,7 @@ class _SetSheetState extends State<SetSheet> {
   /// Tlačítko − / +: nečitelný text nepřepíše, ručně vyšší hodnotu nesrazí.
   void _stepKg(double by) {
     final cur = weight.text.trim().isEmpty ? 0.0 : parseNum(weight.text);
-    if (cur == null) {
+    if (cur == null || cur < 0) {
       setState(
         () => error = tr(
           'Oprav váhu, tlačítko jí nerozumí.',
@@ -210,7 +211,7 @@ class _SetSheetState extends State<SetSheet> {
 
   void _stepReps(int by) {
     final cur = reps.text.trim().isEmpty ? 0 : int.tryParse(reps.text.trim());
-    if (cur == null || cur > 999) {
+    if (cur == null || cur < 0 || cur > 999) {
       setState(
         () => error = tr(
           'Oprav opakování, tlačítko jim nerozumí.',
@@ -440,9 +441,7 @@ class _ValueState extends State<_Value> {
                 ? TextInputAction.next
                 : TextInputAction.done,
             inputFormatters: [
-              FilteringTextInputFormatter.allow(
-                widget.decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
-              ),
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,-]')),
             ],
             style: TextStyle(
               fontFamily: condensedFont,

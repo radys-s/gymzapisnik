@@ -519,15 +519,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
       (birthYear != null && DateTime.now().year - birthYear >= 19);
 
   void _skipBody() {
-    _kg.clear();
-    _height.clear();
-    _year.clear();
+    // Later discards edits in this step, preserving the saved profile.
+    final saved = state.planAnswers ?? const PlanAnswers();
+    final kg = state.bodyweights.firstOrNull?.kg;
+    _kg.text = kg == null ? '' : formatKg(kg);
+    _height.text = saved.heightCm?.toString() ?? '';
+    _year.text = saved.birthYear?.toString() ?? '';
     _changePlan(
       plan.withBody(
-        sex: null,
-        heightCm: null,
-        birthYear: null,
-        weightGoal: null,
+        sex: saved.sex,
+        heightCm: saved.heightCm,
+        birthYear: saved.birthYear,
+        weightGoal: saved.weightGoal,
       ),
     );
     _go(_next(_S.body));
@@ -845,7 +848,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
         if (raw.isNotEmpty && (kg == null || !validBodyWeight(kg))) {
           showToast(
             context,
-            'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.',
+            tr(
+              'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.',
+              'Enter weight in kg, e.g. 72.5. Or leave it empty.',
+            ),
           );
           return;
         }
