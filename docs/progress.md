@@ -80,3 +80,11 @@
 - Numbers: bundle 22 MB in 40 files after dropping skwasm/wimp renderers and debug symbols; build 60 s. Served locally from a sub-path, the build boots to the language picker in headless Chromium.
 - Not verified: storage and the AI proxy inside the claude.ai frame itself (no browser access to claude.ai from the hub).
 - Next: Tomáš's feedback on the preview.
+
+## 2026-11-24 — Exercise illustration polish completed after handoff
+
+- What: finished the pending figure rendering pass: fuller body shapes, highlighted working/helper muscles, rep-dependent effort, movement paths, floor shadows, and a live four-phase tempo strip. Side-view chest orientation follows the hands. Contact-sheet options support exercise subsets and larger cells.
+- Visual correction: the short squeeze phase clipped its label on a 390 px phone; labels now receive equal width while timeline segments retain their duration proportions.
+- Verification: targeted analyzer clean; figure/catalog and exercise-screen tests pass (5 tests); workout screenshot tour passes and renders 8 screens. Inspected the full catalog contact sheet and exercise detail screenshot. Independent read-only review approved the rendering changes before the label correction.
+- Delivery: source committed on the redesign branch. The previously published phone preview predates this final illustration polish; its hosted bundle has not been updated in this pass.
+- Next: hands-on feedback on the existing phone preview, then refresh the hosted bundle with any requested revisions.
