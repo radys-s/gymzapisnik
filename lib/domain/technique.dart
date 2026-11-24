@@ -8,7 +8,8 @@ typedef Technique = ({List<String> steps, List<String> mistakes});
 
 Technique? techniqueOf(String id) => techniques[id];
 
-final Map<String, Technique> techniques = {
+/// Built on each read so the texts follow the current language.
+Map<String, Technique> get techniques => {
   'bench_press': (
     steps: [
       tr(

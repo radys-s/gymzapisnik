@@ -185,7 +185,10 @@ class _ExercisesPageState extends State<ExercisesPage> {
           SectionHeader(
             folded.isEmpty && muscle == null && equipment == null && !gymOnly
                 ? tr('Knihovna cviků', 'Exercise library')
-                : tr('Výsledky (${filtered.length})', 'Results (${filtered.length})'),
+                : tr(
+                    'Výsledky (${filtered.length})',
+                    'Results (${filtered.length})',
+                  ),
           ),
           if (filtered.isEmpty)
             EmptyState(

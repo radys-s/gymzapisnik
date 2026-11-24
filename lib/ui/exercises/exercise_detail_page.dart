@@ -49,7 +49,11 @@ class ExerciseDetailPage extends StatelessWidget {
           if (records[kind] != null) kind,
       ];
       final csName = exercise.nameCs.trim();
-      final showCs = csName.isNotEmpty && fold(csName) != fold(exercise.name);
+      // English name is the title; the Czech UI adds the Czech one.
+      final showCs =
+          !isEnglish &&
+          csName.isNotEmpty &&
+          fold(csName) != fold(exercise.name);
       return LargeTitlePage(
         title: exercise.name,
         children: [
