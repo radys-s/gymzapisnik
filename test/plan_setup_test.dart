@@ -6,6 +6,7 @@ import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/onboarding/onboarding_page.dart';
+import 'package:gymzapisnik/ui/settings/my_gym_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 Future<AppState> _fresh(WidgetTester tester) async {
@@ -89,6 +90,16 @@ void main() {
     }
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _pick(tester, find.text(TrainingPlace.gym.label));
+    // Untick one machine in the optional list; the plan keeps it.
+    await tester.tap(find.text('Zaškrtnout stroje ve fitku (nepovinné)'));
+    await tester.pumpAndSettle();
+    final first = find.byType(CheckboxListTile).first;
+    final id = gymMachinesByMuscle(TrainingPlace.gym).values.first.first.id;
+    await tester.tap(first);
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(200, 20));
+    await tester.pumpAndSettle();
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _tapAndSave(tester, find.text('Nic mě nebolí').hitTestable());
     expect(find.text('Něco o tobě'), findsOneWidget);
     await _tapAndSave(tester, find.text('Doplním později'));
@@ -112,6 +123,7 @@ void main() {
     expect(find.text('Upravím si ho sám'), findsOneWidget);
     expect(state.planAnswers?.goal, PlanGoal.strength);
     expect(state.planAnswers?.style, PlanStyle.oldSchool);
+    expect(state.planAnswers?.unavailable, contains(id));
     expect(state.profile.splitId, 'basics_5x5');
     expect(state.planAnswers?.focus, {focus});
     expect(state.planAnswers?.favorites, {favorite});

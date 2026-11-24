@@ -122,6 +122,8 @@ void main() {
 
     expect(find.text('Kde cvičíš?'), findsOneWidget);
     await _pick(tester, find.text('Doma s činkami'));
+    // Picking a gym waits: a machine list is offered, then Continue.
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
 
     expect(find.text('Bolí tě něco?'), findsOneWidget);
     await tester.tap(find.text('Kolena'));
@@ -254,6 +256,7 @@ void main() {
     await tester.pump();
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _pick(tester, find.text('Velké komerční fitko'));
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _tapAndSave(tester, find.text('Nic mě nebolí'));
     // Přeskoč volitelné kroky (tělo, zaměření) až na hotový plán.
     for (var i = 0; i < 4; i++) {

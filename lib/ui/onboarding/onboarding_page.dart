@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../coach/evidence.dart';
 import '../../coach/plan_quiz.dart';
 import '../../core/diagnostics.dart';
 import '../../core/i18n.dart';
@@ -15,6 +16,8 @@ import '../design/tokens.dart';
 import '../program/plan_quiz.dart' show planFacts;
 import '../program/program_editor_page.dart';
 import '../program/program_widgets.dart';
+import '../settings/my_gym_page.dart' show gymMachinesByMuscle;
+import '../widgets/exercise_media.dart' show ExerciseThumb;
 import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
 import 'consent_page.dart';
@@ -383,6 +386,76 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
+  /// Machines of this gym type, ticked = available. Kept in the answers,
+  /// the same way My gym in Settings stores them.
+  Future<void> _pickMachines() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final groups = gymMachinesByMuscle(plan.place);
+          void toggle(String id) {
+            final preset = plan.place.presetMissing.contains(id);
+            setState(() {
+              plan = preset
+                  ? plan.copyWith(present: _toggle(plan.present, id))
+                  : plan.copyWith(missing: _toggle(plan.missing, id));
+            });
+            setSheet(() {});
+          }
+
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.85,
+            builder: (ctx, scroll) => ListView(
+              controller: scroll,
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                0,
+                Space.page,
+                Space.xl,
+              ),
+              children: [
+                Text(
+                  tr('Stroje ve tvém fitku', 'Machines at your gym'),
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+                Text(
+                  tr(
+                    'Odškrtni, co tam není. Plán je pak nebude navrhovat.',
+                    'Untick what is missing. The plan will not suggest it.',
+                  ),
+                  style: Theme.of(ctx).textTheme.bodySmall
+                      ?.copyWith(color: ctx.palette.secondaryLabel),
+                ),
+                for (final MapEntry(key: muscle, value: list)
+                    in groups.entries) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.l),
+                    child: Text(
+                      muscleLabel(muscle),
+                      style: Theme.of(ctx).textTheme.titleSmall,
+                    ),
+                  ),
+                  for (final e in list)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: ExerciseThumb(e.id),
+                      title: Text(e.name),
+                      value: !plan.unavailable.contains(e.id),
+                      onChanged: (_) => toggle(e.id),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   /// Own plan or one of the styles. A style also fixes the goal for the
   /// strength plan.
   void _pickPath({required bool own, PlanStyle? style}) {
@@ -514,6 +587,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     VoidCallback? onNext,
     VoidCallback? onSkip,
     String? skipLabel,
+    Widget? secondary,
     Tone tone = Tone.training,
   }) {
     final i = _asked.indexOf(s) + 1;
@@ -534,6 +608,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       onBack: !setup && _back(s) == null ? null : () => _goBack(s),
       onSkip: onSkip,
       skipLabel: skipLabel ?? tr('Přeskočit', 'Skip'),
+      secondary: secondary,
       child: child,
     );
   }
@@ -724,6 +799,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
             'Fine-tune single machines in My gym.',
       ),
       tone: Tone.food,
+      // No auto-advance here: after the pick the machine list is offered.
+      action: answered.contains(s) ? tr('Pokračovat', 'Continue') : null,
+      onNext: () => _forward(s),
+      secondary:
+          answered.contains(s) && gymMachinesByMuscle(plan.place).isNotEmpty
+          ? TextButton.icon(
+              onPressed: _pickMachines,
+              icon: const Icon(Icons.checklist_rounded),
+              label: Text(
+                tr(
+                  'Zaškrtnout stroje ve fitku (nepovinné)',
+                  'Tick the machines at your gym (optional)',
+                ),
+              ),
+            )
+          : null,
       child: StaggerColumn(
         gap: Space.s,
         children: [
@@ -733,7 +824,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
               label: g.label,
               hint: g.hint,
               selected: answered.contains(s) && g == plan.place,
-              onTap: () => _pick(plan.copyWith(place: g), s),
+              onTap: () => setState(() {
+                answered.add(s);
+                plan = plan.copyWith(place: g);
+              }),
             ),
         ],
       ),

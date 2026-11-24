@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymzapisnik/app.dart';
 import 'package:gymzapisnik/coach/plan_quiz.dart';
+import 'package:gymzapisnik/core/i18n.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
@@ -117,6 +118,11 @@ Future<AppState> _state(WidgetTester tester) async {
   addTearDown(db.close);
   final state = AppState(LocalStore(db));
   await tester.runAsync(state.load);
+  // SCREENS_LANG=en renders the tour in English.
+  if (Platform.environment['SCREENS_LANG'] == 'en') {
+    await tester.runAsync(() => state.setAppLanguage(AppLang.en));
+    appLang = AppLang.en;
+  }
   return state;
 }
 
@@ -180,6 +186,12 @@ void main() {
     await _tap(tester, find.text('Pokračovat'));
     await _shot(tester, 'gym');
     await _pick(tester, find.text('Velké komerční fitko'));
+    await _shot(tester, 'gym-picked');
+    await _tap(tester, find.text('Zaškrtnout stroje ve fitku (nepovinné)'));
+    await _shot(tester, 'gym-machines');
+    await tester.tapAt(const Offset(200, 20));
+    await tester.pumpAndSettle();
+    await _tap(tester, find.text('Pokračovat'));
     await _tap(tester, find.text('Kolena'));
     await _shot(tester, 'pain');
     await _save(tester, find.text('Pokračovat'));

@@ -492,6 +492,49 @@ class _PlanReveal extends StatelessWidget {
               ],
             ),
           ),
+        if (answers.style == PlanStyle.science)
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr('Na čem plán stojí', 'What the plan is based on'),
+                  style: text.titleMedium,
+                ),
+                for (final e in planPrinciples) ...[
+                  const SizedBox(height: Space.m),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.science_outlined,
+                          size: 18,
+                          color: p.accent,
+                        ),
+                      ),
+                      const SizedBox(width: Space.s),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e.text, style: text.bodyMedium),
+                            Text(
+                              e.source,
+                              style: text.bodySmall?.copyWith(
+                                color: p.secondaryLabel,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
       ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
