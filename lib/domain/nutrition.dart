@@ -170,6 +170,38 @@ DateTime loggedAtFor(String day, DateTime now, {DateTime? timeOf}) {
   return DateTime(d.year, d.month, d.day, t.hour, t.minute);
 }
 
+/// Timestamp written when a food form is saved.
+///
+/// An unchanged entry keeps its instant. Moving it to another day keeps the
+/// clock time (or uses [now] when the new day is today). A new entry uses
+/// [at] only when that instant already falls on [day].
+DateTime foodLoggedAt({
+  required String day,
+  required DateTime now,
+  DateTime? existingLoggedAt,
+  String? existingDay,
+  DateTime? at,
+  DateTime? copyTime,
+}) {
+  if (existingLoggedAt != null && existingDay == day) return existingLoggedAt;
+  if (existingLoggedAt == null && at != null && dayKey(at) == day) return at;
+  return loggedAtFor(
+    day,
+    now,
+    timeOf: existingLoggedAt?.toLocal() ?? at ?? copyTime,
+  );
+}
+
+/// Earliest day a nutrition calendar may open.
+///
+/// The floor is 2000, but an older imported day must still be inside the
+/// range or [showDatePicker] rejects it.
+DateTime nutritionFirstDate(DateTime selected) {
+  final day = DateTime(selected.year, selected.month, selected.day);
+  final floor = DateTime(2000);
+  return day.isBefore(floor) ? day : floor;
+}
+
 /// Denní součet. U každé veličiny `*Missing` říká, že alespoň jednomu
 /// záznamu hodnota chyběla, takže součet je spodní odhad.
 class DayTotals {

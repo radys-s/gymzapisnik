@@ -226,11 +226,13 @@ class _NutritionPageState extends State<NutritionPage> {
 
   Future<void> _pick() async {
     final now = DateTime.now();
+    final last = DateTime(now.year, now.month, now.day);
+    final initial = day.isAfter(last) ? last : _dateOf(day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: day.isAfter(now) ? now : day,
-      firstDate: DateTime(2020),
-      lastDate: now,
+      initialDate: initial,
+      firstDate: nutritionFirstDate(initial),
+      lastDate: last,
     );
     if (picked != null) _show(picked);
   }

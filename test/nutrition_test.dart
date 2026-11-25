@@ -10,8 +10,8 @@ import 'package:gymzapisnik/data/off_client.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/nutrition.dart';
 import 'package:gymzapisnik/state/app_state.dart';
-import 'package:gymzapisnik/ui/nutrition/nutrition_page.dart';
 import 'package:gymzapisnik/ui/design/components.dart';
+import 'package:gymzapisnik/ui/nutrition/nutrition_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -546,6 +546,38 @@ void main() {
       expect(find.textContaining('kontrolní číslicí'), findsOneWidget);
     });
 
+    testWidgets('moving a food to another day also moves its meal timestamp', (
+      tester,
+    ) async {
+      final state = await pump(tester, day: DateTime(2026, 10, 3));
+      await tester.runAsync(
+        () => state.saveFood(food('move', day: '2026-10-03')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(GroupedRow, 'Jogurt'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(GroupedRow, 'Den'));
+      await tester.pumpAndSettle();
+      Navigator.of(tester.element(find.byType(DatePickerDialog)))
+          .pop(DateTime(2026, 10, 2));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Uložit změny'));
+      await settle(tester);
+      expect(state.foods.single.day, '2026-10-02');
+      expect(state.foods.single.loggedAt.toLocal(), DateTime(2026, 10, 2, 12));
+    });
+
+    testWidgets('nutrition calendar accepts an older imported day', (
+      tester,
+    ) async {
+      await pump(tester, day: DateTime(2019, 12, 31));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(TextButton).first);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+    });
+
     testWidgets('past day opens and edit keeps the entry id', (tester) async {
       final state = await pump(tester, day: DateTime(2026, 10, 3));
       await tester.runAsync(
@@ -566,6 +598,38 @@ void main() {
       expect(state.foods.single.amount, 250);
       expect(state.foods.single.day, '2026-10-03');
     });
+  });
+
+  test('moving a saved meal keeps its clock time on the new day', () {
+    final now = DateTime(2026, 11, 22, 18);
+    final kept = foodLoggedAt(
+      day: '2026-10-03',
+      now: now,
+      existingLoggedAt: DateTime(2026, 10, 5, 12),
+      existingDay: '2026-10-03',
+    );
+    expect(kept, DateTime(2026, 10, 5, 12));
+    expect(
+      foodLoggedAt(
+        day: '2026-10-02',
+        now: now,
+        existingLoggedAt: DateTime(2026, 10, 5, 12),
+        existingDay: '2026-10-03',
+      ),
+      DateTime(2026, 10, 2, 12),
+    );
+    expect(
+      foodLoggedAt(
+        day: '2026-11-22',
+        now: now,
+        existingLoggedAt: DateTime(2026, 10, 5, 12),
+        existingDay: '2026-10-03',
+      ),
+      now,
+    );
+    expect(nutritionFirstDate(DateTime(2019, 12, 31)), DateTime(2000));
+    expect(nutritionFirstDate(DateTime(1998, 6, 1)), DateTime(1998, 6, 1));
+    expect(nutritionFirstDate(DateTime(2026, 10, 3)), DateTime(2000));
   });
 
   test('logged time keeps the chosen day', () {

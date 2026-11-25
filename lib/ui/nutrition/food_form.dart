@@ -183,11 +183,13 @@ class _FoodFormPageState extends State<FoodFormPage> {
   Future<void> _pickDay() async {
     final now = DateTime.now();
     final current = parseDayKey(day) ?? now;
+    final last = DateTime(now.year, now.month, now.day);
+    final initial = current.isAfter(last) ? last : current;
     final picked = await showDatePicker(
       context: context,
-      initialDate: current.isAfter(now) ? now : current,
-      firstDate: DateTime(2020),
-      lastDate: now,
+      initialDate: initial,
+      firstDate: nutritionFirstDate(initial),
+      lastDate: last,
     );
     if (picked != null) setState(() => day = dayKey(picked));
   }
@@ -208,16 +210,14 @@ class _FoodFormPageState extends State<FoodFormPage> {
     final next = FoodEntry(
       id: existing?.id ?? newId(),
       day: day,
-      loggedAt:
-          existing?.loggedAt ??
-          // Den se ve formuláři dá změnit: čas jídla platí jen pro původní.
-          (widget.at != null && dayKey(widget.at!) == day
-              ? widget.at!
-              : loggedAtFor(
-                  day,
-                  DateTime.now(),
-                  timeOf: widget.at ?? widget.copyOf?.loggedAt.toLocal(),
-                )),
+      loggedAt: foodLoggedAt(
+        day: day,
+        now: DateTime.now(),
+        existingLoggedAt: existing?.loggedAt,
+        existingDay: existing?.day,
+        at: widget.at,
+        copyTime: widget.copyOf?.loggedAt.toLocal(),
+      ),
       name: name.text.trim(),
       brand: brand,
       barcode: barcode,
