@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/i18n.dart';
 import '../../data/off_client.dart';
 import '../../domain/nutrition.dart';
 
@@ -46,9 +47,11 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
     final code = controller.text.trim();
     if (!validBarcode(code)) {
       setState(() {
-        error =
-            'Zadej čárový kód (8, 12, 13 nebo 14 číslic) se správnou '
-            'kontrolní číslicí.';
+        error = tr(
+          'Zadej čárový kód (8, 12, 13 nebo 14 číslic) se správnou '
+              'kontrolní číslicí.',
+          'Enter a barcode (8, 12, 13 or 14 digits) with a valid check digit.',
+        );
         offerManual = false;
       });
       return;
@@ -67,20 +70,26 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
         setState(() {
           busy = false;
           offerManual = true;
-          error = 'Produkt v databázi není. Můžeš ho zapsat ručně.';
+          error = tr(
+            'Produkt v databázi není. Můžeš ho zapsat ručně.',
+            'Product not found. You can enter it manually.',
+          );
         });
       case LookupFailed(:final message):
         setState(() {
           busy = false;
           offerManual = true;
-          error = '$message Můžeš ho zapsat ručně.';
+          error = tr(
+            '$message Můžeš ho zapsat ručně.',
+            '$message You can enter it manually.',
+          );
         });
     }
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Čárový kód'),
+    title: Text(tr('Čárový kód', 'Barcode')),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,7 +101,10 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
-            labelText: 'Číslo pod čárovým kódem',
+            labelText: tr(
+              'Číslo pod čárovým kódem',
+              'Number below the barcode',
+            ),
             errorText: error,
             errorMaxLines: 4,
           ),
@@ -100,7 +112,10 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Kód se odešle do Open Food Facts. Nic jiného se neodesílá.',
+          tr(
+            'Kód se odešle do Open Food Facts. Nic jiného se neodesílá.',
+            'The code is sent to Open Food Facts. Nothing else is sent.',
+          ),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         if (busy)
@@ -113,7 +128,7 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Zrušit'),
+        child: Text(tr('Zrušit', 'Cancel')),
       ),
       if (offerManual)
         TextButton(
@@ -121,11 +136,11 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
             context,
             BarcodeOutcome(null, controller.text.trim()),
           ),
-          child: const Text('Zadat ručně'),
+          child: Text(tr('Zadat ručně', 'Enter manually')),
         ),
       FilledButton(
         onPressed: busy ? null : _search,
-        child: const Text('Najít'),
+        child: Text(tr('Najít', 'Search')),
       ),
     ],
   );

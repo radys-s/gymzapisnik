@@ -31,8 +31,7 @@ class HeroCard extends StatelessWidget {
   }
 }
 
-/// Main workout card: violet-to-teal light, a subtle data grid, and a
-/// gradient edge that slowly travels around it.
+/// Main workout card: the same flat surface, a little more padding.
 class _WorkoutHero extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
@@ -44,107 +43,9 @@ class _WorkoutHero extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final radius = p.cardRadius();
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: [...p.cardShadow, ...p.glow(AppPalette.violet, 0.7)],
-      ),
-      child: AuraEdge(
-        borderRadius: radius,
-        colors: const [AppPalette.violet, AppPalette.cyan, AppPalette.lime],
-        child: _heroBody(context, p),
-      ),
-    );
-  }
-
-  Widget _heroBody(BuildContext context, AppPalette p) {
-    final still = MediaQuery.disableAnimationsOf(context);
-    return Material(
-      color: p.grouped,
-      shape: p.cardShape(),
-      clipBehavior: Clip.antiAlias,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color.lerp(p.grouped, AppPalette.violet, 0.34)!,
-              Color.lerp(p.grouped, AppPalette.blue, 0.10)!,
-              p.grouped,
-              Color.lerp(p.grouped, AppPalette.teal, 0.18)!,
-            ],
-            stops: const [0, 0.38, 0.7, 1],
-          ),
-        ),
-        child: CustomPaint(
-          painter: _GridPainter(Color.lerp(p.grouped, p.label, 0.035)!),
-          child: Stack(
-            children: [
-              if (watermark != null)
-                Positioned(
-                  right: 44,
-                  top: 0,
-                  child: ExcludeSemantics(
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: still ? 0 : 1, end: 0),
-                      duration: Motion.slow,
-                      curve: Motion.curve,
-                      builder: (context, t, child) => Opacity(
-                        opacity: 1 - t,
-                        child: Transform.translate(
-                          offset: Offset(0, 24 * t),
-                          child: child,
-                        ),
-                      ),
-                      child: Text(
-                        watermark!,
-                        textScaler: TextScaler.noScaling,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: TextStyle(
-                          fontFamily: condensedFont,
-                          fontSize: 132,
-                          height: 1,
-                          fontWeight: FontWeight.w800,
-                          color: p.label.withValues(alpha: 0.06),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              Padding(padding: padding, child: child),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Jemná mřížka 22 px jako na měřicím displeji.
-class _GridPainter extends CustomPainter {
-  final Color color;
-  const _GridPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1;
-    for (var x = 22.0; x < size.width; x += 22) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 22.0; y < size.height; y += 22) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter old) => old.color != color;
+  Widget build(BuildContext context) => CardSurface(
+    child: Padding(padding: padding, child: child),
+  );
 }
 
 /// Startovní dílky, jeden na cvik: rozsvítí se jeden po druhém (jednou)
@@ -237,8 +138,7 @@ extension on _StartLightsState {
                             at >=
                             _StartLightsState._delay +
                                 i * _StartLightsState._step,
-                        // Barva dílku podle místa v řadě: limetka až tyrkys.
-                        color: _sample(p.gradient, _n < 2 ? 0 : i / (_n - 1)),
+                        color: p.accent,
                       ),
                     ),
                   ],
@@ -258,11 +158,10 @@ extension on _StartLightsState {
                         child: Text(
                           caption,
                           style: TextStyle(
-                            fontFamily: condensedFont,
+                            fontFamily: textFont,
                             color: p.secondaryLabel,
                             fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -276,14 +175,6 @@ extension on _StartLightsState {
   }
 }
 
-/// Barva v místě [t] (0–1) vícebarevného přechodu.
-Color _sample(List<Color> colors, double t) {
-  if (colors.length == 1) return colors.first;
-  final at = t.clamp(0.0, 1.0) * (colors.length - 1);
-  final i = at.floor().clamp(0, colors.length - 2);
-  return Color.lerp(colors[i], colors[i + 1], at - i)!;
-}
-
 class _Segment extends StatelessWidget {
   final bool on;
   final Color color;
@@ -291,27 +182,26 @@ class _Segment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 10,
+    height: 4,
     decoration: BoxDecoration(
       color: on ? color : context.palette.fill,
       borderRadius: BorderRadius.circular(2),
-      boxShadow: on
-          ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8)]
-          : null,
     ),
   );
 }
 
 /// Štítek „ŽIVĚ" s tečkou, která třikrát blikne a pak svítí.
 class LiveTag extends StatefulWidget {
-  final String label;
-  const LiveTag({super.key, this.label = 'ŽIVĚ'});
+  final String? label;
+  const LiveTag({super.key, this.label});
 
   @override
   State<LiveTag> createState() => _LiveTagState();
 }
 
 class _LiveTagState extends State<LiveTag> with SingleTickerProviderStateMixin {
+  String get _label => widget.label ?? tr('ŽIVĚ', 'LIVE');
+
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1200),
@@ -347,15 +237,12 @@ class _LiveTagState extends State<LiveTag> with SingleTickerProviderStateMixin {
           child: Container(
             width: 7,
             height: 7,
-            decoration: BoxDecoration(
-              color: c,
-              boxShadow: [BoxShadow(color: c, blurRadius: 8)],
-            ),
+            decoration: BoxDecoration(color: c, shape: BoxShape.circle),
           ),
         ),
         const SizedBox(width: 6),
         Text(
-          widget.label,
+          _label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: c,
             fontWeight: FontWeight.w800,

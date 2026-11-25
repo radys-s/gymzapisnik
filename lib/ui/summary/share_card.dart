@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
@@ -38,7 +39,7 @@ Future<void> showShareImage(
   BuildContext context, {
   required String fileName,
   required Widget child,
-  String button = 'Sdílet obrázek',
+  String? button,
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
@@ -49,13 +50,13 @@ Future<void> showShareImage(
 
 class ShareImageSheet extends StatefulWidget {
   final String fileName;
-  final String button;
+  final String? button;
   final Widget child;
   const ShareImageSheet({
     super.key,
     required this.fileName,
     required this.child,
-    this.button = 'Sdílet obrázek',
+    this.button,
   });
 
   @override
@@ -94,7 +95,12 @@ class _ShareImageSheetState extends State<ShareImageSheet> {
         ),
       );
     } catch (_) {
-      if (mounted) showToast(context, 'Obrázek se nepodařilo sdílet.');
+      if (mounted) {
+        showToast(
+          context,
+          tr('Obrázek se nepodařilo sdílet.', 'Could not share the image.'),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -117,7 +123,7 @@ class _ShareImageSheetState extends State<ShareImageSheet> {
           ),
           const SizedBox(height: Space.l),
           PrimaryButton(
-            widget.button,
+            widget.button ?? tr('Sdílet obrázek', 'Share image'),
             icon: Icons.ios_share_rounded,
             busy: _busy,
             onPressed: _share,
@@ -142,147 +148,193 @@ class ShareCard extends StatelessWidget {
     required this.records,
   });
 
-  static const _bg = Color(0xFF0C0C10);
-  static const _muted = Color(0xFFB4B4BC);
+  static const _bg = AppPalette.ink;
+  static const _muted = Color(0xFFA1A1A8);
+  static const _line = Color(0xFF2A2A2E);
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final duration = workout.finishedAt?.difference(workout.startedAt);
     var kg = 0.0;
     var sets = 0;
-    final lines = <String>[];
+    final lines = <(String, String)>[];
     for (final e in workout.exercises) {
       final type = state.typeOf(e.exerciseId);
       sets += e.countedSets.length;
       if (type == ExerciseType.weighted) kg += volume(type, e.sets);
       final best = bestSet(type, e.sets);
       if (best != null && lines.length < 5) {
-        lines.add(
-          '${state.exercise(e.exerciseId).name}|${setLabel(type, best)}',
-        );
+        lines.add((state.exercise(e.exerciseId).name, setLabel(type, best)));
       }
     }
-    const white = TextStyle(color: Colors.white);
+    const white = TextStyle(color: Colors.white, fontFamily: textFont);
+    const figure = TextStyle(
+      color: Colors.white,
+      fontFamily: condensedFont,
+      fontWeight: FontWeight.w700,
+      fontFeatures: tabular,
+      height: 1,
+    );
     return SizedBox(
       width: 360,
       height: 450,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: ColoredBox(
           color: _bg,
-          borderRadius: BorderRadius.circular(28),
-          gradient: RadialGradient(
-            center: const Alignment(0.9, -1),
-            radius: 1.2,
-            // Neprůhledné barvy: průhledná záře by v PNG i ve světlém sheetu
-            // propustila pozadí. Jen 30 % akcentu, ať je šedý text čitelný.
-            colors: [
-              Color.alphaBlend(p.gradient.first.withValues(alpha: 0.3), _bg),
-              _bg,
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  const AppMark(size: 28),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Gym zápisník',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: white.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Trénink č. $number',
-                    style: white.copyWith(fontSize: 13, color: _muted),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
-              Text(
-                workout.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: white.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              Text(
-                formatDate(workout.date),
-                style: white.copyWith(fontSize: 14, color: _muted),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  if (duration != null)
-                    _stat(white, durationLabel(duration), 'délka'),
-                  _stat(white, '${formatVolume(kg)} kg', 'objem'),
-                  _stat(white, '$sets', 'série'),
-                ],
-              ),
-              const SizedBox(height: 20),
-              for (final l in lines)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
+              Container(height: 4, color: AppPalette.ember),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
+                      Row(
+                        children: [
+                          const AppMark(size: 24),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              tr('GYM ZÁPISNÍK', 'GYM LOG'),
+                              maxLines: 1,
+                              overflow: TextOverflow.clip,
+                              style: white.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            tr('TRÉNINK Č. $number', 'WORKOUT #$number'),
+                            style: white.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                              color: _muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
                         child: Text(
-                          l.split('|').first,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: white.copyWith(fontSize: 15),
+                          '${formatVolume(kg)} kg',
+                          style: figure.copyWith(fontSize: 64),
                         ),
                       ),
-                      const SizedBox(width: 8),
                       Text(
-                        l.split('|').last,
-                        style: white.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: tabular,
-                        ),
+                        tr('zvednuto celkem', 'total lifted'),
+                        style: white.copyWith(fontSize: 12, color: _muted),
                       ),
-                    ],
-                  ),
-                ),
-              const Spacer(),
-              if (records > 0)
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.emoji_events_rounded,
-                      color: Color(0xFFFFD60A),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        records == 1
-                            ? 'Nový osobní rekord'
-                            : 'Nové osobní rekordy: $records',
+                      const SizedBox(height: 14),
+                      Text(
+                        workout.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: white.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
                         ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        formatDate(workout.date),
+                        style: white.copyWith(fontSize: 13, color: _muted),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: const BoxDecoration(
+                          border: Border.symmetric(
+                            horizontal: BorderSide(color: _line),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            if (duration != null)
+                              _stat(
+                                figure,
+                                durationLabel(duration),
+                                tr('délka', 'duration'),
+                              ),
+                            _stat(figure, '$sets', tr('série', 'sets')),
+                            _stat(
+                              figure,
+                              '${workout.exercises.length}',
+                              tr('cviků', 'exercises'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      for (final (name, best) in lines)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 5),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: white.copyWith(fontSize: 13),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                best,
+                                style: white.copyWith(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: tabular,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const Spacer(),
+                      if (records > 0)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.emoji_events_rounded,
+                              color: AppPalette.amber,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                records == 1
+                                    ? tr(
+                                        'Nový osobní rekord',
+                                        'New personal record',
+                                      )
+                                    : tr(
+                                        'Nové osobní rekordy: $records',
+                                        'New personal records: $records',
+                                      ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: white.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppPalette.amber,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
+              ),
             ],
           ),
         ),
@@ -290,23 +342,24 @@ class ShareCard extends StatelessWidget {
     );
   }
 
-  Widget _stat(TextStyle base, String value, String label) => Expanded(
+  Widget _stat(TextStyle figure, String value, String label) => Expanded(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style: base.copyWith(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              fontFeatures: tabular,
-            ),
+          child: Text(value, style: figure.copyWith(fontSize: 24)),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: textFont,
+            fontSize: 11,
+            color: _muted,
           ),
         ),
-        Text(label, style: base.copyWith(fontSize: 12, color: _muted)),
       ],
     ),
   );

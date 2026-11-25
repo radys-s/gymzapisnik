@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import '../../state/app_state.dart';
@@ -40,10 +41,13 @@ Future<void> compareWithAnother(
               Space.l,
             ),
             children: [
-              Text('Porovnat s…', style: text.titleLarge),
+              Text(tr('Porovnat s…', 'Compare with…'), style: text.titleLarge),
               const SizedBox(height: Space.xs),
               Text(
-                'Vyber trénink. Uvidíš ho vedle tohoto série po sérii.',
+                tr(
+                  'Vyber trénink. Uvidíš ho vedle tohoto série po sérii.',
+                  'Pick a workout. You will see it next to this one, set by set.',
+                ),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
               const SizedBox(height: Space.m),
@@ -80,10 +84,16 @@ Future<void> compareWithAnother(
 }
 
 String _sharedLabel(String date, int shared) => switch (shared) {
-  0 => '$date · žádný společný cvik',
-  1 => '$date · 1 společný cvik',
-  < 5 => '$date · $shared společné cviky',
-  _ => '$date · $shared společných cviků',
+  0 => tr('$date · žádný společný cvik', '$date · no shared exercises'),
+  1 => tr('$date · 1 společný cvik', '$date · 1 shared exercise'),
+  < 5 => tr(
+    '$date · $shared společné cviky',
+    '$date · $shared shared exercises',
+  ),
+  _ => tr(
+    '$date · $shared společných cviků',
+    '$date · $shared shared exercises',
+  ),
 };
 
 /// Dva tréninky vedle sebe: novější vlevo, starší vpravo.
@@ -145,7 +155,7 @@ class CompareWorkoutsPage extends StatelessWidget {
         w.exercises.fold(0, (n, e) => n + e.countedSets.length);
 
     return LargeTitlePage(
-      title: 'Porovnání',
+      title: tr('Porovnání', 'Comparison'),
       children: [
         Panel(
           child: Column(
@@ -161,9 +171,9 @@ class CompareWorkoutsPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: Space.s),
                 child: Divider(height: 0.5, thickness: 0.5, color: p.separator),
               ),
-              columns('Délka', length(newer), length(older)),
-              columns('Objem', kg(newer), kg(older)),
-              columns('Série', '${sets(newer)}', '${sets(older)}'),
+              columns(tr('Délka', 'Duration'), length(newer), length(older)),
+              columns(tr('Objem', 'Volume'), kg(newer), kg(older)),
+              columns(tr('Série', 'Sets'), '${sets(newer)}', '${sets(older)}'),
             ],
           ),
         ),
@@ -210,11 +220,14 @@ class _ExercisePair extends StatelessWidget {
       rows = c.sets;
       overall = c.overall;
       verdict = switch (c.overall) {
-        Trend.better => 'Zlepšení proti $olderDate',
-        Trend.same => 'Stejně jako $olderDate',
-        Trend.worse => 'Slabší než $olderDate',
-        Trend.added => 'Jen $newerDate',
-        Trend.missing => 'Bez pracovní série',
+        Trend.better => tr(
+          'Zlepšení proti $olderDate',
+          'Improved vs $olderDate',
+        ),
+        Trend.same => tr('Stejně jako $olderDate', 'Same as $olderDate'),
+        Trend.worse => tr('Slabší než $olderDate', 'Weaker than $olderDate'),
+        Trend.added => tr('Jen $newerDate', 'Only $newerDate'),
+        Trend.missing => tr('Bez pracovní série', 'No working set'),
       };
     } else {
       rows = [
@@ -222,7 +235,7 @@ class _ExercisePair extends StatelessWidget {
           SetComparison(null, s, Trend.missing),
       ];
       overall = Trend.missing;
-      verdict = 'Jen $olderDate';
+      verdict = tr('Jen $olderDate', 'Only $olderDate');
     }
     return Panel(
       child: Column(

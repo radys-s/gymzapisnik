@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../coach/achievements.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -24,17 +25,19 @@ IconData badgeIcon(BadgeMetric m) => switch (m) {
 /// Postup u zamčeného odznaku, např. „12 / 25 tréninků“.
 String badgeProgressLabel(BadgeState s) {
   final unit = switch (s.badge.metric) {
-    BadgeMetric.workouts => 'tréninků',
-    BadgeMetric.weekRun => 'týdnů v řadě',
-    BadgeMetric.weekWorkouts => 'tréninků za týden',
+    BadgeMetric.workouts => tr('tréninků', 'workouts'),
+    BadgeMetric.weekRun => tr('týdnů v řadě', 'weeks in a row'),
+    BadgeMetric.weekWorkouts => tr('tréninků za týden', 'workouts a week'),
     BadgeMetric.volumeTons => 't',
-    BadgeMetric.records => 'rekordů',
-    BadgeMetric.sets => 'sérií',
+    BadgeMetric.records => tr('rekordů', 'records'),
+    BadgeMetric.sets => tr('sérií', 'sets'),
     BadgeMetric.longMinutes => 'min',
     BadgeMetric.earlyStarts || BadgeMetric.lateStarts => '',
-    BadgeMetric.distinctExercises => 'cviků',
+    BadgeMetric.distinctExercises => tr('cviků', 'exercises'),
   };
-  if (unit.isEmpty || s.badge.target == 1) return 'Stačí jednou';
+  if (unit.isEmpty || s.badge.target == 1) {
+    return tr('Stačí jednou', 'Just once');
+  }
   final value = s.value > s.badge.target ? s.badge.target : s.value;
   return '$value / ${s.badge.target} $unit';
 }
@@ -53,11 +56,15 @@ class AchievementsPage extends StatelessWidget {
       final all = state.badgeStates;
       final count = all.where((b) => b.unlocked).length;
       return LargeTitlePage(
-        title: 'Odznaky',
+        title: tr('Odznaky', 'Badges'),
         children: [
           Text(
-            '$count z ${all.length} odemčeno. Odznaky přibývají za '
-            'pravidelnost, rekordy a odcvičený objem.',
+            tr(
+              '$count z ${all.length} odemčeno. Odznaky přibývají za '
+                  'pravidelnost, rekordy a odcvičený objem.',
+              '$count of ${all.length} unlocked. Badges come from consistency, '
+                  'records and volume lifted.',
+            ),
             style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
           ),
           for (final group in BadgeGroup.values) ...[
@@ -101,8 +108,10 @@ class BadgeTile extends StatelessWidget {
       button: true,
       excludeSemantics: true,
       onTap: () => _details(context),
-      label:
-          '${b.title}, ${state.unlocked ? 'odemčeno' : badgeProgressLabel(state)}',
+      label: tr(
+        '${b.title}, ${state.unlocked ? 'odemčeno' : badgeProgressLabel(state)}',
+        '${b.title}, ${state.unlocked ? 'unlocked' : badgeProgressLabel(state)}',
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(context.palette.controlRadius),
         onTap: () => _details(context),
@@ -170,21 +179,24 @@ class BadgeTile extends StatelessWidget {
               const SizedBox(height: Space.s),
               Text(
                 at != null
-                    ? 'Odemčeno ${formatDate(at)}'
+                    ? tr(
+                        'Odemčeno ${formatDate(at)}',
+                        'Unlocked ${formatDate(at)}',
+                      )
                     : badgeProgressLabel(state),
                 style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
               ),
               if (state.unlocked) ...[
                 const SizedBox(height: Space.l),
                 PrimaryButton(
-                  'Sdílet odznak',
+                  tr('Sdílet odznak', 'Share badge'),
                   icon: Icons.ios_share_rounded,
                   onPressed: () {
                     Navigator.pop(context);
                     showShareImage(
                       outer,
                       fileName: 'odznak-${state.badge.id}.png',
-                      button: 'Sdílet odznak',
+                      button: tr('Sdílet odznak', 'Share badge'),
                       child: BadgeShareCard(state),
                     );
                   },
@@ -203,12 +215,9 @@ class BadgeShareCard extends StatelessWidget {
   final BadgeState state;
   const BadgeShareCard(this.state, {super.key});
 
-  static const _bg = Color(0xFF0C0C10);
-  static const _muted = Color(0xFFB4B4BC);
-  static const _gold = Color(0xFFFFD60A);
-
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final at = state.unlockedAt;
     const white = TextStyle(color: Colors.white);
     return SizedBox(
@@ -216,14 +225,8 @@ class BadgeShareCard extends StatelessWidget {
       height: 450,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: _bg,
+          color: p.background,
           borderRadius: BorderRadius.circular(28),
-          gradient: RadialGradient(
-            center: const Alignment(0, -0.35),
-            radius: 0.9,
-            // Neprůhledné barvy, jinak PNG propustí pozadí (viz ShareCard).
-            colors: [Color.alphaBlend(_gold.withValues(alpha: 0.22), _bg), _bg],
-          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -234,7 +237,7 @@ class BadgeShareCard extends StatelessWidget {
                   const AppMark(size: 28),
                   const SizedBox(width: 10),
                   Text(
-                    'Gym zápisník',
+                    tr('Gym zápisník', 'Gym Log'),
                     style: white.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -248,29 +251,22 @@ class BadgeShareCard extends StatelessWidget {
                 height: 132,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _gold,
-                      Color.lerp(_gold, Colors.deepOrange, 0.45)!,
-                    ],
-                  ),
+                  color: p.gold,
                 ),
                 child: Icon(
                   badgeIcon(state.badge.metric),
                   size: 60,
-                  color: Colors.black,
+                  color: p.onAccent,
                 ),
               ),
               const SizedBox(height: 22),
               Text(
-                'ODZNAK ODEMČEN',
+                tr('ODZNAK ODEMČEN', 'BADGE UNLOCKED'),
                 style: white.copyWith(
                   fontSize: 12,
                   letterSpacing: 1.6,
                   fontWeight: FontWeight.w700,
-                  color: _gold,
+                  color: p.gold,
                 ),
               ),
               const SizedBox(height: 6),
@@ -290,13 +286,13 @@ class BadgeShareCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: white.copyWith(fontSize: 15, color: _muted),
+                style: white.copyWith(fontSize: 15, color: p.secondaryLabel),
               ),
               const Spacer(),
               if (at != null)
                 Text(
                   formatDate(at),
-                  style: white.copyWith(fontSize: 13, color: _muted),
+                  style: white.copyWith(fontSize: 13, color: p.secondaryLabel),
                 ),
             ],
           ),
@@ -321,20 +317,13 @@ class BadgeMedal extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: on ? null : p.fill,
-        gradient: on
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [p.gold, Color.lerp(p.gold, Colors.deepOrange, 0.45)!],
-              )
-            : null,
+        color: on ? p.gold : p.fill,
         border: on ? null : Border.all(color: p.separator),
       ),
       child: Icon(
         badgeIcon(state.badge.metric),
         size: size * 0.46,
-        color: on ? Colors.black : p.tertiaryLabel,
+        color: on ? p.onAccent : p.tertiaryLabel,
       ),
     );
   }

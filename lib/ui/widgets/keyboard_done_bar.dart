@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../design/tokens.dart';
 
 /// Číselná klávesnice na iPhonu nemá klávesu, která by ji zasunula.
@@ -59,7 +60,7 @@ class KeyboardDoneBar extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: close,
-                    child: const Text('Hotovo'),
+                    child: Text(tr('Hotovo', 'Done')),
                   ),
                 ),
               ),

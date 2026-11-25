@@ -59,7 +59,7 @@ void main() {
     expect(find.text('Září 2026'), findsOneWidget);
 
     tester.view
-      ..physicalSize = const Size(390, 3600)
+      ..physicalSize = const Size(390, 5000)
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(app(ExerciseDetailPage(state, 'bench_press')));

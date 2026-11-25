@@ -41,6 +41,7 @@ abstract final class ProfileKey {
   static const pro = 'pro';
   static const backupCount = 'backupCount';
   static const installId = 'installId';
+  static const language = 'language';
 
   /// Starší verze ukládaly záložku jinak; čtou se jen kvůli převodu.
   static const legacyTab = 'tab';
@@ -78,6 +79,7 @@ abstract final class ProfileKey {
     pro,
     backupCount,
     installId,
+    language,
     legacyTab,
     legacyLastTab,
   };

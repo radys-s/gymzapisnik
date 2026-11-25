@@ -1,4 +1,4 @@
-// E2E: uvítání → souhlas → reload drží souhlas → offline reload ze service workeru.
+// E2E: language → consent → reload keeps consent → offline reload from the service worker.
 const {chromium}=require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 let ctx, browser;
 (async()=>{
@@ -23,16 +23,17 @@ let ctx, browser;
   throw new Error(msg);
  };
  await p.goto('http://localhost:8099/'); await sem();
- await see(/Gym zápisník/,'welcome');
- // Uvítání: jeden slide, dotazník „Tvůj plán“ (jde přeskočit), pak souhlas.
- await p.getByRole('button',{name:'Sestavit můj plán'}).click();
- await see(/Tvůj plán/,'plan step');
- await p.getByRole('button',{name:'Přeskočit'}).click();
+ await see(/Vyber jazyk/,'language step');
+ await p.getByRole('button',{name:/Čeština/}).click();
+ await see(/Každý den víš/,'welcome');
+ await p.getByRole('button',{name:'Začít'}).click();
  await see(/Než začneš/,'consent');
- await p.getByRole('checkbox',{name:/Souhlasím/}).click();
- await p.getByRole('radio',{name:/18 let nebo/}).click();
+ await p.getByRole('button',{name:/Souhlasím s podmínkami/}).click();
+ await p.getByRole('button',{name:/18 let nebo/}).click();
  await p.waitForTimeout(400);
  await p.getByRole('button',{name:'Pokračovat'}).click();
+ await see(/Jak chceš trénovat/,'path step');
+ await p.getByRole('button',{name:'Přeskočit'}).click();
  await see(/Začít (?!trénink)|Volný trénink/,'home after consent');
  await p.reload(); await sem();
  await see(/Začít (?!trénink)|Volný trénink/,'consent kept after reload');

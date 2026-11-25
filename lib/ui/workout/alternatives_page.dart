@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../domain/anatomy.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -41,7 +42,7 @@ class AlternativesPage extends StatelessWidget {
     final heads = headsLabel(exerciseId);
     final sections = alternativesFor(exerciseId, state.allExercises);
     return Scaffold(
-      appBar: AppBar(title: const Text('Nahradit cvik')),
+      appBar: AppBar(title: Text(tr('Nahradit cvik', 'Replace exercise'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           Space.page,
@@ -81,7 +82,7 @@ class AlternativesPage extends StatelessWidget {
             children: [
               GroupedRow(
                 leading: Icon(Icons.search_rounded, color: p.accent),
-                title: 'Všechny cviky',
+                title: tr('Všechny cviky', 'All exercises'),
                 onTap: () => _all(context),
               ),
             ],
@@ -96,6 +97,6 @@ class AlternativesPage extends StatelessWidget {
     final a = anatomyOf(id);
     if (a == null) return null;
     final heads = headsLabel(id);
-    return a.compound ? '$heads · vícekloubový' : heads;
+    return a.compound ? '$heads · ${tr('vícekloubový', 'compound')}' : heads;
   }
 }

@@ -6,6 +6,7 @@ import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/onboarding/onboarding_page.dart';
+import 'package:gymzapisnik/ui/settings/my_gym_page.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 
 Future<AppState> _fresh(WidgetTester tester) async {
@@ -72,19 +73,43 @@ void main() {
     tester,
   ) async {
     final state = await _fresh(tester);
+    await tester.runAsync(
+      () => state.applyPlan(
+        const PlanAnswers().withBody(
+          sex: Sex.male,
+          heightCm: 180,
+          birthYear: 1990,
+          weightGoal: WeightGoal.keep,
+        ),
+      ),
+    );
     await _open(tester, state);
 
     // Bez uvítání: rovnou první otázka, s počtem otázek včetně zaměření.
-    expect(find.text('Co chceš hlavně?'), findsOneWidget);
+    expect(find.text('Jak chceš trénovat?'), findsOneWidget);
     expect(find.bySemanticsLabel('Otázka 1 ze 7'), findsOneWidget);
     expect(find.text('Přeskočit'), findsNothing);
 
+    await _pick(tester, find.text(PlanStyle.oldSchool.label));
     await _pick(tester, find.text(PlanGoal.strength.label));
     await _pick(tester, find.text(Experience.values.first.label));
-    expect(find.text('Kolik času máš?'), findsOneWidget);
+    expect(find.text('Kdy cvičíš?'), findsOneWidget);
+    for (final d in ['Po', 'Čt']) {
+      await tester.tap(find.text(d));
+      await tester.pump();
+    }
     await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     await _pick(tester, find.text(TrainingPlace.gym.label));
-    await _tapAndSave(tester, find.text('Nic mě nebolí').hitTestable());
+    // Untick one machine in the optional list; the plan keeps it.
+    await tester.tap(find.text('Zaškrtnout stroje ve fitku (nepovinné)'));
+    await tester.pumpAndSettle();
+    final first = find.byType(CheckboxListTile).first;
+    final id = gymMachinesByMuscle(TrainingPlace.gym).values.first.first.id;
+    await tester.tap(first);
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(200, 20));
+    await tester.pumpAndSettle();
+    await _tapAndSave(tester, find.text('Pokračovat').hitTestable());
     expect(find.text('Něco o tobě'), findsOneWidget);
     await _tapAndSave(tester, find.text('Doplním později'));
 
@@ -104,8 +129,16 @@ void main() {
 
     // Poslední otázka plán uloží a ukáže, i s cestou k vlastnímu.
     expect(find.text('Plán je hotový'), findsOneWidget);
-    expect(find.text('Složím si vlastní'), findsOneWidget);
+    expect(find.text('Upravím si ho sám'), findsOneWidget);
+    // Choosing Later must preserve existing nutrition profile details.
+    expect(state.planAnswers?.sex, Sex.male);
+    expect(state.planAnswers?.heightCm, 180);
+    expect(state.planAnswers?.birthYear, 1990);
+    expect(state.planAnswers?.weightGoal, WeightGoal.keep);
     expect(state.planAnswers?.goal, PlanGoal.strength);
+    expect(state.planAnswers?.style, PlanStyle.oldSchool);
+    expect(state.planAnswers?.unavailable, contains(id));
+    expect(state.profile.splitId, 'basics_5x5');
     expect(state.planAnswers?.focus, {focus});
     expect(state.planAnswers?.favorites, {favorite});
 
@@ -124,6 +157,6 @@ void main() {
     await tester.tap(find.byTooltip('Zpět'));
     await tester.pumpAndSettle();
     expect(find.text('Otevřít'), findsOneWidget);
-    expect(find.text('Co chceš hlavně?'), findsNothing);
+    expect(find.text('Jak chceš trénovat?'), findsNothing);
   });
 }

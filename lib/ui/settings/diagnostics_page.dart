@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/diagnostics.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/version.dart';
 import '../../data/storage_status.dart';
 import '../design/components.dart';
@@ -10,10 +11,13 @@ import '../design/tokens.dart';
 
 /// Úložiště jednou větou (web: smí prohlížeč data smazat?).
 String? storageStatusLine() => switch (storagePersisted()) {
-  true => 'Prohlížeč data sám nesmaže.',
-  false =>
+  true => tr('Prohlížeč data sám nesmaže.', 'Your browser keeps the data.'),
+  false => tr(
     'Prohlížeč může data smazat při nedostatku místa. Přidej aplikaci '
         'na plochu a pravidelně si ukládej zálohu.',
+    'Your browser may clear data when space runs low. Add the app to your '
+        'home screen and back up regularly.',
+  ),
   null => null,
 };
 
@@ -30,29 +34,43 @@ class DiagnosticsPage extends StatelessWidget {
       final text = Theme.of(context).textTheme;
       final p = context.palette;
       return LargeTitlePage(
-        title: 'Diagnostika',
+        title: tr('Diagnostika', 'Diagnostics'),
         children: [
           GroupedSection(
-            header: 'Úložiště',
+            header: tr('Úložiště', 'Storage'),
             children: [
               GroupedRow(
                 icon: Icons.storage_rounded,
-                title: storageStatusLine() ?? 'Data drží systém telefonu.',
+                title:
+                    storageStatusLine() ??
+                    tr(
+                      'Data drží systém telefonu.',
+                      'Data is kept by your phone.',
+                    ),
               ),
             ],
           ),
           if (entries.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.check_circle_outline_rounded,
-              title: 'Žádné chyby',
-              message: 'Od spuštění aplikace se nic nepokazilo.',
+              title: tr('Žádné chyby', 'No errors'),
+              message: tr(
+                'Od spuštění aplikace se nic nepokazilo.',
+                'Nothing has gone wrong since launch.',
+              ),
             )
           else ...[
             GroupedSection(
-              header: 'Chyby od spuštění (${entries.length})',
-              footer:
-                  'Jen v tomto zařízení a jen do zavření aplikace. Před '
-                  'odesláním si text projdi.',
+              header: tr(
+                'Chyby od spuštění (${entries.length})',
+                'Errors since launch (${entries.length})',
+              ),
+              footer: tr(
+                'Jen v tomto zařízení a jen do zavření aplikace. Před '
+                    'odesláním si text projdi.',
+                'Only on this device and only until you close the app. '
+                    'Review the text before sending.',
+              ),
               children: [
                 for (final e in entries)
                   Padding(
@@ -81,16 +99,21 @@ class DiagnosticsPage extends StatelessWidget {
             ),
             const SizedBox(height: Space.l),
             PrimaryButton(
-              'Zkopírovat pro vývojáře',
+              tr('Zkopírovat pro vývojáře', 'Copy for developers'),
               onPressed: () async {
                 await Clipboard.setData(
                   ClipboardData(text: Diagnostics.report(version: appVersion)),
                 );
-                if (context.mounted) showToast(context, 'Zkopírováno.');
+                if (context.mounted) {
+                  showToast(context, tr('Zkopírováno.', 'Copied.'));
+                }
               },
             ),
             const SizedBox(height: Space.s),
-            SecondaryButton('Vymazat', onPressed: Diagnostics.clear),
+            SecondaryButton(
+              tr('Vymazat', 'Clear'),
+              onPressed: Diagnostics.clear,
+            ),
           ],
           const SizedBox(height: Space.xxl),
         ],

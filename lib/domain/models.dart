@@ -4,6 +4,8 @@
 /// uložení zachovají (data z novější verze aplikace se neztratí).
 library;
 
+import '../core/i18n.dart';
+
 enum ExerciseType {
   /// Váha × opakování.
   weighted,
@@ -17,19 +19,29 @@ enum ExerciseType {
 
 /// Vybavení cviku. Název v katalogu ho nese v závorce: „Dřep (osa)“.
 enum Equipment {
-  barbell('osa'),
-  dumbbell('jednoručky'),
-  machine('stroj'),
-  cable('kladka'),
-  smith('multipress'),
-  bodyweight('vlastní váha'),
-  kettlebell('kettlebell'),
-  band('guma'),
-  plate('kotouč'),
-  other('jiné');
+  barbell,
+  dumbbell,
+  machine,
+  cable,
+  smith,
+  bodyweight,
+  kettlebell,
+  band,
+  plate,
+  other;
 
-  final String label;
-  const Equipment(this.label);
+  String get label => switch (this) {
+    barbell => tr('osa', 'barbell'),
+    dumbbell => tr('jednoručky', 'dumbbells'),
+    machine => tr('stroj', 'machine'),
+    cable => tr('kladka', 'cable'),
+    smith => tr('multipress', 'Smith machine'),
+    bodyweight => tr('vlastní váha', 'bodyweight'),
+    kettlebell => tr('kettlebell', 'kettlebell'),
+    band => tr('guma', 'band'),
+    plate => tr('kotouč', 'plate'),
+    other => tr('jiné', 'other'),
+  };
 
   static Equipment parse(Object? value) =>
       values.firstWhere((e) => e.name == value, orElse: () => other);
@@ -46,22 +58,31 @@ DateTime? _date(Object? v) => v is String ? DateTime.tryParse(v) : null;
 
 class Exercise {
   final String id;
+
+  /// Primary display name (English for built-in exercises).
   final String name;
+
+  /// Localized/common Czech name shown on detail and used in search.
+  final String nameCs;
   final String muscle;
   final ExerciseType type;
   final bool custom;
   final Equipment equipment;
 
-  /// Další názvy pro hledání a import (anglicky jako v Hevy, slang).
+  /// Extra search/import names (slang, abbreviations, translations).
   final List<String> aliases;
 
-  /// Pohybový vzor pro obrázek postavy (`movementPatterns`).
+  /// Movement pattern for the figure demo (`movementPatterns`).
   final String pattern;
   final Map<String, dynamic> extra;
+
+  /// Duplicate kept only for old history; lists and plans skip it.
+  bool get hidden => extra['hidden'] == true;
 
   const Exercise({
     required this.id,
     required this.name,
+    this.nameCs = '',
     required this.muscle,
     this.type = ExerciseType.weighted,
     this.custom = false,
@@ -71,15 +92,31 @@ class Exercise {
     this.extra = const {},
   });
 
-  static const _known = {'id', 'name', 'muscle', 'type', 'custom', 'equipment'};
+  static const _known = {
+    'id',
+    'name',
+    'nameCs',
+    'muscle',
+    'type',
+    'custom',
+    'equipment',
+    'aliases',
+    'pattern',
+  };
 
   factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
     id: json['id'] as String,
     name: json['name'] as String? ?? '',
+    nameCs: json['nameCs'] as String? ?? '',
     muscle: json['muscle'] as String? ?? 'Ostatní',
     type: ExerciseType.parse(json['type']),
     custom: json['custom'] == true,
     equipment: Equipment.parse(json['equipment']),
+    aliases: [
+      for (final a in json['aliases'] as List? ?? const [])
+        if (a is String && a.trim().isNotEmpty) a,
+    ],
+    pattern: json['pattern'] as String? ?? '',
     extra: _extra(json, _known),
   );
 
@@ -87,23 +124,31 @@ class Exercise {
     ...extra,
     'id': id,
     'name': name,
+    if (nameCs.isNotEmpty) 'nameCs': nameCs,
     'muscle': muscle,
     'type': type.name,
     'custom': custom,
     'equipment': equipment.name,
+    if (aliases.isNotEmpty) 'aliases': aliases,
+    if (pattern.isNotEmpty) 'pattern': pattern,
   };
 }
 
 /// Druh pracovní série. Rozcvička má vlastní příznak [SetEntry.warmup].
 enum SetKind {
-  normal('', 'Pracovní série'),
-  drop('D', 'Drop série'),
-  failure('S', 'Do selhání');
+  normal(''),
+  drop('D'),
+  failure('S');
 
   /// Písmeno na odznaku místo čísla série.
   final String badge;
-  final String label;
-  const SetKind(this.badge, this.label);
+  const SetKind(this.badge);
+
+  String get label => switch (this) {
+    normal => tr('Pracovní série', 'Working set'),
+    drop => tr('Drop série', 'Drop set'),
+    failure => tr('Do selhání', 'To failure'),
+  };
 
   static SetKind parse(Object? v) =>
       values.where((k) => k.name == v).firstOrNull ?? normal;
@@ -250,13 +295,18 @@ class Workout {
 
   factory Workout.fromJson(Map<String, dynamic> json) => Workout(
     id: json['id'] as String,
-    name: json['name'] as String? ?? 'Trénink',
+    name: json['name'] as String? ?? tr('Trénink', 'Workout'),
     // Bez začátku se vezme konec; bez obou trénink nedává smysl (jinak by
     // spadl do roku 1970) a načítání záznam přeskočí.
     startedAt:
         _date(json['startedAt']) ??
         _date(json['finishedAt']) ??
-        (throw const FormatException('Trénink bez platného začátku.')),
+        (throw FormatException(
+          tr(
+            'Trénink bez platného začátku.',
+            'Workout without a valid start time.',
+          ),
+        )),
     finishedAt: _date(json['finishedAt']),
     note: json['note'] as String? ?? '',
     exercises: [

@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import 'profile_keys.dart';
 import 'strength.dart';
 
@@ -157,6 +158,9 @@ class Profile {
   /// Uživatel viděl upozornění, kam jde fotka pro AI.
   bool get aiNoticeAccepted => extra[ProfileKey.aiNotice] == true;
 
+  /// UI language. Retired Slovak falls back to Czech.
+  AppLang get appLanguage => AppLang.parse(extra[ProfileKey.language]);
+
   /// Nezletilý bez souhlasu zákonného zástupce souhlas udělit nemůže.
   Profile acceptConsent({
     required bool adult,
@@ -164,7 +168,12 @@ class Profile {
     required DateTime now,
   }) {
     if (!adult && !guardianConsent) {
-      throw ArgumentError('Nezletilý potřebuje souhlas zákonného zástupce.');
+      throw ArgumentError(
+        tr(
+          'Nezletilý potřebuje souhlas zákonného zástupce.',
+          'A minor needs parental consent.',
+        ),
+      );
     }
     return Profile(
       consentVersion: currentConsentVersion,

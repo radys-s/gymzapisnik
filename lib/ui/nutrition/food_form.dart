@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/ids.dart';
 import '../../core/parse.dart';
 import '../../data/off_client.dart';
@@ -182,11 +183,13 @@ class _FoodFormPageState extends State<FoodFormPage> {
   Future<void> _pickDay() async {
     final now = DateTime.now();
     final current = parseDayKey(day) ?? now;
+    final last = DateTime(now.year, now.month, now.day);
+    final initial = current.isAfter(last) ? last : current;
     final picked = await showDatePicker(
       context: context,
-      initialDate: current.isAfter(now) ? now : current,
-      firstDate: DateTime(2020),
-      lastDate: now,
+      initialDate: initial,
+      firstDate: nutritionFirstDate(initial),
+      lastDate: last,
     );
     if (picked != null) setState(() => day = dayKey(picked));
   }
@@ -195,23 +198,26 @@ class _FoodFormPageState extends State<FoodFormPage> {
     final (values, bad) = _values();
     final amountValue = parseNum(amount.text);
     if (bad) {
-      setState(() => error = 'Hodnoty musí být čísla od nuly výš.');
+      setState(
+        () => error = tr(
+          'Hodnoty musí být čísla od nuly výš.',
+          'Values must be numbers from zero up.',
+        ),
+      );
       return;
     }
     final existing = widget.entry;
     final next = FoodEntry(
       id: existing?.id ?? newId(),
       day: day,
-      loggedAt:
-          existing?.loggedAt ??
-          // Den se ve formuláři dá změnit: čas jídla platí jen pro původní.
-          (widget.at != null && dayKey(widget.at!) == day
-              ? widget.at!
-              : loggedAtFor(
-                  day,
-                  DateTime.now(),
-                  timeOf: widget.at ?? widget.copyOf?.loggedAt.toLocal(),
-                )),
+      loggedAt: foodLoggedAt(
+        day: day,
+        now: DateTime.now(),
+        existingLoggedAt: existing?.loggedAt,
+        existingDay: existing?.day,
+        at: widget.at,
+        copyTime: widget.copyOf?.loggedAt.toLocal(),
+      ),
       name: name.text.trim(),
       brand: brand,
       barcode: barcode,
@@ -265,7 +271,11 @@ class _FoodFormPageState extends State<FoodFormPage> {
     final unitText = unit == FoodUnit.ml ? 'ml' : 'g';
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.entry == null ? 'Přidat jídlo' : 'Upravit jídlo'),
+        title: Text(
+          widget.entry == null
+              ? tr('Přidat jídlo', 'Add food')
+              : tr('Upravit jídlo', 'Edit food'),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -279,8 +289,12 @@ class _FoodFormPageState extends State<FoodFormPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Údaje z Open Food Facts${p.brand == null ? '' : ' (${p.brand})'}'
-                '. Zkontroluj je s obalem, mohou být nepřesné.',
+                tr(
+                  'Údaje z Open Food Facts${p.brand == null ? '' : ' (${p.brand})'}'
+                      '. Zkontroluj je s obalem, mohou být nepřesné.',
+                  'Data from Open Food Facts${p.brand == null ? '' : ' (${p.brand})'}'
+                      '. Check them against the label, they may be inaccurate.',
+                ),
                 style: text.bodySmall?.copyWith(color: pal.accent),
               ),
             ),
@@ -288,36 +302,46 @@ class _FoodFormPageState extends State<FoodFormPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Kód ${widget.barcode} nemáme v databázi. Vyplň údaje z obalu.',
+                tr(
+                  'Kód ${widget.barcode} nemáme v databázi. Vyplň údaje z obalu.',
+                  'We do not have code ${widget.barcode} in the database. Fill in the details from the label.',
+                ),
                 style: text.bodySmall,
               ),
             ),
           TextField(
             controller: name,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'Název jídla'),
+            decoration: InputDecoration(
+              labelText: tr('Název jídla', 'Food name'),
+            ),
           ),
           const SizedBox(height: Space.m),
           GroupedSection(
             children: [
               GroupedRow(
                 icon: Icons.event_outlined,
-                title: 'Den',
+                title: tr('Den', 'Day'),
                 value: formatDate(parseDayKey(day) ?? DateTime.now()),
                 onTap: _pickDay,
               ),
             ],
           ),
-          const SectionHeader('Množství'),
+          SectionHeader(tr('Množství', 'Amount')),
           SegmentedButton<FoodBasis>(
             segments: [
               ButtonSegment(
                 value: FoodBasis.per100,
-                label: Text('Na 100 ${per100 ? unitText : 'g'}'),
+                label: Text(
+                  tr(
+                    'Na 100 ${per100 ? unitText : 'g'}',
+                    'Per 100 ${per100 ? unitText : 'g'}',
+                  ),
+                ),
               ),
-              const ButtonSegment(
+              ButtonSegment(
                 value: FoodBasis.perServing,
-                label: Text('Na porci'),
+                label: Text(tr('Na porci', 'Per serving')),
               ),
             ],
             selected: {basis},
@@ -326,8 +350,14 @@ class _FoodFormPageState extends State<FoodFormPage> {
           const SizedBox(height: 4),
           Text(
             per100
-                ? 'Hodnoty níž jsou na 100 $unitText, množství v $unitText.'
-                : 'Hodnoty níž jsou na jednu porci, množství je počet porcí.',
+                ? tr(
+                    'Hodnoty níž jsou na 100 $unitText, množství v $unitText.',
+                    'Values below are per 100 $unitText, amount in $unitText.',
+                  )
+                : tr(
+                    'Hodnoty níž jsou na jednu porci, množství je počet porcí.',
+                    'Values below are per serving, amount is the number of servings.',
+                  ),
             style: text.bodySmall?.copyWith(color: pal.secondaryLabel),
           ),
           if (per100) ...[
@@ -346,45 +376,72 @@ class _FoodFormPageState extends State<FoodFormPage> {
             ),
           ],
           const SizedBox(height: Space.m),
-          _numberField(amount, per100 ? 'Množství ($unitText)' : 'Počet porcí'),
+          _numberField(
+            amount,
+            per100
+                ? tr('Množství ($unitText)', 'Amount ($unitText)')
+                : tr('Počet porcí', 'Number of servings'),
+          ),
           if (per100 && p?.servingAmount != null)
             Align(
               alignment: Alignment.centerLeft,
               child: ActionChip(
                 label: Text(
-                  '1 porce = ${p!.servingLabel ?? '${_fmt(p.servingAmount)} g'}',
+                  tr(
+                    '1 porce = ${p!.servingLabel ?? '${_fmt(p.servingAmount)} g'}',
+                    '1 serving = ${p.servingLabel ?? '${_fmt(p.servingAmount)} g'}',
+                  ),
                 ),
                 onPressed: () => amount.text = _fmt(p.servingAmount),
               ),
             ),
-          SectionHeader('Hodnoty ${per100 ? 'na 100 $unitText' : 'na porci'}'),
+          SectionHeader(
+            tr(
+              'Hodnoty ${per100 ? 'na 100 $unitText' : 'na porci'}',
+              'Values ${per100 ? 'per 100 $unitText' : 'per serving'}',
+            ),
+          ),
           _numberField(
             kcal,
-            'Energie (kcal)${per100 ? ' na 100 $unitText' : ' na porci'}',
+            tr(
+              'Energie (kcal)${per100 ? ' na 100 $unitText' : ' na porci'}',
+              'Energy (kcal)${per100 ? ' per 100 $unitText' : ' per serving'}',
+            ),
           ),
           const SizedBox(height: Space.m),
-          _numberField(protein, 'Bílkoviny (g)'),
+          _numberField(protein, tr('Bílkoviny (g)', 'Protein (g)')),
           const SizedBox(height: Space.m),
           Row(
             children: [
-              Expanded(child: _numberField(carbs, 'Sacharidy (g)')),
+              Expanded(
+                child: _numberField(carbs, tr('Sacharidy (g)', 'Carbs (g)')),
+              ),
               const SizedBox(width: Space.m),
-              Expanded(child: _numberField(fat, 'Tuky (g)')),
+              Expanded(child: _numberField(fat, tr('Tuky (g)', 'Fat (g)'))),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            'Prázdné pole = hodnotu neznáme. Nula = je opravdu nulová.',
+            tr(
+              'Prázdné pole = hodnotu neznáme. Nula = je opravdu nulová.',
+              'Empty field = unknown value. Zero = really zero.',
+            ),
             style: text.bodySmall?.copyWith(color: pal.secondaryLabel),
           ),
           const SizedBox(height: Space.l),
           if (preview != null)
             Panel(
               child: Text(
-                'Snědeno: ${preview.kcal == null ? '– kcal' : '${preview.kcal!.round()} kcal'}'
-                ' · B ${preview.protein == null ? '–' : preview.protein!.round()} g'
-                ' · S ${preview.carbs == null ? '–' : preview.carbs!.round()} g'
-                ' · T ${preview.fat == null ? '–' : preview.fat!.round()} g',
+                tr(
+                  'Snědeno: ${preview.kcal == null ? '– kcal' : '${preview.kcal!.round()} kcal'}'
+                      ' · B ${preview.protein == null ? '–' : preview.protein!.round()} g'
+                      ' · S ${preview.carbs == null ? '–' : preview.carbs!.round()} g'
+                      ' · T ${preview.fat == null ? '–' : preview.fat!.round()} g',
+                  'Eaten: ${preview.kcal == null ? '– kcal' : '${preview.kcal!.round()} kcal'}'
+                      ' · P ${preview.protein == null ? '–' : preview.protein!.round()} g'
+                      ' · C ${preview.carbs == null ? '–' : preview.carbs!.round()} g'
+                      ' · F ${preview.fat == null ? '–' : preview.fat!.round()} g',
+                ),
                 style: text.bodyLarge,
               ),
             ),
@@ -395,7 +452,9 @@ class _FoodFormPageState extends State<FoodFormPage> {
             ),
           const SizedBox(height: Space.l),
           PrimaryButton(
-            widget.entry == null ? 'Uložit' : 'Uložit změny',
+            widget.entry == null
+                ? tr('Uložit', 'Save')
+                : tr('Uložit změny', 'Save changes'),
             busy: saving,
             onPressed: saving ? null : _save,
           ),

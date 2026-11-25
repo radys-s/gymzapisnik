@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/text.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
@@ -11,24 +12,44 @@ import '../design/tokens.dart';
 import '../summary/summary_page.dart';
 import '../widgets/labels.dart';
 
-const _months = [
-  'Leden',
-  'Únor',
-  'Březen',
-  'Duben',
-  'Květen',
-  'Červen',
-  'Červenec',
-  'Srpen',
-  'Září',
-  'Říjen',
-  'Listopad',
-  'Prosinec',
-];
+String _monthName(int month) => switch (month) {
+  1 => tr('Leden', 'January'),
+  2 => tr('Únor', 'February'),
+  3 => tr('Březen', 'March'),
+  4 => tr('Duben', 'April'),
+  5 => tr('Květen', 'May'),
+  6 => tr('Červen', 'June'),
+  7 => tr('Červenec', 'July'),
+  8 => tr('Srpen', 'August'),
+  9 => tr('Září', 'September'),
+  10 => tr('Říjen', 'October'),
+  11 => tr('Listopad', 'November'),
+  12 => tr('Prosinec', 'December'),
+  _ => '',
+};
 
 String monthLabel(DateTime d) {
   final local = d.toLocal();
-  return '${_months[local.month - 1]} ${local.year}';
+  return '${_monthName(local.month)} ${local.year}';
+}
+
+/// [relativeDay] is shared and Czech-only, so keep the source text and add
+/// the English day name here.
+String _englishRelativeDay(DateTime d, DateTime now) {
+  const weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  final diff = calendarDaysBetween(d, now);
+  if (diff == 0) return 'Today';
+  if (diff == 1) return 'Yesterday';
+  if (diff > 1 && diff < 7) return weekdays[d.toLocal().weekday - 1];
+  return formatDate(d);
 }
 
 /// Hledá v názvu tréninku, poznámkách a názvech cviků, bez diakritiky.
@@ -75,29 +96,38 @@ class _HistoryPageState extends State<HistoryPage> {
         groups.putIfAbsent(monthLabel(w.date), () => []).add(w);
       }
       return LargeTitlePage(
-        title: 'Historie',
+        title: tr('Historie', 'History'),
         children: [
           if (state.workouts.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.history,
-              title: 'Zatím žádný trénink',
-              message: 'Dokončené tréninky se tu objeví po měsících.',
+              title: tr('Zatím žádný trénink', 'No workouts yet'),
+              message: tr(
+                'Dokončené tréninky se tu objeví po měsících.',
+                'Completed workouts will appear here by month.',
+              ),
             )
           else ...[
             TextField(
-              decoration: const InputDecoration(
-                hintText: 'Hledat trénink nebo cvik',
-                prefixIcon: Icon(Icons.search_rounded),
+              decoration: InputDecoration(
+                hintText: tr(
+                  'Hledat trénink nebo cvik',
+                  'Search workouts or exercises',
+                ),
+                prefixIcon: const Icon(Icons.search_rounded),
               ),
               textInputAction: TextInputAction.search,
               onChanged: (v) => setState(() => query = v),
             ),
             const SizedBox(height: Space.m),
             if (groups.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.search_off_rounded,
-                title: 'Nic nenalezeno',
-                message: 'Zkus jiný název cviku nebo tréninku.',
+                title: tr('Nic nenalezeno', 'Nothing found'),
+                message: tr(
+                  'Zkus jiný název cviku nebo tréninku.',
+                  'Try another exercise or workout name.',
+                ),
               ),
           ],
           for (final MapEntry(key: month, value: list) in groups.entries)
@@ -129,6 +159,7 @@ class WorkoutRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
+    final at = now();
     var sets = 0;
     var kg = 0.0;
     for (final e in workout.exercises) {
@@ -174,18 +205,19 @@ class WorkoutRow extends StatelessWidget {
                         const SizedBox(width: Space.s),
                         Pill(
                           prs == 1
-                              ? 'Rekord'
+                              ? tr('Rekord', 'Record')
                               : prs <= 4
-                              ? '$prs rekordy'
-                              : '$prs rekordů',
+                              ? tr('$prs rekordy', '$prs records')
+                              : tr('$prs rekordů', '$prs records'),
                           icon: Icons.emoji_events,
+                          color: context.palette.gold,
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${relativeDay(workout.date, now())} · ${setsLabel(sets)}'
+                    '${tr(relativeDay(workout.date, at), _englishRelativeDay(workout.date, at))} · ${setsLabel(sets)}'
                     '${kg > 0 ? ' · ${formatVolume(kg)} kg' : ''}',
                     style: text.bodySmall?.copyWith(fontFeatures: tabular),
                   ),

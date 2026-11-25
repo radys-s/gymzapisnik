@@ -10,6 +10,7 @@ import 'package:gymzapisnik/ui/history/history_page.dart';
 import 'package:gymzapisnik/ui/home/dashboard.dart';
 import 'package:gymzapisnik/ui/home/home_page.dart';
 import 'package:gymzapisnik/ui/progress/progress_page.dart';
+import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/theme.dart';
 import 'package:gymzapisnik/ui/widgets/labels.dart';
 
@@ -44,7 +45,7 @@ void main() {
       remaining: 2,
       daysLeft: 4,
     );
-    expect(MissionCopy.title(m), 'Tento týden 1 z 3');
+    expect(MissionCopy.title(m), 'Dnes je den na trénink');
     expect(MissionCopy.subtitle(m), startsWith('První trénink'));
     expect(MissionCopy.subtitle(m, daysSince: 1), startsWith('Minule včera'));
     expect(
@@ -75,7 +76,7 @@ void main() {
     await _show(tester, ProgressPage(state));
     expect(find.text('Pokrok začne prvním tréninkem'), findsOneWidget);
     expect(find.text('Statistiky'), findsOneWidget);
-    expect(find.text('Tělesná váha'), findsOneWidget);
+    expect(find.text('Váha a míry'), findsOneWidget);
     expect(find.text('Rady pro růst svalů'), findsOneWidget);
   });
 
@@ -98,15 +99,33 @@ void main() {
     expect(find.text('Trénink tento týden'), findsOneWidget);
     expect(find.text('Objem podle partií'), findsOneWidget);
     expect(find.text('Partie tento týden'), findsOneWidget);
-    expect(find.text('Bench press (osa)'), findsWidgets); // křivka i rekordy
+    expect(find.text('Barbell Bench Press'), findsWidgets); // křivka i rekordy
     expect(find.textContaining('Odhad 1RM'), findsOneWidget);
+    // Souhrn nahoře: 3 tréninky a 3 série.
+    expect(find.text('tréninky'), findsOneWidget);
+    expect(find.text('3'), findsAtLeastNWidgets(2));
+    await tester.scrollUntilVisible(
+      find.textContaining('Rekord: Barbell Bench Press'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.textContaining('Rekord: Barbell Bench Press'), findsOneWidget);
+    // V přehledu má historie taky 3.
+    await tester.scrollUntilVisible(
+      find.text('Historie'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(
-      find.textContaining('Rekord: Bench press (osa) 82,5 kg'),
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('Historie'),
+          matching: find.byType(GroupedRow),
+        ),
+        matching: find.text('3'),
+      ),
       findsOneWidget,
     );
-    // Souhrn: 3 tréninky a 3 série, v přehledu historie taky 3.
-    expect(find.text('tréninky'), findsOneWidget);
-    expect(find.text('3'), findsNWidgets(3));
   });
 
   testWidgets('progress tab: history is one tap away, not below the fold', (
@@ -155,11 +174,11 @@ void main() {
     });
     // Sobota 31. 10. 2026: v plánu volno, další trénink v pondělí.
     await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 31, 15)));
-    expect(find.textContaining('Příště · pondělí'), findsOneWidget);
+    expect(find.textContaining('PŘÍŠTĚ · PONDĚLÍ'), findsOneWidget);
     expect(find.text('Bonusový trénink'), findsOneWidget);
     expect(find.text('Dnes volno podle plánu'), findsOneWidget);
     // Ve středu se trénuje: zase „Dnes“.
     await _show(tester, HomePage(state, now: () => DateTime(2026, 10, 28, 15)));
-    expect(find.textContaining('Dnes · Full body'), findsOneWidget);
+    expect(find.textContaining('DNES · FULL BODY'), findsOneWidget);
   });
 }

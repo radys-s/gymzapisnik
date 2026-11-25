@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../coach/plan_quiz.dart';
 import '../../coach/splits.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -65,7 +66,13 @@ mixin WorkoutLauncher<T extends StatefulWidget> on State<T> {
       await state.applyPlan(answers);
     } catch (_) {
       if (mounted) {
-        showToast(context, 'Plán se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Plán se nepodařilo uložit. Zkus to znovu.',
+            'Could not save the plan. Try again.',
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => starting = false);
@@ -84,7 +91,10 @@ mixin WorkoutLauncher<T extends StatefulWidget> on State<T> {
           context,
           e is StateError
               ? e.message
-              : 'Trénink se nepodařilo začít. Zkus to znovu.',
+              : tr(
+                  'Trénink se nepodařilo začít. Zkus to znovu.',
+                  'Could not start the workout. Try again.',
+                ),
         );
       }
       if (mounted) setState(() => starting = false);
@@ -140,14 +150,23 @@ mixin WorkoutLauncher<T extends StatefulWidget> on State<T> {
             children: [
               ListTile(
                 leading: const Icon(Icons.bolt_rounded),
-                title: const Text('Volný trénink'),
-                subtitle: const Text('Cviky přidáváš průběžně'),
+                title: Text(tr('Volný trénink', 'Free workout')),
+                subtitle: Text(
+                  tr('Cviky přidáváš průběžně', 'Add exercises as you go'),
+                ),
                 onTap: () => Navigator.pop(sheet, 0),
               ),
               ListTile(
                 leading: const Icon(Icons.tune_rounded),
-                title: const Text('Sestavit podle partií'),
-                subtitle: const Text('Vybereš svaly, cviky navrhne aplikace'),
+                title: Text(
+                  tr('Sestavit podle partií', 'Build by muscle groups'),
+                ),
+                subtitle: Text(
+                  tr(
+                    'Vybereš svaly, cviky navrhne aplikace',
+                    'Pick muscles, the app suggests exercises',
+                  ),
+                ),
                 onTap: () => Navigator.pop(sheet, 1),
               ),
             ],

@@ -9,13 +9,28 @@ extension RestTimerOps on AppState {
     return v is String ? DateTime.tryParse(v)?.toLocal() : null;
   }
 
-  void _setRestEnd(DateTime? end) {
+  /// Celá délka běžící pauzy (i s úpravami −15/+15), pro pruh postupu.
+  Duration? get restTotal {
+    final end = restEndsAt;
+    final v = active?.extra[AppState._restStartKey];
+    final start = v is String ? DateTime.tryParse(v)?.toLocal() : null;
+    if (end == null || start == null) return null;
+    return end.difference(start);
+  }
+
+  /// [start] = nová pauza; úprava běžící pauzy ho nechá být.
+  void _setRestEnd(DateTime? end, {DateTime? start}) {
     final workout = active;
     if (workout == null) return;
     if (end == null) {
-      workout.extra.remove(AppState._restKey);
+      workout.extra
+        ..remove(AppState._restKey)
+        ..remove(AppState._restStartKey);
     } else {
       workout.extra[AppState._restKey] = end.toUtc().toIso8601String();
+      if (start != null) {
+        workout.extra[AppState._restStartKey] = start.toUtc().toIso8601String();
+      }
     }
   }
 
@@ -112,15 +127,25 @@ extension RestTimerOps on AppState {
     DateTime? now,
   }) async {
     final workout = active;
-    if (workout == null) return (workout: null, error: 'Žádný trénink.');
-    final done = workout.copy()..extra.remove(AppState._restKey);
+    if (workout == null) {
+      return (workout: null, error: tr('Žádný trénink.', 'No workout.'));
+    }
+    final done = workout.copy()
+      ..extra.remove(AppState._restKey)
+      ..extra.remove(AppState._restStartKey);
     done.exercises = [
       for (final e in done.exercises)
         if (e.sets.any((s) => s.done && s.reps > 0))
           e..sets = e.sets.where((s) => s.done && s.reps > 0).toList(),
     ];
     if (!done.exercises.any((e) => e.countedSets.isNotEmpty)) {
-      return (workout: null, error: 'Potvrď aspoň jednu pracovní sérii.');
+      return (
+        workout: null,
+        error: tr(
+          'Potvrď aspoň jednu pracovní sérii.',
+          'Confirm at least one working set.',
+        ),
+      );
     }
     final finished = Workout.fromJson({
       ...done.toJson(),
@@ -143,7 +168,10 @@ extension RestTimerOps on AppState {
       _changed();
       return (
         workout: null,
-        error: 'Trénink se nepodařilo uložit. Zkus dokončení znovu. Pokud chyba trvá, aplikaci nezavírej.',
+        error: tr(
+          'Trénink se nepodařilo uložit. Zkus dokončení znovu. Pokud chyba trvá, aplikaci nezavírej.',
+          'Could not save the workout. Try finishing again. If the error persists, do not close the app.',
+        ),
       );
     }
     workouts = [finished, ...workouts.where((w) => w.id != finished.id)]

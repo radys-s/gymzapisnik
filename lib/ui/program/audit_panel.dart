@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
+
 import '../../coach/routine_audit.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -49,11 +51,17 @@ class AuditPanel extends StatelessWidget {
                     Expanded(
                       child: Text(
                         findings.isEmpty
-                            ? 'Kontrola: rutina pokrývá všechno'
+                            ? tr(
+                                'Kontrola: rutina pokrývá všechno',
+                                'Check: routine covers everything',
+                              )
                             : gaps == 0
-                            ? 'Kontrola: bez mezer'
-                            : 'Kontrola: $gaps '
-                                  '${gaps == 1 ? 'mezera' : (gaps < 5 ? 'mezery' : 'mezer')}',
+                            ? tr('Kontrola: bez mezer', 'Check: no gaps')
+                            : tr(
+                                'Kontrola: $gaps '
+                                    '${gaps == 1 ? 'mezera' : (gaps < 5 ? 'mezery' : 'mezer')}',
+                                'Check: $gaps ${gaps == 1 ? 'gap' : 'gaps'}',
+                              ),
                         style: text.titleSmall,
                       ),
                     ),
@@ -75,7 +83,10 @@ class AuditPanel extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: Space.s),
                     child: Text(
-                      'A další ${findings.length - 6}.',
+                      tr(
+                        'A další ${findings.length - 6}.',
+                        'And ${findings.length - 6} more.',
+                      ),
                       style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                     ),
                   ),
@@ -125,7 +136,10 @@ class _FindingRow extends StatelessWidget {
                 Text(
                   exerciseName == null
                       ? finding.detail
-                      : '${finding.detail} Návrh: $exerciseName.',
+                      : tr(
+                          '${finding.detail} Návrh: $exerciseName.',
+                          '${finding.detail} Suggestion: $exerciseName.',
+                        ),
                   style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                 ),
               ],
@@ -135,9 +149,9 @@ class _FindingRow extends StatelessWidget {
             TextButton(
               onPressed: onAdd,
               child: Semantics(
-                label: 'Přidat $exerciseName',
+                label: tr('Přidat $exerciseName', 'Add $exerciseName'),
                 excludeSemantics: true,
-                child: const Text('Přidat'),
+                child: Text(tr('Přidat', 'Add')),
               ),
             ),
         ],

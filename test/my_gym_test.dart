@@ -87,4 +87,27 @@ void main() {
     expect(state.planAnswers!.place, TrainingPlace.bodyweight);
     expect(find.byType(Switch), findsNothing);
   });
+
+  testWidgets('the switch toggles a machine only once', (tester) async {
+    final state = await _fresh(tester);
+    await tester.runAsync(
+      () => state.applyPlan(const PlanAnswers(place: TrainingPlace.gym)),
+    );
+    tester.view.physicalSize = const Size(400, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(theme: buildTheme(), home: MyGymPage(state)),
+    );
+    await tester.pumpAndSettle();
+    final machine = gymMachinesByMuscle(TrainingPlace.gym).values.first.first;
+    expect(state.gymHas(machine.id), isTrue);
+    await tester.runAsync(() async {
+      await tester.tap(find.byType(Switch).first);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    expect(state.gymHas(machine.id), isFalse);
+    expect(state.planAnswers!.missing, {machine.id});
+  });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/motion.dart';
@@ -59,7 +60,10 @@ class _ConsentPageState extends State<ConsentPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => saving = false);
-      showToast(context, 'Uložení se nezdařilo: $error');
+      showToast(
+        context,
+        tr('Uložení se nezdařilo: $error', 'Could not save: $error'),
+      );
     }
   }
 
@@ -80,24 +84,34 @@ class _ConsentPageState extends State<ConsentPage> {
     final minor = age == AgeChoice.minor;
     return QuestionScaffold(
       tone: Tone.progress,
-      title: 'Než začneš',
-      action: 'Pokračovat',
+      title: tr('Než začneš', 'Before you start'),
+      action: tr('Pokračovat', 'Continue'),
       busy: saving,
       onBack: widget.onBack,
       onNext: canContinue ? _continue : null,
       child: StaggerColumn(
         children: [
           Text(
-            'Gym zápisník slouží k zápisu tréninků a jídla a ke '
-            'sledování pokroku. Není to lékařská ani výživová rada. '
-            'Při bolesti nebo zdravotních potížích přestaň cvičit '
-            'a poraď se s lékařem.',
+            tr(
+              'Gym zápisník slouží k zápisu tréninků a jídla a ke '
+                  'sledování pokroku. Není to lékařská ani výživová rada. '
+                  'Při bolesti nebo zdravotních potížích přestaň cvičit '
+                  'a poraď se s lékařem.',
+              'Gym zápisník is for logging workouts and food and tracking '
+                  'progress. It is not medical or nutrition advice. If you feel '
+                  'pain or have health issues, stop exercising and talk to a '
+                  'doctor.',
+            ),
             style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
           ),
           const SizedBox(height: Space.s),
           Text(
-            'Otázky trenérovi a fotky jdou do Cloudflare Workers AI '
-            'bez jména a poznámek. AI se může splést.',
+            tr(
+              'Otázky trenérovi a fotky jdou do Cloudflare Workers AI '
+                  'bez jména a poznámek. AI se může splést.',
+              'Coach questions and photos go to Cloudflare Workers AI without '
+                  'your name or notes. AI can be wrong.',
+            ),
             style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
           ),
           Align(
@@ -108,34 +122,44 @@ class _ConsentPageState extends State<ConsentPage> {
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, minTap),
               ),
-              child: const Text('Přečíst podmínky a soukromí'),
+              child: Text(
+                tr('Přečíst podmínky a soukromí', 'Read terms and privacy'),
+              ),
             ),
           ),
           const SizedBox(height: Space.xs),
           ChoiceCard(
             icon: Icons.description_outlined,
-            color: AppPalette.violet,
-            label: 'Souhlasím s podmínkami používání',
+            label: tr(
+              'Souhlasím s podmínkami používání',
+              'I agree to the terms of use',
+            ),
             multi: true,
             selected: termsAccepted,
             onTap: () => setState(() => termsAccepted = !termsAccepted),
           ),
           const SizedBox(height: Space.xl),
-          Text('Kolik ti je let?', style: text.titleMedium),
+          Text(
+            tr('Kolik ti je let?', 'How old are you?'),
+            style: text.titleMedium,
+          ),
           const SizedBox(height: Space.s),
           ChoiceCard(
             icon: Icons.verified_user_outlined,
-            color: AppPalette.cyan,
-            label: 'Je mi 18 let nebo víc',
+            label: tr('Je mi 18 let nebo víc', 'I am 18 or older'),
             selected: age == AgeChoice.adult,
             onTap: () => _setAge(AgeChoice.adult),
           ),
           const SizedBox(height: Space.s),
           ChoiceCard(
             icon: Icons.school_outlined,
-            color: AppPalette.amber,
-            label: 'Je mi méně než 18 let',
-            hint: minor ? 'Bez cílů hubnutí a omezování jídla' : null,
+            label: tr('Je mi méně než 18 let', 'I am under 18'),
+            hint: minor
+                ? tr(
+                    'Bez cílů hubnutí a omezování jídla',
+                    'No weight loss or food restriction goals',
+                  )
+                : null,
             selected: minor,
             onTap: () => _setAge(AgeChoice.minor),
           ),
@@ -143,8 +167,10 @@ class _ConsentPageState extends State<ConsentPage> {
             const SizedBox(height: Space.s),
             ChoiceCard(
               icon: Icons.family_restroom_rounded,
-              color: AppPalette.amber,
-              label: 'Mám souhlas rodiče nebo zákonného zástupce',
+              label: tr(
+                'Mám souhlas rodiče nebo zákonného zástupce',
+                'I have a parent or guardian\'s consent',
+              ),
               multi: true,
               selected: guardianConsent,
               onTap: () => setState(() => guardianConsent = !guardianConsent),

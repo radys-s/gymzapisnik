@@ -221,7 +221,7 @@ void main() {
       );
       await snap(tester);
       expect(trainer.photos, hasLength(1));
-      expect(trainer.photos.single.$2, builtInExercises);
+      expect(trainer.photos.single.$2, catalogExercises);
       expect(find.text('Na fotce: Leg press'), findsOneWidget);
       expect(find.text('Nejspíš tohle'), findsOneWidget);
       expect(find.text('Spíš ne, ale podobné'), findsOneWidget);

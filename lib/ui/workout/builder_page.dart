@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
+
 import '../../coach/plan_quiz.dart';
 import '../../coach/splits.dart';
 import '../../domain/anatomy.dart';
@@ -72,7 +74,14 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
     ].isNotEmpty;
     if (duplicate) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tenhle cvik už v tréninku je.')),
+        SnackBar(
+          content: Text(
+            tr(
+              'Tenhle cvik už v tréninku je.',
+              'That exercise is already in the workout.',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -86,7 +95,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
     final current = day;
     final short = current.exercises.length < count && focuses.isNotEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('Sestavit trénink')),
+      appBar: AppBar(title: Text(tr('Sestavit trénink', 'Build workout'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           Space.page,
@@ -96,8 +105,12 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
         ),
         children: [
           Text(
-            'Vyber partie a počet cviků. Těžké vícekloubové cviky jdou '
-            'první, další míří na různé hlavy svalu.',
+            tr(
+              'Vyber partie a počet cviků. Těžké vícekloubové cviky jdou '
+                  'první, další míří na různé hlavy svalu.',
+              'Pick muscle groups and exercise count. Heavy compound lifts '
+                  'come first, the rest target different muscle heads.',
+            ),
             style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
           ),
           const SizedBox(height: Space.l),
@@ -113,20 +126,25 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 StepperControl(
-                  label: 'Počet cviků',
+                  label: tr('Počet cviků', 'Exercise count'),
                   value: count,
                   min: 1,
                   max: maxBuiltExercises,
                   onChanged: (n) => _change(() => count = n),
-                  spoken: (n) => '$n cviků',
+                  spoken: (n) => isEnglish ? '$n exercises' : '$n cviků',
                 ),
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        'Doporučeno: $recommended '
-                        '(na ${answers.minutes} min, '
-                        '${answers.level.label.toLowerCase()})',
+                        tr(
+                          'Doporučeno: $recommended '
+                              '(na ${answers.minutes} min, '
+                              '${answers.level.label.toLowerCase()})',
+                          'Recommended: $recommended '
+                              '(${answers.minutes} min, '
+                              '${answers.level.label.toLowerCase()})',
+                        ),
                         style: text.bodySmall?.copyWith(
                           color: p.secondaryLabel,
                         ),
@@ -135,7 +153,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                     if (count != recommended)
                       TextButton(
                         onPressed: () => _change(() => count = recommended),
-                        child: const Text('Vrátit'),
+                        child: Text(tr('Vrátit', 'Reset')),
                       ),
                   ],
                 ),
@@ -146,8 +164,14 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
             SectionHeader(current.name),
             GroupedSection(
               footer: short
-                  ? 'Pro zvolené partie víc různých cviků nemám.'
-                  : 'Klepnutím cvik vyměníš za jiný na stejnou hlavu svalu.',
+                  ? tr(
+                      'Pro zvolené partie víc různých cviků nemám.',
+                      'No more different exercises for the selected groups.',
+                    )
+                  : tr(
+                      'Klepnutím cvik vyměníš za jiný na stejnou hlavu svalu.',
+                      'Tap an exercise to swap it for another targeting the same head.',
+                    ),
               children: [
                 for (var i = 0; i < current.exercises.length; i++)
                   GroupedRow(
@@ -161,7 +185,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                     trailing: Icon(
                       Icons.swap_horiz_rounded,
                       color: p.tertiaryLabel,
-                      semanticLabel: 'Vyměnit',
+                      semanticLabel: tr('Vyměnit', 'Swap'),
                     ),
                     chevron: false,
                     onTap: () => _swap(i, current.exercises[i].exerciseId),
@@ -169,12 +193,18 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
               ],
             ),
           ] else
-            const Padding(
-              padding: EdgeInsets.only(top: Space.xxl),
+            Padding(
+              padding: const EdgeInsets.only(top: Space.xxl),
               child: EmptyState(
                 icon: Icons.accessibility_new_rounded,
-                title: 'Vyber aspoň jednu partii',
-                message: 'Třeba Hrudník a Triceps, nebo jen Nohy.',
+                title: tr(
+                  'Vyber aspoň jednu partii',
+                  'Pick at least one muscle group',
+                ),
+                message: tr(
+                  'Třeba Hrudník a Triceps, nebo jen Nohy.',
+                  'For example Chest and Triceps, or just Legs.',
+                ),
               ),
             ),
         ],
@@ -190,7 +220,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                   Space.s,
                 ),
                 child: PrimaryButton(
-                  'Začít trénink',
+                  tr('Začít trénink', 'Start workout'),
                   icon: Icons.play_arrow_rounded,
                   onPressed: () => popOnce(context, current),
                 ),

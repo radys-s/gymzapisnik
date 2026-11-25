@@ -14,21 +14,11 @@ class CardSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: p.cardRadius(),
-        boxShadow: p.cardShadow,
-      ),
-      child: Material(
-        color: p.grouped,
-        shape: p.cardShape(),
-        clipBehavior: Clip.antiAlias,
-        // Ink paints on the card itself, so tap ripples stay visible.
-        child: Ink(
-          decoration: BoxDecoration(gradient: p.surface(tone)),
-          child: child,
-        ),
-      ),
+    return Material(
+      color: p.grouped,
+      shape: p.cardShape(),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
   }
 }
@@ -101,7 +91,7 @@ class ProgressRing extends StatelessWidget {
             v,
             stroke,
             p.fill,
-            colors ?? ToneScope.of(context).colors,
+            colors ?? [p.accent, p.accent],
           ),
           child: Center(child: child),
         ),
@@ -219,7 +209,12 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final valueStyle = (big ? text.headlineMedium : text.titleLarge)?.copyWith(
+    final valueStyle = TextStyle(
+      fontFamily: condensedFont,
+      fontSize: big ? 34 : 26,
+      height: 1.05,
+      fontWeight: FontWeight.w700,
+      color: context.palette.label,
       fontFeatures: tabular,
     );
     return Column(
@@ -304,16 +299,7 @@ class AppMark extends StatelessWidget {
     child: DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.225),
-        boxShadow: glow
-            ? [
-                BoxShadow(
-                  color: AppPalette.violet.withValues(alpha: 0.38),
-                  blurRadius: size * 0.42,
-                  spreadRadius: -size * 0.1,
-                  offset: Offset(0, size * 0.14),
-                ),
-              ]
-            : null,
+        boxShadow: null,
       ),
       child: const CustomPaint(painter: BrandPainter()),
     ),

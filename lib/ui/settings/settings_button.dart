@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import 'settings_page.dart';
 
@@ -10,7 +11,7 @@ class SettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-    tooltip: 'Nastavení',
+    tooltip: tr('Nastavení', 'Settings'),
     icon: Badge(
       isLabelVisible: state.backupDue,
       smallSize: 8,

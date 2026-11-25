@@ -45,6 +45,10 @@ extension SettingsOps on AppState {
     (p) => p.withExtra({ProfileKey.strengthStandard: standard.name}),
   );
 
+  /// Preferred UI language (cs/en/sk). Exercises remain in English.
+  Future<void> setAppLanguage(AppLang lang) =>
+      _updateProfile((p) => p.withExtra({ProfileKey.language: lang.name}));
+
   Future<void> setPreferences({int? restSeconds, double? weightStep}) =>
       _updateProfile(
         (p) => p.withExtra({
@@ -80,6 +84,37 @@ extension SettingsOps on AppState {
     if (bodyweights.any((b) => b.id == entry.id)) return;
     await _enqueue(() => store.put(Kinds.bodyweight, entry.toJson()));
     bodyweights = [entry, ...bodyweights]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    _changed();
+  }
+
+  /// Zapíše obvod; `false` = nesmyslná hodnota.
+  Future<bool> addMeasurement(BodyPart part, double cm, {DateTime? now}) async {
+    if (!validMeasurement(cm)) return false;
+    final entry = Measurement(
+      id: newId(),
+      date: now ?? DateTime.now(),
+      part: part,
+      cm: double.parse(cm.toStringAsFixed(1)),
+    );
+    await _enqueue(() => store.put(Kinds.measurement, entry.toJson()));
+    measurements = [entry, ...measurements]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    _changed();
+    return true;
+  }
+
+  Future<void> removeMeasurement(String id) async {
+    await _enqueue(() => store.remove(id));
+    measurements = measurements.where((m) => m.id != id).toList();
+    _changed();
+  }
+
+  /// Vrátí smazanou míru („Vrátit“ po smazání).
+  Future<void> restoreMeasurement(Measurement entry) async {
+    if (measurements.any((m) => m.id == entry.id)) return;
+    await _enqueue(() => store.put(Kinds.measurement, entry.toJson()));
+    measurements = [entry, ...measurements]
       ..sort((a, b) => b.date.compareTo(a.date));
     _changed();
   }
@@ -157,7 +192,9 @@ extension SettingsOps on AppState {
       values: entry.values,
     );
     if (error != null) return error;
-    if (parseDayKey(entry.day) == null) return 'Neplatný den.';
+    if (parseDayKey(entry.day) == null) {
+      return tr('Neplatný den.', 'Invalid day.');
+    }
     await _enqueue(() => store.put(Kinds.food, entry.toJson()));
     foods = [
       entry,

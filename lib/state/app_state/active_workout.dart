@@ -34,14 +34,21 @@ extension ActiveWorkoutOps on AppState {
 
   /// Začne nový trénink, nebo vrátí rozepsaný.
   Future<Workout> startWorkout({String? name, DateTime? now}) async {
-    if (_finishing != null) throw StateError('Počkej na uložení tréninku.');
+    if (_finishing != null) {
+      throw StateError(
+        tr('Počkej na uložení tréninku.', 'Wait for the workout to be saved.'),
+      );
+    }
     final existing = active;
     if (existing != null) return existing;
     final start = now ?? DateTime.now();
     _dayPick = null;
     active = Workout(
       id: newId(),
-      name: name ?? 'Trénink – ${AppState._weekdays[start.weekday - 1]}',
+      name:
+          name ??
+          '${tr('Trénink', 'Workout')} – '
+              '${AppState._weekdays[start.weekday - 1]}',
       startedAt: start,
     );
     await saveActive();
@@ -50,7 +57,14 @@ extension ActiveWorkoutOps on AppState {
 
   /// Zopakuje minulý trénink: stejné cviky, hodnoty z posledního provedení.
   Future<Workout> repeatWorkout(Workout past) async {
-    if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
+    if (active != null) {
+      throw StateError(
+        tr(
+          'Nejdřív dokonči rozepsaný trénink.',
+          'Finish the current workout first.',
+        ),
+      );
+    }
     final workout = await startWorkout(name: past.name);
     final ids = <String>[];
     final groups = <String, String>{};
@@ -391,10 +405,14 @@ extension ActiveWorkoutOps on AppState {
 
   Future<String?> toggleDone(SetEntry set, {DateTime? now}) async {
     if (!set.done) {
-      if (set.reps <= 0) return 'Zadej počet opakování.';
-      if (set.weight < 0 || !set.weight.isFinite) return 'Neplatná váha.';
+      if (set.reps <= 0) {
+        return tr('Zadej počet opakování.', 'Enter the number of reps.');
+      }
+      if (set.weight < 0 || !set.weight.isFinite) {
+        return tr('Neplatná váha.', 'Invalid weight.');
+      }
       if (!set.warmup && set.weight == 0 && _isWeighted(set)) {
-        return 'Zadej váhu v kg.';
+        return tr('Zadej váhu v kg.', 'Enter the weight in kg.');
       }
     }
     set.done = !set.done;
@@ -404,7 +422,8 @@ extension ActiveWorkoutOps on AppState {
       // V supersérii se jde rovnou na další cvik; pauza až po kole.
       if (entry == null || restsAfter(list, entry)) {
         final seconds = restFor(entry?.exerciseId);
-        _setRestEnd((now ?? DateTime.now()).add(Duration(seconds: seconds)));
+        final at = now ?? DateTime.now();
+        _setRestEnd(at.add(Duration(seconds: seconds)), start: at);
       } else {
         _setRestEnd(null);
       }

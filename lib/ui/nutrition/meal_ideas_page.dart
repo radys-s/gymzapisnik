@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../ai/fridge_coach.dart';
+import '../../core/i18n.dart';
 import '../../core/ids.dart';
 import '../../domain/nutrition.dart';
 import '../../state/app_state.dart';
@@ -41,8 +42,11 @@ class MealIdeasPage extends StatelessWidget {
       ),
     );
     if (saved && context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Zapsáno: ${meal.title}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(tr('Zapsáno: ${meal.title}', 'Logged: ${meal.title}')),
+        ),
+      );
     }
   }
 
@@ -51,7 +55,7 @@ class MealIdeasPage extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final p = context.palette;
     return Scaffold(
-      appBar: AppBar(title: const Text('Návrhy jídel')),
+      appBar: AppBar(title: Text(tr('Návrhy jídel', 'Meal ideas'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           Space.page,
@@ -70,26 +74,38 @@ class MealIdeasPage extends StatelessWidget {
                     Text(meal.title, style: text.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      '${meal.minutes} min · ${_value(meal.estimate.kcal)} kcal'
-                      ' · B ${_value(meal.estimate.protein)} g'
-                      ' · S ${_value(meal.estimate.carbs)} g'
-                      ' · T ${_value(meal.estimate.fat)} g',
+                      tr(
+                        '${meal.minutes} min · ${_value(meal.estimate.kcal)} kcal'
+                            ' · B ${_value(meal.estimate.protein)} g'
+                            ' · S ${_value(meal.estimate.carbs)} g'
+                            ' · T ${_value(meal.estimate.fat)} g',
+                        '${meal.minutes} min · ${_value(meal.estimate.kcal)} kcal'
+                            ' · P ${_value(meal.estimate.protein)} g'
+                            ' · C ${_value(meal.estimate.carbs)} g'
+                            ' · F ${_value(meal.estimate.fat)} g',
+                      ),
                     ),
                     Text(
                       meal.source == EstimateSource.table
-                          ? 'Odhad podle tabulky potravin'
-                          : 'Odhad AI, může být hodně nepřesný',
+                          ? tr(
+                              'Odhad podle tabulky potravin',
+                              'Estimate from food table',
+                            )
+                          : tr(
+                              'Odhad AI, může být hodně nepřesný',
+                              'AI estimate, may be way off',
+                            ),
                       style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                     ),
                     const SizedBox(height: 8),
-                    Text('Suroviny', style: text.labelLarge),
+                    Text(tr('Suroviny', 'Ingredients'), style: text.labelLarge),
                     for (final i in meal.ingredients)
                       Text(
                         '• ${i.name}'
                         '${itemAmount(i).isEmpty ? '' : ' – ${itemAmount(i)}'}',
                       ),
                     const SizedBox(height: 8),
-                    Text('Postup', style: text.labelLarge),
+                    Text(tr('Postup', 'Instructions'), style: text.labelLarge),
                     for (final (n, step) in meal.steps.indexed)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
@@ -97,7 +113,7 @@ class MealIdeasPage extends StatelessWidget {
                       ),
                     const SizedBox(height: Space.l),
                     SecondaryButton(
-                      'Zapsat do deníku',
+                      tr('Zapsat do deníku', 'Log to diary'),
                       icon: Icons.add,
                       onPressed: () => _log(context, meal),
                     ),
@@ -107,8 +123,12 @@ class MealIdeasPage extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           Text(
-            'Návrhy vytvořila AI z tvého seznamu. Jsou to nápady, ne výživové '
-            'ani zdravotní doporučení. Zkontroluj suroviny a hodnoty.',
+            tr(
+              'Návrhy vytvořila AI z tvého seznamu. Jsou to nápady, ne výživové '
+                  'ani zdravotní doporučení. Zkontroluj suroviny a hodnoty.',
+              'AI created these ideas from your list. They are ideas, not '
+                  'nutrition or health advice. Check the ingredients and values.',
+            ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
         ],

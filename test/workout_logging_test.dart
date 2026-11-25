@@ -184,8 +184,11 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'press');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Šikmý bench press (osa)'));
-    await tester.tap(find.text('Tlak na hrudník (stroj)'));
+    await tester.ensureVisible(find.text('Incline Barbell Bench Press'));
+    await tester.tap(find.text('Incline Barbell Bench Press'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Machine Chest Press'));
+    await tester.tap(find.text('Machine Chest Press'));
     await tester.pump();
     expect(find.text('Přidat cviky (2)'), findsOneWidget);
     await _write(tester, find.text('Přidat cviky (2)'));

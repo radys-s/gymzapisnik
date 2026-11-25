@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../ai/fridge_coach.dart';
 import '../../ai/photo.dart';
 import '../../ai/trainer.dart';
+import '../../core/i18n.dart';
 import '../../core/text.dart';
 import '../../domain/anatomy.dart';
 import '../../domain/catalog.dart';
@@ -12,6 +13,7 @@ import '../../domain/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/ai_photo.dart';
 import '../widgets/exercise_media.dart';
+import '../widgets/labels.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 
@@ -35,11 +37,16 @@ class ExercisePickerPage extends StatefulWidget {
   State<ExercisePickerPage> createState() => _ExercisePickerPageState();
 }
 
-/// Hledá v názvu i aliasech (anglické názvy z Hevy, „pec deck“), bez diakritiky.
-bool matchesExercise(Exercise e, String folded) =>
-    folded.isEmpty ||
-    fold(e.name).contains(folded) ||
-    e.aliases.any((a) => fold(a).contains(folded));
+/// Search by English name, Czech name, aliases, muscle, and equipment.
+bool matchesExercise(Exercise e, String folded) {
+  if (folded.isEmpty) return true;
+  bool has(String s) => fold(s).contains(folded);
+  return has(e.name) ||
+      has(e.nameCs) ||
+      has(e.muscle) ||
+      has(e.equipment.label) ||
+      e.aliases.any(has);
+}
 
 /// Návrat z návrhů podle fotky: založit vlastní cvik s názvem stroje.
 const _customFromPhoto = '\u0000custom';
@@ -50,6 +57,7 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
   /// Filtry nad seznamem (null = vše).
   String? muscle;
   Equipment? equipment;
+  bool gymOnly = false;
 
   /// Vybrané cviky v pořadí klepnutí (v tomto pořadí se přidají).
   final selected = <String>[];
@@ -61,9 +69,14 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       for (final e in w.exercises) {
         if (!ids.contains(e.exerciseId)) ids.add(e.exerciseId);
       }
-      if (ids.length >= 8) break;
     }
-    return [for (final id in ids.take(8)) widget.state.exercise(id)];
+    final found = <Exercise>[];
+    for (final id in ids) {
+      final e = findExercise(id, widget.state.customExercises);
+      if (e != null) found.add(e);
+      if (found.length >= 8) break;
+    }
+    return found;
   }();
 
   /// Běží rozpoznání fotky stroje.
@@ -109,20 +122,23 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
             Space.l,
           ),
           child: GroupedSection(
-            header: 'Fotka stroje',
-            footer:
-                'Vyfoť celý stroj nebo činku zboku. AI navrhne cviky '
-                'z katalogu, vybereš si sám.',
+            header: tr('Fotka stroje', 'Machine photo'),
+            footer: tr(
+              'Vyfoť celý stroj nebo činku zboku. AI navrhne cviky '
+                  'z katalogu, vybereš si sám.',
+              'Photograph the whole machine or a dumbbell from the side. '
+                  'AI suggests exercises from the catalog; you pick.',
+            ),
             children: [
               GroupedRow(
                 icon: Icons.photo_camera_rounded,
-                title: 'Vyfotit',
+                title: tr('Vyfotit', 'Take photo'),
                 chevron: false,
                 onTap: () => Navigator.pop(sheet, true),
               ),
               GroupedRow(
                 icon: Icons.photo_library_rounded,
-                title: 'Vybrat z galerie',
+                title: tr('Vybrat z galerie', 'Choose from gallery'),
                 chevron: false,
                 onTap: () => Navigator.pop(sheet, false),
               ),
@@ -151,27 +167,39 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       if (raw == null) {
         // Zrušený výběr fotky není chyba.
       } else if (jpeg == null) {
-        problem = 'Tenhle formát fotky neumím přečíst. Zkus jinou.';
+        problem = tr(
+          'Tenhle formát fotky neumím přečíst. Zkus jinou.',
+          "I can't read this photo format. Try another one.",
+        );
       } else {
         final result = await widget.state.trainer.recognizeMachine(
           jpeg,
-          builtInExercises,
+          catalogExercises,
         );
         if (!mounted || request != scanId) return;
         switch (result) {
           case AiError(:final message):
-            problem = '$message Cvik zatím najdi v seznamu.';
+            problem = tr(
+              '$message Cvik zatím najdi v seznamu.',
+              '$message Find the exercise in the list for now.',
+            );
           case AiOk(:final value)
               when value.matches.isEmpty && value.machine == null:
-            problem =
-                'Na fotce jsem stroj nepoznal. Zkus fotku z větší dálky, '
-                'nebo cvik najdi v seznamu.';
+            problem = tr(
+              'Na fotce jsem stroj nepoznal. Zkus fotku z větší dálky, '
+                  'nebo cvik najdi v seznamu.',
+              "I couldn't recognize the machine in the photo. Try a photo "
+                  'from farther away, or find the exercise in the list.',
+            );
           case AiOk(:final value):
             found = value;
         }
       }
     } catch (_) {
-      problem = 'Fotku se nepodařilo načíst. Zkus to znovu.';
+      problem = tr(
+        'Fotku se nepodařilo načíst. Zkus to znovu.',
+        "Couldn't load the photo. Try again.",
+      );
     } finally {
       if (mounted && request == scanId) {
         setState(() {
@@ -198,7 +226,13 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       return;
     }
     if (!selected.contains(id)) setState(() => selected.add(id));
-    showToast(context, '${widget.state.exercise(id).name} vybrán.');
+    showToast(
+      context,
+      tr(
+        '${widget.state.exercise(id).name} vybrán.',
+        '${widget.state.exercise(id).name} selected.',
+      ),
+    );
   }
 
   void _tap(Exercise e) {
@@ -229,15 +263,16 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final folded = fold(query.trim());
-    final filtered = muscle != null || equipment != null;
+    final filtered = muscle != null || equipment != null || gymOnly;
     bool keep(Exercise e) =>
         matchesExercise(e, folded) &&
         (muscle == null || e.muscle == muscle) &&
-        (equipment == null || e.equipment == equipment);
+        (equipment == null || e.equipment == equipment) &&
+        (!gymOnly || widget.state.gymHas(e.id));
     final matches = widget.state.allExercises.where(keep).toList();
     final sections = <String, List<Exercise>>{};
     if (folded.isEmpty && !filtered && recent.isNotEmpty) {
-      sections['Nedávné'] = recent;
+      sections[tr('Nedávné', 'Recent')] = recent;
     }
     for (final group in muscleGroups) {
       final list = matches.where((e) => e.muscle == group).toList()
@@ -247,7 +282,11 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
     final count = selected.length;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.multiple ? 'Přidat cviky' : 'Nahradit cvik'),
+        title: Text(
+          widget.multiple
+              ? tr('Přidat cviky', 'Add exercises')
+              : tr('Nahradit cvik', 'Replace exercise'),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -259,24 +298,24 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
         children: [
           // Bez automatického fokusu: klávesnice nezakryje nedávné cviky.
           TextField(
-            decoration: const InputDecoration(
-              hintText: 'Hledat cvik',
-              prefixIcon: Icon(Icons.search_rounded),
+            decoration: InputDecoration(
+              hintText: tr('Hledat cvik', 'Search exercises'),
+              prefixIcon: const Icon(Icons.search_rounded),
             ),
             textInputAction: TextInputAction.search,
             onChanged: (v) => setState(() => query = v),
           ),
           const SizedBox(height: Space.m),
           _FilterRow<String>(
-            label: 'Partie',
+            label: tr('Partie', 'Muscle group'),
             values: muscleGroups,
             selected: muscle,
-            name: (g) => g,
+            name: muscleLabel,
             onSelected: (g) => setState(() => muscle = g),
           ),
           const SizedBox(height: Space.s),
           _FilterRow<Equipment>(
-            label: 'Vybavení',
+            label: tr('Vybavení', 'Equipment'),
             values: [
               for (final q in Equipment.values)
                 if (widget.state.allExercises.any((e) => e.equipment == q)) q,
@@ -285,12 +324,22 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
             name: (q) => q.label,
             onSelected: (q) => setState(() => equipment = q),
           ),
+          const SizedBox(height: Space.s),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilterChip(
+              selected: gymOnly,
+              showCheckmark: false,
+              label: Text(tr('Jen moje posilovna', 'My gym only')),
+              onSelected: (v) => setState(() => gymOnly = v),
+            ),
+          ),
           const SizedBox(height: Space.xl),
           GroupedSection(
             children: [
               GroupedRow(
                 leading: Icon(Icons.add_rounded, color: p.accent),
-                title: 'Vlastní cvik',
+                title: tr('Vlastní cvik', 'Custom exercise'),
                 chevron: false,
                 onTap: () => _createCustom(),
               ),
@@ -303,11 +352,17 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
                         )
                       : Icon(Icons.photo_camera_rounded, color: p.accent),
                   title: scanning
-                      ? 'Hledám cvik podle fotky…'
-                      : 'Vyfotit stroj',
+                      ? tr(
+                          'Hledám cvik podle fotky…',
+                          'Finding exercise from photo…',
+                        )
+                      : tr('Vyfotit stroj', 'Photograph a machine'),
                   subtitle: scanning
-                      ? 'Klepnutím hledání zrušíš'
-                      : 'AI podle fotky navrhne cvik',
+                      ? tr('Klepnutím hledání zrušíš', 'Tap to cancel')
+                      : tr(
+                          'AI podle fotky navrhne cvik',
+                          'AI suggests an exercise from the photo',
+                        ),
                   chevron: false,
                   onTap: _photo,
                 ),
@@ -326,14 +381,17 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
               ),
             ),
           if (sections.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.search_off_rounded,
-              title: 'Nic nenalezeno',
-              message: 'Zkus jiný název, nebo přidej vlastní cvik.',
+              title: tr('Nic nenalezeno', 'Nothing found'),
+              message: tr(
+                'Zkus jiný název, nebo přidej vlastní cvik.',
+                'Try a different name, or add a custom exercise.',
+              ),
             ),
           for (final section in sections.entries)
             GroupedSection(
-              header: section.key,
+              header: muscleLabel(section.key),
               children: [
                 for (final e in section.value)
                   _ExerciseRow(
@@ -357,7 +415,9 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
                   Space.s,
                 ),
                 child: PrimaryButton(
-                  count == 1 ? 'Přidat cvik' : 'Přidat cviky ($count)',
+                  count == 1
+                      ? tr('Přidat cvik', 'Add exercise')
+                      : tr('Přidat cviky ($count)', 'Add exercises ($count)'),
                   onPressed: () => popOnce(context, [...selected]),
                 ),
               ),
@@ -387,7 +447,7 @@ class _FilterRow<T> extends StatelessWidget {
     child: Row(
       children: [
         ChoiceChip(
-          label: Text('$label: vše'),
+          label: Text(tr('$label: vše', '$label: all')),
           selected: selected == null,
           onSelected: (_) => onSelected(null),
         ),
@@ -411,7 +471,8 @@ class _ExerciseRow extends StatelessWidget {
   String? get _subtitle {
     final parts = [
       headsLabel(exercise.id),
-      if (exercise.type == ExerciseType.bodyweight) 'vlastní váha',
+      if (exercise.type == ExerciseType.bodyweight)
+        tr('vlastní váha', 'bodyweight'),
     ].where((s) => s.isNotEmpty);
     return parts.isEmpty ? null : parts.join(' · ');
   }
@@ -457,10 +518,10 @@ class _MachineSheet extends StatelessWidget {
   const _MachineSheet({required this.state, required this.result});
 
   static String _sure(double c) => c >= 0.7
-      ? 'Nejspíš tohle'
+      ? tr('Nejspíš tohle', 'Most likely this')
       : c >= 0.4
-      ? 'Možná'
-      : 'Spíš ne, ale podobné';
+      ? tr('Možná', 'Maybe')
+      : tr('Spíš ne, ale podobné', 'Unlikely, but similar');
 
   @override
   Widget build(BuildContext context) {
@@ -470,10 +531,15 @@ class _MachineSheet extends StatelessWidget {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, Space.l),
         child: GroupedSection(
-          header: machine == null ? 'Návrhy podle fotky' : 'Na fotce: $machine',
-          footer:
-              'AI se může splést. Když tu cvik není, najdi ho v seznamu '
-              'nebo si ho přidej jako vlastní.',
+          header: machine == null
+              ? tr('Návrhy podle fotky', 'Suggestions from the photo')
+              : tr('Na fotce: $machine', 'In the photo: $machine'),
+          footer: tr(
+            'AI se může splést. Když tu cvik není, najdi ho v seznamu '
+                'nebo si ho přidej jako vlastní.',
+            'AI can be wrong. If the exercise is not here, find it in the '
+                'list or add it as a custom one.',
+          ),
           children: [
             for (final m in result.matches)
               GroupedRow(
@@ -485,7 +551,7 @@ class _MachineSheet extends StatelessWidget {
             if (machine != null)
               GroupedRow(
                 leading: Icon(Icons.add_rounded, color: p.accent),
-                title: 'Přidat jako vlastní cvik',
+                title: tr('Přidat jako vlastní cvik', 'Add as custom exercise'),
                 subtitle: machine,
                 chevron: false,
                 onTap: () => Navigator.pop(context, _customFromPhoto),
@@ -530,7 +596,13 @@ class _CustomExerciseDialogState extends State<_CustomExerciseDialog> {
       if (mounted) Navigator.pop(context, created);
     } catch (_) {
       if (mounted) {
-        showToast(context, 'Cvik se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Cvik se nepodařilo uložit. Zkus to znovu.',
+            "Couldn't save the exercise. Try again.",
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => saving = false);
@@ -539,33 +611,36 @@ class _CustomExerciseDialogState extends State<_CustomExerciseDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Vlastní cvik'),
+    title: Text(tr('Vlastní cvik', 'Custom exercise')),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         TextField(
           controller: name,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Název'),
+          decoration: InputDecoration(labelText: tr('Název', 'Name')),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: Space.m),
         DropdownButtonFormField<String>(
           initialValue: muscle,
-          decoration: const InputDecoration(labelText: 'Partie'),
+          decoration: InputDecoration(labelText: tr('Partie', 'Muscle group')),
           items: [
             for (final g in muscleGroups)
-              DropdownMenuItem(value: g, child: Text(g)),
+              DropdownMenuItem(value: g, child: Text(muscleLabel(g))),
           ],
           onChanged: (v) => setState(() => muscle = v ?? muscle),
         ),
         const SizedBox(height: Space.m),
         SegmentedButton<ExerciseType>(
-          segments: const [
-            ButtonSegment(value: ExerciseType.weighted, label: Text('S váhou')),
+          segments: [
+            ButtonSegment(
+              value: ExerciseType.weighted,
+              label: Text(tr('S váhou', 'Weighted')),
+            ),
             ButtonSegment(
               value: ExerciseType.bodyweight,
-              label: Text('Vlastní váha'),
+              label: Text(tr('Vlastní váha', 'Bodyweight')),
             ),
           ],
           selected: {type},
@@ -576,11 +651,11 @@ class _CustomExerciseDialogState extends State<_CustomExerciseDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Zpět'),
+        child: Text(tr('Zpět', 'Back')),
       ),
       TextButton(
         onPressed: saving || name.text.trim().isEmpty ? null : _save,
-        child: const Text('Uložit'),
+        child: Text(tr('Uložit', 'Save')),
       ),
     ],
   );

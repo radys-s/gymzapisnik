@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/parse.dart';
 import '../../domain/models.dart';
 import '../widgets/set_kind.dart';
@@ -25,6 +26,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   late final Workout draft = widget.workout.copy();
   late final name = TextEditingController(text: draft.name);
   late final note = TextEditingController(text: draft.note);
+  final _invalidSets = <SetEntry>{};
   bool saving = false;
   bool allowExit = false;
   bool leaving = false;
@@ -33,7 +35,8 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
     final current = draft.copy()
       ..name = name.text
       ..note = note.text;
-    return jsonEncode(current.toJson()) != jsonEncode(widget.workout.toJson());
+    return _invalidSets.isNotEmpty ||
+        jsonEncode(current.toJson()) != jsonEncode(widget.workout.toJson());
   }
 
   @override
@@ -51,10 +54,13 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
     try {
       final discard = await confirmAction(
         context,
-        title: 'Zahodit změny?',
-        message: 'Úpravy tohoto tréninku ještě nejsou uložené.',
-        cancel: 'Pokračovat v úpravách',
-        confirm: 'Zahodit změny',
+        title: tr('Zahodit změny?', 'Discard changes?'),
+        message: tr(
+          'Úpravy tohoto tréninku ještě nejsou uložené.',
+          'Changes to this workout have not been saved.',
+        ),
+        cancel: tr('Pokračovat v úpravách', 'Keep editing'),
+        confirm: tr('Zahodit změny', 'Discard changes'),
         destructive: true,
       );
       if (!mounted || !discard) return;
@@ -82,7 +88,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   }
 
   Future<void> _save() async {
-    if (saving) return;
+    if (saving || _invalidSets.isNotEmpty) return;
     setState(() => saving = true);
     draft
       ..name = name.text
@@ -91,7 +97,10 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
     try {
       error = await widget.state.updateWorkout(draft);
     } catch (_) {
-      error = 'Změny se nepodařilo uložit. Zkus to znovu.';
+      error = tr(
+        'Změny se nepodařilo uložit. Zkus to znovu.',
+        'Could not save changes. Try again.',
+      );
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -106,10 +115,16 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   void _removeExercise(WorkoutExercise entry) {
     final index = draft.exercises.indexOf(entry);
     if (index < 0) return;
-    setState(() => draft.exercises.removeAt(index));
+    setState(() {
+      _invalidSets.removeAll(entry.sets);
+      draft.exercises.removeAt(index);
+    });
     showUndo(
       context,
-      'Cvik ${widget.state.exercise(entry.exerciseId).name} odebrán.',
+      tr(
+        'Cvik ${widget.state.exercise(entry.exerciseId).name} odebrán.',
+        'Exercise ${widget.state.exercise(entry.exerciseId).name} removed.',
+      ),
       () {
         if (!mounted || draft.exercises.contains(entry)) return;
         setState(
@@ -125,8 +140,11 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
   void _removeSet(WorkoutExercise entry, SetEntry set) {
     final index = entry.sets.indexOf(set);
     if (index < 0) return;
-    setState(() => entry.sets.removeAt(index));
-    showUndo(context, 'Série smazána.', () {
+    setState(() {
+      _invalidSets.remove(set);
+      entry.sets.removeAt(index);
+    });
+    showUndo(context, tr('Série smazána.', 'Set deleted.'), () {
       if (!mounted || entry.sets.contains(set)) return;
       setState(() => entry.sets.insert(index.clamp(0, entry.sets.length), set));
     });
@@ -143,18 +161,20 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Upravit trénink'),
+          title: Text(tr('Upravit trénink', 'Edit workout')),
           actions: [
             TextButton(
-              onPressed: saving || !dirty ? null : _save,
+              onPressed: saving || !dirty || _invalidSets.isNotEmpty
+                  ? null
+                  : _save,
               child: saving
                   ? const SizedBox.square(
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text(
-                      'Uložit',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                  : Text(
+                      tr('Uložit', 'Save'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
             ),
             const SizedBox(width: Space.xs),
@@ -171,7 +191,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
             TextField(
               controller: name,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'Název'),
+              decoration: InputDecoration(labelText: tr('Název', 'Name')),
             ),
             const SizedBox(height: Space.s),
             TextField(
@@ -179,7 +199,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
               maxLines: 3,
               minLines: 1,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'Poznámka'),
+              decoration: InputDecoration(labelText: tr('Poznámka', 'Note')),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.xs, Space.s, 0, 0),
@@ -189,10 +209,13 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
               ),
             ),
             if (draft.exercises.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.fitness_center_rounded,
-                title: 'Žádný cvik',
-                message: 'Po uložení zůstane jen název a poznámka.',
+                title: tr('Žádný cvik', 'No exercises'),
+                message: tr(
+                  'Po uložení zůstane jen název a poznámka.',
+                  'After saving, only the name and note will remain.',
+                ),
               ),
             for (final entry in draft.exercises)
               Padding(
@@ -217,7 +240,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Odebrat cvik',
+                            tooltip: tr('Odebrat cvik', 'Remove exercise'),
                             onPressed: () => _removeExercise(entry),
                             icon: Icon(
                               Icons.delete_outline_rounded,
@@ -236,7 +259,11 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
                             entry.sets.take(i).where((s) => !s.warmup).length +
                                 1,
                           ),
-                          onChanged: _changed,
+                          onChanged: (valid) => setState(() {
+                            valid
+                                ? _invalidSets.remove(set)
+                                : _invalidSets.add(set);
+                          }),
                           onType: (v) => setState(() {
                             set
                               ..warmup = v == 'warmup'
@@ -259,7 +286,7 @@ class _EditWorkoutPageState extends State<EditWorkoutPage> {
                           ),
                         ),
                         icon: const Icon(Icons.add_rounded),
-                        label: const Text('Série'),
+                        label: Text(tr('Série', 'Set')),
                       ),
                     ],
                   ),
@@ -277,7 +304,7 @@ class _EditSetRow extends StatefulWidget {
   final String label;
   final ValueChanged<String> onType;
   final VoidCallback onRemove;
-  final VoidCallback onChanged;
+  final ValueChanged<bool> onChanged;
   const _EditSetRow({
     super.key,
     required this.set,
@@ -308,6 +335,23 @@ class _EditSetRowState extends State<_EditSetRow> {
     super.dispose();
   }
 
+  String? _problem(String raw, {required bool decimal}) {
+    if (raw.trim().isEmpty) return null;
+    if (decimal) {
+      final v = parseNum(raw);
+      return v != null && v >= 0
+          ? null
+          : tr('Zadej váhu od 0 kg.', 'Enter a weight of 0 kg or more.');
+    }
+    final v = int.tryParse(raw.trim());
+    return v != null && v >= 0 && v <= 999
+        ? null
+        : tr(
+            'Zadej celé opakování od 0 do 999.',
+            'Enter whole reps between 0 and 999.',
+          );
+  }
+
   Widget _field(
     TextEditingController c,
     String hint,
@@ -325,12 +369,12 @@ class _EditSetRowState extends State<_EditSetRow> {
               ?.copyWith(fontFeatures: tabular),
           keyboardType: TextInputType.numberWithOptions(decimal: decimal),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              decimal ? RegExp(r'[0-9.,]') : RegExp(r'[0-9]'),
-            ),
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,-]')),
           ],
           decoration: InputDecoration(
             hintText: hint,
+            errorText: _problem(c.text, decimal: decimal),
+            errorMaxLines: 3,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: Space.s,
@@ -338,10 +382,16 @@ class _EditSetRowState extends State<_EditSetRow> {
             ),
           ),
           onChanged: (_) {
-            widget.set
-              ..weight = parseNum(weight.text) ?? 0
-              ..reps = int.tryParse(reps.text) ?? 0;
-            widget.onChanged();
+            final valid =
+                _problem(weight.text, decimal: true) == null &&
+                _problem(reps.text, decimal: false) == null;
+            if (valid) {
+              widget.set
+                ..weight = parseNum(weight.text) ?? 0
+                ..reps = int.tryParse(reps.text.trim()) ?? 0;
+            }
+            setState(() {});
+            widget.onChanged(valid);
           },
         ),
       ),
@@ -361,7 +411,7 @@ class _EditSetRowState extends State<_EditSetRow> {
             width: minTap,
             height: minTap,
             child: PopupMenuButton<String>(
-              tooltip: '$_name, změnit typ',
+              tooltip: tr('$_name, změnit typ', '$_name, change type'),
               padding: EdgeInsets.zero,
               onSelected: (v) => switch (v) {
                 'delete' => widget.onRemove(),
@@ -373,7 +423,7 @@ class _EditSetRowState extends State<_EditSetRow> {
                 PopupMenuItem(
                   value: 'delete',
                   child: Text(
-                    'Smazat sérii',
+                    tr('Smazat sérii', 'Delete set'),
                     style: TextStyle(color: p.negative),
                   ),
                 ),
@@ -401,10 +451,19 @@ class _EditSetRowState extends State<_EditSetRow> {
               ),
             ),
           ),
-          _field(weight, 'kg', 'Kilogramy, $_name', decimal: true),
-          _field(reps, 'opak.', 'Opakování, $_name'),
+          _field(
+            weight,
+            'kg',
+            tr('Kilogramy, $_name', 'Kilograms, $_name'),
+            decimal: true,
+          ),
+          _field(
+            reps,
+            tr('opak.', 'reps'),
+            tr('Opakování, $_name', 'Reps, $_name'),
+          ),
           IconButton(
-            tooltip: 'Smazat sérii',
+            tooltip: tr('Smazat sérii', 'Delete set'),
             onPressed: widget.onRemove,
             icon: Icon(Icons.close_rounded, color: p.tertiaryLabel),
           ),
@@ -429,13 +488,21 @@ class _SetHeader extends StatelessWidget {
           children: [
             SizedBox(
               width: minTap,
-              child: Text('Série', style: style, textAlign: TextAlign.center),
+              child: Text(
+                tr('Série', 'Set'),
+                style: style,
+                textAlign: TextAlign.center,
+              ),
             ),
             Expanded(
               child: Text('kg', style: style, textAlign: TextAlign.center),
             ),
             Expanded(
-              child: Text('opak.', style: style, textAlign: TextAlign.center),
+              child: Text(
+                tr('opak.', 'reps'),
+                style: style,
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(width: 48),
           ],

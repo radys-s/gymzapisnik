@@ -50,7 +50,7 @@ void main() {
     expect(find.text('Nový program'), findsWidgets);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Název programu'),
+      find.widgetWithText(TextField, 'Název (nepovinné)'),
       'Moje ruce',
     );
     await tester.tap(find.text('Přidat den'));
@@ -73,7 +73,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Série × opakování přes předvolbu.
-    await tester.tap(find.text('Tlak nad hlavu ve stoje (osa)'));
+    await tester.dragUntilVisible(
+      find.text('Overhead Press'),
+      find.byType(Scrollable).first,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Overhead Press'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Síla 4×5–8'));
     await tester.pumpAndSettle();
@@ -140,7 +146,7 @@ void main() {
     await tester.tap(find.text('Vytvořit vlastní program').first);
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.widgetWithText(TextField, 'Název programu'),
+      find.widgetWithText(TextField, 'Název (nepovinné)'),
       'Něco',
     );
     await tester.pump();
@@ -229,5 +235,26 @@ void main() {
 
     await _write(tester, find.byTooltip('Víc: Tréninků týdně'));
     expect(state.weekGoal, 4);
+  });
+
+  testWidgets('a template fills the days and the name is optional', (
+    tester,
+  ) async {
+    final state = await _state(tester);
+    await _pump(tester, state);
+    await tester.tap(find.text('Vytvořit vlastní program').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Push / Pull / Legs · 3'));
+    await tester.pumpAndSettle();
+    expect(find.text('Začni ze šablony'), findsNothing);
+    expect(find.text('Push'), findsWidgets);
+    // Clear the name: saving still works with a default.
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Název (nepovinné)'),
+      '',
+    );
+    await _write(tester, find.text('Uložit a používat'));
+    expect(state.split?.name, 'Můj plán');
+    expect(state.split?.days.length, 3);
   });
 }

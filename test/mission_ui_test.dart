@@ -39,7 +39,7 @@ void main() {
     final state = await newState(tester);
     await show(tester, state);
     expect(state.weekGoal, 3);
-    expect(find.text('Tento týden 0 z 3'), findsOneWidget);
+    expect(find.text('Dnes je den na trénink'), findsOneWidget);
     expect(find.text('0/3'), findsNothing); // weekly ring moved to Progress
   });
 
@@ -59,9 +59,9 @@ void main() {
     await show(tester, state);
 
     expect(find.text('Dnes máš hotovo'), findsOneWidget);
-    expect(find.textContaining('Příště ·'), findsOneWidget);
+    expect(find.textContaining('PŘÍŠTĚ ·'), findsOneWidget);
     expect(find.text('Bonusový trénink'), findsOneWidget);
-    expect(find.textContaining('Dnes · Full body'), findsNothing);
+    expect(find.textContaining('DNES · FULL BODY'), findsNothing);
   });
 
   testWidgets('trained today: mission done, weekly goal follows settings', (
@@ -79,8 +79,8 @@ void main() {
     await show(tester, state);
     expect(find.text('Týdenní cíl splněn'), findsOneWidget);
     expect(find.text('1/1'), findsNothing);
-    // Streak summary moved to Progress.
-    expect(find.text('1 týden'), findsNothing);
+    // The week strip on Home shows the streak in weeks.
+    expect(find.text('1 týden'), findsOneWidget);
 
     await tester.runAsync(() => state.setWeekGoal(null));
     await tester.pumpAndSettle();

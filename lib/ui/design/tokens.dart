@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Shared dark colors and surfaces, available through `context.palette`.
 ///
-/// Green marks key actions; each section adds its own accent and gradient.
+/// One accent (ember) marks actions; green marks completed sets; gold marks
+/// records. Everything else is neutral.
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   final Color background;
@@ -47,105 +48,84 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.negative,
   });
 
-  /// Jediná paleta aplikace: tmavý inkoust s barevnými akcenty.
+  /// Jediná paleta aplikace: neutrální skoro černá, jeden akcent (žár),
+  /// zelená jen pro hotové série, zlatá jen pro rekordy.
   static const gym = AppPalette(
-    background: Color(0xFF0B0C14),
-    grouped: Color(0xFF141624),
-    elevated: Color(0xFF1C1F31),
-    separator: Color(0xFF2A2E45),
-    label: Color(0xFFF4F5FA),
-    secondaryLabel: Color(0xFFB6BBCE),
-    tertiaryLabel: Color(0xFF8188A0),
-    fill: Color(0xFF212438),
-    accent: green,
-    onAccent: Colors.black,
+    background: Color(0xFF0A0A0B),
+    grouped: Color(0xFF151517),
+    elevated: Color(0xFF1E1E21),
+    separator: Color(0xFF2A2A2E),
+    label: Color(0xFFF5F5F4),
+    secondaryLabel: Color(0xFFA1A1A8),
+    tertiaryLabel: Color(0xFF6B6B73),
+    fill: Color(0xFF242428),
+    accent: ember,
+    onAccent: ink,
     gradient: training,
-    onGradient: Colors.black,
-    cta: green,
-    onCta: Colors.black,
-    positive: green,
-    negative: Color(0xFFFF5A4E),
+    onGradient: ink,
+    cta: ember,
+    onCta: ink,
+    positive: done,
+    negative: Color(0xFFFF5A5F),
   );
 
   /// Light neutral surface used by inverse Material components.
-  static const gymGrey = Color(0xFFE4E4E7);
+  static const gymGrey = Color(0xFFEDEDEC);
 
-  /// Hlavní zelená: akce, hotovo, vybraná záložka.
-  static const green = Color(0xFF9BE15D);
-  static const lime = Color(0xFFB9F56A);
-  static const teal = Color(0xFF4FE0C0);
-  static const cyan = Color(0xFF4FD8E8);
-  static const blue = Color(0xFF5AA9FF);
-  static const violet = Color(0xFF8B7CFF);
-  static const pink = Color(0xFFFF6FA5);
-  static const orange = Color(0xFFFF8A5B);
-  static const amber = Color(0xFFFFC857);
-  static const yellow = Color(0xFFFFE08A);
+  /// Text on the accent.
+  static const ink = Color(0xFF0A0A0B);
 
-  /// Workout, food, progress, and coach gradients.
-  static const training = [lime, Color(0xFF8BEA7A), teal];
-  static const food = [amber, orange, pink];
-  static const progress = [violet, blue, cyan];
-  static const coach = [pink, Color(0xFFC07CFF), violet];
+  /// Brand accent: actions, selection, current state.
+  static const ember = Color(0xFFFF6B2C);
+
+  /// Completed sets and positive change. Never used for actions.
+  static const done = Color(0xFF3DD68C);
+
+  /// Data colors for charts and muscle groups; never for actions.
+  static const green = done;
+  static const lime = Color(0xFFB4E44D);
+  static const teal = Color(0xFF2EC4B6);
+  static const cyan = Color(0xFF4CC9F0);
+  static const blue = Color(0xFF5B8CFF);
+  static const violet = Color(0xFF9D8CFF);
+  static const pink = Color(0xFFF472B6);
+  static const orange = ember;
+  static const amber = Color(0xFFFFC53D);
+  static const yellow = Color(0xFFFDE68A);
+
+  /// Section "gradients" are flat now: one accent everywhere.
+  static const training = [ember, ember];
+  static const food = [ember, ember];
+  static const progress = [ember, ember];
+  static const coach = [ember, ember];
 
   /// Superset colors A, B, C, D (then repeat).
-  static const superset = [cyan, amber, orange, violet];
+  static const superset = [cyan, amber, pink, violet];
 
   /// Zlatá pro rekordy a odznaky.
   Color get gold => amber;
 
   /// Card corner radius.
-  BorderRadius cardRadius() => BorderRadius.circular(20);
+  BorderRadius cardRadius() => BorderRadius.circular(Radii.card);
 
-  /// Rounded card with a subtle outline.
-  ShapeBorder cardShape() => RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(20),
-    side: BorderSide(color: separator),
-  );
+  /// Flat card, no outline: surfaces separate by tone.
+  ShapeBorder cardShape() =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.card));
 
   /// Zaoblení tlačítek a polí.
-  double get controlRadius => 14;
+  double get controlRadius => Radii.control;
 
-  LinearGradient get linear => LinearGradient(
-    colors: gradient,
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  LinearGradient get linear => LinearGradient(colors: [accent, accent]);
 
-  /// Card fill: a faint light from the top-left corner. A [tone] tints
-  /// that corner with the section color.
-  LinearGradient surface([Tone? tone]) => LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      tone == null
-          ? Color.lerp(grouped, label, 0.045)!
-          : Color.lerp(grouped, tone.color, 0.17)!,
-      grouped,
-      Color.lerp(grouped, background, 0.35)!,
-    ],
-    stops: const [0, 0.55, 1],
-  );
+  /// Card fill. Flat; kept as a gradient so callers need no change.
+  LinearGradient surface([Tone? tone]) =>
+      LinearGradient(colors: [grouped, grouped]);
 
-  /// Soft drop shadow that lifts a card off the page.
-  List<BoxShadow> get cardShadow => const [
-    BoxShadow(
-      color: Color(0x59000000),
-      blurRadius: 24,
-      spreadRadius: -10,
-      offset: Offset(0, 12),
-    ),
-  ];
+  /// No shadows: depth comes from surface tone.
+  List<BoxShadow> get cardShadow => const [];
 
-  /// Colored glow under a raised or selected element; [t] fades it in.
-  List<BoxShadow> glow(Color color, [double t = 1]) => [
-    BoxShadow(
-      color: color.withValues(alpha: 0.34 * t),
-      blurRadius: 24,
-      spreadRadius: -8,
-      offset: Offset(0, 10 * t),
-    ),
-  ];
+  /// No glows.
+  List<BoxShadow> glow(Color color, [double t = 1]) => const [];
 
   @override
   AppPalette copyWith() => this;
@@ -156,10 +136,10 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
 /// Color family of an app section, so each area has its own accent.
 enum Tone {
-  training(AppPalette.green, AppPalette.training),
-  food(AppPalette.orange, AppPalette.food),
-  progress(AppPalette.violet, AppPalette.progress),
-  coach(AppPalette.pink, AppPalette.coach);
+  training(AppPalette.ember, AppPalette.training),
+  food(AppPalette.ember, AppPalette.food),
+  progress(AppPalette.ember, AppPalette.progress),
+  coach(AppPalette.ember, AppPalette.coach);
 
   final Color color;
   final List<Color> colors;
@@ -206,17 +186,20 @@ abstract final class Space {
 }
 
 abstract final class Radii {
-  static const control = 14.0;
-  static const card = 20.0;
-  static const hero = 28.0;
-  static const sheet = 24.0;
+  static const control = 12.0;
+  static const card = 16.0;
+  static const hero = 20.0;
+  static const sheet = 20.0;
 }
 
 /// Nejmenší dotyková plocha (Apple HIG).
 const minTap = 44.0;
 
-/// Condensed type reserved for decorative figures and compact labels.
+/// Condensed type reserved for big figures (timers, totals, records).
 const condensedFont = 'Barlow Condensed';
+
+/// Text face for everything else.
+const textFont = 'Inter';
 
 /// Čísla se stejnou šířkou číslic, aby hodnoty neposkakovaly.
 const tabular = [FontFeature.tabularFigures()];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../coach/push.dart';
+import '../../core/i18n.dart';
 import '../../domain/catalog.dart';
 import '../../domain/history.dart';
 import '../../domain/models.dart';
@@ -11,13 +12,20 @@ import '../design/motion.dart';
 
 String _kg(double v) => v.round().toString();
 
-String _sessions(int n) => n >= 2 && n <= 4 ? '$n tréninky' : '$n tréninků';
+String _sessions(int n) {
+  if (isEnglish) return n == 1 ? '1 workout' : '$n workouts';
+  return n >= 2 && n <= 4 ? '$n tréninky' : '$n tréninků';
+}
 
 /// Otázka pro trenéra, když váha stojí: s čísly, ať odpoví konkrétně.
-String plateauQuestion(String name, Plateau p) =>
-    'Jsem zaseknutý u cviku $name: ${_sessions(p.sessions)} bez posunu, '
-    'poslední váha ${_kg(p.topWeight)} kg (odhad 1RM '
-    '${_kg(p.best)} kg). Co mám příští týden dělat, abych se posunul?';
+String plateauQuestion(String name, Plateau p) => tr(
+  'Jsem zaseknutý u cviku $name: ${_sessions(p.sessions)} bez posunu, '
+      'poslední váha ${_kg(p.topWeight)} kg (odhad 1RM '
+      '${_kg(p.best)} kg). Co mám příští týden dělat, abych se posunul?',
+  'I am stuck on $name: ${_sessions(p.sessions)} with no progress, '
+      'last weight ${_kg(p.topWeight)} kg (est. 1RM ${_kg(p.best)} kg). '
+      'What should I do next week to progress?',
+);
 
 /// Hodnocení tréninku čtyřmi tlačítky. Kouč podle něj přidává váhu
 /// rychleji, nebo ji podrží.
@@ -31,7 +39,10 @@ class RatingPanel extends StatelessWidget {
       await state.rateWorkout(workout, r);
     } catch (_) {
       if (context.mounted) {
-        showToast(context, 'Hodnocení se nepodařilo uložit.');
+        showToast(
+          context,
+          tr('Hodnocení se nepodařilo uložit.', 'Could not save rating.'),
+        );
       }
     }
   }
@@ -45,11 +56,14 @@ class RatingPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Jak to šlo?', style: text.titleMedium),
+          Text(tr('Jak to šlo?', 'How did it go?'), style: text.titleMedium),
           const SizedBox(height: 2),
           Text(
             current?.hint ??
-                'Kouč podle toho příště přidá váhu, nebo ji podrží.',
+                tr(
+                  'Kouč podle toho příště přidá váhu, nebo ji podrží.',
+                  'Your coach will add weight next time or hold it there.',
+                ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
           const SizedBox(height: Space.m),
@@ -108,9 +122,15 @@ class PlateauPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Zaseknutý na váze?', style: text.titleMedium),
                     Text(
-                      '$name: ${plateau.sessions}× bez posunu',
+                      tr('Zaseknutý na váze?', 'Stuck at the same weight?'),
+                      style: text.titleMedium,
+                    ),
+                    Text(
+                      tr(
+                        '$name: ${plateau.sessions}× bez posunu',
+                        '$name: ${plateau.sessions}× no progress',
+                      ),
                       style: text.bodySmall?.copyWith(
                         color: p.secondaryLabel,
                         fontFeatures: tabular,
@@ -143,7 +163,7 @@ class PlateauPanel extends StatelessWidget {
             ),
           const SizedBox(height: Space.s),
           SecondaryButton(
-            'Zeptej se trenéra',
+            tr('Zeptej se trenéra', 'Ask your coach'),
             icon: Icons.forum_outlined,
             onPressed: onAsk,
           ),
@@ -178,10 +198,17 @@ class WeekFocusCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nastav si cíl týdne', style: text.titleMedium),
                   Text(
-                    'Síla, pravidelnost, objem nebo bílkoviny. '
-                    'Kouč tě bude tlačit.',
+                    tr('Nastav si cíl týdne', 'Set your weekly goal'),
+                    style: text.titleMedium,
+                  ),
+                  Text(
+                    tr(
+                      'Síla, pravidelnost, objem nebo bílkoviny. '
+                          'Kouč tě bude tlačit.',
+                      'Strength, consistency, volume or protein. '
+                          'Your coach will keep you on track.',
+                    ),
                     style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                   ),
                 ],
@@ -193,10 +220,15 @@ class WeekFocusCard extends StatelessWidget {
       );
     }
     final title = focus.kind == FocusKind.strength
-        ? 'Síla: ${state.exercise(focus.exerciseId!).name}'
+        ? tr(
+            'Síla: ${state.exercise(focus.exerciseId!).name}',
+            'Strength: ${state.exercise(focus.exerciseId!).name}',
+          )
         : focus.kind.label;
     String num(double v) => focus.kind == FocusKind.strength
-        ? v.toStringAsFixed(1).replaceAll('.', ',')
+        ? isEnglish
+              ? v.toStringAsFixed(1)
+              : v.toStringAsFixed(1).replaceAll('.', ',')
         : '${v.round()}';
     return Panel(
       tone: Tone.progress,
@@ -210,7 +242,10 @@ class WeekFocusCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Cíl týdne', style: text.labelMedium),
+                    Text(
+                      tr('Cíl týdne', 'Weekly goal'),
+                      style: text.labelMedium,
+                    ),
                     Text(title, style: text.titleMedium),
                   ],
                 ),
@@ -226,9 +261,12 @@ class WeekFocusCard extends StatelessWidget {
           ),
           const SizedBox(height: Space.s),
           Semantics(
-            label:
-                '${progress.unit}: ${num(progress.value)} '
-                'z ${num(progress.target)}',
+            label: tr(
+              '${progress.unit}: ${num(progress.value)} '
+                  'z ${num(progress.target)}',
+              '${progress.unit}: ${num(progress.value)} '
+                  'of ${num(progress.target)}',
+            ),
             child: _GradientBar(progress.fraction),
           ),
           const SizedBox(height: Space.s),
@@ -301,7 +339,12 @@ Future<void> showWeekFocusSheet(
         await state.setWeekFocus(kind, exerciseId: id, now: now);
         if (sheet.mounted) Navigator.pop(sheet);
       } catch (_) {
-        if (sheet.mounted) showToast(sheet, 'Cíl se nepodařilo uložit.');
+        if (sheet.mounted) {
+          showToast(
+            sheet,
+            tr('Cíl se nepodařilo uložit.', 'Could not save goal.'),
+          );
+        }
       }
     }
 
@@ -312,18 +355,30 @@ Future<void> showWeekFocusSheet(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Cíl na tento týden', style: text.titleLarge),
+            Text(
+              tr('Cíl na tento týden', 'Goal for this week'),
+              style: text.titleLarge,
+            ),
             const SizedBox(height: Space.xs),
             Text(
-              'Jeden cíl do neděle. Kouč ho bude hlídat a tlačit tě k němu.',
+              tr(
+                'Jeden cíl do neděle. Kouč ho bude hlídat a tlačit tě k němu.',
+                'One goal until Sunday. Your coach will track it and push you.',
+              ),
               style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             ),
             const SizedBox(height: Space.m),
             GroupedSection(
-              header: 'Síla v cviku',
+              header: tr('Síla v cviku', 'Strength in a lift'),
               footer: lifts.isEmpty
-                  ? 'Až odcvičíš první trénink s váhou, půjde vybrat cvik.'
-                  : 'Cíl je o 2,5 % vyšší odhad maxima než dosud.',
+                  ? tr(
+                      'Až odcvičíš první trénink s váhou, půjde vybrat cvik.',
+                      'Log your first weighted workout to pick a lift.',
+                    )
+                  : tr(
+                      'Cíl je o 2,5 % vyšší odhad maxima než dosud.',
+                      'The goal is 2.5% above your current estimated max.',
+                    ),
               children: [
                 for (final id in lifts.take(6))
                   GroupedRow(
@@ -338,7 +393,7 @@ Future<void> showWeekFocusSheet(
               ],
             ),
             GroupedSection(
-              header: 'Jiný cíl',
+              header: tr('Jiný cíl', 'Other goals'),
               children: [
                 for (final k in FocusKind.values.skip(1))
                   GroupedRow(
@@ -354,7 +409,7 @@ Future<void> showWeekFocusSheet(
             if (current != null)
               TextButton(
                 onPressed: () => pick(null),
-                child: const Text('Zrušit cíl týdne'),
+                child: Text(tr('Zrušit cíl týdne', 'Clear weekly goal')),
               ),
           ],
         ),

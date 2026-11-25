@@ -2,6 +2,7 @@
 /// opakování. Čistý Dart bez Flutteru.
 library;
 
+import '../core/i18n.dart';
 import '../domain/models.dart';
 import 'splits.dart';
 
@@ -33,12 +34,14 @@ SplitTemplate? routineFromWorkout(Workout workout) {
     if (exercises.length >= maxDayExercises) break;
   }
   if (exercises.isEmpty) return null;
-  var name = workout.name.trim().isEmpty ? 'Trénink' : workout.name.trim();
+  var name = workout.name.trim().isEmpty
+      ? tr('Trénink', 'Workout')
+      : workout.name.trim();
   if (name.length > maxNameLength) name = name.substring(0, maxNameLength);
   return SplitTemplate(
     id: '',
     name: name,
-    description: 'Uloženo z tréninku',
+    description: tr('Uloženo z tréninku', 'Saved from a workout'),
     perWeek: 1,
     days: [SplitDay(name, exercises)],
     custom: true,

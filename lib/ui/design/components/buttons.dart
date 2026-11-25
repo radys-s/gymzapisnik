@@ -26,9 +26,9 @@ class PrimaryButton extends StatelessWidget {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;
-    final radius = BorderRadius.circular(p.controlRadius);
-    final shape = RoundedRectangleBorder(borderRadius: radius);
-    final glow = tone?.color ?? p.cta;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(p.controlRadius),
+    );
     // Vlastní uzel: jinak se popisek slije do rodiče přes celou obrazovku.
     return Semantics(
       container: true,
@@ -36,20 +36,15 @@ class PrimaryButton extends StatelessWidget {
       enabled: enabled,
       child: PressScale(
         enabled: enabled,
-        child: _CtaBody(
-          radius: radius,
-          glow: enabled ? glow : null,
-          child: Ink(
-            height: 52,
-            decoration: ShapeDecoration(
-              color: enabled ? null : p.fill,
-              gradient: enabled ? (tone?.gradient ?? p.linear) : null,
-              shape: shape,
-            ),
-            child: InkWell(
-              customBorder: shape,
-              // Bez vibrace: haptika jen u důležitých momentů (pauza, rekord).
-              onTap: enabled ? onPressed : null,
+        child: Material(
+          color: enabled ? p.cta : p.fill,
+          shape: shape,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            // Bez vibrace: haptika jen u důležitých momentů (pauza, rekord).
+            onTap: enabled ? onPressed : null,
+            child: SizedBox(
+              height: 52,
               child: Center(
                 child: busy
                     ? SizedBox.square(
@@ -59,26 +54,27 @@ class PrimaryButton extends StatelessWidget {
                           color: p.secondaryLabel,
                         ),
                       )
-                    // Keep the action label and direction easy to scan.
                     : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Expanded(
+                            if (icon != null) ...[
+                              Icon(icon, color: fg, size: 20),
+                              const SizedBox(width: 8),
+                            ],
+                            Flexible(
                               child: Text(
                                 label,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
+                                  fontFamily: textFont,
                                   color: fg,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  letterSpacing: -0.2,
                                 ),
                               ),
-                            ),
-                            Icon(
-                              icon ?? Icons.arrow_forward,
-                              color: fg,
-                              size: 20,
                             ),
                           ],
                         ),
@@ -90,31 +86,6 @@ class PrimaryButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Glow under an enabled main action and the sheen that passes over it.
-class _CtaBody extends StatelessWidget {
-  final BorderRadius radius;
-  final Color? glow;
-  final Widget child;
-  const _CtaBody({
-    required this.radius,
-    required this.glow,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      borderRadius: radius,
-      boxShadow: glow == null ? null : context.palette.glow(glow!),
-    ),
-    child: Sheen(
-      enabled: glow != null,
-      borderRadius: radius,
-      child: Material(type: MaterialType.transparency, child: child),
-    ),
-  );
 }
 
 /// Vedlejší akce stejné velikosti jako hlavní (šedé pozadí, barevný text).
@@ -136,7 +107,8 @@ class SecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final style = OutlinedButton.styleFrom(
-      foregroundColor: destructive ? p.negative : p.accent,
+      foregroundColor: destructive ? p.negative : p.label,
+      backgroundColor: p.fill,
       minimumSize: const Size.fromHeight(52),
     );
     return PressScale(

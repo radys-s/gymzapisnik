@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../coach/evidence.dart';
 import '../../coach/plan_quiz.dart';
 import '../../core/diagnostics.dart';
+import '../../core/i18n.dart';
 import '../../core/format.dart';
 import '../../coach/reminders.dart';
 import '../../domain/bodyweight.dart';
@@ -14,6 +16,8 @@ import '../design/tokens.dart';
 import '../program/plan_quiz.dart' show planFacts;
 import '../program/program_editor_page.dart';
 import '../program/program_widgets.dart';
+import '../settings/my_gym_page.dart' show gymMachinesByMuscle;
+import '../widgets/exercise_media.dart' show ExerciseThumb;
 import '../welcome/whats_new.dart';
 import '../widgets/labels.dart';
 import 'consent_page.dart';
@@ -48,13 +52,14 @@ class PlanSetupPage extends OnboardingPage {
 /// Kroky úvodu a nastavení plánu. Ukládá se pořadí kroku v daném běhu
 /// (`steps`), ne pořadí v tomto výčtu.
 enum _S {
+  language,
   value,
   consent,
+  path,
   goal,
   experience,
   schedule,
   gym,
-  pain,
   body,
   focus,
   reveal,
@@ -64,11 +69,11 @@ enum _S {
 /// Otázky dotazníku: mají lištu postupu a jejich odpovědi se průběžně
 /// ukládají.
 const _questions = {
+  _S.path,
   _S.goal,
   _S.experience,
   _S.schedule,
   _S.gym,
-  _S.pain,
   _S.body,
   _S.focus,
 };
@@ -90,33 +95,38 @@ class _OnboardingPageState extends State<OnboardingPage> {
   /// Připomínky jdou jen tam, kde umí aplikace poslat oznámení.
   late final bool reminders = !setup && state.notifier.supported;
 
-  /// Kroky v tomto běhu. Úvod se ptá jen na to, z čeho se skládá plán;
-  /// tělo a zaměření se doladí později v nastavení plánu, které je
-  /// zase bez uvítání, souhlasu a připomínky.
-  late final List<_S> steps = setup
-      ? const [
-          _S.goal,
-          _S.experience,
-          _S.schedule,
-          _S.gym,
-          _S.pain,
-          _S.body,
-          _S.focus,
-          _S.reveal,
-        ]
-      : [
-          _S.value,
-          _S.consent,
-          _S.goal,
-          _S.experience,
-          _S.schedule,
-          _S.gym,
-          _S.pain,
-          _S.reveal,
-          if (reminders) _S.reminder,
-        ];
+  /// Own plan instead of a recommended one: after days and gym the
+  /// editor opens.
+  bool own = false;
 
-  late final List<_S> _asked = [
+  /// Steps answered in this run. An unanswered question shows no choice,
+  /// so nothing looks picked before the user taps.
+  late final Set<_S> answered = {
+    if (setup) ..._S.values,
+    if (!setup)
+      for (final (i, s) in _flow(plan.style).indexed)
+        if (i < state.onboardingStep) s,
+  };
+
+  /// Steps of a run. The path (own plan or a style) comes first and
+  /// decides the questions: an own plan needs only days and gym, the
+  /// strength style implies the goal. Body and focus are only in the
+  /// later plan setup.
+  List<_S> _flow(PlanStyle? style) => [
+    if (!setup) ...[_S.language, _S.value, _S.consent],
+    _S.path,
+    if (!own && style != PlanStyle.strength) _S.goal,
+    if (!own) _S.experience,
+    _S.schedule,
+    _S.gym,
+    if (setup && !own) ...[_S.body, _S.focus],
+    _S.reveal,
+    if (!setup && reminders) _S.reminder,
+  ];
+
+  List<_S> get steps => _flow(plan.style);
+
+  List<_S> get _asked => [
     for (final s in steps)
       if (_questions.contains(s)) s,
   ];
@@ -128,9 +138,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int _resume() {
     final consent = steps.indexOf(_S.consent);
     final saved = state.onboardingStep;
-    return state.profile.hasValidConsent
-        ? saved.clamp(consent + 1, steps.length - 1)
-        : saved.clamp(0, consent);
+    if (!state.profile.hasValidConsent) return saved.clamp(0, consent);
+    // The own-plan choice is not saved: back to the path question.
+    final path = steps.indexOf(_S.path);
+    return plan.style == null
+        ? path
+        : saved.clamp(consent + 1, steps.length - 1);
   }
 
   late final _pages = PageController(initialPage: _first);
@@ -204,6 +217,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   /// Jedna odpověď: zvýraznit, chvilku nechat vidět a jet dál.
   void _pick(PlanAnswers a, _S from) {
+    answered.add(from);
     _changePlan(a);
     _advance?.cancel();
     _advance = Timer(const Duration(milliseconds: 300), () {
@@ -216,7 +230,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final raw = _kg.text.trim().replaceAll(',', '.');
     final kg = raw.isEmpty ? null : double.tryParse(raw);
     if (raw.isNotEmpty && (kg == null || !validBodyWeight(kg))) {
-      showToast(context, 'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.');
+      showToast(
+        context,
+        tr(
+          'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.',
+          'Enter weight in kg, e.g. 72.5. Or leave it empty.',
+        ),
+      );
       return false;
     }
     setState(() => busy = true);
@@ -237,7 +257,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
       return true;
     } catch (_) {
       if (mounted) {
-        showToast(context, 'Plán se nepodařilo uložit. Zkus to znovu.');
+        showToast(
+          context,
+          tr(
+            'Plán se nepodařilo uložit. Zkus to znovu.',
+            'The plan could not be saved. Try again.',
+          ),
+        );
       }
       return false;
     } finally {
@@ -248,17 +274,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
   /// Uloží plán z odpovědí a ukáže ho.
   Future<void> _toReveal() async {
     if (busy) return;
-    if (await _save() && mounted) _go(_S.reveal);
+    if (!await _save() || !mounted) return;
+    if (own) {
+      await _buildOwn();
+      return;
+    }
+    _go(_S.reveal);
   }
 
   /// Vlastní program místo navrženého: otevře editor. Návrh platí dál,
   /// dokud si vlastní neuloží, takže návrat bez uložení nic nezmění.
   Future<void> _buildOwn() async {
     if (busy) return;
-    final saved = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => ProgramEditorPage(state)));
-    if (saved != null && mounted) _afterReveal();
+    final saved = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ProgramEditorPage(state, initialDayCount: plan.days.clamp(1, 7)),
+      ),
+    );
+    if (!mounted) return;
+    if (saved != null) {
+      _afterReveal();
+      return;
+    }
+    // Back from the editor without saving: the recommended plan stays.
+    if (step != _S.reveal) {
+      setState(() => own = false);
+      _go(_S.reveal);
+    }
   }
 
   /// Dál z hotového plánu: připomínka, jinak konec.
@@ -278,7 +321,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       } catch (_) {
         if (!mounted) return;
         setState(() => busy = false);
-        showToast(context, 'Uložení se nezdařilo. Zkus to znovu.');
+        showToast(
+          context,
+          tr('Uložení se nezdařilo. Zkus to znovu.', 'Save failed. Try again.'),
+        );
       }
       return;
     }
@@ -290,7 +336,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ..showSnackBar(
         SnackBar(
           content: Text(
-            name == null ? 'Plán je uložený.' : 'Program $name je nastavený.',
+            name == null
+                ? tr('Plán je uložený.', 'Plan is saved.')
+                : tr('Program $name je nastavený.', 'Program $name is set.'),
           ),
         ),
       );
@@ -301,7 +349,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final next = {...days};
     if (!next.remove(d)) {
       if (next.length >= 6) {
-        showToast(context, 'Aspoň jeden den v týdnu nech na odpočinek.');
+        showToast(
+          context,
+          tr(
+            'Aspoň jeden den v týdnu nech na odpočinek.',
+            'Leave at least one rest day in the week.',
+          ),
+        );
         return;
       }
       next.add(d);
@@ -312,11 +366,112 @@ class _OnboardingPageState extends State<OnboardingPage> {
     });
   }
 
+  /// Days and length both picked: the schedule question is answered.
+  bool get _scheduleDone =>
+      days.length >= 2 && (answered.contains(_S.schedule) || minutesPicked);
+
+  late bool minutesPicked = setup;
+
+  /// The language applies at once; the app rebuilds in it and the intro
+  /// resumes on the next step, which is saved first.
+  Future<void> _pickLanguage(AppLang lang) async {
+    await state.setOnboardingStep(steps.indexOf(_S.value));
+    if (lang != state.profile.appLanguage) {
+      await state.setAppLanguage(lang);
+    } else if (mounted) {
+      _go(_S.value);
+    }
+  }
+
+  /// Machines of this gym type, ticked = available. Kept in the answers,
+  /// the same way My gym in Settings stores them.
+  Future<void> _pickMachines() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final groups = gymMachinesByMuscle(plan.place);
+          void toggle(String id) {
+            final preset = plan.place.presetMissing.contains(id);
+            setState(() {
+              plan = preset
+                  ? plan.copyWith(present: _toggle(plan.present, id))
+                  : plan.copyWith(missing: _toggle(plan.missing, id));
+            });
+            setSheet(() {});
+          }
+
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.85,
+            builder: (ctx, scroll) => ListView(
+              controller: scroll,
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                0,
+                Space.page,
+                Space.xl,
+              ),
+              children: [
+                Text(
+                  tr('Stroje ve tvém fitku', 'Machines at your gym'),
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+                Text(
+                  tr(
+                    'Odškrtni, co tam není. Plán je pak nebude navrhovat.',
+                    'Untick what is missing. The plan will not suggest it.',
+                  ),
+                  style: Theme.of(ctx).textTheme.bodySmall
+                      ?.copyWith(color: ctx.palette.secondaryLabel),
+                ),
+                for (final MapEntry(key: muscle, value: list)
+                    in groups.entries) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.l),
+                    child: Text(
+                      muscleLabel(muscle),
+                      style: Theme.of(ctx).textTheme.titleSmall,
+                    ),
+                  ),
+                  for (final e in list)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: ExerciseThumb(e.id),
+                      title: Text(e.name),
+                      value: !plan.unavailable.contains(e.id),
+                      onChanged: (_) => toggle(e.id),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Own plan or one of the styles. A style also fixes the goal for the
+  /// strength plan.
+  void _pickPath({required bool own, PlanStyle? style}) {
+    answered.add(_S.path);
+    setState(() => this.own = own);
+    _pick(
+      plan.copyWith(
+        style: style,
+        goal: style == PlanStyle.strength ? PlanGoal.strength : null,
+      ),
+      _S.path,
+    );
+  }
+
   /// Krok, kam vede zpět z kroku [from]; `null` = zavřít obrazovku.
   _S? _back(_S from) {
-    if (from == _S.reminder) return skipped ? _S.goal : _S.reveal;
-    // Souhlas je uložený; zpět před první otázku už nejde.
-    if (from == _S.goal) return null;
+    if (from == _S.reminder) return skipped ? _S.path : _S.reveal;
+    // Consent is saved; there is no way back before the first question.
+    if (from == _S.path) return null;
     final i = steps.indexOf(from);
     return i > 0 ? steps[i - 1] : null;
   }
@@ -364,15 +519,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
       (birthYear != null && DateTime.now().year - birthYear >= 19);
 
   void _skipBody() {
-    _kg.clear();
-    _height.clear();
-    _year.clear();
+    // Later discards edits in this step, preserving the saved profile.
+    final saved = state.planAnswers ?? const PlanAnswers();
+    final kg = state.bodyweights.firstOrNull?.kg;
+    _kg.text = kg == null ? '' : formatKg(kg);
+    _height.text = saved.heightCm?.toString() ?? '';
+    _year.text = saved.birthYear?.toString() ?? '';
     _changePlan(
       plan.withBody(
-        sex: null,
-        heightCm: null,
-        birthYear: null,
-        weightGoal: null,
+        sex: saved.sex,
+        heightCm: saved.heightCm,
+        birthYear: saved.birthYear,
+        weightGoal: saved.weightGoal,
       ),
     );
     _go(_next(_S.body));
@@ -385,11 +543,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
       if (!ok && mounted) {
         showToast(
           context,
-          'Bez povolení oznámení připomínky nepřijdou. Zapneš je v Nastavení.',
+          tr(
+            'Bez povolení oznámení připomínky nepřijdou. Zapneš je v Nastavení.',
+            'Without notification permission, reminders will not arrive. You can enable them in Settings.',
+          ),
         );
       }
     } catch (_) {
-      if (mounted) showToast(context, 'Připomínku se nepodařilo nastavit.');
+      if (mounted) {
+        showToast(
+          context,
+          tr(
+            'Připomínku se nepodařilo nastavit.',
+            'Could not set the reminder.',
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => busy = false);
@@ -417,14 +586,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
     String? action,
     VoidCallback? onNext,
     VoidCallback? onSkip,
-    String skipLabel = 'Přeskočit',
+    String? skipLabel,
+    Widget? secondary,
     Tone tone = Tone.training,
   }) {
     final i = _asked.indexOf(s) + 1;
     return QuestionScaffold(
       tone: tone,
       progress: i / _asked.length,
-      step: 'Otázka $i ${_outOf(_asked.length)}',
+      step: tr(
+        'Otázka $i ${_outOf(_asked.length)}',
+        'Question $i of ${_asked.length}',
+      ),
       progressLabel: '$i/${_asked.length}',
       title: title,
       why: why,
@@ -434,46 +607,122 @@ class _OnboardingPageState extends State<OnboardingPage> {
       // V úvodu před první otázkou nic není (souhlas je uložený).
       onBack: !setup && _back(s) == null ? null : () => _goBack(s),
       onSkip: onSkip,
-      skipLabel: skipLabel,
+      skipLabel: skipLabel ?? tr('Přeskočit', 'Skip'),
+      secondary: secondary,
       child: child,
     );
   }
 
   Widget _page(_S s) => switch (s) {
-    _S.value => QuestionScaffold(
+    _S.language => QuestionScaffold(
       tone: Tone.progress,
-      action: 'Začít',
-      onNext: () => _go(_S.consent),
-      child: const _Value(),
+      child: StaggerColumn(
+        gap: Space.s,
+        children: [
+          const SizedBox(height: Space.xl),
+          const Center(child: AppMark(size: 96)),
+          const SizedBox(height: Space.l),
+          Text(
+            tr('Gym zápisník', 'Gym Log'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          const SizedBox(height: Space.xxl),
+          Semantics(
+            header: true,
+            child: Text(
+              'Vyber jazyk · Choose language',
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: context.palette.secondaryLabel),
+            ),
+          ),
+          const SizedBox(height: Space.xs),
+          for (final lang in AppLang.values)
+            ChoiceCard(
+              leading: _LangBadge(lang),
+              label: lang.native,
+              hint: lang == AppLang.cs
+                  ? tr('Aplikace bude česky', 'The app will be in Czech')
+                  : 'The app will be in English',
+              selected: false,
+              onTap: () => _pickLanguage(lang),
+            ),
+        ],
+      ),
     ),
-    _S.consent => ConsentPage(
-      state,
-      resumeAt: steps.indexOf(_S.goal),
-      onAccepted: () => _go(_S.goal),
-      onBack: () => _go(_S.value),
-    ),
-    _S.goal => _question(
+    _S.path => _question(
       s: s,
-      title: 'Co chceš hlavně?',
-      why:
-          'Podle cíle nastavím opakování: na svaly 8–12, na sílu méně '
-          'a těžší, na kondici víc a s kratší pauzou.',
       onSkip: setup
           ? null
           : () {
               skipped = true;
               _afterReveal();
             },
+      title: tr('Jak chceš trénovat?', 'How do you want to train?'),
+      why: tr(
+        'Vlastní plán si složíš za minutu. Nebo ti ho sestavím podle '
+            'stylu, který ti sedí. Změníš to kdykoli v Programu.',
+        'Build your own plan in a minute, or let me put one together in '
+            'the style that suits you. You can change it any time.',
+      ),
+      tone: Tone.coach,
+      child: StaggerColumn(
+        gap: Space.s,
+        children: [
+          _OwnPlanCard(
+            selected: answered.contains(_S.path) && own,
+            onTap: () => _pickPath(own: true),
+          ),
+          const SizedBox(height: Space.m),
+          Padding(
+            padding: const EdgeInsets.only(left: Space.xs),
+            child: Text(
+              tr('Nebo ti plán sestavím', 'Or let me build one'),
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(color: context.palette.secondaryLabel),
+            ),
+          ),
+          for (final st in PlanStyle.values)
+            ChoiceCard(
+              icon: _styleIcon(st),
+              label: st.label,
+              hint: st.hint,
+              selected: answered.contains(_S.path) && !own && plan.style == st,
+              onTap: () => _pickPath(own: false, style: st),
+            ),
+        ],
+      ),
+    ),
+    _S.value => QuestionScaffold(
+      tone: Tone.progress,
+      action: tr('Začít', 'Start'),
+      onNext: () => _go(_S.consent),
+      child: const _Value(),
+    ),
+    _S.consent => ConsentPage(
+      state,
+      resumeAt: steps.indexOf(_S.path),
+      onAccepted: () => _go(_S.path),
+      onBack: () => _go(_S.value),
+    ),
+    _S.goal => _question(
+      s: s,
+      title: tr('Co chceš hlavně?', 'What is your main goal?'),
+      why: tr(
+        'Podle cíle nastavím opakování: na svaly 8–12, na sílu méně '
+            'a těžší, na kondici víc a s kratší pauzou.',
+        'The goal sets the reps: 8–12 for muscle, fewer and heavier for '
+            'strength, more with shorter rests for fitness.',
+      ),
       child: StaggerColumn(
         gap: Space.s,
         children: [
           for (final g in PlanGoal.values)
             ChoiceCard(
               icon: _goalIcon(g),
-              color: _goalColor(g),
               label: g.label,
               hint: g.hint,
-              selected: g == plan.goal,
+              selected: answered.contains(s) && g == plan.goal,
               onTap: () => _pick(plan.copyWith(goal: g), s),
             ),
         ],
@@ -481,25 +730,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ),
     _S.experience => _question(
       s: s,
-      title: 'Jak dlouho cvičíš?',
-      why:
-          'Začátečník roste i z menšího objemu. Po letech je potřeba '
-          'víc sérií a pomalejší postup ve vahách.',
+      title: tr('Jak dlouho cvičíš?', 'How long have you been training?'),
+      why: tr(
+        'Začátečník roste i z menšího objemu. Po letech je potřeba '
+            'víc sérií a pomalejší postup ve vahách.',
+        'Beginners grow from less volume. After years you need more sets '
+            'and slower weight increases.',
+      ),
       tone: Tone.progress,
       child: StaggerColumn(
         gap: Space.s,
         children: [
           for (final (i, e) in Experience.values.indexed)
             ChoiceCard(
-              color: AppPalette.blue,
               leading: LevelBars(
                 level: i + 1,
-                selected: e == plan.experience,
-                color: AppPalette.blue,
+                selected: answered.contains(s) && e == plan.experience,
               ),
               label: e.label,
               hint: e.hint,
-              selected: e == plan.experience,
+              selected: answered.contains(s) && e == plan.experience,
               onTap: () => _pick(plan.copyWith(experience: e), s),
             ),
         ],
@@ -507,89 +757,108 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ),
     _S.schedule => _question(
       s: s,
-      title: 'Kolik času máš?',
-      why:
-          'Počet dní určí rozdělení (celé tělo, horní a dolní, push '
-          'pull legs), minuty to, kolik cviků se do tréninku vejde.',
-      action: 'Pokračovat',
-      onNext: () => _forward(s),
+      title: tr('Kdy cvičíš?', 'When do you train?'),
+      why: own
+          ? tr(
+              'Tolik dní dostane tvůj plán. Ve vybrané dny ti připomenu '
+                  'trénink.',
+              'Your plan gets this many days. I will remind you on them.',
+            )
+          : tr(
+              'Počet dní určí rozdělení (celé tělo, horní a dolní, push '
+                  'pull legs), minuty to, kolik cviků se vejde.',
+              'The number of days picks the split (full body, upper/lower, '
+                  'push/pull/legs), minutes how many exercises fit.',
+            ),
+      action: tr('Pokračovat', 'Continue'),
+      onNext: _scheduleDone
+          ? () {
+              answered.add(s);
+              _forward(s);
+            }
+          : null,
       tone: Tone.coach,
       child: _Schedule(
         answers: plan,
         days: days,
-        onChanged: _changePlan,
+        minutesPicked: minutesPicked,
+        onMinutes: (m) => setState(() {
+          minutesPicked = true;
+          plan = plan.copyWith(minutes: m);
+        }),
         onDay: _toggleDay,
       ),
     ),
     _S.gym => _question(
       s: s,
-      title: 'Kde cvičíš?',
-      why:
-          'Do plánu dám jen cviky na vybavení, které tam opravdu je. '
-          'Chybějící stroje odškrtneš později v Nastavení.',
+      title: tr('Kde cvičíš?', 'Where do you train?'),
+      why: tr(
+        'Nabídnu jen cviky na vybavení, které tam opravdu je. '
+            'Jednotlivé stroje upřesníš v Moje posilovna.',
+        'I will only suggest exercises for the equipment you have. '
+            'Fine-tune single machines in My gym.',
+      ),
       tone: Tone.food,
+      // No auto-advance here: after the pick the machine list is offered.
+      action: answered.contains(s) ? tr('Pokračovat', 'Continue') : null,
+      onNext: () => _forward(s),
+      secondary:
+          answered.contains(s) && gymMachinesByMuscle(plan.place).isNotEmpty
+          ? TextButton.icon(
+              onPressed: _pickMachines,
+              icon: const Icon(Icons.checklist_rounded),
+              label: Text(
+                tr(
+                  'Zaškrtnout stroje ve fitku (nepovinné)',
+                  'Tick the machines at your gym (optional)',
+                ),
+              ),
+            )
+          : null,
       child: StaggerColumn(
         gap: Space.s,
         children: [
           for (final g in TrainingPlace.values)
             ChoiceCard(
               icon: placeIcon(g),
-              color: _placeColor(g),
               label: g.label,
               hint: g.hint,
-              selected: g == plan.place,
-              onTap: () => _pick(plan.copyWith(place: g), s),
-            ),
-        ],
-      ),
-    ),
-    _S.pain => _question(
-      s: s,
-      title: 'Bolí tě něco?',
-      why:
-          'Cviky, které bolavý kloub zatěžují, vyměním za šetrnější '
-          'na stejný sval. Vybrat můžeš víc.',
-      action: plan.avoid.isEmpty ? 'Nic mě nebolí' : 'Pokračovat',
-      onNext: () => _forward(s),
-      tone: Tone.progress,
-      child: StaggerColumn(
-        gap: Space.s,
-        children: [
-          for (final j in Joint.values)
-            ChoiceCard(
-              icon: _jointIcon(j),
-              color: _jointColor(j),
-              label: j.label,
-              hint: _jointHint(j),
-              multi: true,
-              selected: plan.avoid.contains(j),
-              onTap: () =>
-                  _changePlan(plan.copyWith(avoid: _toggle(plan.avoid, j))),
+              selected: answered.contains(s) && g == plan.place,
+              onTap: () => setState(() {
+                answered.add(s);
+                plan = plan.copyWith(place: g);
+              }),
             ),
         ],
       ),
     ),
     _S.body => _question(
       s: s,
-      title: 'Něco o tobě',
-      why:
-          'Z váhy a výšky spočítám bílkoviny a kalorie ve Stravě. '
-          'Nepovinné, údaje zůstanou jen v telefonu.',
-      action: 'Pokračovat',
+      title: tr('Něco o tobě', 'About you'),
+      why: tr(
+        'Z váhy a výšky spočítám bílkoviny a kalorie ve Stravě. '
+            'Nepovinné, údaje zůstanou jen v telefonu.',
+        'Weight and height give your protein and calorie targets. '
+            'Optional, and it stays on this phone.',
+      ),
+      action: tr('Pokračovat', 'Continue'),
       onNext: () {
         final raw = _kg.text.trim().replaceAll(',', '.');
         final kg = raw.isEmpty ? null : double.tryParse(raw);
         if (raw.isNotEmpty && (kg == null || !validBodyWeight(kg))) {
           showToast(
             context,
-            'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.',
+            tr(
+              'Zadej váhu v kg, třeba 72,5. Nebo ji nech prázdnou.',
+              'Enter weight in kg, e.g. 72.5. Or leave it empty.',
+            ),
           );
           return;
         }
         _forward(s);
       },
       onSkip: _skipBody,
-      skipLabel: 'Doplním později',
+      skipLabel: tr('Doplním později', 'Later'),
       tone: Tone.food,
       child: _Body(
         answers: plan,
@@ -602,24 +871,29 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ),
     _S.focus => _question(
       s: s,
-      title: 'Na co se zaměřit?',
-      why:
-          'Vybrané partie dostanou v plánu sérii navíc. Oblíbený cvik '
-          'nahradí jiný cvik na stejný sval. Obojí je nepovinné.',
-      action: 'Pokračovat',
+      title: tr('Na co se zaměřit?', 'What to focus on?'),
+      why: tr(
+        'Vybrané partie dostanou v plánu sérii navíc. Oblíbený cvik '
+            'nahradí jiný cvik na stejný sval. Obojí je nepovinné.',
+        'Picked muscles get an extra set. A favourite exercise replaces '
+            'another one for the same muscle. Both optional.',
+      ),
+      action: tr('Pokračovat', 'Continue'),
       onNext: () => _forward(s),
       tone: Tone.coach,
       child: _Focus(answers: plan, state: state, onChanged: _changePlan),
     ),
     _S.reveal => QuestionScaffold(
-      action: setup ? 'Hotovo' : 'Beru tenhle plán',
+      action: setup
+          ? tr('Hotovo', 'Done')
+          : tr('Beru tenhle plán', 'Use this plan'),
       busy: busy,
       onBack: () => _goBack(s),
       onNext: _afterReveal,
       // Návrh a vlastní program vedle sebe: jedno klepnutí na každý.
       secondary: TextButton(
         onPressed: busy ? null : _buildOwn,
-        child: const Text('Složím si vlastní'),
+        child: Text(tr('Upravím si ho sám', 'Let me edit it')),
       ),
       child: _PlanReveal(state, answers: plan),
     ),
@@ -673,7 +947,7 @@ class _Focus extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Partie', style: text.titleMedium),
+        Text(tr('Partie', 'Muscle groups'), style: text.titleMedium),
         const SizedBox(height: Space.s),
         chips([
           for (final f in focusChoices)
@@ -685,7 +959,10 @@ class _Focus extends StatelessWidget {
             ),
         ]),
         const SizedBox(height: Space.xl),
-        Text('Oblíbené cviky', style: text.titleMedium),
+        Text(
+          tr('Oblíbené cviky', 'Favorite exercises'),
+          style: text.titleMedium,
+        ),
         const SizedBox(height: Space.s),
         chips([
           for (final id in favoriteChoices)

@@ -54,6 +54,8 @@ prof*/
 
 # lokální výstupy balení
 dist/
+# generated release web bundle behind the mobile review page
+/docs/screenshots/review-2026-11-22/app/
 
 # Soukromé a interní: zůstávají jen lokálně (2026-10-31)
 /docs/progress.md

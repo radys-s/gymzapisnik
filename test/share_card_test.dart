@@ -42,13 +42,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('2. trénink'), findsOneWidget);
+    expect(find.textContaining('2. TRÉNINK'), findsOneWidget);
     expect(find.text('Týden 2/${state.weekGoal}'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Sdílet'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text('Trénink č. 2'), findsOneWidget);
+    expect(find.text('TRÉNINK Č. 2'), findsOneWidget);
     expect(find.text('Sdílet obrázek'), findsOneWidget);
     expect(
       find.descendant(

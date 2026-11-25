@@ -10,11 +10,12 @@ Legend: **P0** blocks daily use, **P1** clearly felt by the user, **P2** quality
 ## 1. What the app is for
 
 - **Core loop:** open in the gym → see today's training → log a set with one tap → see progress.
-  Offline, no account, Czech.
+  Offline, no account, Czech or English.
 - **Where it can beat Hevy/Strong:** own routine with a smart audit ("biceps: short head missing"),
-  "Moje posilovna" with machine photos, protein tracking that feeds the progression coach, Czech copy.
-- **Not the product:** full calorie tracker, social feed, gamification. Fridge AI, badges, growth,
-  recovery and the premium scaffolding dilute the core loop and go behind "Laboratoř".
+  "Moje posilovna" with machine photos, food/fridge AI that informs training, a next-PR target,
+  science/old-school/strength plans and a one-minute own-plan path.
+- **Not the product:** a direct trainer or a social feed. Badges, ranks, growth, recovery and the
+  premium scaffolding support the loop instead of replacing it.
 - **Success test:** Tomáš trains one full workout on the iPhone build and names fewer than 3 bad moments.
 
 ## 2. Work order
@@ -140,7 +141,7 @@ Legend: **P0** blocks daily use, **P1** clearly felt by the user, **P2** quality
 
 | ID | Item |
 |---|---|
-| R1 | Version `1.0.0-beta.12+21` in `pubspec.yaml` and `lib/core/version.dart` |
+| R1 | Version `1.0.0-beta.15+24` in `pubspec.yaml` and `lib/core/version.dart` |
 | R2 | Web build + `scripts/stamp_web_build.py`; deploy command is run by Tomáš |
 | R3 | IPA through `ios-sideload.yml`, verify SHA256 and bundle id |
 | R4 | `docs/progress.md` entry with measured numbers |

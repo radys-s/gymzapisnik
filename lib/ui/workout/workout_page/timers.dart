@@ -5,7 +5,8 @@ part of '../workout_page.dart';
 /// Uplynulý čas tréninku; překresluje jen sebe.
 class _Elapsed extends StatefulWidget {
   final DateTime start;
-  const _Elapsed(this.start);
+  final TextStyle? style;
+  const _Elapsed(this.start, {this.style});
 
   @override
   State<_Elapsed> createState() => _ElapsedState();
@@ -34,10 +35,88 @@ class _ElapsedState extends State<_Elapsed> {
     final text = s >= 3600
         ? '${s ~/ 3600}:${two(s % 3600 ~/ 60)}:${two(s % 60)}'
         : '${s ~/ 60}:${two(s % 60)}';
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.bodySmall
-          ?.copyWith(fontFeatures: tabular),
+    final style =
+        widget.style ??
+        Theme.of(context).textTheme.bodySmall?.copyWith(fontFeatures: tabular);
+    return Text(text, style: style, maxLines: 1);
+  }
+}
+
+/// Souhrn rozepsaného tréninku pod lištou: čas, objem, série a pruh
+/// hotových sérií (jako v Hevy).
+class _SessionStrip extends StatelessWidget {
+  final Workout workout;
+  const _SessionStrip(this.workout);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final working = [
+      for (final e in workout.exercises)
+        for (final s in e.sets)
+          if (!s.warmup) s,
+    ];
+    final done = working.where((s) => s.counts).toList();
+    final volume = done.fold<double>(0, (a, s) => a + s.weight * s.reps);
+    final value = TextStyle(
+      fontFamily: condensedFont,
+      fontSize: 22,
+      height: 1.1,
+      fontWeight: FontWeight.w700,
+      color: p.label,
+      fontFeatures: tabular,
+    );
+    Widget cell(String label, Widget child) => Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: text.labelSmall),
+          child,
+        ],
+      ),
+    );
+    final progress = working.isEmpty ? 0.0 : done.length / working.length;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Space.page, 0, Space.page, 8),
+          child: Row(
+            children: [
+              cell(
+                tr('ČAS', 'TIME'),
+                _Elapsed(workout.startedAt, style: value),
+              ),
+              cell(
+                tr('OBJEM', 'VOLUME'),
+                AnimatedLabel('${formatKg(volume)} kg', style: value),
+              ),
+              cell(
+                tr('SÉRIE', 'SETS'),
+                AnimatedLabel('${done.length}/${working.length}', style: value),
+              ),
+            ],
+          ),
+        ),
+        Semantics(
+          label: tr(
+            'Hotovo ${done.length} z ${working.length} sérií',
+            '${done.length} of ${working.length} sets done',
+          ),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: progress),
+            duration: Motion.of(context, Motion.quick),
+            builder: (context, v, _) => LinearProgressIndicator(
+              value: v,
+              minHeight: 2,
+              backgroundColor: p.separator,
+              color: p.positive,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -57,8 +136,8 @@ class _RestBarState extends State<_RestBar> {
   late final Timer timer;
   DateTime? _alertedFor;
 
-  /// Jak dlouho po konci zůstane lišta „Pauza hotová“.
-  static const _linger = Duration(seconds: 10);
+  /// Jak dlouho po konci zůstane lišta „Pauza hotová“ a počítá přesčas.
+  static const _linger = Duration(seconds: 90);
 
   @override
   void initState() {
@@ -104,23 +183,35 @@ class _RestBarState extends State<_RestBar> {
     final seconds = (left.inMilliseconds / 1000).ceil();
     final finished = seconds <= 0;
     final p = context.palette;
-    // Plovoucí tableta: bílá na černém podkladu.
-    const bg = Colors.white;
-    const fg = Colors.black;
-    final chipFg = finished ? p.onGradient : fg;
+    final total = widget.state.restTotal;
+    final fraction = finished || total == null || total.inMilliseconds <= 0
+        ? 1.0
+        : 1 - left.inMilliseconds / total.inMilliseconds;
+    final bg = p.elevated;
+    final fg = finished ? AppPalette.ink : p.label;
+    final chipFg = fg;
+    final over = -left.inSeconds;
     final text = finished
-        ? 'Pauza hotová'
+        ? over < 1
+              ? tr('Pauza hotová', 'Rest done')
+              : tr(
+                  'Pauza hotová · +${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')}',
+                  'Rest done · +${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')}',
+                )
         : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
     Widget chip(String label, VoidCallback onTap) => Padding(
-      padding: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.only(left: 4),
       child: TextButton(
         onPressed: onTap,
         style: TextButton.styleFrom(
           foregroundColor: chipFg,
-          backgroundColor: chipFg.withValues(alpha: 0.12),
+          backgroundColor: chipFg.withValues(alpha: 0.1),
           minimumSize: const Size(minTap, minTap),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           textStyle: Theme.of(context).textTheme.titleSmall
               ?.copyWith(fontFeatures: tabular),
         ),
@@ -132,70 +223,112 @@ class _RestBarState extends State<_RestBar> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Space.m, Space.xs, Space.m, Space.s),
         child: Material(
-          color: bg,
-          borderRadius: BorderRadius.circular(Radii.hero),
+          color: finished ? p.positive : bg,
+          borderRadius: BorderRadius.circular(Radii.card),
           clipBehavior: Clip.antiAlias,
-          child: DecoratedBox(
-            // Hotová pauza se rozsvítí přechodem motivu.
-            decoration: BoxDecoration(gradient: finished ? p.linear : null),
+          child: CustomPaint(
+            // Uběhlá část pauzy prosvítá akcentem zleva.
+            painter: finished
+                ? null
+                : _RestFill(fraction, p.accent.withValues(alpha: 0.16)),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                8,
+                12,
+                8 + MediaQuery.paddingOf(context).bottom,
+              ),
+              // Jeden řádek: čas vlevo, tlačítka vpravo. Na úzkém telefonu
+              // se čas zmenší a „Přeskočit“ zůstane jen jako ikona.
               child: LayoutBuilder(
-                builder: (context, bar) => Row(
-                  children: [
-                    Icon(
-                      Icons.timer_outlined,
-                      color: finished ? p.onGradient : fg,
-                    ),
-                    const SizedBox(width: 10),
-                    // Čas jen tak široký, jak potřebuje: zbytek patří
-                    // tlačítkům, která se mačkají mezi každou sérií. Při
-                    // velkém písmu nejvýš polovina řádku, pak se zalomí.
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: bar.maxWidth / 2),
-                      child: Text(
-                        text,
-                        semanticsLabel: finished ? text : 'Pauza $text',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              color: finished ? p.onGradient : fg,
-                              fontFeatures: tabular,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(width: Space.xs),
-                    // Zmenší se až při velkém písmu, ne na běžném telefonu.
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (!finished) ...[
-                              chip(
-                                '−15',
-                                () => widget.state.adjustRest(
-                                  const Duration(seconds: -15),
-                                ),
-                              ),
-                              chip(
-                                '+15',
-                                () => widget.state.adjustRest(
-                                  const Duration(seconds: 15),
-                                ),
-                              ),
-                            ],
-                            chip(
-                              finished ? 'Zavřít' : 'Přeskočit',
-                              widget.state.skipRest,
-                            ),
-                          ],
+                builder: (context, box) {
+                  // Velké písmo tlačítka rozšíří; pak taky jen ikona.
+                  final compact =
+                      box.maxWidth < 300 ||
+                      MediaQuery.textScalerOf(context).scale(1) > 1.2;
+                  return Row(
+                    children: [
+                      PopSelect(
+                        selected: finished,
+                        child: AnimatedSwitcher(
+                          duration: Motion.of(context, Motion.quick),
+                          child: Icon(
+                            finished
+                                ? Icons.check_circle_rounded
+                                : Icons.timer_outlined,
+                            key: ValueKey(finished),
+                            color: finished ? fg : p.accent,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: AnimatedLabel(
+                            text,
+                            semanticsLabel: finished
+                                ? text
+                                : tr('Pauza $text', 'Rest $text'),
+                            style: finished
+                                ? Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: fg,
+                                        fontWeight: FontWeight.w700,
+                                      )
+                                : TextStyle(
+                                    fontFamily: condensedFont,
+                                    fontSize: 30,
+                                    height: 1,
+                                    fontWeight: FontWeight.w700,
+                                    color: fg,
+                                    fontFeatures: tabular,
+                                  ),
+                          ),
+                        ),
+                      ),
+                      if (!finished) ...[
+                        chip(
+                          '−15',
+                          () => widget.state.adjustRest(
+                            const Duration(seconds: -15),
+                          ),
+                        ),
+                        chip(
+                          '+15',
+                          () => widget.state.adjustRest(
+                            const Duration(seconds: 15),
+                          ),
+                        ),
+                      ],
+                      if (compact && !finished)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: IconButton(
+                            tooltip: tr('Přeskočit', 'Skip'),
+                            onPressed: widget.state.skipRest,
+                            style: IconButton.styleFrom(
+                              foregroundColor: chipFg,
+                              backgroundColor: chipFg.withValues(alpha: 0.1),
+                              minimumSize: const Size(minTap, minTap),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.skip_next_rounded),
+                          ),
+                        )
+                      else
+                        chip(
+                          finished
+                              ? tr('Zavřít', 'Close')
+                              : tr('Přeskočit', 'Skip'),
+                          widget.state.skipRest,
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -203,4 +336,21 @@ class _RestBarState extends State<_RestBar> {
       ),
     );
   }
+}
+
+/// Výplň uběhlé části pauzy.
+class _RestFill extends CustomPainter {
+  final double fraction;
+  final Color color;
+  const _RestFill(this.fraction, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRect(
+    Offset.zero & Size(size.width * fraction.clamp(0, 1), size.height),
+    Paint()..color = color,
+  );
+
+  @override
+  bool shouldRepaint(_RestFill old) =>
+      old.fraction != fraction || old.color != color;
 }

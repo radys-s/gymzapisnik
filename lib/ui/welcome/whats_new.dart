@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
@@ -9,33 +10,52 @@ import '../design/tokens.dart';
 const whatsNewRelease = '1.8';
 
 /// Novinky aktuálního vydání: ikona, nadpis, jedna věta.
-const whatsNewItems = <(IconData, String, String)>[
+List<(IconData, String, String)> whatsNewItems() => [
   (
     Icons.check_circle_outline_rounded,
-    'Potvrzení přímo v úpravě série',
-    'Po změně váhy nebo opakování stačí „Potvrdit sérii“, fajfku v řádku '
-        'už hledat nemusíš.',
+    tr('Potvrzení přímo v úpravě série', 'Confirm sets while editing'),
+    tr(
+      'Po změně váhy nebo opakování stačí „Potvrdit sérii“, fajfku v řádku '
+          'už hledat nemusíš.',
+      'After changing weight or reps, just tap "Confirm set" — no need to '
+          'hunt for the checkmark.',
+    ),
   ),
   (
     Icons.edit_note_rounded,
-    'Chybějící číslo doplníš hned',
-    'Fajfka u prázdné série otevře úpravu s kurzorem tam, kde číslo chybí.',
+    tr('Chybějící číslo doplníš hned', 'Fill in missing numbers right away'),
+    tr(
+      'Fajfka u prázdné série otevře úpravu s kurzorem tam, kde číslo chybí.',
+      'The checkmark on an empty set opens editing with the cursor where '
+          'the number is missing.',
+    ),
   ),
   (
     Icons.edit_outlined,
-    'Oprava hned po tréninku',
-    'Tužka v souhrnu otevře úpravu tréninku, bez cesty přes historii.',
+    tr('Oprava hned po tréninku', 'Fix workouts right after training'),
+    tr(
+      'Tužka v souhrnu otevře úpravu tréninku, bez cesty přes historii.',
+      'The pencil in the summary opens workout editing without going '
+          'through history.',
+    ),
   ),
   (
     Icons.timer_outlined,
-    'Tlačítka pauzy se už nezmenšují',
-    '−15, +15 a Přeskočit mají plnou velikost i na menším telefonu.',
+    tr('Tlačítka pauzy se už nezmenšují', 'Rest buttons keep their size'),
+    tr(
+      '−15, +15 a Přeskočit mají plnou velikost i na menším telefonu.',
+      '−15, +15 and Skip stay full size even on smaller phones.',
+    ),
   ),
   (
     Icons.history_rounded,
-    'Historie jedním klepnutím',
-    'V Pokroku otevřeš historii i s hledáním ikonou nahoře vedle '
-        'nastavení.',
+    tr('Historie jedním klepnutím', 'History in one tap'),
+    tr(
+      'V Pokroku otevřeš historii i s hledáním ikonou nahoře vedle '
+          'nastavení.',
+      'In Progress, history and search are an icon away at the top next '
+          'to settings.',
+    ),
   ),
 ];
 
@@ -49,7 +69,7 @@ class WhatsNewList extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Column(
       children: [
-        for (final (icon, title, body) in whatsNewItems)
+        for (final (icon, title, body) in whatsNewItems())
           Padding(
             padding: const EdgeInsets.symmetric(vertical: Space.m),
             child: Row(
@@ -96,14 +116,17 @@ Future<void> showWhatsNewOnce(BuildContext context, AppState state) async {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Co je nového',
+              tr('Co je nového', "What's new"),
               style: text.headlineLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: Space.l),
             const WhatsNewList(),
             const SizedBox(height: Space.xl),
-            PrimaryButton('Pokračovat', onPressed: () => Navigator.pop(sheet)),
+            PrimaryButton(
+              tr('Pokračovat', 'Continue'),
+              onPressed: () => Navigator.pop(sheet),
+            ),
           ],
         ),
       ),
@@ -122,8 +145,8 @@ class WhatsNewPage extends StatelessWidget {
   const WhatsNewPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const LargeTitlePage(
-    title: 'Novinky',
-    children: [Panel(child: WhatsNewList())],
+  Widget build(BuildContext context) => LargeTitlePage(
+    title: tr('Novinky', "What's new"),
+    children: const [Panel(child: WhatsNewList())],
   );
 }

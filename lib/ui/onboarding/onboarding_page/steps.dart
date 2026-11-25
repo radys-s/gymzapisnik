@@ -8,25 +8,6 @@ IconData _goalIcon(PlanGoal g) => switch (g) {
   PlanGoal.fitness => Icons.favorite_rounded,
 };
 
-Color _goalColor(PlanGoal g) => switch (g) {
-  PlanGoal.muscle => AppPalette.green,
-  PlanGoal.strength => AppPalette.orange,
-  PlanGoal.fitness => AppPalette.pink,
-};
-
-Color _placeColor(TrainingPlace p) => switch (p) {
-  TrainingPlace.gym => AppPalette.violet,
-  TrainingPlace.smallGym => AppPalette.blue,
-  TrainingPlace.home => AppPalette.teal,
-  TrainingPlace.bodyweight => AppPalette.amber,
-};
-
-Color _jointColor(Joint j) => switch (j) {
-  Joint.knees => AppPalette.cyan,
-  Joint.lowerBack => AppPalette.orange,
-  Joint.shoulders => AppPalette.violet,
-};
-
 IconData placeIcon(TrainingPlace p) => switch (p) {
   TrainingPlace.gym => Icons.apartment_rounded,
   TrainingPlace.smallGym => Icons.storefront_rounded,
@@ -34,28 +15,25 @@ IconData placeIcon(TrainingPlace p) => switch (p) {
   TrainingPlace.bodyweight => Icons.accessibility_new_rounded,
 };
 
-IconData _jointIcon(Joint j) => switch (j) {
-  Joint.knees => Icons.directions_walk_rounded,
-  Joint.lowerBack => Icons.airline_seat_recline_normal_rounded,
-  Joint.shoulders => Icons.sports_handball_rounded,
+IconData _styleIcon(PlanStyle s) => switch (s) {
+  PlanStyle.science => Icons.science_outlined,
+  PlanStyle.oldSchool => Icons.fitness_center_rounded,
+  PlanStyle.strength => Icons.bolt_rounded,
 };
 
-String _jointHint(Joint j) => switch (j) {
-  Joint.knees => 'Méně hlubokých dřepů a výpadů',
-  Joint.lowerBack => 'Bez mrtvých tahů a předklonů s osou',
-  Joint.shoulders => 'Bez tlaků nad hlavu a kliků na bradlech',
-};
-
-/// Počet tréninků, délka a (nepovinně) konkrétní dny.
+/// Training days (their count is the plan's frequency) and session length.
+/// Nothing is picked until the user taps.
 class _Schedule extends StatelessWidget {
   final PlanAnswers answers;
   final Set<int> days;
-  final ValueChanged<PlanAnswers> onChanged;
+  final bool minutesPicked;
+  final ValueChanged<int> onMinutes;
   final ValueChanged<int> onDay;
   const _Schedule({
     required this.answers,
     required this.days,
-    required this.onChanged,
+    required this.minutesPicked,
+    required this.onMinutes,
     required this.onDay,
   });
 
@@ -63,45 +41,17 @@ class _Schedule extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
-    final hint = days.isEmpty
-        ? 'Nepovinné. Bez výběru plán rozloží tréninky do týdne.'
-        : days.length == answers.days
-        ? 'Plán a připomínky v tyto dny.'
-        : 'Vyber ${answers.days} dny, nebo nech plán rozložit do týdne.';
+    final n = days.length;
+    final hint = n < 2
+        ? tr('Vyber aspoň 2 dny.', 'Pick at least 2 days.')
+        : tr('$n× týdně · připomenu ti je.', '$n× a week · I will remind you.');
     Widget label(String s) => Padding(
       padding: const EdgeInsets.only(bottom: Space.s),
       child: Text(s, style: text.titleMedium),
     );
     return StaggerColumn(
       children: [
-        label('Kolikrát týdně'),
-        TileRow(
-          children: [
-            for (var d = 2; d <= 6; d++)
-              ChoiceTile(
-                label: '$d×',
-                spoken: '$d× týdně',
-                selected: answers.days == d,
-                onTap: () => onChanged(answers.copyWith(days: d)),
-              ),
-          ],
-        ),
-        const SizedBox(height: Space.xxl),
-        label('Jak dlouhý trénink'),
-        TileRow(
-          children: [
-            for (final m in planMinutes)
-              ChoiceTile(
-                label: '$m',
-                hint: 'min',
-                spoken: '$m minut',
-                selected: answers.minutes == m,
-                onTap: () => onChanged(answers.copyWith(minutes: m)),
-              ),
-          ],
-        ),
-        const SizedBox(height: Space.xxl),
-        label('Ve které dny'),
+        label(tr('Ve které dny', 'Which days')),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -115,7 +65,27 @@ class _Schedule extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Space.s),
-        Text(hint, style: text.bodySmall?.copyWith(color: p.secondaryLabel)),
+        Text(
+          hint,
+          style: text.bodySmall?.copyWith(
+            color: n < 2 ? p.secondaryLabel : p.accent,
+            fontFeatures: tabular,
+          ),
+        ),
+        const SizedBox(height: Space.xxl),
+        label(tr('Jak dlouhý trénink', 'Session length')),
+        TileRow(
+          children: [
+            for (final m in planMinutes)
+              ChoiceTile(
+                label: '$m',
+                hint: 'min',
+                spoken: tr('$m minut', '$m minutes'),
+                selected: minutesPicked && answers.minutes == m,
+                onTap: () => onMinutes(m),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -177,18 +147,21 @@ class _Body extends StatelessWidget {
         const SizedBox(height: Space.xl),
         Row(
           children: [
-            field(kg, 'Váha', '72,5', 'kg', decimal: true),
+            field(kg, tr('Váha', 'Weight'), '72,5', 'kg', decimal: true),
             const SizedBox(width: Space.s),
-            field(height, 'Výška', '180', 'cm'),
+            field(height, tr('Výška', 'Height'), '180', 'cm'),
             const SizedBox(width: Space.s),
-            field(year, 'Rok narození', '2008', ''),
+            field(year, tr('Rok narození', 'Birth year'), '2008', ''),
           ],
         ),
         if (goalAllowed) ...[
           const SizedBox(height: Space.xxl),
           Padding(
             padding: const EdgeInsets.only(bottom: Space.s),
-            child: Text('S váhou chci', style: text.titleMedium),
+            child: Text(
+              tr('S váhou chci', 'Weight goal'),
+              style: text.titleMedium,
+            ),
           ),
           TileRow(
             children: [
@@ -208,7 +181,7 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// Připomínka tréninku: výchozí čas je předvybraný, stačí jedno klepnutí.
+/// Připomínka tréninku: čas vybere uživatel, nic není předvybrané.
 class _ReminderStep extends StatefulWidget {
   final bool busy;
   final VoidCallback onBack;
@@ -227,36 +200,44 @@ class _ReminderStep extends StatefulWidget {
 
 class _ReminderStepState extends State<_ReminderStep> {
   static const _times = [7, 12, 16, 18, 20];
-  int hour = 18;
+
+  /// Nothing is picked for the user: the reminder needs a deliberate time.
+  int? hour;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return QuestionScaffold(
       tone: Tone.coach,
-      title: 'Připomenu ti trénink?',
-      why:
-          'Jen v tréninkové dny a jen když ještě nemáš hotovo. Vypneš to '
-          'kdykoli v Nastavení.',
-      action: 'Zapnout připomínky',
+      title: tr('Připomenu ti trénink?', 'Remind you to train?'),
+      why: tr(
+        'Jen v tréninkové dny a jen když ještě nemáš hotovo. Vypneš to '
+            'kdykoli v Nastavení.',
+        'Only on training days and only if you have not finished yet. '
+            'You can turn it off anytime in Settings.',
+      ),
+      action: tr('Zapnout připomínky', 'Turn on reminders'),
       busy: widget.busy,
       onBack: widget.onBack,
-      onNext: () => widget.onEnable(hour * 60),
+      onNext: hour == null ? null : () => widget.onEnable(hour! * 60),
       secondary: TextButton(
         onPressed: widget.busy ? null : widget.onSkip,
-        child: const Text('Teď ne'),
+        child: Text(tr('Teď ne', 'Not now')),
       ),
       child: StaggerColumn(
         children: [
           Center(
             child: IconTile(
               Icons.notifications_active_rounded,
-              color: AppPalette.pink,
+              color: context.palette.secondaryLabel,
               size: 72,
             ),
           ),
           const SizedBox(height: Space.xl),
-          Text('Kdy ti to nejvíc sedí?', style: text.titleMedium),
+          Text(
+            tr('Kdy ti to nejvíc sedí?', 'What time works best?'),
+            style: text.titleMedium,
+          ),
           const SizedBox(height: Space.m),
           TileRow(
             children: [
@@ -264,11 +245,23 @@ class _ReminderStepState extends State<_ReminderStep> {
                 ChoiceTile(
                   label: '$h',
                   hint: ':00',
-                  spoken: '$h hodin',
+                  spoken: tr('$h hodin', '$h o\'clock'),
                   selected: h == hour,
                   onTap: () => setState(() => hour = h),
                 ),
             ],
+          ),
+          const SizedBox(height: Space.s),
+          Text(
+            hour == null
+                ? tr('Vyber čas, nebo to přeskoč.', 'Pick a time, or skip.')
+                : tr(
+                    'Připomínka bude v $hour:00.',
+                    'Reminder will be at $hour:00.',
+                  ),
+            style: text.bodySmall?.copyWith(
+              color: context.palette.secondaryLabel,
+            ),
           ),
         ],
       ),
@@ -280,24 +273,24 @@ class _ReminderStepState extends State<_ReminderStep> {
 class _Value extends StatelessWidget {
   const _Value();
 
-  static const _points = [
+  static List<(IconData, String, String)> get _points => [
     (
       Icons.today_rounded,
-      AppPalette.green,
-      'Každý den víš, co cvičit',
-      'Plán podle tvého času',
+      tr('Každý den víš, co cvičit', 'Know what to train every day'),
+      tr('Plán podle tvého času', 'A plan that fits your time'),
     ),
     (
       Icons.trending_up_rounded,
-      AppPalette.violet,
-      'Váhy se předvyplní samy',
-      'Potvrdíš sérii a vidíš, jak sílíš',
+      tr('Váhy se předvyplní samy', 'Weights fill in automatically'),
+      tr(
+        'Potvrdíš sérii a vidíš, jak sílíš',
+        'Confirm a set and see yourself get stronger',
+      ),
     ),
     (
       Icons.lock_outline_rounded,
-      AppPalette.amber,
-      'Bez účtu a bez reklam',
-      'Tréninky zůstávají v telefonu',
+      tr('Bez účtu a bez reklam', 'No account and no ads'),
+      tr('Tréninky zůstávají v telefonu', 'Workouts stay on your phone'),
     ),
   ];
 
@@ -316,7 +309,7 @@ class _Value extends StatelessWidget {
             container: true,
             header: true,
             child: Text(
-              'Gym zápisník',
+              tr('Gym zápisník', 'Gym Log'),
               style: text.headlineLarge,
               textAlign: TextAlign.center,
             ),
@@ -326,20 +319,23 @@ class _Value extends StatelessWidget {
         Reveal(
           index: 2,
           child: Text(
-            'Trenér do kapsy: řekne, co dnes, a hlídá, jak rosteš.',
+            tr(
+              'Trenér do kapsy: řekne, co dnes, a hlídá, jak rosteš.',
+              'A pocket coach: tells you what to do today and tracks your growth.',
+            ),
             textAlign: TextAlign.center,
             style: text.bodyLarge?.copyWith(color: p.secondaryLabel),
           ),
         ),
         const SizedBox(height: Space.xxl),
-        for (final (i, (icon, color, title, body)) in _points.indexed)
+        for (final (i, (icon, title, body)) in _points.indexed)
           Reveal(
             index: 3 + i,
             child: Padding(
               padding: const EdgeInsets.only(bottom: Space.l),
               child: Row(
                 children: [
-                  IconTile(icon, color: color, size: 40),
+                  IconTile(icon, color: p.secondaryLabel, size: 40),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Column(
@@ -388,7 +384,7 @@ class _PlanReveal extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Plán je hotový',
+              tr('Plán je hotový', 'Your plan is ready'),
               style: text.labelLarge?.copyWith(
                 color: p.accent,
                 fontWeight: FontWeight.w600,
@@ -399,7 +395,7 @@ class _PlanReveal extends StatelessWidget {
               container: true,
               header: true,
               child: Text(
-                split?.name ?? 'Tvůj program',
+                split?.name ?? tr('Tvůj program', 'Your program'),
                 style: text.headlineLarge,
               ),
             ),
@@ -417,8 +413,10 @@ class _PlanReveal extends StatelessWidget {
         ),
         Panel(
           child: Semantics(
-            label:
-                'Trénink v ${[for (final d in week) weekdayLong[d - 1]].join(', ')}',
+            label: tr(
+              'Trénink v ${[for (final d in week) weekdayLong[d - 1]].join(', ')}',
+              'Training on ${[for (final d in week) weekdayLong[d - 1]].join(', ')}',
+            ),
             child: ExcludeSemantics(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -439,7 +437,13 @@ class _PlanReveal extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('První trénink · ${first.name}', style: text.titleMedium),
+                Text(
+                  tr(
+                    'První trénink · ${first.name}',
+                    'First workout · ${first.name}',
+                  ),
+                  style: text.titleMedium,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${exercisesLabel(first.exercises.length)} · ~'
@@ -472,9 +476,55 @@ class _PlanReveal extends StatelessWidget {
                   ),
                 const SizedBox(height: Space.xs),
                 Text(
-                  'Váhy ti při prvním tréninku navrhnu podle cviku.',
+                  tr(
+                    'Váhy ti při prvním tréninku navrhnu podle cviku.',
+                    'I will suggest weights for your first workout based on the exercise.',
+                  ),
                   style: text.bodySmall?.copyWith(color: p.secondaryLabel),
                 ),
+              ],
+            ),
+          ),
+        if (answers.style == PlanStyle.science)
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr('Na čem plán stojí', 'What the plan is based on'),
+                  style: text.titleMedium,
+                ),
+                for (final e in planPrinciples) ...[
+                  const SizedBox(height: Space.m),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.science_outlined,
+                          size: 18,
+                          color: p.accent,
+                        ),
+                      ),
+                      const SizedBox(width: Space.s),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e.text, style: text.bodyMedium),
+                            Text(
+                              e.source,
+                              style: text.bodySmall?.copyWith(
+                                color: p.secondaryLabel,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -509,15 +559,161 @@ class _WeekDay extends StatelessWidget {
       height: 38,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        gradient: on ? p.linear : null,
-        color: on ? null : p.fill,
+        color: on ? p.accent : p.fill,
         borderRadius: BorderRadius.circular(context.palette.controlRadius),
       ),
       child: Text(
         label,
-        style: style?.copyWith(color: on ? p.onGradient : p.secondaryLabel),
+        style: style?.copyWith(color: on ? p.onAccent : p.secondaryLabel),
       ),
     );
     return on ? Reveal(index: 2 + index, offset: 8, child: cell) : cell;
+  }
+}
+
+/// Two-letter badge on the language cards (no flags: a language is not
+/// a country).
+class _LangBadge extends StatelessWidget {
+  final AppLang lang;
+  const _LangBadge(this.lang);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: p.fill,
+        borderRadius: BorderRadius.circular(p.controlRadius + 2),
+      ),
+      child: Text(
+        lang.name.toUpperCase(),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontFamily: condensedFont,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+}
+
+/// The own-plan path, larger than the styles: for people who already
+/// train and only want to log their routine. Shows the three steps.
+class _OwnPlanCard extends StatelessWidget {
+  final bool selected;
+  final VoidCallback onTap;
+  const _OwnPlanCard({required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final radius = BorderRadius.circular(p.controlRadius + 4);
+    final steps = [
+      tr('Dny', 'Days'),
+      tr('Cviky', 'Exercises'),
+      tr('Cvič', 'Train'),
+    ];
+    return Semantics(
+      button: true,
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      label: tr(
+        'Mám vlastní plán. Vyber dny, přidej cviky, cvič.',
+        'I have my own plan. Pick days, add exercises, train.',
+      ),
+      excludeSemantics: true,
+      child: PressScale(
+        child: Material(
+          color: Color.lerp(p.grouped, p.accent, selected ? 0.22 : 0.10),
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(color: p.accent, width: selected ? 2 : 1),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(Space.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: p.accent,
+                          borderRadius: BorderRadius.circular(
+                            p.controlRadius + 2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.edit_calendar_rounded,
+                          color: p.onAccent,
+                        ),
+                      ),
+                      const SizedBox(width: Space.m),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tr('Mám vlastní plán', 'I have my own plan'),
+                              style: text.titleLarge,
+                            ),
+                            Text(
+                              tr(
+                                'Cvičíš už čtvrt roku a víc? Slož si ho za minutu.',
+                                'Training for 3+ months? Build yours in a minute.',
+                              ),
+                              style: text.bodySmall?.copyWith(
+                                color: p.secondaryLabel,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (selected)
+                        Icon(Icons.check_circle_rounded, color: p.accent),
+                    ],
+                  ),
+                  const SizedBox(height: Space.m),
+                  Row(
+                    children: [
+                      for (final (i, label) in steps.indexed) ...[
+                        if (i > 0)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Space.xs,
+                            ),
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              size: 16,
+                              color: p.tertiaryLabel,
+                            ),
+                          ),
+                        Flexible(
+                          child: Text(
+                            '${i + 1}  $label',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.labelLarge?.copyWith(
+                              fontFeatures: tabular,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gym Zápisník — Mobile Review</title>
+  <style>
+    :root { --bg:#111315; --panel:#1b1f24; --border:#2a313a; --text:#eef2f7; --muted:#9aa7b5; --accent:#ff7a1a; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: radial-gradient(1200px 600px at 50% -10%, #232933 0%, var(--bg) 55%); color:var(--text); }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 40px; }
+    h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
+    p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .top { display:flex; gap:16px; align-items:end; justify-content:space-between; flex-wrap:wrap; margin-bottom: 20px; }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); background:rgba(255,255,255,.03); border-radius:999px; color:var(--muted); font-size:13px; }
+    .pill b { color:var(--text); }
+    .layout { display:grid; grid-template-columns: 420px 1fr; gap: 24px; align-items:start; }
+    .phone-shell { position: sticky; top: 16px; }
+    .phone { width: 390px; max-width: 100%; margin: 0 auto; padding: 12px; border-radius: 42px; background: linear-gradient(180deg, #333a44, #14181d); box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08); }
+    .screen { position: relative; border-radius: 32px; overflow: hidden; background: #000; aspect-ratio: 390 / 844; }
+    .notch { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:126px; height:34px; background:#000; border-radius:20px; z-index:5; pointer-events:none; }
+    iframe { width:100%; height:100%; border:0; background:#111; }
+    .notes { background: rgba(255,255,255,.03); border:1px solid var(--border); border-radius: 20px; padding: 20px; }
+    .notes h2 { margin:0 0 12px; font-size: 16px; }
+    .notes ul { margin:0; padding-left: 20px; color: #d7dde5; }
+    .notes li { margin: 8px 0; line-height: 1.5; }
+    .notes code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 6px; font-size: 0.95em; }
+    .muted { color: var(--muted); font-size: 14px; margin-top: 14px; }
+    a { color: #ff9a52; }
+    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } .phone-shell { position: static; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Gym Zápisník — mobile emulator</h1>
+        <p>Live web build for review. Test the redesigned flow and note what feels off.</p>
+      </div>
+      <div class="pill"><b>Branch</b> t3/app-deep-redesign</div>
+      <div class="pill"><b>Build</b> beta.15+24</div>
+    </div>
+    <div class="layout">
+      <div class="phone-shell">
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <iframe src="./app/index.html" title="Gym Zápisník app" loading="eager"></iframe>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <h2>What to review</h2>
+        <ul>
+          <li><b>Onboarding:</b> language selection, beginner vs 6+ months path, own plan goes through schedule/gym then opens prefilled day editor.</li>
+          <li><b>Exercises:</b> English names + Czech name in detail, search by EN/CZ/alias/muscle/equipment, gym-only filter.</li>
+          <li><b>Exercise detail:</b> demo with replay/phase cue, technique tips, next PR target, alternatives.</li>
+          <li><b>Home:</b> stronger food highlight, quick add, today action clarity.</li>
+          <li><b>Progress:</b> rank card, next PR targets, records, strength curve.</li>
+          <li><b>Settings:</b> app language can be changed later (exercise names stay English).</li>
+          <li><b>Bottom nav:</b> animated bar feel and readability.</li>
+        </ul>
+        <p class="muted">If the app looks blank when opened as a file, serve this folder over HTTP: <code>python3 -m http.server 8765</code> from <code>docs/screenshots/review-2026-11-22</code>, then open <a href="http://localhost:8765/emulator.html">http://localhost:8765/emulator.html</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

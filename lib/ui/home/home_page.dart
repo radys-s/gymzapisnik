@@ -6,6 +6,7 @@ import '../../coach/missions.dart';
 import '../../coach/plan_quiz.dart';
 import '../../coach/progression.dart';
 import '../../coach/splits.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
@@ -19,6 +20,7 @@ import '../premium/pro_gate.dart';
 import '../onboarding/onboarding_page.dart' show PlanSetupPage;
 import '../program/program_page.dart';
 import '../program/program_widgets.dart';
+import '../progress/week_report_page.dart';
 import '../settings/settings_button.dart';
 import '../widgets/labels.dart';
 import '../workout/launcher.dart';
@@ -80,15 +82,21 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           'application/json',
         );
       } catch (_) {
-        message = 'Zálohu se nepodařilo uložit. Zkus to znovu.';
+        message = tr(
+          'Zálohu se nepodařilo uložit. Zkus to znovu.',
+          'Could not save backup. Try again.',
+        );
         return;
       }
       if (!saved) return;
-      message = 'Uloženo: $name';
+      message = tr('Uloženo: $name', 'Saved: $name');
       try {
         await state.markBackedUp();
       } catch (_) {
-        message = 'Soubor $name je uložený, připomínka ale zůstane.';
+        message = tr(
+          'Soubor $name je uložený, připomínka ale zůstane.',
+          'File $name is saved, but the reminder will remain.',
+        );
       }
     } finally {
       if (mounted) setState(() => _savingBackup = false);
@@ -109,10 +117,9 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
       return LargeTitlePage(
         // The tab bar already says "Domů"; the title greets instead.
         title: greeting(now),
-        titleLeading: const AppMark(size: 36),
         actions: [
           IconButton(
-            tooltip: 'Trenér',
+            tooltip: tr('Trenér', 'Coach'),
             icon: const Icon(Icons.forum_outlined),
             onPressed: () => _push(_trainer()),
           ),
@@ -136,12 +143,16 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Ulož si zálohu',
+                            tr('Ulož si zálohu', 'Save a backup'),
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Text(
-                            'Data jsou jen v tomto zařízení. Jedno klepnutí '
-                            'uloží všechno do souboru.',
+                            tr(
+                              'Data jsou jen v tomto zařízení. Jedno klepnutí '
+                                  'uloží všechno do souboru.',
+                              'Data is only on this device. One tap saves '
+                                  'everything to a file.',
+                            ),
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: context.palette.secondaryLabel,
@@ -154,6 +165,13 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: Space.l),
+            child: ListenableBuilder(
+              listenable: state.on.history,
+              builder: (context, _) => _WeekStrip(state: state, now: now),
+            ),
+          ),
           // Put the next clear action before food and progress details.
           Reveal(
             child: _TodayCard(
@@ -170,6 +188,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
             ),
           ),
           const SizedBox(height: Space.m),
+          LastWeekCard(state: state, now: now),
           Reveal(
             index: 1,
             child: HomeFoodBlock(state: state, now: now),
@@ -182,8 +201,8 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           const SizedBox(height: Space.m),
           if (recent.isNotEmpty) ...[
             SectionHeader(
-              'Historie',
-              action: 'Vše',
+              tr('Historie', 'History'),
+              action: tr('Vše', 'All'),
               onAction: () => _push(HistoryPage(state)),
             ),
             GroupedSection(
@@ -228,10 +247,7 @@ class _TodayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HeroCard(
-    vivid: true,
-    padding: const EdgeInsets.fromLTRB(Space.xl, Space.l, Space.xl, Space.l),
-    // Závod: číslo jezdce = pořadí dnešního tréninku.
-    watermark: '${state.workouts.where((w) => w.finished).length + 1}',
+    padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.l),
     // Rozepsaný trénink se mění při každé sérii: překreslí se jen karta.
     child: ListenableBuilder(
       listenable: state.on.active,
@@ -256,13 +272,16 @@ class _TodayCard extends StatelessWidget {
           padding: EdgeInsets.only(bottom: Space.xs),
           child: Align(alignment: Alignment.centerLeft, child: LiveTag()),
         ),
-        _Eyebrow('Rozepsaný trénink', color: p.accent),
+        _Eyebrow(
+          tr('Rozepsaný trénink', 'Workout in progress'),
+          color: p.accent,
+        ),
         Text(active.name, style: text.headlineSmall),
         const SizedBox(height: 2),
         _Elapsed(start: active.startedAt, sets: sets),
         const SizedBox(height: Space.l),
         PrimaryButton(
-          'Pokračovat v tréninku',
+          tr('Pokračovat v tréninku', 'Continue workout'),
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() async {}),
@@ -284,11 +303,14 @@ class _TodayCard extends StatelessWidget {
           : null;
       final String when;
       if (!nextUp) {
-        when = 'Dnes';
+        when = tr('Dnes', 'Today');
       } else if (next == null) {
-        when = 'Příště';
+        when = tr('Příště', 'Next');
       } else {
-        when = 'Příště · ${weekdayLong[next - 1]}';
+        when = tr(
+          'Příště · ${weekdayLong[next - 1]}',
+          'Next · ${weekdayLong[next - 1]}',
+        );
       }
       final scope =
           '${exercisesLabel(plan.length)} · '
@@ -302,32 +324,48 @@ class _TodayCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Eyebrow(
-                    '$when · ${split.name} · den '
-                    '${dayIndex % split.days.length + 1}/${split.days.length}',
+                    tr(
+                      '$when · ${split.name} · den '
+                          '${dayIndex % split.days.length + 1}/${split.days.length}',
+                      '$when · ${split.name} · day '
+                          '${dayIndex % split.days.length + 1}/${split.days.length}',
+                    ),
                   ),
-                  Text(day.name, style: text.displaySmall),
+                  Text(day.name, style: text.headlineMedium),
                 ],
               ),
             ),
             PopupMenuButton<int>(
-              tooltip: 'Jiný den nebo program',
-              icon: Icon(Icons.more_horiz, color: p.accent),
+              tooltip: tr('Jiný den nebo program', 'Another day or program'),
+              icon: Icon(Icons.more_horiz, color: p.secondaryLabel),
               onSelected: (i) => i < 0 ? onProgram() : onPickDay(i),
               itemBuilder: (_) => [
                 for (var i = 0; i < split.days.length; i++)
                   PopupMenuItem(value: i, child: Text(split.days[i].name)),
                 const PopupMenuDivider(),
-                const PopupMenuItem(value: -1, child: Text('Změnit program')),
+                PopupMenuItem(
+                  value: -1,
+                  child: Text(tr('Změnit program', 'Change program')),
+                ),
               ],
             ),
           ],
         ),
-        const SizedBox(height: Space.s),
+        const SizedBox(height: Space.m),
         for (final (pe, s) in plan.take(5))
           Padding(
-            padding: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.only(bottom: 6),
             child: Row(
               children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.only(right: Space.s),
+                  decoration: BoxDecoration(
+                    color: p.tertiaryLabel,
+                    shape: BoxShape.circle,
+                  ),
+                ),
                 Expanded(
                   child: Text(
                     state.exercise(pe.exerciseId).name,
@@ -349,26 +387,39 @@ class _TodayCard extends StatelessWidget {
             ),
           ),
         if (plan.length > 5)
-          Text('a další ${plan.length - 5}', style: text.bodySmall),
-        const SizedBox(height: Space.s),
-        // Jeden dílek na cvik, rozsah tréninku a vedlejší volba na jednom
-        // řádku: karta je nižší a jídlo se vejde na první obrazovku.
-        StartLights(
-          count: plan.length,
-          caption: scope,
-          trailing: TextButton(
-            onPressed: busy ? null : onOther,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: Space.s),
-              minimumSize: const Size(0, minTap),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: text.titleSmall,
-            ),
-            child: const Text('Jiný trénink'),
+          Text(
+            tr('a další ${plan.length - 5}', 'and ${plan.length - 5} more'),
+            style: text.bodySmall,
           ),
+        const SizedBox(height: Space.s),
+        // Rozsah tréninku a vedlejší volba na jednom řádku.
+        Row(
+          children: [
+            Icon(Icons.schedule_rounded, size: 16, color: p.tertiaryLabel),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                scope,
+                style: text.bodySmall?.copyWith(fontFeatures: tabular),
+              ),
+            ),
+            TextButton(
+              onPressed: busy ? null : onOther,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: Space.s),
+                minimumSize: const Size(0, minTap),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: text.titleSmall,
+              ),
+              child: Text(tr('Jiný trénink', 'Another workout')),
+            ),
+          ],
         ),
+        const SizedBox(height: Space.xs),
         PrimaryButton(
-          nextUp ? 'Bonusový trénink' : 'Začít ${day.name}',
+          nextUp
+              ? tr('Bonusový trénink', 'Bonus workout')
+              : tr('Začít ${day.name}', 'Start ${day.name}'),
           icon: Icons.play_arrow_rounded,
           busy: busy,
           onPressed: () => onStart(() => state.startSplitDay(dayIndex)),
@@ -380,19 +431,26 @@ class _TodayCard extends StatelessWidget {
       final r = recommendPlan(answers ?? const PlanAnswers());
       final pick = findSplit(r.splitId);
       children.addAll([
-        _Eyebrow('Vyber si plán', color: p.accent),
-        Text(pick?.name ?? 'Program', style: text.headlineSmall),
+        _Eyebrow(tr('Vyber si plán', 'Pick a plan'), color: p.accent),
+        Text(pick?.name ?? tr('Program', 'Program'), style: text.headlineSmall),
         const SizedBox(height: 2),
         Text(
           answers == null
-              ? 'Program ti řekne, co který den cvičit, a hlídá postup '
-                    'vah. Odpověz na čtyři otázky, nebo začni tímhle.'
+              ? tr(
+                  'Program ti řekne, co který den cvičit, a hlídá postup '
+                      'vah. Odpověz na čtyři otázky, nebo začni tímhle.',
+                  'A program tells you what to train each day and tracks '
+                      'weight progression. Answer four questions, or start with this one.',
+                )
               : r.why,
           style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
         ),
         const SizedBox(height: Space.l),
         PrimaryButton(
-          'Použít ${pick?.name ?? 'program'}',
+          tr(
+            'Použít ${pick?.name ?? 'program'}',
+            'Use ${pick?.name ?? 'program'}',
+          ),
           icon: Icons.check_rounded,
           busy: busy,
           onPressed: () => onUsePlan(answers),
@@ -404,12 +462,14 @@ class _TodayCard extends StatelessWidget {
             TextButton(
               onPressed: busy ? null : onQuiz,
               child: Text(
-                answers == null ? 'Vybrat podle sebe' : 'Změnit odpovědi',
+                answers == null
+                    ? tr('Vybrat podle sebe', 'Pick for myself')
+                    : tr('Změnit odpovědi', 'Change answers'),
               ),
             ),
             TextButton(
               onPressed: busy ? null : () => onStart(state.startWorkout),
-              child: const Text('Volný trénink'),
+              child: Text(tr('Volný trénink', 'Free workout')),
             ),
           ],
         ),
@@ -464,11 +524,11 @@ class _Eyebrow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 2),
     child: Text(
-      text,
+      text.toUpperCase(),
       style: TextStyle(
-        fontFamily: condensedFont,
-        color: color ?? context.palette.secondaryLabel,
-        fontSize: 13,
+        fontFamily: textFont,
+        color: color ?? context.palette.tertiaryLabel,
+        fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.6,
       ),
@@ -495,9 +555,8 @@ class _MissionLine extends StatelessWidget {
           vertical: Space.s + 2,
         ),
         decoration: BoxDecoration(
-          color: p.background.withValues(alpha: 0.42),
+          color: p.fill,
           borderRadius: BorderRadius.circular(context.palette.controlRadius),
-          border: Border.all(color: p.label.withValues(alpha: 0.06)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,7 +564,7 @@ class _MissionLine extends StatelessWidget {
             Icon(
               MissionCopy.icon(mission.kind),
               size: 20,
-              color: urgent ? AppPalette.orange : AppPalette.cyan,
+              color: urgent ? p.accent : p.secondaryLabel,
             ),
             const SizedBox(width: Space.m),
             Expanded(
@@ -557,8 +616,12 @@ class _ElapsedState extends State<_Elapsed> {
 
   @override
   Widget build(BuildContext context) => Text(
-    'Běží ${durationLabel(DateTime.now().difference(widget.start))} · '
-    '${setsLabel(widget.sets)} hotovo',
+    tr(
+      'Běží ${durationLabel(DateTime.now().difference(widget.start))} · '
+          '${setsLabel(widget.sets)} hotovo',
+      'Running ${durationLabel(DateTime.now().difference(widget.start))} · '
+          '${setsLabel(widget.sets)} done',
+    ),
     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
       color: context.palette.secondaryLabel,
       fontFeatures: tabular,
@@ -574,4 +637,183 @@ int? _nextTrainingDay(List<int>? days, DateTime now) {
     if (days.contains(d)) return d;
   }
   return null;
+}
+
+/// Týden po dnech: odcvičené dny plné, plánované s tečkou, dnešek
+/// orámovaný. Vpravo série týdnů v řadě.
+class _WeekStrip extends StatelessWidget {
+  final AppState state;
+  final DateTime now;
+  const _WeekStrip({required this.state, required this.now});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final trained = <int>{
+      for (final w in state.workouts)
+        if (w.finished && !w.date.isBefore(monday))
+          if (DateTime(
+                w.date.year,
+                w.date.month,
+                w.date.day,
+              ).difference(monday).inDays
+              case final d when d >= 0 && d < 7)
+            d,
+    };
+    final planned = state.profile.trainingDays ?? const <int>[];
+    final streak = state.streak(now);
+    final letters = weekdayShort;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              tr(
+                'TENTO TÝDEN · ${trained.length}/${state.weekGoal}',
+                'THIS WEEK · ${trained.length}/${state.weekGoal}',
+              ),
+              style: text.labelSmall,
+            ),
+            const Spacer(),
+            if (streak.weeks > 0)
+              Semantics(
+                label: tr(
+                  'Série ${streak.weeks} týdnů v řadě',
+                  '${streak.weeks}-week streak',
+                ),
+                excludeSemantics: true,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 16,
+                      color: p.accent,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      tr(
+                        '${streak.weeks} ${streak.weeks == 1
+                            ? 'týden'
+                            : streak.weeks < 5
+                            ? 'týdny'
+                            : 'týdnů'}',
+                        '${streak.weeks} ${streak.weeks == 1 ? 'week' : 'weeks'}',
+                      ),
+                      style: text.labelMedium?.copyWith(
+                        color: p.label,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.s),
+        Row(
+          children: [
+            for (var i = 0; i < 7; i++)
+              Expanded(
+                child: _DayDot(
+                  letter: letters[i],
+                  day: monday.add(Duration(days: i)).day,
+                  done: trained.contains(i),
+                  today: i == today.weekday - 1,
+                  planned: planned.contains(i + 1),
+                  past: i < today.weekday - 1,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DayDot extends StatelessWidget {
+  final String letter;
+  final int day;
+  final bool done;
+  final bool today;
+  final bool planned;
+  final bool past;
+  const _DayDot({
+    required this.letter,
+    required this.day,
+    required this.done,
+    required this.today,
+    required this.planned,
+    required this.past,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    final Color bg = done ? p.positive : p.grouped;
+    final Color fg = done
+        ? AppPalette.ink
+        : past
+        ? p.tertiaryLabel
+        : p.label;
+    return Semantics(
+      label:
+          '$letter $day.${done
+              ? tr(', odcvičeno', ', done')
+              : planned
+              ? tr(', plánovaný trénink', ', planned workout')
+              : ''}'
+          '${today ? tr(', dnes', ', today') : ''}',
+      excludeSemantics: true,
+      child: Column(
+        children: [
+          Text(
+            letter,
+            style: text.labelSmall?.copyWith(
+              color: today ? p.accent : p.tertiaryLabel,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+              border: today && !done
+                  ? Border.all(color: p.accent, width: 2)
+                  : null,
+            ),
+            child: done
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 20,
+                    color: AppPalette.ink,
+                  )
+                : Text(
+                    '$day',
+                    style: text.titleSmall?.copyWith(
+                      color: fg,
+                      fontFeatures: tabular,
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 4,
+            height: 4,
+            decoration: BoxDecoration(
+              color: planned && !done ? p.tertiaryLabel : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

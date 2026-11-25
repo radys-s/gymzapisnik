@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../design/ambient.dart';
+import '../../core/i18n.dart';
 import '../design/components.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
@@ -39,7 +39,7 @@ class QuestionScaffold extends StatelessWidget {
     this.busy = false,
     this.onBack,
     this.onSkip,
-    this.skipLabel = 'Přeskočit',
+    this.skipLabel = 'Přeskočit', // translated at display via tr() in callers? Keep default for compat.
     this.secondary,
     this.tone = Tone.training,
   });
@@ -47,12 +47,7 @@ class QuestionScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Scaffold(
-      body: AuroraBackground(
-        tone: tone,
-        child: SafeArea(child: _body(context, text)),
-      ),
-    );
+    return Scaffold(body: SafeArea(child: _body(context, text)));
   }
 
   Widget _body(BuildContext context, TextTheme text) {
@@ -67,7 +62,7 @@ class QuestionScaffold extends StatelessWidget {
               children: [
                 if (onBack != null)
                   IconButton(
-                    tooltip: 'Zpět',
+                    tooltip: tr('Zpět', 'Back'),
                     onPressed: busy ? null : onBack,
                     icon: const Icon(Icons.arrow_back_rounded),
                   )
@@ -84,7 +79,11 @@ class QuestionScaffold extends StatelessWidget {
                 if (onSkip != null)
                   TextButton(
                     onPressed: busy ? null : onSkip,
-                    child: Text(skipLabel),
+                    child: Text(
+                      skipLabel == 'Přeskočit'
+                          ? tr('Přeskočit', 'Skip')
+                          : skipLabel,
+                    ),
                   )
                 else
                   const SizedBox(width: minTap),
@@ -134,7 +133,7 @@ class WhyLine extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     return Semantics(
       container: true,
-      label: 'Proč se ptám: $text',
+      label: tr('Proč se ptám: $text', 'Why I ask: $text'),
       excludeSemantics: true,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +152,7 @@ class WhyLine extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: 'Proč se ptám  ',
+                    text: tr('Proč se ptám  ', 'Why I ask  '),
                     style: t.labelLarge?.copyWith(
                       color: p.accent,
                       fontWeight: FontWeight.w600,
@@ -184,7 +183,12 @@ class _ProgressBar extends StatelessWidget {
         ?.copyWith(color: p.secondaryLabel, fontFeatures: tabular);
     return Semantics(
       container: true,
-      label: step ?? 'Postup ${(value * 100).round()} %',
+      label:
+          step ??
+          tr(
+            'Postup ${(value * 100).round()} %',
+            'Progress ${(value * 100).round()}%',
+          ),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Space.s),

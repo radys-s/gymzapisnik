@@ -43,6 +43,50 @@ void main() {
     expect(t.hasRunningAnimations, isFalse);
   });
 
+  testWidgets('enabling reduced motion completes an in-flight reveal', (
+    t,
+  ) async {
+    await t.pumpWidget(_app(const Reveal(index: 8, child: Text('Ready'))));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(t.widget<Opacity>(find.byType(Opacity).first).opacity, lessThan(1));
+    await t.pumpWidget(
+      _app(const Reveal(index: 8, child: Text('Ready')), reduce: true),
+    );
+    expect(t.widget<Opacity>(find.byType(Opacity).first).opacity, 1);
+    await t.pump(const Duration(seconds: 1));
+    expect(t.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('reduced motion completes a tab transition immediately', (
+    t,
+  ) async {
+    Widget tabs(int index, bool reduce) => _app(
+      FadeIndexedStack(index: index, children: const [Text('A'), Text('B')]),
+      reduce: reduce,
+    );
+    await t.pumpWidget(tabs(0, false));
+    await t.pumpWidget(tabs(1, false));
+    await t.pump(const Duration(milliseconds: 30));
+    await t.pumpWidget(tabs(1, true));
+    expect(t.widget<Opacity>(find.byType(Opacity).first).opacity, 1);
+    expect(t.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('animated values expose only the latest value to accessibility', (
+    t,
+  ) async {
+    final semantics = t.ensureSemantics();
+    await t.pumpWidget(_app(const AnimatedLabel('10 kg')));
+    await t.pumpWidget(_app(const AnimatedLabel('20 kg')));
+    await t.pump(const Duration(milliseconds: 50));
+    expect(find.bySemanticsLabel('20 kg'), findsOneWidget);
+    expect(find.bySemanticsLabel('10 kg'), findsNothing);
+    await t.pumpWidget(_app(const AnimatedLabel('20 kg'), reduce: true));
+    expect(find.text('10 kg'), findsNothing);
+    expect(t.hasRunningAnimations, isFalse);
+    semantics.dispose();
+  });
+
   testWidgets('press scale never swallows the tap', (t) async {
     var taps = 0;
     await t.pumpWidget(
@@ -111,6 +155,28 @@ void main() {
     expect(paint().foregroundPainter, isNull);
     // Leaving the screen stops the shared clock; a timer left running
     // would fail this test.
+    await t.pumpWidget(_app(const SizedBox()));
+  });
+
+  testWidgets('ambient clock pauses when the app goes into the background', (
+    t,
+  ) async {
+    Ambient.enabled = true;
+    addTearDown(() => Ambient.enabled = false);
+    await t.pumpWidget(
+      _app(
+        AmbientBuilder(
+          builder: (_, time, _) => Text(time == null ? 'Paused' : 'Running'),
+        ),
+      ),
+    );
+    expect(find.text('Running'), findsOneWidget);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await t.pump();
+    expect(find.text('Paused'), findsOneWidget);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await t.pump();
+    expect(find.text('Running'), findsOneWidget);
     await t.pumpWidget(_app(const SizedBox()));
   });
 

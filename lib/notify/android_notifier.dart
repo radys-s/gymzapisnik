@@ -4,6 +4,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../core/i18n.dart';
 import '../coach/reminders.dart';
 import 'notifier.dart';
 
@@ -67,11 +68,14 @@ class MobileNotifier implements Notifier, RestNotifier {
     await _init();
     await cancelAll();
     if (!_zoneKnown) return;
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'training',
-        'Připomínky tréninku',
-        channelDescription: 'Připomene trénink v dny, které máš v plánu.',
+        tr('Připomínky tréninku', 'Workout reminders'),
+        channelDescription: tr(
+          'Připomene trénink v dny, které máš v plánu.',
+          'Reminds you to train on your planned days.',
+        ),
       ),
       iOS: DarwinNotificationDetails(threadIdentifier: 'training'),
     );
@@ -103,13 +107,16 @@ class MobileNotifier implements Notifier, RestNotifier {
     if (!_zoneKnown || !end.isAfter(DateTime.now())) return;
     await _plugin.zonedSchedule(
       id: 9000,
-      title: 'Pauza končí',
-      body: 'Můžeš pokračovat další sérií.',
+      title: tr('Pauza končí', 'Rest is over'),
+      body: tr(
+        'Můžeš pokračovat další sérií.',
+        'You can continue with the next set.',
+      ),
       scheduledDate: tz.TZDateTime.from(end, tz.local),
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'rest',
-          'Pauza mezi sériemi',
+          tr('Pauza mezi sériemi', 'Rest between sets'),
           importance: Importance.high,
           priority: Priority.high,
         ),

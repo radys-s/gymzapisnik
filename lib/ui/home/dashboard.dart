@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../coach/missions.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../domain/models.dart';
 import '../../domain/history.dart';
 import '../../domain/stats.dart';
@@ -21,15 +22,21 @@ List<String> recapLines(WeekSummary week, WeekSummary previous, int records) {
     final pct = ((week.volumeKg / previous.volumeKg - 1) * 100).round();
     lines.add(
       pct == 0
-          ? 'Objem stejný jako minulý týden.'
-          : 'Objem ${pct > 0 ? '+' : '−'}${pct.abs()} % oproti minulému týdnu.',
+          ? tr('Objem stejný jako minulý týden.', 'Volume same as last week.')
+          : tr(
+              'Objem ${pct > 0 ? '+' : '−'}${pct.abs()} % oproti minulému týdnu.',
+              'Volume ${pct > 0 ? '+' : '−'}${pct.abs()}% vs last week.',
+            ),
     );
   }
   if (records > 0) {
     lines.add(
       records == 1
-          ? 'Nový rekord u 1 cviku.'
-          : 'Nové rekordy u $records cviků.',
+          ? tr('Nový rekord u 1 cviku.', 'New record in 1 exercise.')
+          : tr(
+              'Nové rekordy u $records cviků.',
+              'New records in $records exercises.',
+            ),
     );
   }
   return lines;
@@ -69,7 +76,7 @@ class RecentRecordsCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.emoji_events_rounded, color: p.accent),
+                    Icon(Icons.emoji_events_rounded, color: p.gold),
                     const SizedBox(width: Space.m),
                     Expanded(
                       child: Column(
@@ -93,7 +100,7 @@ class RecentRecordsCard extends StatelessWidget {
                     Text(
                       recordLabel(r.kind, r.value),
                       style: text.titleSmall?.copyWith(
-                        color: p.positive,
+                        color: p.gold,
                         fontFeatures: tabular,
                       ),
                     ),
@@ -131,7 +138,10 @@ class WeekSummaryCard extends StatelessWidget {
             children: [
               Semantics(
                 container: true,
-                label: 'Tento týden ${week.workouts} z $goal tréninků',
+                label: tr(
+                  'Tento týden ${week.workouts} z $goal tréninků',
+                  'This week ${week.workouts} of $goal workouts',
+                ),
                 excludeSemantics: true,
                 child: ProgressRing(
                   value: goal == 0 ? 0 : week.workouts / goal,
@@ -150,13 +160,25 @@ class WeekSummaryCard extends StatelessWidget {
                   runSpacing: Space.m,
                   children: [
                     StatTile('${week.sets}', setsNoun(week.sets)),
-                    StatTile('${formatVolume(week.volumeKg)} kg', 'objem'),
+                    StatTile(
+                      '${formatVolume(week.volumeKg)} kg',
+                      tr('objem', 'volume'),
+                    ),
                     if (streak != null && streak.weeks > 0)
                       Tooltip(
                         message: streak.jokerReady
-                            ? 'Žolík je připravený: zachrání jeden zmeškaný týden.'
-                            : 'Žolík se po použití obnoví za pár týdnů.',
-                        child: StatTile(weeksLabel(streak.weeks), 'v řadě'),
+                            ? tr(
+                                'Žolík je připravený: zachrání jeden zmeškaný týden.',
+                                'Joker is ready: it will save one missed week.',
+                              )
+                            : tr(
+                                'Žolík se po použití obnoví za pár týdnů.',
+                                'The joker resets a few weeks after use.',
+                              ),
+                        child: StatTile(
+                          weeksLabel(streak.weeks),
+                          tr('v řadě', 'in a row'),
+                        ),
                       ),
                   ],
                 ),
@@ -166,7 +188,10 @@ class WeekSummaryCard extends StatelessWidget {
           if (streak?.jokerJustUsed ?? false) ...[
             const SizedBox(height: Space.m),
             Text(
-              'Žolík ti minulý týden zachránil streak.',
+              tr(
+                'Žolík ti minulý týden zachránil streak.',
+                'A joker saved your streak last week.',
+              ),
               style: text.bodySmall?.copyWith(color: context.palette.accent),
             ),
           ],
@@ -210,14 +235,14 @@ class QuickProgressCard extends StatelessWidget {
     final delta = points.last.value - points.first.value;
     final p = context.palette;
     final text = Theme.of(context).textTheme;
-    final unit = type == ExerciseType.weighted ? 'kg' : 'opak.';
+    final unit = type == ExerciseType.weighted ? 'kg' : tr('opak.', 'reps');
     final deltaText = type == ExerciseType.weighted
         ? formatKg(double.parse(delta.abs().toStringAsFixed(1)))
         : '${delta.abs().round()}';
     final sign = delta > 0 ? '+' : (delta < 0 ? '−' : '±');
     final metric = type == ExerciseType.weighted
-        ? 'Odhad 1RM'
-        : 'Max opakování';
+        ? tr('Odhad 1RM', 'Est. 1RM')
+        : tr('Max opakování', 'Max reps');
     final color = delta < 0 ? p.negative : p.accent;
     // Rostoucí křivka nese barvy sekce, klesající zůstává varovná.
     final line = delta < 0 ? [color, color] : ToneScope.of(context).colors;
@@ -304,33 +329,69 @@ class QuickProgressCard extends StatelessWidget {
 /// týdne), ne obecně.
 abstract final class MissionCopy {
   static String title(Mission m) => switch (m.kind) {
-    MissionKind.weekDone => 'Týdenní cíl splněn',
-    MissionKind.doneToday => 'Dnes máš hotovo',
-    MissionKind.catchUp => 'Dnes je potřeba trénovat',
-    MissionKind.rest => 'Dnes odpočinek',
-    MissionKind.trainToday => 'Tento týden ${m.done} z ${m.goal}',
-    MissionKind.plannedRest => 'Dnes volno podle plánu',
+    MissionKind.weekDone => tr('Týdenní cíl splněn', 'Weekly goal complete'),
+    MissionKind.doneToday => tr('Dnes máš hotovo', 'Done for today'),
+    MissionKind.catchUp => tr(
+      'Dnes je potřeba trénovat',
+      'You need to train today',
+    ),
+    MissionKind.rest => tr('Dnes odpočinek', 'Rest day today'),
+    // The week count already sits above the day strip.
+    MissionKind.trainToday => tr(
+      'Dnes je den na trénink',
+      'Today is a training day',
+    ),
+    MissionKind.plannedRest => tr(
+      'Dnes volno podle plánu',
+      'Planned day off today',
+    ),
   };
 
   /// [daysSince] = dní od posledního dokončeného tréninku (`null`: žádný).
   static String subtitle(Mission m, {int? daysSince}) => switch (m.kind) {
-    MissionKind.weekDone => 'Další trénink už je bonus.',
-    MissionKind.doneToday => 'Dobrá práce. Další trénink až příště.',
-    MissionKind.catchUp =>
+    MissionKind.weekDone => tr(
+      'Další trénink už je bonus.',
+      'Any extra workout is a bonus now.',
+    ),
+    MissionKind.doneToday => tr(
+      'Dobrá práce. Další trénink až příště.',
+      'Good work. Next workout another time.',
+    ),
+    MissionKind.catchUp => tr(
       '${remainingWorkoutsLabel(m.remaining)} a ${daysLabel(m.daysLeft)} '
           'do konce týdne.',
-    MissionKind.rest => 'Včera byl trénink. Klidně si dej další i dnes.',
+      '${remainingWorkoutsLabel(m.remaining)} and ${daysLabel(m.daysLeft)} '
+          'left this week.',
+    ),
+    MissionKind.rest => tr(
+      'Včera byl trénink. Klidně si dej další i dnes.',
+      'You trained yesterday. Feel free to go again today.',
+    ),
     MissionKind.trainToday => _since(daysSince),
-    MissionKind.plannedRest =>
+    MissionKind.plannedRest => tr(
       'Hotovo ${m.done} z ${m.goal}. Trénink se počítá i mimo plán.',
+      '${m.done} of ${m.goal} done. Workouts count even off-plan.',
+    ),
   };
 
   static String _since(int? days) => switch (days) {
-    null => 'První trénink tě čeká. Začni lehce a zapiš každou sérii.',
-    <= 0 => 'Dnes už máš trénink za sebou.',
-    1 => 'Minule včera. Hlídej, jak se tělo cítí.',
-    < 7 => 'Minule před $days dny, máš odpočinuto.',
-    _ => 'Od posledního tréninku je to přes týden. Začni o kus lehčeji.',
+    null => tr(
+      'První trénink tě čeká. Začni lehce a zapiš každou sérii.',
+      'Your first workout is waiting. Start light and log every set.',
+    ),
+    <= 0 => tr('Dnes už máš trénink za sebou.', 'You already trained today.'),
+    1 => tr(
+      'Minule včera. Hlídej, jak se tělo cítí.',
+      'Last time was yesterday. See how your body feels.',
+    ),
+    < 7 => tr(
+      'Minule před $days dny, máš odpočinuto.',
+      '$days days since last time, you should be recovered.',
+    ),
+    _ => tr(
+      'Od posledního tréninku je to přes týden. Začni o kus lehčeji.',
+      'It has been over a week since your last workout. Start a bit lighter.',
+    ),
   };
 
   static IconData icon(MissionKind kind) => switch (kind) {

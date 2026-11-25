@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
+
 import '../../coach/splits.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
@@ -33,10 +35,24 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
     }
   }
 
-  Future<void> _use(SplitTemplate program) => _guard(() async {
-    await state.setSplit(program.id);
-    if (mounted) showToast(context, 'Program ${program.name} je aktivní.');
-  }, 'Program se nepodařilo zvolit. Zkus to znovu.');
+  Future<void> _use(SplitTemplate program) => _guard(
+    () async {
+      await state.setSplit(program.id);
+      if (mounted) {
+        showToast(
+          context,
+          tr(
+            'Program ${program.name} je aktivní.',
+            '${program.name} is now active.',
+          ),
+        );
+      }
+    },
+    tr(
+      'Program se nepodařilo zvolit. Zkus to znovu.',
+      'Could not select the program. Try again.',
+    ),
+  );
 
   bool _editing = false;
 
@@ -68,18 +84,27 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
   Future<void> _delete(SplitTemplate program) async {
     final ok = await confirmAction(
       context,
-      title: 'Smazat program?',
-      message:
-          'Program ${program.name} zmizí. Odcvičené tréninky zůstanou '
-          'v historii.',
-      confirm: 'Smazat',
+      title: tr('Smazat program?', 'Delete program?'),
+      message: tr(
+        'Program ${program.name} zmizí. Odcvičené tréninky zůstanou '
+            'v historii.',
+        'Program ${program.name} will be removed. Logged workouts stay '
+            'in history.',
+      ),
+      confirm: tr('Smazat', 'Delete'),
       destructive: true,
     );
     if (!ok || !mounted) return;
-    await _guard(() async {
-      await state.deleteProgram(program.id);
-      if (mounted) Navigator.pop(context);
-    }, 'Program se nepodařilo smazat. Zkus to znovu.');
+    await _guard(
+      () async {
+        await state.deleteProgram(program.id);
+        if (mounted) Navigator.pop(context);
+      },
+      tr(
+        'Program se nepodařilo smazat. Zkus to znovu.',
+        'Could not delete the program. Try again.',
+      ),
+    );
   }
 
   @override
@@ -111,14 +136,17 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
                       const SizedBox(width: Space.s),
                       Flexible(
                         child: Text(
-                          'Tento program používáš',
+                          tr(
+                            'Tento program používáš',
+                            'You\'re using this program',
+                          ),
                           style: text.titleSmall,
                         ),
                       ),
                     ],
                   )
                 : PrimaryButton(
-                    'Používat tento program',
+                    tr('Používat tento program', 'Use this program'),
                     busy: _busy,
                     onPressed: () => _use(program),
                   ),
@@ -129,9 +157,9 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
             padding: const EdgeInsets.fromLTRB(Space.xs, 0, Space.xs, Space.l),
             child: Text(
               program.custom
-                  ? '${programSummary(program)} · vlastní program'
+                  ? '${programSummaryLabel(program)} · ${tr('vlastní program', 'custom program')}'
                   : '${program.description} '
-                        'Doporučeno ${perWeekLabel(program.perWeek)}.',
+                        '${tr('Doporučeno', 'Recommended')} ${perWeekLabel(program.perWeek)}.',
               style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
             ),
           ),
@@ -139,14 +167,16 @@ class _ProgramDetailPageState extends State<ProgramDetailPage> {
             ProgramDayPanel(state: state, index: i, day: program.days[i]),
           const SizedBox(height: Space.s),
           SecondaryButton(
-            program.custom ? 'Upravit program' : 'Upravit jako vlastní',
+            program.custom
+                ? tr('Upravit program', 'Edit program')
+                : tr('Upravit jako vlastní', 'Edit as custom'),
             icon: Icons.edit_outlined,
             onPressed: _busy ? null : () => _edit(raw),
           ),
           if (program.custom) ...[
             const SizedBox(height: Space.s),
             SecondaryButton(
-              'Smazat program',
+              tr('Smazat program', 'Delete program'),
               destructive: true,
               onPressed: _busy ? null : () => _delete(program),
             ),

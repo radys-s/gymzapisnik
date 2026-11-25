@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'coach/tips.dart';
+import 'core/i18n.dart';
 import 'state/app_state.dart';
 import 'ui/widgets/keyboard_done_bar.dart';
 import 'ui/home/home_page.dart';
@@ -27,25 +28,34 @@ class GymApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: state.on.consent,
-    builder: (context, _) => appFrame(
-      home: state.profile.ready ? AppShell(state) : OnboardingPage(state),
-    ),
+    listenable: state,
+    builder: (context, _) {
+      final lang = appLang = state.profile.appLanguage;
+      // Texts are picked in build, so a new language rebuilds everything.
+      return appFrame(
+        home: KeyedSubtree(
+          key: ValueKey(lang),
+          child: state.profile.ready ? AppShell(state) : OnboardingPage(state),
+        ),
+        locale: Locale(lang.name),
+      );
+    },
   );
 }
 
-/// Společný rámec: vzhled a čeština i pro systémové dialogy.
-MaterialApp appFrame({required Widget home}) => MaterialApp(
-  title: 'Gym zápisník',
-  debugShowCheckedModeBanner: false,
-  theme: buildTheme(),
-  themeMode: ThemeMode.dark,
-  locale: _czech,
-  supportedLocales: const [_czech],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
-  builder: (_, child) => KeyboardDoneBar(child: child!),
-  home: home,
-);
+/// Shared app frame: theme, locale, and keyboard helpers.
+MaterialApp appFrame({required Widget home, Locale locale = _czech}) =>
+    MaterialApp(
+      title: tr('Gym zápisník', 'Gym Log'),
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(),
+      themeMode: ThemeMode.dark,
+      locale: locale,
+      supportedLocales: const [Locale('cs'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      builder: (_, child) => KeyboardDoneBar(child: child!),
+      home: home,
+    );
 
 /// Hlavní navigace: Domů / Trénink / Strava / Pokrok. Každá záložka má vlastní
 /// navigaci, takže přepnutí neztratí rozpracovanou stránku, hledání ani posun.
@@ -101,30 +111,33 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     widget.state.setLastTab(i);
   }
 
-  /// Section color of each tab, in tab order.
-  static const _tones = [
-    Tone.training,
-    Tone.training,
-    Tone.food,
-    Tone.progress,
+  List<({IconData icon, IconData active, String label, Tone tone})>
+  get _items => [
+    (
+      icon: Icons.home_outlined,
+      active: Icons.home_rounded,
+      label: tr('Domů', 'Home'),
+      tone: Tone.training,
+    ),
+    (
+      icon: Icons.fitness_center_outlined,
+      active: Icons.fitness_center,
+      label: tr('Trénink', 'Training'),
+      tone: Tone.training,
+    ),
+    (
+      icon: Icons.restaurant_outlined,
+      active: Icons.restaurant_rounded,
+      label: tr('Strava', 'Nutrition'),
+      tone: Tone.food,
+    ),
+    (
+      icon: Icons.insights_outlined,
+      active: Icons.insights_rounded,
+      label: tr('Pokrok', 'Progress'),
+      tone: Tone.progress,
+    ),
   ];
-
-  /// The selected tab wears its section color.
-  NavigationBarThemeData _barTheme(BuildContext context, Color color) {
-    final p = context.palette;
-    Color of(Set<WidgetState> states) =>
-        states.contains(WidgetState.selected) ? color : p.secondaryLabel;
-    return NavigationBarTheme.of(context).copyWith(
-      indicatorColor: color.withValues(alpha: 0.16),
-      iconTheme: WidgetStateProperty.resolveWith(
-        (st) => IconThemeData(size: 26, color: of(st)),
-      ),
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (st) =>
-            TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: of(st)),
-      ),
-    );
-  }
 
   Widget _tab(int i, Widget root) => Navigator(
     key: _navigators[i],
@@ -144,8 +157,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         } else if (tab != 0) {
           _select(0);
         } else {
-          // Kořen první záložky: zavřít aplikaci. maybePop by se vrátil
-          // sem do PopScope a zacyklil se.
           SystemNavigator.pop();
         }
       },
@@ -167,49 +178,144 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ActiveWorkoutBar(widget.state),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: p.separator, width: 0.5),
-                    ),
-                  ),
-                  child: NavigationBarTheme(
-                    data: _barTheme(context, _tones[tab].color),
-                    child: NavigationBar(
-                      selectedIndex: tab,
-                      onDestinationSelected: _select,
-                      destinations: const [
-                        NavigationDestination(
-                          icon: Icon(Icons.home_outlined),
-                          selectedIcon: Icon(Icons.home_rounded),
-                          label: 'Domů',
-                          // Popisek je vidět pořád; tooltip na webu visel.
-                          tooltip: '',
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: p.elevated.withValues(alpha: 0.96),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: p.separator.withValues(alpha: 0.55),
                         ),
-                        NavigationDestination(
-                          icon: Icon(Icons.fitness_center_outlined),
-                          selectedIcon: Icon(Icons.fitness_center),
-                          label: 'Trénink',
-                          tooltip: '',
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
                         ),
-                        NavigationDestination(
-                          icon: Icon(Icons.restaurant_outlined),
-                          selectedIcon: Icon(Icons.restaurant),
-                          label: 'Strava',
-                          tooltip: '',
+                        child: Row(
+                          children: [
+                            for (var i = 0; i < _items.length; i++)
+                              Expanded(
+                                child: _NavItem(
+                                  icon: _items[i].icon,
+                                  activeIcon: _items[i].active,
+                                  label: _items[i].label,
+                                  color: _items[i].tone.color,
+                                  selected: i == tab,
+                                  onTap: () => _select(i),
+                                ),
+                              ),
+                          ],
                         ),
-                        NavigationDestination(
-                          icon: Icon(Icons.insights_outlined),
-                          selectedIcon: Icon(Icons.insights_rounded),
-                          label: 'Pokrok',
-                          tooltip: '',
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final fg = selected ? color : p.tertiaryLabel;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: Motion.of(context, Motion.quick),
+          curve: Motion.curve,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? color.withValues(alpha: 0.14)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: selected ? 1.0 : 0.92,
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
+                child: AnimatedSwitcher(
+                  duration: Motion.of(context, Motion.quick),
+                  transitionBuilder: (child, anim) => ScaleTransition(
+                    scale: Tween(begin: 0.85, end: 1.0).animate(anim),
+                    child: FadeTransition(opacity: anim, child: child),
+                  ),
+                  child: Icon(
+                    selected ? activeIcon : icon,
+                    key: ValueKey(selected),
+                    color: fg,
+                    size: 24,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
+                style: TextStyle(
+                  fontFamily: textFont,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: fg,
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 2),
+              AnimatedContainer(
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
+                height: 3,
+                width: selected ? 18 : 0,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -332,7 +438,7 @@ class _BootScreenState extends State<BootScreen> {
     return Scaffold(
       body: Semantics(
         button: widget.onSkip != null,
-        label: widget.onSkip != null ? 'Přeskočit' : null,
+        label: widget.onSkip != null ? tr('Přeskočit', 'Skip') : null,
         onTap: widget.onSkip,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -392,7 +498,7 @@ class _BootScreenState extends State<BootScreen> {
                   duration: Motion.of(context, Motion.quick),
                   child: Semantics(
                     container: true,
-                    label: 'Načítám',
+                    label: tr('Načítám', 'Loading'),
                     child: SizedBox.square(
                       dimension: 22,
                       child: CircularProgressIndicator(
@@ -459,15 +565,23 @@ class _StartupErrorPageState extends State<StartupErrorPage> {
                         ),
                         const SizedBox(height: Space.xl),
                         Text(
-                          'Aplikaci se nepodařilo spustit',
+                          tr(
+                            'Aplikaci se nepodařilo spustit',
+                            "The app couldn't start",
+                          ),
                           style: text.headlineSmall,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: Space.m),
                         Text(
-                          'Zkus to znovu. Když to nepomůže, zavři aplikaci '
-                          'úplně a otevři ji znovu. Zálohu ze souboru pak '
-                          'obnovíš v Nastavení.',
+                          tr(
+                            'Zkus to znovu. Když to nepomůže, zavři aplikaci '
+                                'úplně a otevři ji znovu. Zálohu ze souboru pak '
+                                'obnovíš v Nastavení.',
+                            'Try again. If that does not help, close the app '
+                                'completely and reopen it. You can restore a '
+                                'file backup in Settings.',
+                          ),
                           style: text.bodyLarge?.copyWith(
                             color: p.secondaryLabel,
                           ),
@@ -484,7 +598,11 @@ class _StartupErrorPageState extends State<StartupErrorPage> {
                   ),
                 ),
               ),
-              PrimaryButton('Zkusit znovu', busy: retrying, onPressed: _retry),
+              PrimaryButton(
+                tr('Zkusit znovu', 'Try again'),
+                busy: retrying,
+                onPressed: _retry,
+              ),
             ],
           ),
         ),

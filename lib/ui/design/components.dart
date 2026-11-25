@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart' show CupertinoDialogAction;
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
-import 'ambient.dart';
+import '../../core/i18n.dart';
 import 'brand.dart';
 import 'motion.dart';
 

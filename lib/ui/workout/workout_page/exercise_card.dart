@@ -11,13 +11,12 @@ String? _coachReason(WorkoutExercise entry) {
 }
 
 /// Šířky sloupců řádku série (záhlaví a řádky musí sedět).
-const _typeWidth = minTap;
-const _doneWidth = 52.0;
-const _badgeWidth = 30.0;
+const _typeWidth = 40.0;
+const _doneWidth = 48.0;
+const _badgeWidth = 28.0;
 
-/// Odsazení od okraje zvýraznění série: odznak vlevo, ✓ vpravo i řádek
-/// +/− pod sérií mají od kraje stejnou mezeru.
-const _edgeInset = (_typeWidth - _badgeWidth) / 2;
+/// Odsazení řádku série od kraje obrazovky.
+const _rowInset = Space.s;
 
 class _ExerciseCard extends StatelessWidget {
   final AppState state;
@@ -31,8 +30,12 @@ class _ExerciseCard extends StatelessWidget {
   final ValueChanged<SetEntry> onRemoveSet;
   final ValueChanged<String> onError;
 
+  /// Série, na které uživatel právě je (zvýrazní se).
+  final SetEntry? current;
+
   const _ExerciseCard({
     super.key,
+    this.current,
     required this.state,
     required this.entry,
     required this.canMoveUp,
@@ -44,7 +47,14 @@ class _ExerciseCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AnimatedSize(
+    duration: Motion.of(context, Motion.base),
+    curve: Motion.curve,
+    alignment: Alignment.topCenter,
+    child: _content(context),
+  );
+
+  Widget _content(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final exercise = state.exercise(entry.exerciseId);
@@ -58,13 +68,8 @@ class _ExerciseCard extends StatelessWidget {
     var workingIndex = 0;
     return _SupersetFrame(
       slot: slot,
-      child: Panel(
-        padding: const EdgeInsets.fromLTRB(
-          Space.m,
-          Space.xs,
-          Space.xs,
-          Space.s,
-        ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: Space.s, bottom: Space.xs),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -83,22 +88,31 @@ class _ExerciseCard extends StatelessWidget {
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Space.xs,
-                        vertical: Space.xs,
+                      padding: const EdgeInsets.fromLTRB(
+                        Space.page,
+                        Space.xs,
+                        Space.xs,
+                        Space.xs,
                       ),
                       child: Row(
                         children: [
-                          ExerciseThumb(exercise.id, size: 36),
-                          const SizedBox(width: Space.s),
+                          ExerciseThumb(exercise.id, size: 40),
+                          const SizedBox(width: Space.m),
                           Expanded(
                             child: Semantics(
                               container: true,
                               header: true,
-                              hint: 'Otevře techniku cviku',
+                              hint: tr(
+                                'Otevře techniku cviku',
+                                'Opens exercise technique',
+                              ),
                               child: Text(
                                 exercise.name,
-                                style: text.titleMedium,
+                                style: text.titleMedium?.copyWith(
+                                  color: p.accent,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
@@ -110,74 +124,91 @@ class _ExerciseCard extends StatelessWidget {
                 Semantics(
                   container: true,
                   button: true,
-                  label: 'Vyměnit cvik',
+                  label: tr('Vyměnit cvik', 'Replace exercise'),
                   onTap: () => onMenu('replace'),
                   excludeSemantics: true,
                   child: IconButton(
                     onPressed: () => onMenu('replace'),
-                    icon: Icon(Icons.swap_horiz_rounded, color: p.accent),
+                    icon: Icon(
+                      Icons.swap_horiz_rounded,
+                      color: p.secondaryLabel,
+                    ),
                   ),
                 ),
                 PopupMenuButton<String>(
-                  tooltip: 'Možnosti cviku',
+                  tooltip: tr('Možnosti cviku', 'Exercise options'),
                   icon: Icon(Icons.more_horiz_rounded, color: p.secondaryLabel),
                   onSelected: onMenu,
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'note', child: Text('Poznámka')),
+                    PopupMenuItem(
+                      value: 'note',
+                      child: Text(tr('Poznámka', 'Note')),
+                    ),
                     PopupMenuItem(
                       value: 'pin',
                       child: Text(
                         pinned == null
-                            ? 'Připnout poznámku'
-                            : 'Upravit připnutou poznámku',
+                            ? tr('Připnout poznámku', 'Pin note')
+                            : tr(
+                                'Upravit připnutou poznámku',
+                                'Edit pinned note',
+                              ),
                       ),
                     ),
                     PopupMenuItem(
                       value: 'rest',
                       child: Text(
-                        'Pauza: ${restLabel(state.restFor(exercise.id))}',
+                        tr(
+                          'Pauza: ${restLabel(state.restFor(exercise.id))}',
+                          'Rest: ${restLabel(state.restFor(exercise.id))}',
+                        ),
                       ),
                     ),
                     if (!bodyweight) ...[
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'warmups',
-                        child: Text('Přidat rozcvičku'),
+                        child: Text(tr('Přidat rozcvičku', 'Add warm-up')),
                       ),
                       if (usesPlates(exercise.id, custom: exercise.custom))
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'plates',
-                          child: Text('Kotouče na činku'),
+                          child: Text(tr('Kotouče na činku', 'Barbell plates')),
                         ),
                     ],
                     if (canMoveUp)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'up',
-                        child: Text('Posunout výš'),
+                        child: Text(tr('Posunout výš', 'Move up')),
                       ),
                     if (canMoveDown)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'down',
-                        child: Text('Posunout níž'),
+                        child: Text(tr('Posunout níž', 'Move down')),
                       ),
                     if (canMoveUp || canMoveDown)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'reorder',
-                        child: Text('Seřadit cviky'),
+                        child: Text(tr('Seřadit cviky', 'Reorder exercises')),
                       ),
                     if (canMoveDown && !linked)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'superset',
-                        child: Text('Supersérie s dalším cvikem'),
+                        child: Text(
+                          tr(
+                            'Supersérie s dalším cvikem',
+                            'Superset with next exercise',
+                          ),
+                        ),
                       ),
                     if (slot != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'unsuperset',
-                        child: Text('Zrušit supersérii'),
+                        child: Text(tr('Zrušit supersérii', 'Remove superset')),
                       ),
                     PopupMenuItem(
                       value: 'remove',
                       child: Text(
-                        'Odebrat',
+                        tr('Odebrat', 'Remove'),
                         style: TextStyle(color: p.negative),
                       ),
                     ),
@@ -188,9 +219,9 @@ class _ExerciseCard extends StatelessWidget {
             if (_coachReason(entry) case final reason?)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Space.xs,
+                  Space.page,
                   0,
-                  Space.s,
+                  Space.page,
                   Space.s,
                 ),
                 child: Row(
@@ -199,7 +230,7 @@ class _ExerciseCard extends StatelessWidget {
                     Icon(
                       Icons.tips_and_updates_outlined,
                       size: 16,
-                      color: p.accent,
+                      color: p.tertiaryLabel,
                     ),
                     const SizedBox(width: 6),
                     Expanded(child: Text(reason, style: text.bodySmall)),
@@ -209,9 +240,9 @@ class _ExerciseCard extends StatelessWidget {
             if (pinned != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Space.xs,
+                  Space.page,
                   0,
-                  Space.s,
+                  Space.page,
                   Space.s,
                 ),
                 child: Row(
@@ -221,7 +252,7 @@ class _ExerciseCard extends StatelessWidget {
                       Icons.push_pin_rounded,
                       size: 16,
                       color: p.secondaryLabel,
-                      semanticLabel: 'Připnutá poznámka',
+                      semanticLabel: tr('Připnutá poznámka', 'Pinned note'),
                     ),
                     const SizedBox(width: 6),
                     Expanded(child: Text(pinned, style: text.bodySmall)),
@@ -231,9 +262,9 @@ class _ExerciseCard extends StatelessWidget {
             if (entry.note.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Space.xs,
+                  Space.page,
                   0,
-                  Space.s,
+                  Space.page,
                   Space.s,
                 ),
                 child: Text(entry.note, style: text.bodySmall),
@@ -243,28 +274,41 @@ class _ExerciseCard extends StatelessWidget {
                 _LastDeltaRow(d),
             ExcludeSemantics(
               child: Padding(
-                padding: const EdgeInsets.only(right: _edgeInset),
+                padding: const EdgeInsets.symmetric(horizontal: _rowInset),
                 child: DefaultTextStyle.merge(
-                  style: text.labelMedium,
+                  style: text.labelSmall,
                   child: Row(
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: _typeWidth,
-                        child: Text('Série', textAlign: TextAlign.center),
-                      ),
-                      const Expanded(flex: 3, child: Text('Minule')),
-                      Expanded(
-                        flex: 3,
                         child: Text(
-                          bodyweight ? '+kg' : 'kg',
+                          tr('SÉRIE', 'SET'),
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const Expanded(
+                      Expanded(flex: 3, child: Text(tr('MINULE', 'PREVIOUS'))),
+                      Expanded(
                         flex: 3,
-                        child: Text('opak.', textAlign: TextAlign.center),
+                        child: Text(
+                          bodyweight ? '+KG' : 'KG',
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      const SizedBox(width: _doneWidth),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          tr('OPAK.', 'REPS'),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(
+                        width: _doneWidth,
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 14,
+                          color: AppPalette.gymGrey,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -280,21 +324,41 @@ class _ExerciseCard extends StatelessWidget {
                 label: setBadge(entry.sets[i], ++workingIndex),
                 bodyweight: bodyweight,
                 previous: previous[i],
+                current: identical(entry.sets[i], current),
                 onRemove: () => onRemoveSet(entry.sets[i]),
                 onError: onError,
               ),
-            Align(
-              alignment: Alignment.centerLeft,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.page,
+                Space.s,
+                Space.page,
+                0,
+              ),
               child: TextButton.icon(
                 onPressed: () async {
                   try {
                     await state.addSet(entry);
                   } catch (_) {
-                    onError('Sérii se nepodařilo přidat. Zkus to znovu.');
+                    onError(
+                      tr(
+                        'Sérii se nepodařilo přidat. Zkus to znovu.',
+                        'Could not add the set. Try again.',
+                      ),
+                    );
                   }
                 },
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Série'),
+                style: TextButton.styleFrom(
+                  backgroundColor: p.fill,
+                  foregroundColor: p.label,
+                  minimumSize: const Size.fromHeight(40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: text.titleSmall,
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(tr('Přidat sérii', 'Add set')),
               ),
             ),
           ],
@@ -318,18 +382,22 @@ class _SupersetFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = slot;
+    final sep = BorderSide(color: context.palette.separator, width: 0.5);
     if (s == null) {
-      return Padding(
+      return Container(
         padding: const EdgeInsets.only(bottom: Space.m),
+        decoration: BoxDecoration(border: Border(bottom: sep)),
         child: child,
       );
     }
     return Container(
-      // Cviky jedné skupiny drží u sebe, za poslední je běžná mezera.
-      margin: EdgeInsets.only(bottom: s.isLast ? Space.m : Space.xs),
-      padding: const EdgeInsets.only(left: Space.s),
+      // Cviky jedné skupiny drží u sebe, oddělí se až poslední.
+      padding: EdgeInsets.only(bottom: s.isLast ? Space.m : Space.xs),
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: _supersetColor(s), width: 3)),
+        border: Border(
+          left: BorderSide(color: _supersetColor(s), width: 3),
+          bottom: s.isLast ? sep : BorderSide.none,
+        ),
       ),
       child: child,
     );
@@ -345,19 +413,25 @@ class _SupersetLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _supersetColor(slot);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Space.xs, Space.xs, 0, 0),
+      padding: const EdgeInsets.fromLTRB(Space.page, Space.xs, 0, 0),
       child: Semantics(
         container: true,
-        label:
-            'Supersérie ${slot.letter}, cvik ${slot.position + 1} '
-            'z ${slot.size}, střídej bez pauzy',
+        label: tr(
+          'Supersérie ${slot.letter}, cvik ${slot.position + 1} '
+              'z ${slot.size}, střídej bez pauzy',
+          'Superset ${slot.letter}, exercise ${slot.position + 1} '
+              'of ${slot.size}, alternate without rest',
+        ),
         excludeSemantics: true,
         child: Row(
           children: [
             Icon(Icons.link_rounded, size: 16, color: color),
             const SizedBox(width: 6),
             Text(
-              'Supersérie ${slot.letter} · ${slot.position + 1}/${slot.size}',
+              tr(
+                'Supersérie ${slot.letter} · ${slot.position + 1}/${slot.size}',
+                'Superset ${slot.letter} · ${slot.position + 1}/${slot.size}',
+              ),
               style: Theme.of(context).textTheme.labelMedium
                   ?.copyWith(color: color),
             ),

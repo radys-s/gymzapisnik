@@ -12,10 +12,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymzapisnik/app.dart';
 import 'package:gymzapisnik/coach/plan_quiz.dart';
+import 'package:gymzapisnik/core/i18n.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/models.dart';
 import 'package:gymzapisnik/state/app_state.dart';
+import 'package:gymzapisnik/ui/exercises/exercise_detail_page.dart';
 import 'package:gymzapisnik/ui/program/program_editor_page.dart';
 import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 
@@ -44,6 +46,10 @@ Future<void> _fonts() async {
       '$material/Roboto-$w.ttf',
   ]);
   await _font('MaterialIcons', ['$material/MaterialIcons-Regular.otf']);
+  await _font('Inter', [
+    for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold'])
+      'assets/fonts/Inter-$w.ttf',
+  ]);
   await _font('Barlow Condensed', [
     for (final w in ['SemiBold', 'Bold', 'ExtraBold'])
       'assets/fonts/BarlowCondensed-$w.ttf',
@@ -70,6 +76,18 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
     return;
   }
   await tester.tap(f.first, warnIfMissed: false);
+  await tester.pumpAndSettle();
+}
+
+/// `tester.pageBack()` only knows the English "Back" tooltip; this app is
+/// Czech, where Material's back button is labelled "Zpět".
+Future<void> _back(WidgetTester tester) async {
+  final back = find.byTooltip('Zpět');
+  if (back.evaluate().isEmpty) {
+    debugPrint('MISS back button');
+    return;
+  }
+  await tester.tap(back.first, warnIfMissed: false);
   await tester.pumpAndSettle();
 }
 
@@ -100,6 +118,11 @@ Future<AppState> _state(WidgetTester tester) async {
   addTearDown(db.close);
   final state = AppState(LocalStore(db));
   await tester.runAsync(state.load);
+  // SCREENS_LANG=en renders the tour in English.
+  if (Platform.environment['SCREENS_LANG'] == 'en') {
+    await tester.runAsync(() => state.setAppLanguage(AppLang.en));
+    appLang = AppLang.en;
+  }
   return state;
 }
 
@@ -139,6 +162,8 @@ void main() {
   _screens('first run', (tester) async {
     final state = await _state(tester);
     await _pump(tester, state);
+    await _shot(tester, 'language');
+    await _tap(tester, find.text('Čeština'));
     await _shot(tester, 'welcome');
     await _tap(tester, find.text('Začít'));
     await _shot(tester, 'consent');
@@ -146,19 +171,43 @@ void main() {
     await _tap(tester, find.text('Je mi 18 let nebo víc'));
     await _shot(tester, 'consent-filled');
     await _save(tester, find.text('Pokračovat'));
+    await _shot(tester, 'path');
+    await _pick(tester, find.text('Vědecký přístup'));
     await _shot(tester, 'goal');
     await _pick(tester, find.text('Svaly'));
     await _shot(tester, 'experience');
     await _pick(tester, find.text('Půl roku'));
-    await _tap(tester, find.text('4×'));
+    await _shot(tester, 'schedule-empty');
+    for (final d in ['Po', 'St', 'Pá']) {
+      await _tap(tester, find.text(d));
+    }
+    await _tap(tester, find.text('60'));
     await _shot(tester, 'schedule');
     await _tap(tester, find.text('Pokračovat'));
     await _shot(tester, 'gym');
-    await _pick(tester, find.text('Velké fitko'));
-    await _tap(tester, find.text('Kolena'));
-    await _shot(tester, 'pain');
-    await _save(tester, find.text('Pokračovat'));
+    await _pick(tester, find.text('Velké komerční fitko'));
+    await _shot(tester, 'gym-picked');
+    await _tap(tester, find.text('Zaškrtnout stroje ve fitku (nepovinné)'));
+    await _shot(tester, 'gym-machines');
+    await tester.tapAt(const Offset(200, 20));
+    await tester.pumpAndSettle();
+    await _tap(tester, find.text('Pokračovat'));
     await _shot(tester, 'plan');
+  });
+
+  _screens('exercise detail', (tester) async {
+    final state = await _state(tester);
+    for (final id in ['bench_press', 'overhead_triceps_extension', 'squat']) {
+      await _pump(tester, state, home: ExerciseDetailPage(state, id));
+      // Mid rep: lowering phase of the first rep.
+      await tester.pump(const Duration(milliseconds: 1800));
+      await _shot(tester, 'detail-$id');
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      await _shot(tester, 'detail-$id-2');
+    }
   });
 
   _screens('own program', (tester) async {
@@ -206,5 +255,132 @@ void main() {
     await _shot(tester, 'food');
     await _tap(tester, find.text('Pokrok'));
     await _shot(tester, 'progress');
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -700));
+    await tester.pumpAndSettle();
+    await _shot(tester, 'progress-2');
+    final reportRow = find.text('Týdenní report');
+    await tester.scrollUntilVisible(
+      reportRow,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    if (reportRow.evaluate().isNotEmpty) {
+      await _tap(tester, reportRow.first);
+      await _shot(tester, 'week-report');
+      await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      await _shot(tester, 'week-report-2');
+      await _back(tester);
+    }
+    final weightRow = find.text('Váha a míry');
+    if (weightRow.evaluate().isNotEmpty) {
+      await tester.ensureVisible(weightRow.first);
+      await tester.pumpAndSettle();
+      await _tap(tester, weightRow);
+      await _shot(tester, 'weight');
+      await _tap(tester, find.text('Přidat míru'));
+      await tester.enterText(find.byType(TextField), '82,5');
+      await _save(tester, find.text('Uložit'));
+      await _shot(tester, 'measurements');
+    }
+  });
+
+  _screens('workout', (tester) async {
+    final state = await _state(tester);
+    final now = DateTime.now();
+    await tester.runAsync(() async {
+      await state.applyPlan(const PlanAnswers());
+      await state.acceptConsent(
+        adult: true,
+        guardianConsent: false,
+        welcomeVersion: whatsNewRelease,
+        aiNotice: true,
+      );
+      await state.addBodyweight(78);
+      for (final (daysAgo, kg) in [(9, 75.0), (5, 80.0), (2, 82.5)]) {
+        final at = now.subtract(Duration(days: daysAgo));
+        await state.startWorkout(now: at);
+        final e = await state.addExercise('bench_press');
+        e.sets = [
+          SetEntry(weight: kg, reps: 8, done: true),
+          SetEntry(weight: kg, reps: 7, done: true),
+        ];
+        await state.finishActive(now: at.add(const Duration(hours: 1)));
+      }
+    });
+    await _pump(tester, state);
+    await _tap(tester, find.textContaining('Začít').first);
+    await tester.pump(const Duration(seconds: 1));
+    await _shot(tester, 'workout');
+    final checks = find.bySemanticsLabel('Potvrdit sérii');
+    if (checks.evaluate().isNotEmpty) {
+      await _save(tester, checks.first);
+      // The confirmed row leaves this finder; its first match is now
+      // the next set. Wait for persistence before capturing the totals.
+      await _save(tester, checks.first);
+    }
+    await _shot(tester, 'workout-rest');
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+    await tester.pump(const Duration(milliseconds: 600));
+    await _shot(tester, 'workout-2');
+    final add = find.text('Přidat cvik');
+    if (add.evaluate().isNotEmpty) {
+      await tester.ensureVisible(add.first);
+      await tester.pumpAndSettle();
+      await tester.tap(add.first, warnIfMissed: false);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await _shot(tester, 'exercise-picker');
+      await _back(tester);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+    final bench = find.text('Barbell Bench Press');
+    if (bench.evaluate().isNotEmpty) {
+      await tester.ensureVisible(bench.first);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(bench.first, warnIfMissed: false);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await _shot(tester, 'exercise-detail');
+      await _back(tester);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+    final finish = find.text('Dokončit');
+    if (finish.evaluate().isNotEmpty) {
+      await tester.tap(finish.first, warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 500));
+      await _shot(tester, 'finish-dialog');
+      final confirm = find.text('Dokončit');
+      if (confirm.evaluate().length > 1) {
+        await tester.runAsync(() async {
+          await tester.tap(confirm.last, warnIfMissed: false);
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        });
+        for (var i = 0; i < 40; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await _shot(tester, 'summary');
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await _shot(tester, 'summary-2');
+        final share = find.byTooltip('Sdílet');
+        if (share.evaluate().isNotEmpty) {
+          await tester.tap(share.first, warnIfMissed: false);
+          for (var i = 0; i < 10; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+          await _shot(tester, 'share-card');
+        }
+      }
+    }
   });
 }

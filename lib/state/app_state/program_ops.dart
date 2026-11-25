@@ -145,7 +145,10 @@ extension ProgramOps on AppState {
       } else {
         if (list.length >= maxCustomPrograms) {
           throw ArgumentError(
-            'Vlastních programů může být nejvýš $maxCustomPrograms.',
+            tr(
+              'Vlastních programů může být nejvýš $maxCustomPrograms.',
+              'You can have at most $maxCustomPrograms custom programs.',
+            ),
           );
         }
         list.add(cleaned.toJson());
@@ -353,14 +356,26 @@ extension ProgramOps on AppState {
           weight: 0,
           reps: p.repMin,
           sets: p.sets,
-          reason: 'Návrh váhy od kouče je součástí Pro.',
+          reason: tr(
+            'Návrh váhy od kouče je součástí Pro.',
+            'Coach weight suggestions are part of Pro.',
+          ),
         );
 
   /// Začne trénink podle dne splitu s předvyplněnými návrhy.
   Future<Workout> startSplitDay(int dayIndex, {DateTime? now}) async {
     final s = split;
-    if (s == null) throw StateError('Není zvolený split.');
-    if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
+    if (s == null) {
+      throw StateError(tr('Není zvolený split.', 'No split is selected.'));
+    }
+    if (active != null) {
+      throw StateError(
+        tr(
+          'Nejdřív dokonči rozepsaný trénink.',
+          'Finish the current workout first.',
+        ),
+      );
+    }
     final index = dayIndex % s.days.length;
     final day = s.days[index];
     final workout = await startWorkout(name: day.name, now: now);
@@ -373,8 +388,19 @@ extension ProgramOps on AppState {
 
   /// Začne trénink sestavený mimo program (výběr partií a počtu cviků).
   Future<Workout> startPlanned(SplitDay day, {DateTime? now}) async {
-    if (active != null) throw StateError('Nejdřív dokonči rozepsaný trénink.');
-    if (day.exercises.isEmpty) throw StateError('Trénink nemá žádný cvik.');
+    if (active != null) {
+      throw StateError(
+        tr(
+          'Nejdřív dokonči rozepsaný trénink.',
+          'Finish the current workout first.',
+        ),
+      );
+    }
+    if (day.exercises.isEmpty) {
+      throw StateError(
+        tr('Trénink nemá žádný cvik.', 'The workout has no exercises.'),
+      );
+    }
     final workout = await startWorkout(name: day.name, now: now);
     await _fillPlanned(workout, day);
     return workout;

@@ -7,6 +7,7 @@ library;
 
 import 'dart:math';
 
+import '../core/i18n.dart';
 import '../domain/history.dart';
 import '../domain/models.dart';
 import '../domain/stats.dart';
@@ -149,84 +150,135 @@ String _line(PlanLine l) {
   final s = l.suggestion;
   final String load;
   if (l.start != null) {
-    load = 'začni na ${l.start}';
+    load = tr('začni na ${l.start}', 'start at ${l.start}');
   } else if (s.weight > 0) {
     load = '${_kg(s.weight)} kg × ${s.reps}';
   } else if (!l.weighted) {
-    load = '$range opakování';
+    load = tr('$range opakování', '$range reps');
   } else {
-    load = 'váhu na $range opakování';
+    load = tr('váhu na $range opakování', 'weight for $range reps');
   }
   return '• ${l.name} ${l.sets}×$range · $load';
 }
 
 String _times(int n) => switch (n) {
-  1 => '1 trénink',
-  2 || 3 || 4 => '$n tréninky',
-  _ => '$n tréninků',
+  1 => tr('1 trénink', '1 workout'),
+  2 || 3 || 4 => tr('$n tréninky', '$n workouts'),
+  _ => tr('$n tréninků', '$n workouts'),
 };
 
 String _dayLabel(CoachFacts f) => f.dayCount > 1
-    ? '${f.day} (den ${f.dayNumber} z ${f.dayCount})'
+    ? tr(
+        '${f.day} (den ${f.dayNumber} z ${f.dayCount})',
+        '${f.day} (day ${f.dayNumber} of ${f.dayCount})',
+      )
     : '${f.day}';
 
 /// Odpověď na „co mám dnes cvičit“.
 String todayAnswer(CoachFacts f) {
   final m = f.mission;
   if (f.activeWorkout) {
-    return 'Máš rozepsaný trénink. Dokonči ho, pak spolu projdeme, '
-        'jak šel.';
+    return tr(
+      'Máš rozepsaný trénink. Dokonči ho, pak spolu projdeme, '
+          'jak šel.',
+      'You have a workout in progress. Finish it, then we will go through '
+          'how it went.',
+    );
   }
   if (f.day == null) {
-    return 'Zatím nemáš zvolený program. Otevři Program a vyber si ho, '
-        'nebo si sestav trénink z partií, které jsou odpočaté'
-        '${f.ready.isEmpty ? '' : ' (${f.ready.take(3).join(', ')})'}.';
+    return tr(
+      'Zatím nemáš zvolený program. Otevři Program a vyber si ho, '
+          'nebo si sestav trénink z partií, které jsou odpočaté'
+          '${f.ready.isEmpty ? '' : ' (${f.ready.take(3).join(', ')})'}.',
+      'You have not chosen a program yet. Open Program and pick one, '
+          'or build a workout from the muscle groups that are recovered'
+          '${f.ready.isEmpty ? '' : ' (${f.ready.take(3).join(', ')})'}.',
+    );
   }
   final plan = [for (final l in f.plan) _line(l)].join('\n');
   final head = switch (m.kind) {
-    MissionKind.doneToday =>
+    MissionKind.doneToday => tr(
       'Dnes máš odcvičeno, dobrá práce. Příště je na řadě ${_dayLabel(f)}:',
-    MissionKind.weekDone =>
+      'You have trained today, good work. Next up is ${_dayLabel(f)}:',
+    ),
+    MissionKind.weekDone => tr(
       'Týdenní cíl máš splněný (${m.done} z ${m.goal}). Trénink navíc je '
           'bonus, na řadě je ${_dayLabel(f)}:',
-    MissionKind.rest =>
+      'You have hit your weekly goal (${m.done} of ${m.goal}). An extra '
+          'workout is a bonus; next up is ${_dayLabel(f)}:',
+    ),
+    MissionKind.rest => tr(
       'Včera byl trénink, dnes je dobré dát svalům pauzu. Když chceš '
           'jít, na řadě je ${_dayLabel(f)}:',
-    MissionKind.plannedRest =>
+      'You trained yesterday, so today is a good day to let your muscles '
+          'rest. If you want to go, next up is ${_dayLabel(f)}:',
+    ),
+    MissionKind.plannedRest => tr(
       'Dnes máš podle plánu volno. Až půjdeš, na řadě je ${_dayLabel(f)}:',
-    MissionKind.catchUp =>
+      'Today is a planned rest day. When you train again, next up is '
+          '${_dayLabel(f)}:',
+    ),
+    MissionKind.catchUp => tr(
       'Dnes je potřeba jít, jinak týdenní cíl nevyjde. Na řadě je '
           '${_dayLabel(f)}:',
-    MissionKind.trainToday => 'Dnes je na řadě ${_dayLabel(f)}:',
+      'You need to train today or you will miss your weekly goal. '
+          'Next up is ${_dayLabel(f)}:',
+    ),
+    MissionKind.trainToday => tr(
+      'Dnes je na řadě ${_dayLabel(f)}:',
+      'Today is ${_dayLabel(f)}:',
+    ),
   };
   final tail = f.tired.isEmpty
       ? ''
-      : '\nJeště se zotavuje: ${f.tired.take(3).join(', ')}. Když něco '
-            'bolí, uber váhu.';
+      : tr(
+          '\nJeště se zotavuje: ${f.tired.take(3).join(', ')}. Když něco '
+              'bolí, uber váhu.',
+          '\nStill recovering: ${f.tired.take(3).join(', ')}. If something '
+              'hurts, lower the weight.',
+        );
   return '$head\n$plan$tail';
 }
 
 /// Odpověď na „kde stagnuju“.
 String stallAnswer(CoachFacts f) {
   if (f.stalls.isEmpty) {
-    return 'Ve zapsaných trénincích stagnaci nevidím: hlavní cviky se '
-        'posouvají nebo jich je zatím málo na srovnání. Zapisuj každou '
-        'sérii a po 3 trénincích stejného cviku ti řeknu víc.';
+    return tr(
+      'Ve zapsaných trénincích stagnaci nevidím: hlavní cviky se '
+          'posouvají nebo jich je zatím málo na srovnání. Zapisuj každou '
+          'sérii a po 3 trénincích stejného cviku ti řeknu víc.',
+      'I do not see a plateau in your logged workouts: your main lifts are '
+          'moving up, or there are not enough of them yet to compare. Log '
+          'every set and after 3 workouts of the same exercise I can tell you '
+          'more.',
+    );
   }
   final lines = [
     for (final s in f.stalls.take(3))
-      '• ${s.name}: držíš ${_kg(s.kg)} kg × ${s.reps}',
+      tr(
+        '• ${s.name}: držíš ${_kg(s.kg)} kg × ${s.reps}',
+        '• ${s.name}: stuck at ${_kg(s.kg)} kg × ${s.reps}',
+      ),
   ].join('\n');
-  return 'Tady se poslední tréninky nehnuly:\n$lines\n'
-      'Zkus jeden trénink s váhou o 10 % nižší a plnými opakováními, pak '
-      'se vrať a přidávej po opakováních. Pomáhá i spánek a dost bílkovin.';
+  return tr(
+    'Tady se poslední tréninky nehnuly:\n$lines\n'
+        'Zkus jeden trénink s váhou o 10 % nižší a plnými opakováními, pak '
+        'se vrať a přidávej po opakováních. Pomáhá i spánek a dost bílkovin.',
+    'Your last workouts have not moved here:\n$lines\n'
+        'Try one workout with 10 % less weight and full reps, then come back '
+        'and build up by reps. Sleep and enough protein help too.',
+  );
 }
 
 /// Odpověď na „kolik sérií týdně dávám“.
 String volumeAnswer(CoachFacts f) {
   if (f.hardSets.isEmpty) {
-    return 'Za posledních 7 dní nemáš zapsanou žádnou pracovní sérii. Pro '
-        'růst stačí zhruba 10 až 20 těžkých sérií na partii týdně.';
+    return tr(
+      'Za posledních 7 dní nemáš zapsanou žádnou pracovní sérii. Pro '
+          'růst stačí zhruba 10 až 20 těžkých sérií na partii týdně.',
+      'You have no working sets logged in the last 7 days. For growth, '
+          'about 10 to 20 hard sets per muscle group per week is enough.',
+    );
   }
   final sorted = f.hardSets.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
@@ -236,36 +288,68 @@ String volumeAnswer(CoachFacts f) {
     for (final e in sorted)
       if (e.value < 10) e.key,
   ];
-  return 'Těžké série za posledních 7 dní:\n$lines\n'
-      'Cíl pro růst je zhruba 10 až 20 na partii týdně.'
-      '${low.isEmpty ? '' : ' Málo zatím: ${low.take(3).join(', ')}.'}';
+  return tr(
+    'Těžké série za posledních 7 dní:\n$lines\n'
+        'Cíl pro růst je zhruba 10 až 20 na partii týdně.'
+        '${low.isEmpty ? '' : ' Málo zatím: ${low.take(3).join(', ')}.'}',
+    'Hard sets in the last 7 days:\n$lines\n'
+        'The goal for growth is about 10 to 20 per muscle group per week.'
+        '${low.isEmpty ? '' : ' Low so far: ${low.take(3).join(', ')}.'}',
+  );
 }
 
 /// Odpověď na „jak rozložit tréninky do konce týdne“.
 String weekAnswer(CoachFacts f) {
   final m = f.mission;
   if (m.remaining == 0) {
-    return 'Tento týden máš hotovo: ${m.done} z ${m.goal}. Zbytek týdne '
-        'odpočívej, nebo dej lehký trénink navíc.';
+    return tr(
+      'Tento týden máš hotovo: ${m.done} z ${m.goal}. Zbytek týdne '
+          'odpočívej, nebo dej lehký trénink navíc.',
+      'You are done for this week: ${m.done} of ${m.goal}. Rest for the rest '
+          'of the week, or do an extra light workout.',
+    );
   }
   final days = f.trainingDaysLeft.isEmpty
       ? ''
-      : ' Tvoje dny do neděle: ${f.trainingDaysLeft.join(', ')}.';
+      : tr(
+          ' Tvoje dny do neděle: ${f.trainingDaysLeft.join(', ')}.',
+          ' Your days until Sunday: ${f.trainingDaysLeft.join(', ')}.',
+        );
   final tight = m.remaining >= m.daysLeft
-      ? ' Musíš jít každý zbývající den, klidně kratší tréninky.'
-      : ' Mezi tréninky na stejné partie nech aspoň den volna.';
-  return 'Tento týden máš ${m.done} z ${m.goal}. Zbývá ${_times(m.remaining)} '
-      'a ${m.daysLeft == 1 ? 'dnešek' : '${m.daysLeft} dní včetně dneška'}.'
-      '$days$tight';
+      ? tr(
+          ' Musíš jít každý zbývající den, klidně kratší tréninky.',
+          ' You need to go every remaining day, even short workouts are fine.',
+        )
+      : tr(
+          ' Mezi tréninky na stejné partie nech aspoň den volna.',
+          ' Leave at least one day off between workouts for the same muscle '
+              'group.',
+        );
+  return tr(
+    'Tento týden máš ${m.done} z ${m.goal}. Zbývá ${_times(m.remaining)} '
+        'a ${m.daysLeft == 1 ? 'dnešek' : '${m.daysLeft} dní včetně dneška'}.'
+        '$days$tight',
+    'This week you have ${m.done} of ${m.goal}. '
+        '${_times(m.remaining)} left and '
+        '${m.daysLeft == 1 ? 'today' : '${m.daysLeft} days including today'}.'
+        '$days$tight',
+  );
 }
 
-const _substitute =
-    'Při bolesti kolene nejdřív ať se na to podívá lékař nebo fyzioterapeut. '
-    'Do té doby zkus cviky, které koleno tolik neohýbají:\n'
-    '• hip thrust nebo glute bridge\n'
-    '• rumunský mrtvý tah\n'
-    '• leg press v menším rozsahu, jen bez bolesti\n'
-    'Když cvik bolí, přestaň.';
+String get _substitute => tr(
+  'Při bolesti kolene nejdřív ať se na to podívá lékař nebo fyzioterapeut. '
+      'Do té doby zkus cviky, které koleno tolik neohýbají:\n'
+      '• hip thrust nebo glute bridge\n'
+      '• rumunský mrtvý tah\n'
+      '• leg press v menším rozsahu, jen bez bolesti\n'
+      'Když cvik bolí, přestaň.',
+  'If your knee hurts, have a doctor or physiotherapist look at it first. '
+      'Until then, try exercises that do not bend the knee as much:\n'
+      '• hip thrust or glute bridge\n'
+      '• Romanian deadlift\n'
+      '• leg press through a smaller range, only if pain free\n'
+      'If an exercise hurts, stop.',
+);
 
 /// Místní odpověď, nebo `null`, když na otázku data nestačí.
 String? localAnswer(CoachIntent intent, CoachFacts f) => switch (intent) {
@@ -281,32 +365,52 @@ String? localAnswer(CoachIntent intent, CoachFacts f) => switch (intent) {
 String briefing(CoachFacts f, DateTime now) {
   final h = now.hour;
   final hello = h < 10
-      ? 'Dobré ráno.'
+      ? tr('Dobré ráno.', 'Good morning.')
       : h < 18
-      ? 'Ahoj.'
-      : 'Dobrý večer.';
+      ? tr('Ahoj.', 'Hello.')
+      : tr('Dobrý večer.', 'Good evening.');
   final m = f.mission;
   final today = f.activeWorkout
-      ? 'Máš rozepsaný trénink.'
+      ? tr('Máš rozepsaný trénink.', 'You have a workout in progress.')
       : f.day == null
-      ? 'Zatím nemáš program, pomůžu ti ho vybrat.'
+      ? tr(
+          'Zatím nemáš program, pomůžu ti ho vybrat.',
+          'You have no program yet, I will help you pick one.',
+        )
       : switch (m.kind) {
-          MissionKind.doneToday => 'Dnes máš odcvičeno.',
-          MissionKind.plannedRest ||
-          MissionKind.rest => 'Dnes je den volna, příště ${f.day}.',
-          MissionKind.weekDone => 'Týden máš splněný, příště ${f.day}.',
-          _ =>
+          MissionKind.doneToday => tr(
+            'Dnes máš odcvičeno.',
+            'You have trained today.',
+          ),
+          MissionKind.plannedRest || MissionKind.rest => tr(
+            'Dnes je den volna, příště ${f.day}.',
+            'Today is a rest day, next up ${f.day}.',
+          ),
+          MissionKind.weekDone => tr(
+            'Týden máš splněný, příště ${f.day}.',
+            'You have hit your weekly goal, next up ${f.day}.',
+          ),
+          _ => tr(
             'Dnes je na řadě ${f.day}, ${f.plan.length} '
                 '${f.plan.length == 1
                     ? 'cvik'
                     : f.plan.length < 5
                     ? 'cviky'
                     : 'cviků'}.',
+            'Today is ${f.day}, ${f.plan.length} '
+                '${f.plan.length == 1 ? 'exercise' : 'exercises'}.',
+          ),
         };
-  final week = 'Týden: ${m.done} z ${m.goal}.';
+  final week = tr(
+    'Týden: ${m.done} z ${m.goal}.',
+    'Week: ${m.done} of ${m.goal}.',
+  );
   final rec = f.ready.isEmpty
       ? ''
-      : ' Odpočaté: ${f.ready.take(3).join(', ')}.';
+      : tr(
+          ' Odpočaté: ${f.ready.take(3).join(', ')}.',
+          ' Recovered: ${f.ready.take(3).join(', ')}.',
+        );
   return '$hello $today $week$rec';
 }
 

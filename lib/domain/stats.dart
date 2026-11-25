@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import 'models.dart';
 
 /// Odhad maxima na jedno opakování (Epley). Slouží k porovnání sérií
@@ -162,9 +163,9 @@ enum RecordKind {
   maxReps;
 
   String get label => switch (this) {
-    maxWeight => 'Max váha',
-    bestE1rm => 'Odhad 1RM',
-    maxReps => 'Max opakování',
+    maxWeight => tr('Max váha', 'Max weight'),
+    bestE1rm => tr('Odhad 1RM', 'Est. 1RM'),
+    maxReps => tr('Max opakování', 'Max reps'),
   };
 }
 

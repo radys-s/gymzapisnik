@@ -4,6 +4,7 @@
 /// odchod z posilovny po prvním tréninku. Pokročilý začíná o polovinu výš.
 library;
 
+import '../core/i18n.dart';
 import 'plan_quiz.dart';
 
 enum Gear { barbell, dumbbell, machine }
@@ -20,9 +21,15 @@ class StartLoad {
   String get label {
     final w = _kg(kg);
     return switch (gear) {
-      Gear.barbell when emptyBar => 'prázdné ose (20 kg)',
+      Gear.barbell when emptyBar => tr(
+        'prázdné ose (20 kg)',
+        'an empty bar (20 kg)',
+      ),
       Gear.barbell => 'ose $w kg',
-      Gear.dumbbell => 'jednoručkách $w kg na ruku',
+      Gear.dumbbell => tr(
+        'jednoručkách $w kg na ruku',
+        '$w kg dumbbells per hand',
+      ),
       Gear.machine => '$w kg',
     };
   }

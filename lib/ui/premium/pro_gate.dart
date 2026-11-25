@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../premium/entitlements.dart';
 import '../../state/app_state.dart';
 import 'premium_page.dart';
@@ -19,7 +20,7 @@ class ProGate extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.lock_outline),
         title: Text(feature.title),
-        subtitle: const Text('Součást Gym zápisník Pro'),
+        subtitle: Text(tr('Součást Gym zápisník Pro', 'Part of Gym Log Pro')),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.push(
           context,

@@ -53,6 +53,22 @@ TextButton _saveButton(WidgetTester tester) => tester.widget<TextButton>(
 );
 
 void main() {
+  testWidgets('invalid pasted reps cannot overwrite a finished workout', (
+    tester,
+  ) async {
+    final (state, _) = await _setup(tester);
+    await tester.enterText(find.widgetWithText(TextField, '8'), '8.5');
+    await tester.pumpAndSettle();
+    expect(find.text('Zadej celé opakování od 0 do 999.'), findsOneWidget);
+    expect(find.byType(EditWorkoutPage), findsOneWidget);
+    expect(state.workouts.single.exercises.single.sets.last.reps, 8);
+    expect(_saveButton(tester).onPressed, isNull);
+    await tester.enterText(find.widgetWithText(TextField, '8.5'), '9');
+    await tester.pump();
+    expect(find.text('Zadej celé opakování od 0 do 999.'), findsNothing);
+    expect(_saveButton(tester).onPressed, isNotNull);
+  });
+
   testWidgets('edit sets, mark warm-up and save', (tester) async {
     final (state, _) = await _setup(tester);
     expect(_saveButton(tester).onPressed, isNull);

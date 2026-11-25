@@ -21,9 +21,11 @@ import '../coach/recovery.dart';
 import '../coach/streak.dart';
 import '../coach/tips.dart';
 import '../core/diagnostics.dart';
+import '../core/i18n.dart';
 import '../core/ids.dart';
 import '../data/backup.dart';
 import '../domain/bodyweight.dart';
+import '../domain/measurement.dart';
 import '../data/hevy_import.dart';
 import '../data/off_client.dart';
 import '../data/csv.dart';
@@ -56,6 +58,7 @@ abstract final class Kinds {
   static const workout = 'workout';
   static const exercise = 'exercise';
   static const bodyweight = 'bodyweight';
+  static const measurement = 'measurement';
   static const food = 'food';
 }
 
@@ -114,6 +117,9 @@ class AppState extends ChangeNotifier {
   /// Tělesná váha, nejnovější první.
   List<BodyWeight> bodyweights = [];
 
+  /// Obvody částí těla, nejnovější první.
+  List<Measurement> measurements = [];
+
   /// Výživový deník, nejnovější záznam první.
   List<FoodEntry> foods = [];
 
@@ -157,6 +163,10 @@ class AppState extends ChangeNotifier {
     bodyweights = _parsed(
       await store.all(Kinds.bodyweight),
       BodyWeight.fromJson,
+    )..sort((a, b) => b.date.compareTo(a.date));
+    measurements = _parsed(
+      await store.all(Kinds.measurement),
+      Measurement.fromJson,
     )..sort((a, b) => b.date.compareTo(a.date));
     foods = _parsed(await store.all(Kinds.food), FoodEntry.fromJson)
       ..sort(_newestFood);
@@ -215,13 +225,17 @@ class AppState extends ChangeNotifier {
   });
 
   /// Všechny cviky: vlastní + katalog.
-  List<Exercise> get allExercises => [...customExercises, ...builtInExercises];
+  List<Exercise> get allExercises => [...customExercises, ...catalogExercises];
 
   /// Cvik podle ID; neznámé ID (např. smazaný vlastní cvik) dostane
   /// náhradní záznam, aby historie dál fungovala.
   Exercise exercise(String id) =>
       findExercise(id, customExercises) ??
-      Exercise(id: id, name: 'Neznámý cvik', muscle: 'Ostatní');
+      Exercise(
+        id: id,
+        name: tr('Neznámý cvik', 'Unknown exercise'),
+        muscle: 'Ostatní',
+      );
 
   ExerciseType typeOf(String id) => exercise(id).type;
 
@@ -231,7 +245,9 @@ class AppState extends ChangeNotifier {
     required ExerciseType type,
   }) async {
     final trimmed = name.trim();
-    if (trimmed.isEmpty) throw ArgumentError('Zadej název cviku.');
+    if (trimmed.isEmpty) {
+      throw ArgumentError(tr('Zadej název cviku.', 'Enter an exercise name.'));
+    }
     final exercise = Exercise(
       id: 'custom_${newId()}',
       name: trimmed,
@@ -269,14 +285,14 @@ class AppState extends ChangeNotifier {
   /// ve které vznikla, a v testech s falešným časem by fronta nikdy nedoběhla.
   Future<void>? _writes;
   Future<({Workout? workout, String? error})>? _finishing;
-  static const _weekdays = [
-    'pondělí',
-    'úterý',
-    'středa',
-    'čtvrtek',
-    'pátek',
-    'sobota',
-    'neděle',
+  static List<String> get _weekdays => [
+    tr('pondělí', 'Monday'),
+    tr('úterý', 'Tuesday'),
+    tr('středa', 'Wednesday'),
+    tr('čtvrtek', 'Thursday'),
+    tr('pátek', 'Friday'),
+    tr('sobota', 'Saturday'),
+    tr('neděle', 'Sunday'),
   ];
   List<Workout>? _badgesOf;
   List<Exercise>? _badgesExercises;
@@ -288,6 +304,7 @@ class AppState extends ChangeNotifier {
 
   // Pauza mezi sériemi: stav pro app_state/rest_timer.dart
   static const _restKey = 'restEndsAt';
+  static const _restStartKey = 'restStartedAt';
   Future<void>? _restUpdates;
 
   // Split a progrese: stav pro app_state/program_ops.dart
@@ -385,7 +402,7 @@ class StateSlices {
     : active = StateSlice._(s, (s) => (s.active, s._activeRev)),
       history = StateSlice._(
         s,
-        (s) => (s.workouts, s.customExercises, s.bodyweights),
+        (s) => (s.workouts, s.customExercises, s.bodyweights, s.measurements),
       ),
       food = StateSlice._(s, (s) => s.foods),
       profile = StateSlice._(s, (s) => (s.profile, s._dayPick, s._today)),

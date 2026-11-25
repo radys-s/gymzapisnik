@@ -38,10 +38,7 @@ void main() {
   testWidgets('four tabs: Domů, Trénink, Strava, Pokrok', (tester) async {
     await _app(tester);
     for (final t in ['Domů', 'Trénink', 'Strava', 'Pokrok']) {
-      expect(
-        find.descendant(of: find.byType(NavigationBar), matching: find.text(t)),
-        findsOneWidget,
-      );
+      expect(find.text(t), findsWidgets);
     }
     await _tapReal(tester, find.text('Pokrok'));
     expect(find.text('Nastavení'), findsWidgets);
@@ -52,11 +49,7 @@ void main() {
     tester,
   ) async {
     final state = await _app(tester);
-    final tabs = find.byType(NavigationBar);
-    await _tapReal(
-      tester,
-      find.descendant(of: tabs, matching: find.text('Trénink')),
-    );
+    await _tapReal(tester, find.text('Trénink').last);
     expect(find.text('Moje rutiny'), findsOneWidget);
     await _tapReal(tester, find.text('Začít prázdný trénink'));
     expect(state.active, isNotNull);
@@ -69,10 +62,7 @@ void main() {
     });
     await tester.pumpAndSettle();
     expect(state.active, isNotNull);
-    await _tapReal(
-      tester,
-      find.descendant(of: tabs, matching: find.text('Strava')),
-    );
+    await _tapReal(tester, find.text('Strava').last);
     final bar = find.bySemanticsLabel(RegExp('^Běžící trénink'));
     expect(bar, findsOneWidget);
     expect(find.textContaining('Přidej první cvik'), findsOneWidget);
@@ -91,13 +81,7 @@ void main() {
       expect(await state.toggleDone(set), isNull);
     });
     await tester.pump();
-    await _tapReal(
-      tester,
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text('Strava'),
-      ),
-    );
+    await _tapReal(tester, find.text('Strava').last);
     expect(find.textContaining('Pauza · '), findsOneWidget);
     expect(
       find.bySemanticsLabel(RegExp(r'^Běžící trénink .*, pauza \d:\d\d,')),

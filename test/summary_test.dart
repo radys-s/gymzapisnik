@@ -63,18 +63,24 @@ void main() {
     expect(find.textContaining('Lepší než minule'), findsOneWidget);
     expect(find.text('minule 80×8'), findsOneWidget);
     expect(find.textContaining('Nové osobní rekordy'), findsOneWidget);
-    expect(find.textContaining('Max váha: 82,5 kg'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Text && (w.semanticsLabel ?? '').contains('Max váha: 82,5 kg'),
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('(+20 kg)'), findsOneWidget);
     expect(find.byType(BackButton), findsNothing);
     expect(find.text('Hotovo'), findsOneWidget);
     // Kouč řekne verdikt a konkrétní cíl na příště.
     expect(
-      find.text('Nové rekordy: Bench press (osa). Takhle vypadá progres.'),
+      find.text('Nové rekordy: Barbell Bench Press. Takhle vypadá progres.'),
       findsOneWidget,
     );
     expect(find.text('Příště'), findsOneWidget);
     expect(
-      find.textContaining(RegExp(r'^Bench press \(osa\) [\d,]+ kg × \d+$')),
+      find.textContaining(RegExp(r'^Barbell Bench Press [\d,]+ kg × \d+$')),
       findsOneWidget,
     );
     await tester.pumpAndSettle();

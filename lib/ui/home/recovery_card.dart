@@ -3,17 +3,33 @@ import 'package:flutter/material.dart';
 import '../../coach/recovery.dart';
 import '../../coach/splits.dart';
 import '../../coach/tips.dart';
+import '../../core/i18n.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
 import '../design/tokens.dart';
 import 'body_map.dart';
 
+String _focusName(String id, String fallback) => switch (id) {
+  'chest' => tr('Hrudník', 'Chest'),
+  'back' => tr('Záda', 'Back'),
+  'legs' => tr('Nohy', 'Legs'),
+  'shoulders' => tr('Ramena', 'Shoulders'),
+  'biceps' => tr('Biceps', 'Biceps'),
+  'triceps' => tr('Triceps', 'Triceps'),
+  'core' => tr('Břicho', 'Core'),
+  'glutes' => tr('Hýždě', 'Glutes'),
+  'calves' => tr('Lýtka', 'Calves'),
+  _ => fallback,
+};
+
 /// Kolik zbývá do připravenosti („za 20 h“).
 String recoveryLeftLabel(FocusRecovery r, DateTime now) {
   final at = r.readyAt;
-  if (at == null) return 'připraveno';
+  if (at == null) return tr('připraveno', 'ready');
   final hours = (at.difference(now).inMinutes / 60).ceil();
-  return hours <= 1 ? 'za hodinu' : 'za $hours h';
+  return hours <= 1
+      ? tr('za hodinu', 'in 1 h')
+      : tr('za $hours h', 'in $hours h');
 }
 
 /// Regenerace partií a rychlé sestavení tréninku z odpočatých.
@@ -43,7 +59,7 @@ class RecoveryPanel extends StatelessWidget {
       (id) => state.exercise(id).muscle,
     );
     final suggested = suggestFocuses(recovery, weekly);
-    final names = {for (final f in dayFocuses) f.id: f.name};
+    final names = {for (final f in dayFocuses) f.id: _focusName(f.id, f.name)};
     final tired = [
       for (final f in dayFocuses)
         if (recovery[f.id] case final r? when !r.isReady) r,
@@ -58,8 +74,11 @@ class RecoveryPanel extends StatelessWidget {
               recovery: recovery,
               names: names,
               status: (r) => r.isReady
-                  ? 'odpočaté'
-                  : 'regeneruje, ${recoveryLeftLabel(r, now)}',
+                  ? tr('odpočaté', 'recovered')
+                  : tr(
+                      'regeneruje, ${recoveryLeftLabel(r, now)}',
+                      'recovering, ${recoveryLeftLabel(r, now)}',
+                    ),
               onTap: (id) => _detail(
                 context,
                 id,
@@ -77,8 +96,8 @@ class RecoveryPanel extends StatelessWidget {
               runSpacing: Space.xs,
               children: [
                 for (final (color, label) in [
-                  (p.positive, 'odpočaté'),
-                  (recoveringColor, 'regeneruje'),
+                  (p.positive, tr('odpočaté', 'recovered')),
+                  (recoveringColor, tr('regeneruje', 'recovering')),
                 ])
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -94,21 +113,31 @@ class RecoveryPanel extends StatelessWidget {
           const SizedBox(height: Space.s),
           Text(
             tired.isEmpty
-                ? 'Všechny partie jsou odpočaté. Klepni na partii pro detail.'
-                : 'Regeneruje: ${tired.map((r) => '${names[r.focusId]} ${recoveryLeftLabel(r, now)}').join(', ')}. '
-                      'Odhad podle posledních 3 dnů.',
+                ? tr(
+                    'Všechny partie jsou odpočaté. Klepni na partii pro detail.',
+                    'All muscle groups are recovered. Tap a group for details.',
+                  )
+                : tr(
+                    'Regeneruje: ${tired.map((r) => '${names[r.focusId]} ${recoveryLeftLabel(r, now)}').join(', ')}. '
+                        'Odhad podle posledních 3 dnů.',
+                    'Recovering: ${tired.map((r) => '${names[r.focusId]} ${recoveryLeftLabel(r, now)}').join(', ')}. '
+                        'Estimate based on the last 3 days.',
+                  ),
             style: text.bodySmall?.copyWith(color: p.secondaryLabel),
           ),
           if (suggested.isNotEmpty) ...[
             const SizedBox(height: Space.l),
             SecondaryButton(
-              'Sestavit z odpočatých',
+              tr('Sestavit z odpočatých', 'Build from recovered'),
               icon: Icons.auto_awesome_rounded,
               onPressed: () => onBuild(suggested, avoid),
             ),
             const SizedBox(height: Space.xs),
             Text(
-              'Návrh: ${suggested.map((id) => names[id]).join(', ')}',
+              tr(
+                'Návrh: ${suggested.map((id) => names[id]).join(', ')}',
+                'Suggestion: ${suggested.map((id) => names[id]).join(', ')}',
+              ),
               style: text.bodySmall?.copyWith(color: p.secondaryLabel),
             ),
           ],
@@ -149,8 +178,14 @@ class RecoveryPanel extends StatelessWidget {
                 const SizedBox(height: Space.xs),
                 Text(
                   ready
-                      ? 'Odpočaté, můžeš ji dnes trénovat.'
-                      : 'Ještě regeneruje, připravená ${recoveryLeftLabel(r, now)}.',
+                      ? tr(
+                          'Odpočaté, můžeš ji dnes trénovat.',
+                          'Recovered, you can train it today.',
+                        )
+                      : tr(
+                          'Ještě regeneruje, připravená ${recoveryLeftLabel(r, now)}.',
+                          'Still recovering, ready ${recoveryLeftLabel(r, now)}.',
+                        ),
                   style: text.bodyLarge?.copyWith(
                     color: ready ? p.positive : recoveringColor,
                   ),
@@ -161,16 +196,26 @@ class RecoveryPanel extends StatelessWidget {
                   // přijít i z cviků, kde partie jen pomáhá.
                   sets == 0
                       ? (ready
-                            ? 'Za posledních 7 dní na ni nemáš žádnou sérii.'
-                            : 'Unavená z cviků, ve kterých pomáhá.')
-                      : 'Za posledních 7 dní: $sets ${_sets(sets)}. '
-                            'Pro růst se hodí zhruba 10–20 týdně.',
+                            ? tr(
+                                'Za posledních 7 dní na ni nemáš žádnou sérii.',
+                                'No sets for it in the last 7 days.',
+                              )
+                            : tr(
+                                'Unavená z cviků, ve kterých pomáhá.',
+                                'Fatigued by exercises where it assists.',
+                              ))
+                      : tr(
+                          'Za posledních 7 dní: $sets ${_sets(sets)}. '
+                              'Pro růst se hodí zhruba 10–20 týdně.',
+                          'Last 7 days: $sets ${_sets(sets)}. '
+                              'Roughly 10–20 per week is good for growth.',
+                        ),
                   style: text.bodyMedium?.copyWith(color: p.secondaryLabel),
                 ),
                 const SizedBox(height: Space.l),
                 if (ready)
                   PrimaryButton(
-                    'Sestavit trénink: $name',
+                    tr('Sestavit trénink: $name', 'Build workout: $name'),
                     onPressed: () {
                       Navigator.pop(sheet);
                       onBuild([id], avoid);
@@ -178,8 +223,12 @@ class RecoveryPanel extends StatelessWidget {
                   )
                 else
                   Text(
-                    'Dej jí čas. Těžký trénink na unavenou partii '
-                    'přidá víc únavy než růstu.',
+                    tr(
+                      'Dej jí čas. Těžký trénink na unavenou partii '
+                          'přidá víc únavy než růstu.',
+                      'Give it time. A hard session on a fatigued muscle '
+                          'adds more fatigue than growth.',
+                    ),
                     style: text.bodyMedium,
                   ),
               ],
@@ -190,7 +239,10 @@ class RecoveryPanel extends StatelessWidget {
     );
   }
 
-  static String _sets(int n) => n < 5 ? 'pracovní série' : 'pracovních sérií';
+  static String _sets(int n) {
+    if (isEnglish) return n == 1 ? 'working set' : 'working sets';
+    return n < 5 ? 'pracovní série' : 'pracovních sérií';
+  }
 }
 
 class _Dot extends StatelessWidget {

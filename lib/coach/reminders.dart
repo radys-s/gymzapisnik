@@ -6,6 +6,7 @@
 /// zmizí a splněný týden je klidný.
 library;
 
+import '../core/i18n.dart';
 import '../domain/models.dart';
 import 'weeks.dart';
 
@@ -59,8 +60,11 @@ List<Reminder> planReminders({
     result.add(
       Reminder(
         at,
-        'Čas na trénink',
-        'Otevři Gym zápisník, kouč má pro dnešek návrh.',
+        tr('Čas na trénink', 'Time to train'),
+        tr(
+          'Otevři Gym zápisník, kouč má pro dnešek návrh.',
+          'Open Gym zápisník — your coach has a suggestion for today.',
+        ),
       ),
     );
   }

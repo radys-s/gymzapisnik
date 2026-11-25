@@ -39,3 +39,84 @@
 - Numbers (taps): adjusted set 4 → 3; first set of a never-done exercise 4 → 2 (plus typing, no error); fix a set right after finishing 6 + scroll → 1; open history 2 + scroll → 2; rest buttons 36 px → 44 px tall at 360 px. Prefilled set stays at 1 tap. 10 new widget tests (and one updated); all but the guard that a done set keeps "Hotovo" failed before their change.
 - What worked: a release web build plus the browser preview with Flutter semantics enabled gave real tap targets in px; a local copy of `tool/screens_test.dart` rendered before/after PNGs in seconds without a browser. Loading Roboto in a widget test made size assertions match the phone (the default test font is far wider). The independent review caught real issues: a retried confirm could un-confirm a set, an unreadable number could be confirmed with old values, the keyboard's Done skipped confirmation, and the summary's coach verdict stayed stale after an edit.
 - Next: the plan screen's "Složím si vlastní" sits where the previous step's primary button was (double-tap risk); check on an iPhone whether the set sheet should stop opening the keyboard by itself; workout title tap target is 37 px; let a past workout's date change and a forgotten exercise be added; Esc to close pages on desktop web.
+
+## 2026-11-22 — Body measurements and a working screenshot tour
+
+- What: added circumference tracking (waist, chest, arm, forearm, thigh, calf, hips, neck) on the existing Váha a míry page: add, history, delete with undo, 30-day change per part, persistence, backup export/import and wipe. Renamed the Progress row to match; the test expectation was updated with it.
+- Why: competitor research (`docs/research/competitors-2026-11.md`) lists body measurements as a standard free feature in Strong, Alpha Progression and Hevy; weight alone misses recomposition.
+- Bug found during verification: the screenshot tour's `pageBack()` looks for the English "Back" tooltip, but this Czech app uses "Zpět", so the tour failed on the exercise detail page even though its back arrow is present. Replaced with a localized `_back` helper. The tour now also captures the weight and measurements screens.
+- Numbers: 7 domain/state/UI tests added or updated, 33 focused tests pass, tour renders 29 screens in 12 s; format, `git diff --check` and targeted analyze are clean.
+- Next: finish the remaining top-20 research items in priority order and review the rendered screens with Tomáš.
+
+## 2026-11-22 — Deep redesign pass, audit fixes, and mobile review artifact
+
+- What: English-first exercise catalog (211 entries) with Czech names/aliases/pattern metadata; improved exercise search/filtering (EN/CZ/alias/muscle/equipment) and gym-only filter in library and workout picker; richer exercise detail with Czech name, clearer demo framing/replay/phase cue, science-based technique tips, alternatives, and next PR target.
+- Onboarding: added language selection (cs/en/sk, exercise names remain English), beginner vs 6+ months fork, and "I have my own plan" flow that collects schedule/gym preferences, saves a recommended fallback, then opens Program Editor prefilled with the selected day count.
+- Dopamine/UI: added Progress rank card and "Další PR cíle" card, made Home food block more prominent with calorie/protein progress and quick add, refreshed bottom nav with animated bar, updated gym presets (Suncity/Okragon/Extrifit/Form Factory/generic big gym).
+- Audit fixes: used suggested nutrition targets per field when only one custom target is set, restored counted-set guard in exercise history counts, guarded null bestToday in exercise comparison, skipped unknown recent exercises in picker, and added app-language setting in Settings.
+- Verification: `flutter analyze` clean on changed Dart files; focused tests passed (`progress_page_test`, `set_sheet_test`, `catalog_test`, `summary_test`, `measurement_test`, `bodyweight_test`, `backup_test`, `app_state_test`, `state_slices_test`); `flutter build web --release` succeeded; review artifact refreshed at `docs/screenshots/review-2026-11-22/`.
+- Next: collect user feedback from mobile emulator, polish demo quality beyond figurine animation, and continue i18n/dopamine tuning based on review.
+
+## 2026-11-22 — Weekly report, current-set marker and visual cleanup
+
+- What: new Týdenní report (Progress → "Týdenní report" or the "Report" action on the week card): weekly volume with per-day bars, workouts/time/sets/reps with % against last week, the week's records (one row per exercise, best value only), exercise of the week, and sets per muscle; arrows browse back to the first training week. Home shows a "Minulý týden" recap on Monday and Tuesday that opens last week's report. In the workout, the next set to log gets an ember stripe and tint.
+- Cleanup: tab bar labels fell back to the system font (AnimatedDefaultTextStyle replaced the theme style) and now use Inter; the rest bar is one row again after the overflow fix had wrapped its buttons to a second line (skip becomes an icon under 300 px); the Home food block lost its off-brand blue/orange boxes and three-line subtitle; rank names and the demo cue are Czech (Nováček…Elita, no "Lv."), rank uses ember with gold only at the top.
+- Why: competitor research item 19 (Boostcamp-style weekly report) was the last missing top-20 feature; the rest were visible inconsistencies Tomáš called slop.
+- Numbers: 11 new tests (9 domain, 2 widget); focused workout, home and progress suites pass (61 + 13 tests); screenshot tour renders the report.
+- Next: Tomáš's hands-on feedback from the new IPA.
+
+## 2026-11-23 — Onboarding rebuilt around plan styles, Czech + English, new figure
+
+- What: onboarding starts with a one-tap language choice (Czech or English, Slovak dropped, nothing preselected), then "Jak chceš trénovat?": a highlighted own-plan card or one of three styles (science-based, old school, strength). Questions show no answer until tapped; the schedule asks for days and session length. Six new style plans; science-based exercises carry a short "why this exercise" note with its study (Maeo 2021/2023, Pedrosa 2022, Kubo 2019, Kassiano 2023, Wolf 2023; plan principles from Schoenfeld 2016/2017 and Robinson 2024). The own-plan editor starts from any template with one tap, names are optional, empty days show one big add button.
+- Languages: `tr(cs, en)` pairs (lib/core/i18n.dart); the app rebuilds when the language changes. Translated in batches by a worker model and reviewed.
+- Exercises: 33 English names made consistent, 17 duplicates hidden from lists (ids kept for history), 45 exercises got a matching movement. The figure got volume, working muscles in the accent (helpers half-tone, equipment neutral), a faint start pose, three slow reps with phase labels and start/end frames.
+- Declined: copying scraped photos from free-exercise-db/wrkout (their maintainer says he does not own the image copyright); used only as pose reference.
+- Next: English for the remaining screens and technique texts, 54 new exercises, review, IPA.
+
+## 2026-11-24 — Phone preview of the whole redesign
+
+- What: built the release web app with CanvasKit bundled (`--no-web-resources-cdn`, relative `<base href="./">`) and published it inside a phone frame as a private claude.ai artifact (https://claude.ai/artifact/21ui45gtzW9tYi7c6u3R6u) with a "what changed / try this" column. Fixed the last 8 analyzer infos (curly braces in `splits.dart` and `workout_page.dart`).
+- Why: Tomáš asked for a page with a phone emulator to try the app and dictate feedback after the long redesign run.
+- Numbers: bundle 22 MB in 40 files after dropping skwasm/wimp renderers and debug symbols; build 60 s. Served locally from a sub-path, the build boots to the language picker in headless Chromium.
+- Not verified: storage and the AI proxy inside the claude.ai frame itself (no browser access to claude.ai from the hub).
+- Next: Tomáš's feedback on the preview.
+
+## 2026-11-24 — Exercise illustration polish completed after handoff
+
+- What: finished the pending figure rendering pass: fuller body shapes, highlighted working/helper muscles, rep-dependent effort, movement paths, floor shadows, and a live four-phase tempo strip. Side-view chest orientation follows the hands. Contact-sheet options support exercise subsets and larger cells.
+- Visual correction: the short squeeze phase clipped its label on a 390 px phone; labels now receive equal width while timeline segments retain their duration proportions.
+- Verification: targeted analyzer clean; figure/catalog and exercise-screen tests pass (5 tests); workout screenshot tour passes and renders 8 screens. Inspected the full catalog contact sheet and exercise detail screenshot. Independent read-only review approved the rendering changes before the label correction.
+- Delivery: source committed on the redesign branch. The previously published phone preview predates this final illustration polish; its hosted bundle has not been updated in this pass.
+- Next: hands-on feedback on the existing phone preview, then refresh the hosted bundle with any requested revisions.
+
+## 2026-11-24 — Remove the pain question
+
+- Removed the pain-selection screen from onboarding and plan setup following user feedback. Gym selection now leads directly to the generated plan in onboarding; later plan setup continues with the optional body and focus steps.
+- Removed unused question helpers, adjusted the progress count, and updated the flow tests and screenshot tour. Existing saved exercise exclusions remain supported.
+- Verification: targeted analyzer clean; first-run screenshot tour reaches the plan without the removed step.
+
+## 2026-11-24 — Follow-up audit: preserve profile and numeric input
+
+- Fixed Later in plan setup deleting saved sex, height, birth year and weight goal. It now discards only edits in that step and restores saved body details, including the weight field.
+- Fixed set input silently stripping minus signs (pasted -5 became 5) and decimal separators from reps (8.5 became 85). Keep these characters visible, reject invalid/negative values before persistence, and prevent steppers from replacing negative input. Existing draft values remain intact until input is corrected.
+- Translated the body-step validation toast for English users.
+- Evidence: added regression assertions failed before both fixes; body/profile flow and consent suites pass (15 tests), set editor passes (9). Baseline checks of active workout, backups, history and English onboarding also passed (37 including the set suite). Targeted analyzer clean.
+- Independent read-only audits: schedule-loss claim is blocked by the required schedule selection before save; draft-body claim does not apply because the body step is only offered in setup, which intentionally initializes from saved planAnswers rather than planDraft. Neither warranted changing persistence.
+- Next: continue the audit with nutrition and program editing; refresh the hosted preview after the source fixes are collected. This pass does not establish that the entire app is bug-free.
+
+## 2026-11-24 — Competitor-informed workout motion and input robustness
+
+- Research: used REA to navigate and inspect Hevy's feature page and Strong's public site. Recorded exact Evidence IDs, observations and limits in `docs/research/motion-rea-2026-11-24.md`; no claim of inspecting signed-in mobile app behavior.
+- Motion: slide/fade workout volume and completed-set values, animate exercise-card size and rest-bar entrance/exit, transition countdown values and completion icon, animate nutrition's remaining-goal feedback. Screen readers receive only the latest animated label. Reduced-motion settings show final states immediately.
+- Robustness: delayed reveals now cancel when reduced motion is enabled during a run; tab and selection animations settle too. Ambient clock subscribers stop in the background and resume in the foreground. Added deterministic regression tests for these cases.
+- Data: the completed-workout editor independently stripped minus signs and decimal separators, turning pasted fractional reps into different whole values. It now keeps invalid input visible, shows inline errors, preserves the last valid draft values, blocks saving, and recovers when corrected. Deleting an invalid set or exercise clears its validation state.
+- Review tooling: the workout screenshot tour now awaits set persistence and confirms the next remaining set, avoiding captures with stale totals or a skipped row.
+- Verification: 58 focused tests pass (motion, history editing, rest controls, set entry, nutrition and workout logging); targeted analyzer clean. Before/after workout renders captured under `/tmp/gym-motion-before` and `/tmp/gym-motion-final`. No repo-wide build or test run on this hub. Source work stays on `t3/app-deep-redesign`; hosted preview refresh remains separate.
+
+## 2026-11-25 — Pre-release audit fixes and bilingual polish
+
+- What: fixed the last preselected onboarding control (reminder time now needs a deliberate tap), kept Czech exercise names out of English lists, translated the keyboard "Done" bar and the Progress report action, and put bottom-nav transitions behind the shared reduced-motion-aware `Motion` helper. Updated the onboarding e2e scripts to the current language → value → consent → path flow, refreshed the stale product/design docs, and bumped the version to `1.0.0-beta.15+24`.
+- Why: a read-only audit of the redesign branch found these remaining gaps before the sideload build. A first fresh IPA from `23213fc` succeeded (run `45588478774`), but the branch had further fixes to land.
+- Numbers: two new regression tests (reminder stays unset until a time is picked; My-gym switch toggles once); full `flutter analyze --no-pub` clean; full `flutter test --no-pub` passes 509 tests.
+- Verification: focused consent and My-gym suites pass. The full test log still contains one pre-existing non-fatal hit-test warning in `first_workout_test.dart`; it does not fail the suite or CI.
+- Next: rebuild the phone-review bundle from the new HEAD, dispatch the final sideload IPA, and check its artifact and version.

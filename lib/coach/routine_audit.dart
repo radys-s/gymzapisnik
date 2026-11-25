@@ -4,6 +4,7 @@
 /// Rutina = dny, které se cvičí dokola; každý den počítáme jednou týdně.
 library;
 
+import '../core/i18n.dart';
 import '../domain/anatomy.dart';
 import '../domain/catalog.dart';
 import '../domain/models.dart';
@@ -91,7 +92,7 @@ String _focusName(String focusId) => dayFocuses
 String _sets(num n) {
   final v = n % 1 == 0 ? n.toInt().toString() : n.toStringAsFixed(1);
   final i = n.round();
-  return '$v ${i == 1 ? 'série' : (i >= 2 && i <= 4 ? 'série' : 'sérií')}';
+  return '$v ${i == 1 ? tr('série', 'set') : tr('sérií', 'sets')}';
 }
 
 /// Nejlepší dostupný cvik, který hlavu [headId] cvičí jako hlavní.
@@ -101,7 +102,7 @@ String? suggestFor(
   bool Function(Exercise e)? allowed,
 }) {
   String? fallback;
-  for (final e in builtInExercises) {
+  for (final e in catalogExercises) {
     if (taken.contains(e.id)) continue;
     if (allowed != null && !allowed(e)) continue;
     final a = anatomyOf(e.id);
@@ -171,8 +172,11 @@ List<AuditFinding> auditRoutine(
             id: 'focus-${f.id}',
             kind: AuditKind.missingFocus,
             focusId: f.id,
-            title: '$name: ${_sets(sets)} týdně',
-            detail: 'Velká partie v rutině chybí. Přidej aspoň jeden cvik.',
+            title: '$name: ${_sets(sets)} ${tr('týdně', 'per week')}',
+            detail: tr(
+              'Velká partie v rutině chybí. Přidej aspoň jeden cvik.',
+              'A major muscle group is missing from the routine. Add at least one exercise.',
+            ),
             dayIndex: shortest,
             exerciseId: suggestFor(head, taken: taken, allowed: allowed),
           ),
@@ -188,22 +192,44 @@ List<AuditFinding> auditRoutine(
           id: 'head-$head',
           kind: AuditKind.missingHead,
           focusId: f.id,
-          title: '$name: chybí ${_shortHead(head)}',
+          title: '$name: ${tr('chybí', 'missing')} ${_shortHead(head)}',
           detail: switch (head) {
-            'biceps_short' =>
+            'biceps_short' => tr(
               'Krátkou hlavu nejvíc trefí zdvih s lokty před tělem, '
                   'třeba na Scottově lavici.',
-            'biceps_long' =>
+              'The short head is hit best by curls with the elbows in front '
+                  'of the body, for example on a Scott bench.',
+            ),
+            'biceps_long' => tr(
               'Dlouhá hlava pracuje nejvíc s pažemi za tělem, '
                   'třeba zdvih na šikmé lavici.',
-            'triceps_long' =>
+              'The long head works hardest with the arms behind the body, '
+                  'for example incline curls.',
+            ),
+            'triceps_long' => tr(
               'Dlouhá hlava potřebuje cvik s pažemi nad hlavou.',
-            'delt_rear' => 'Zadní ramena drží rameno zdravé a plné zezadu.',
-            'delt_side' =>
+              'The long head needs an exercise with the arms overhead.',
+            ),
+            'delt_rear' => tr(
+              'Zadní ramena drží rameno zdravé a plné zezadu.',
+              'Rear delts keep the shoulder healthy and full from behind.',
+            ),
+            'delt_side' => tr(
               'Boční delt dělá šířku ramen. Tlaky ho skoro netrefí.',
-            'chest_upper' => 'Horní hrudník trefí tlak na šikmé lavici.',
-            'hamstrings' => 'Zadní stehna vyvažují dřepy a chrání kolena.',
-            _ => 'Tahle část partie zatím nedostává žádnou přímou práci.',
+              'Side delts create shoulder width. Presses barely hit them.',
+            ),
+            'chest_upper' => tr(
+              'Horní hrudník trefí tlak na šikmé lavici.',
+              'The upper chest is hit by incline presses.',
+            ),
+            'hamstrings' => tr(
+              'Zadní stehna vyvažují dřepy a chrání kolena.',
+              'Hamstrings balance squats and protect the knees.',
+            ),
+            _ => tr(
+              'Tahle část partie zatím nedostává žádnou přímou práci.',
+              'This part of the muscle group is not getting any direct work yet.',
+            ),
           },
           dayIndex: direct.$1,
           exerciseId: suggestFor(head, taken: taken, allowed: allowed),
@@ -217,8 +243,12 @@ List<AuditFinding> auditRoutine(
           id: 'low-${f.id}',
           kind: AuditKind.lowVolume,
           focusId: f.id,
-          title: '$name: ${_sets(sets)} týdně, málo',
-          detail: 'Na růst počítej s $low až $high sériemi týdně.',
+          title:
+              '$name: ${_sets(sets)} ${tr('týdně', 'per week')}, ${tr('málo', 'low')}',
+          detail: tr(
+            'Na růst počítej s $low až $high sériemi týdně.',
+            'For growth, aim for $low to $high sets per week.',
+          ),
           dayIndex: direct.$1,
           exerciseId: suggestFor(head, taken: taken, allowed: allowed),
         ),
@@ -229,10 +259,14 @@ List<AuditFinding> auditRoutine(
           id: 'high-${f.id}',
           kind: AuditKind.highVolume,
           focusId: f.id,
-          title: '$name: ${_sets(sets)} týdně, hodně',
-          detail:
-              'Nad $high sérií týdně už to spíš unaví, než přidá. '
-              'Zvaž ubrat.',
+          title:
+              '$name: ${_sets(sets)} ${tr('týdně', 'per week')}, ${tr('hodně', 'high')}',
+          detail: tr(
+            'Nad $high sérií týdně už to spíš unaví, než přidá. '
+                'Zvaž ubrat.',
+            'Above $high sets a week it tends to fatigue you rather than '
+                'help you grow. Consider cutting back.',
+          ),
           dayIndex: direct.$1,
         ),
       );

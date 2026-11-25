@@ -11,7 +11,7 @@ const _colors = FigureColors(
   Color(0xFFE4E4E7),
   Color(0xFF6E6E76),
   Color(0x889A9AA2),
-  Color(0xFF76B900),
+  Color(0xFF9A9AA2),
   Color(0xFF26262A),
 );
 
@@ -37,17 +37,25 @@ void main() {
     }
   });
 
-  // Kontaktní arch všech figurek pro vizuální kontrolu:
-  // FIGURE_SHEET=cesta.png flutter test test/figure_test.dart
+  // Contact sheet of all figures for visual review:
+  // FIGURE_SHEET=figures.png flutter test test/figure_test.dart
   final sheet = Platform.environment['FIGURE_SHEET'];
   test('contact sheet', skip: sheet == null, () async {
-    const cell = 150.0, cols = 10;
-    final list = builtInExercises;
+    final cell = double.parse(Platform.environment['FIGURE_CELL'] ?? '150');
+    final cols = int.parse(Platform.environment['FIGURE_COLS'] ?? '10');
+    // FIGURE_IDS=squat,bench_press limits the sheet to those exercises.
+    final ids = Platform.environment['FIGURE_IDS']?.split(',');
+    final list = ids == null
+        ? builtInExercises
+        : [
+            for (final e in builtInExercises)
+              if (ids.contains(e.id)) e,
+          ];
     final rows = (list.length / cols).ceil();
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     canvas.drawRect(
-      const Rect.fromLTWH(0, 0, cell * cols, 1e5),
+      Rect.fromLTWH(0, 0, cell * cols, 1e5),
       Paint()..color = Colors.black,
     );
     for (final (i, e) in list.indexed) {
@@ -60,7 +68,12 @@ void main() {
         e.equipment,
         t,
         _colors,
-      ).paint(canvas, const Size(cell, cell - 22));
+        work: bodyPartsOf(e.id).work,
+        help: bodyPartsOf(e.id).help,
+        ghost: true,
+        path: true,
+        effort: double.parse(Platform.environment['FIGURE_EFFORT'] ?? '1'),
+      ).paint(canvas, Size(cell, cell - 22));
       final tp = TextPainter(
         text: TextSpan(
           text: e.id,
