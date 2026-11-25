@@ -61,14 +61,17 @@ let page, context;
 
  // První spuštění: uvítání, dotazník (přeskočit) a souhlas.
  const onboard=async()=>{
-  await see(has(/Gym zápisník/),'welcome');
-  await tap('button','Sestavit můj plán');
-  // Dotazník „Tvůj plán“ jde přeskočit.
-  await see(has(/Tvůj plán/),'plan step');
-  await tapUntil('button','Přeskočit',has(/Než začneš/),'consent');
-  await tap('checkbox',/Souhlasím/);
-  await tap('radio',/18 let nebo/);
+  await see(has(/Vyber jazyk/),'language step');
+  await tap('button',/Čeština/);
+  await see(has(/Každý den víš/),'welcome');
+  await tap('button','Začít');
+  await see(has(/Než začneš/),'consent');
+  await tap('button',/Souhlasím s podmínkami/);
+  await tap('button',/18 let nebo/);
   await tap('button','Pokračovat');
+  // Volba stylu jde přeskočit: nový profil se souhlasem už dorazí domů.
+  await see(has(/Jak chceš trénovat/),'path step');
+  await tap('button','Přeskočit');
  };
  await p.goto('http://localhost:8099/'); await sem();
  await onboard();

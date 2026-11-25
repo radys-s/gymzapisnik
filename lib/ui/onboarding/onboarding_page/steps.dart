@@ -181,7 +181,7 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// Připomínka tréninku: výchozí čas je předvybraný, stačí jedno klepnutí.
+/// Připomínka tréninku: čas vybere uživatel, nic není předvybrané.
 class _ReminderStep extends StatefulWidget {
   final bool busy;
   final VoidCallback onBack;
@@ -200,7 +200,9 @@ class _ReminderStep extends StatefulWidget {
 
 class _ReminderStepState extends State<_ReminderStep> {
   static const _times = [7, 12, 16, 18, 20];
-  int hour = 18;
+
+  /// Nothing is picked for the user: the reminder needs a deliberate time.
+  int? hour;
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +219,7 @@ class _ReminderStepState extends State<_ReminderStep> {
       action: tr('Zapnout připomínky', 'Turn on reminders'),
       busy: widget.busy,
       onBack: widget.onBack,
-      onNext: () => widget.onEnable(hour * 60),
+      onNext: hour == null ? null : () => widget.onEnable(hour! * 60),
       secondary: TextButton(
         onPressed: widget.busy ? null : widget.onSkip,
         child: Text(tr('Teď ne', 'Not now')),
@@ -248,6 +250,18 @@ class _ReminderStepState extends State<_ReminderStep> {
                   onTap: () => setState(() => hour = h),
                 ),
             ],
+          ),
+          const SizedBox(height: Space.s),
+          Text(
+            hour == null
+                ? tr('Vyber čas, nebo to přeskoč.', 'Pick a time, or skip.')
+                : tr(
+                    'Připomínka bude v $hour:00.',
+                    'Reminder will be at $hour:00.',
+                  ),
+            style: text.bodySmall?.copyWith(
+              color: context.palette.secondaryLabel,
+            ),
           ),
         ],
       ),

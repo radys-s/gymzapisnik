@@ -112,3 +112,11 @@
 - Data: the completed-workout editor independently stripped minus signs and decimal separators, turning pasted fractional reps into different whole values. It now keeps invalid input visible, shows inline errors, preserves the last valid draft values, blocks saving, and recovers when corrected. Deleting an invalid set or exercise clears its validation state.
 - Review tooling: the workout screenshot tour now awaits set persistence and confirms the next remaining set, avoiding captures with stale totals or a skipped row.
 - Verification: 58 focused tests pass (motion, history editing, rest controls, set entry, nutrition and workout logging); targeted analyzer clean. Before/after workout renders captured under `/tmp/gym-motion-before` and `/tmp/gym-motion-final`. No repo-wide build or test run on this hub. Source work stays on `t3/app-deep-redesign`; hosted preview refresh remains separate.
+
+## 2026-11-25 — Pre-release audit fixes and bilingual polish
+
+- What: fixed the last preselected onboarding control (reminder time now needs a deliberate tap), kept Czech exercise names out of English lists, translated the keyboard "Done" bar and the Progress report action, and put bottom-nav transitions behind the shared reduced-motion-aware `Motion` helper. Updated the onboarding e2e scripts to the current language → value → consent → path flow, refreshed the stale product/design docs, and bumped the version to `1.0.0-beta.15+24`.
+- Why: a read-only audit of the redesign branch found these remaining gaps before the sideload build. A first fresh IPA from `23213fc` succeeded (run `45588478774`), but the branch had further fixes to land.
+- Numbers: two new regression tests (reminder stays unset until a time is picked; My-gym switch toggles once); full `flutter analyze --no-pub` clean; full `flutter test --no-pub` passes 509 tests.
+- Verification: focused consent and My-gym suites pass. The full test log still contains one pre-existing non-fatal hit-test warning in `first_workout_test.dart`; it does not fail the suite or CI.
+- Next: rebuild the phone-review bundle from the new HEAD, dispatch the final sideload IPA, and check its artifact and version.

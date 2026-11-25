@@ -258,8 +258,8 @@ class _NavItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
+          duration: Motion.of(context, Motion.quick),
+          curve: Motion.curve,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: selected
@@ -272,10 +272,10 @@ class _NavItem extends StatelessWidget {
             children: [
               AnimatedScale(
                 scale: selected ? 1.0 : 0.92,
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutBack,
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
+                  duration: Motion.of(context, Motion.quick),
                   transitionBuilder: (child, anim) => ScaleTransition(
                     scale: Tween(begin: 0.85, end: 1.0).animate(anim),
                     child: FadeTransition(opacity: anim, child: child),
@@ -290,8 +290,8 @@ class _NavItem extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
                 style: TextStyle(
                   fontFamily: textFont,
                   fontSize: 11,
@@ -306,8 +306,8 @@ class _NavItem extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               AnimatedContainer(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
+                duration: Motion.of(context, Motion.quick),
+                curve: Motion.curve,
                 height: 3,
                 width: selected ? 18 : 0,
                 decoration: BoxDecoration(

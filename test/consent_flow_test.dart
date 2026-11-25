@@ -5,22 +5,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymzapisnik/app.dart';
 import 'package:gymzapisnik/coach/plan_quiz.dart';
+import 'package:gymzapisnik/coach/reminders.dart';
 import 'package:gymzapisnik/coach/tips.dart';
 import 'package:gymzapisnik/data/database.dart';
 import 'package:gymzapisnik/data/store.dart';
 import 'package:gymzapisnik/domain/profile.dart';
+import 'package:gymzapisnik/notify/notifier.dart';
 import 'package:gymzapisnik/state/app_state.dart';
 import 'package:gymzapisnik/ui/design/components.dart';
 import 'package:gymzapisnik/ui/onboarding/question.dart';
 import 'package:gymzapisnik/ui/program/program_widgets.dart';
 import 'package:gymzapisnik/ui/welcome/whats_new.dart';
 
-Future<AppState> _fresh(WidgetTester tester) async {
+Future<AppState> _fresh(
+  WidgetTester tester, {
+  Notifier notifier = const NoopNotifier(),
+}) async {
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
-  final state = AppState(LocalStore(db));
+  final state = AppState(LocalStore(db), notifier: notifier);
   await tester.runAsync(state.load);
   return state;
+}
+
+class _FakeNotifier implements Notifier {
+  @override
+  bool get supported => true;
+
+  @override
+  Future<bool> requestPermission() async => true;
+
+  @override
+  Future<void> schedule(List<Reminder> reminders) async {}
+
+  @override
+  Future<void> cancelAll() async {}
 }
 
 /// Klepnutí, které ukládá do databáze, musí běžet v reálném čase.
@@ -431,6 +450,33 @@ void main() {
     await tester.tap(find.byType(BootScreen));
     await tester.pumpAndSettle();
     expect(find.text('Trénink'), findsWidgets);
+  });
+
+  testWidgets('reminder time starts unselected and needs a tap', (
+    tester,
+  ) async {
+    final state = await _fresh(tester, notifier: _FakeNotifier());
+    await tester.runAsync(() async {
+      await state.applyPlan(
+        const PlanAnswers(days: 3, style: PlanStyle.science),
+      );
+      await _midway(state, 9);
+    });
+    await _open(tester, state);
+
+    expect(find.text('Připomenu ti trénink?'), findsOneWidget);
+    expect(
+      tester
+          .widgetList<ChoiceTile>(find.byType(ChoiceTile))
+          .where((c) => c.selected),
+      isEmpty,
+    );
+    await _tapAndSave(tester, find.text('Zapnout připomínky'));
+    expect(state.profile.reminderMinutes, isNull);
+
+    await _tapAndSave(tester, find.text('18'));
+    await _tapAndSave(tester, find.text('Zapnout připomínky'));
+    expect(state.profile.reminderMinutes, 18 * 60);
   });
 
   testWidgets('startup error offers retry', (tester) async {

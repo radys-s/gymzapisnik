@@ -235,7 +235,8 @@ class _ExerciseRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final subtitle = [
-      if (e.nameCs.isNotEmpty && fold(e.nameCs) != fold(e.name)) e.nameCs,
+      if (!isEnglish && e.nameCs.isNotEmpty && fold(e.nameCs) != fold(e.name))
+        e.nameCs,
       muscleLabel(e.muscle),
       e.equipment.label,
       if (trained > 0) tr('$trained× v historii', '$trained× in history'),

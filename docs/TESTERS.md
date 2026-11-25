@@ -5,7 +5,16 @@ bez účtu a cloudové synchronizace. AI po potvrzení upozornění odesílá fo
 nebo seznam do Cloudflare Workers AI; hledání čárového kódu používá Open Food Facts.
 Pravidelně si **ulož zálohu** (Nastavení → Uložit zálohu do souboru).
 
-## Co je nového v beta.14
+## Co je nového v beta.15
+
+**Jazyk**: čeština a angličtina; v angličtině už cviky a tlačítka nepadají do češtiny.
+**Vlastní plán**: v úvodu je první volbou „Mám vlastní plán“ — dny, cviky, trénink. Pro zkušené
+cvičence je tu i vědecký, starý a silový styl s vysvětlením pravidel.
+**Připomínka**: čas se nevybírá za tebe; bez klepnutí se nic nenastaví.
+**Opravy**: při přesouvání jídla na jiný den zůstává čas jídla, starší importovaný den jde otevřít,
+přepínač ve „Moje posilovna“ mění stroj jen jednou.
+
+## Co bylo nového v beta.14
 
 **Zápis série**: v úpravě série je hlavní tlačítko „Potvrdit sérii“ (potvrdí sérii stejně jako fajfka),
 „Jen uložit“ hodnoty uloží bez potvrzení. Fajfka u série bez opakování nebo váhy rovnou otevře

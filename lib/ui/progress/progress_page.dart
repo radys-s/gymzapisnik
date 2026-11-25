@@ -136,7 +136,7 @@ class ProgressPage extends StatelessWidget {
           if (finished.isNotEmpty) ...[
             SectionHeader(
               tr('Trénink tento týden', "This week's training"),
-              action: 'Report',
+              action: tr('Zpráva', 'Report'),
               onAction: () => Navigator.push(
                 context,
                 MaterialPageRoute(

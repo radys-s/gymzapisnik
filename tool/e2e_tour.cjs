@@ -87,11 +87,20 @@ const note = (...a) => { const s = a.join(' '); console.log(s); log.push(s); };
       const t = await txt();
       if (/Domů/.test(t) && /Strava/.test(t) && /Pokrok/.test(t)) break;
       await shot(`onboarding-${step}`);
+      if (/Vyber jazyk/.test(t)) {
+        await tap(/Čeština/);
+        continue;
+      }
       // Terms and age come right after the welcome, as two choice cards.
       if (/Než začneš|Souhlasím/.test(t)) {
         await tap(/Souhlasím/);
         await tap(/18 let nebo/);
         await tap(/^Pokračovat/);
+        continue;
+      }
+      // The path step is skippable: a fresh profile still reaches Home.
+      if (/Jak chceš trénovat/.test(t)) {
+        await tap(/Přeskočit/);
         continue;
       }
       const names = await buttons();

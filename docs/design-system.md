@@ -9,9 +9,11 @@ Written 2026-11-22. Replaces the neon gradient look of beta.13/14. Competitor no
 2. **One accent.** Ember orange marks what you can press and what is current. Nothing else is orange.
 3. **Color means something.** Green = a completed set or a positive change. Gold = a record or badge.
    Red = destructive or failure set. Everything else is neutral grey.
-4. **Flat.** No gradients, glows, grid textures, drifting backgrounds or shadows. Depth comes from
-   surface tone (background → card → control).
-5. **Quiet motion.** Short state transitions (150–250 ms). Nothing moves on its own.
+4. **Quietly layered.** Depth comes from surface tone (background → card → control). A single soft
+   shadow under the bottom bar and a subtle gradient on a pressed/selected tile are allowed; no
+   glows, grid textures or drifting backgrounds.
+5. **Quiet motion.** All transitions go through `Motion` (roughly 120–280 ms for state changes, zero
+   when the system asks to reduce motion). Nothing moves on its own.
 
 ## Tokens (`lib/ui/design/tokens.dart`)
 
