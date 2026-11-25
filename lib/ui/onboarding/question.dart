@@ -246,6 +246,7 @@ class ChoiceCard extends StatelessWidget {
   final String? hint;
   final bool selected;
   final bool multi;
+  final bool enabled;
   final VoidCallback onTap;
 
   /// Barva ikony a výběru; bez ní barva motivu.
@@ -260,17 +261,27 @@ class ChoiceCard extends StatelessWidget {
     this.leading,
     this.hint,
     this.multi = false,
+    this.enabled = true,
     this.color,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(
+    enabled: enabled,
+    color: color ?? context.palette.accent,
+    borderRadius: BorderRadius.circular(context.palette.controlRadius + 2),
+    child: _content(context),
+  );
+
+  Widget _content(BuildContext context) {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     final radius = BorderRadius.circular(p.controlRadius + 2);
     final c = color ?? p.accent;
     return Semantics(
       button: true,
+      enabled: enabled,
+      onTap: enabled ? onTap : null,
       selected: selected,
       inMutuallyExclusiveGroup: !multi,
       label: [label, ?hint].join(', '),
@@ -278,6 +289,7 @@ class ChoiceCard extends StatelessWidget {
       child: PopSelect(
         selected: selected,
         child: PressScale(
+          enabled: enabled,
           child: TweenAnimationBuilder<double>(
             tween: Tween(end: selected ? 1 : 0),
             duration: Motion.of(context, Motion.quick),
@@ -297,7 +309,7 @@ class ChoiceCard extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  onTap: onTap,
+                  onTap: enabled ? onTap : null,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 68),
                     child: Padding(

@@ -390,11 +390,41 @@ class _AppLoaderState extends State<AppLoader> {
   @override
   Widget build(BuildContext context) {
     final ready = state;
-    if (ready != null && !held) return GymApp(ready);
-    return appFrame(
-      home: error == null
-          ? BootScreen(tip: tip, onSkip: _skip)
-          : StartupErrorPage(error: error!, onRetry: _load),
+    final showApp = ready != null && !held;
+    final reduce =
+        MediaQuery.maybeDisableAnimationsOf(context) ??
+        WidgetsBinding
+            .instance
+            .platformDispatcher
+            .accessibilityFeatures
+            .disableAnimations;
+    return AnimatedSwitcher(
+      duration: reduce ? Duration.zero : Motion.quick,
+      switchInCurve: Motion.curve,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.center,
+        children: [
+          for (final child in previous)
+            ExcludeSemantics(child: IgnorePointer(child: child)),
+          ?current,
+        ],
+      ),
+      child: KeyedSubtree(
+        key: ValueKey(
+          showApp
+              ? 'ready'
+              : error == null
+              ? 'loading'
+              : 'error',
+        ),
+        child: showApp
+            ? GymApp(ready)
+            : appFrame(
+                home: error == null
+                    ? BootScreen(tip: tip, onSkip: _skip)
+                    : StartupErrorPage(error: error!, onRetry: _load),
+              ),
+      ),
     );
   }
 }

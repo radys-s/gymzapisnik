@@ -22,7 +22,14 @@ class PrimaryButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(
+    enabled: onPressed != null && !busy,
+    color: context.palette.label,
+    borderRadius: BorderRadius.circular(context.palette.controlRadius),
+    child: _content(context),
+  );
+
+  Widget _content(BuildContext context) {
     final p = context.palette;
     final enabled = onPressed != null && !busy;
     final fg = enabled ? p.onCta : p.tertiaryLabel;

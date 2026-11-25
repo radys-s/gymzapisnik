@@ -420,6 +420,71 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
 /// Značky pro sdílené přechody (Hero) – jedna funkce, ať se nerozejdou.
 String heroTag(String kind, Object id) => 'hero:$kind:$id';
 
+/// Shared pointer and keyboard feedback without adding a focus stop or
+/// intercepting the child's tap. Reduced motion retains the focus outline.
+class HoverLift extends StatefulWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+  final Color color;
+  final bool enabled;
+  const HoverLift({
+    super.key,
+    required this.child,
+    required this.borderRadius,
+    required this.color,
+    this.enabled = true,
+  });
+
+  @override
+  State<HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<HoverLift> {
+  bool _hover = false;
+  bool _focus = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) {
+      _hover = _focus = false;
+      return widget.child;
+    }
+    final active = _hover || _focus;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onFocusChange: (value) => setState(() => _focus = value),
+        child: AnimatedContainer(
+          duration: Motion.of(context, Motion.instant),
+          curve: Motion.curve,
+          transform: Matrix4.translationValues(
+            0,
+            active && Motion.on(context) ? -2 : 0,
+            0,
+          ),
+          foregroundDecoration: BoxDecoration(
+            borderRadius: widget.borderRadius,
+            border: Border.all(
+              color: widget.color.withValues(
+                alpha: _focus
+                    ? 0.75
+                    : _hover
+                    ? 0.30
+                    : 0,
+              ),
+            ),
+          ),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
 /// A changing value slides and fades into place. Screen readers receive
 /// only the current value, never the outgoing transition copy.
 class AnimatedLabel extends StatelessWidget {

@@ -40,7 +40,14 @@ class Panel extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => PressScale(
+  Widget build(BuildContext context) => HoverLift(
+    enabled: onTap != null,
+    color: context.palette.accent,
+    borderRadius: BorderRadius.circular(Radii.card),
+    child: _content(context),
+  );
+
+  Widget _content(BuildContext context) => PressScale(
     enabled: onTap != null,
     scale: 0.985,
     child: CardSurface(

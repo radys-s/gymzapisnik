@@ -117,6 +117,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
       return LargeTitlePage(
         // The tab bar already says "Domů"; the title greets instead.
         title: greeting(now),
+        titleLeading: const AppMark(size: 30),
         actions: [
           IconButton(
             tooltip: tr('Trenér', 'Coach'),

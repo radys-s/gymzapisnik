@@ -11,6 +11,7 @@ import '../../coach/reminders.dart';
 import '../../domain/bodyweight.dart';
 import '../../state/app_state.dart';
 import '../design/components.dart';
+import '../design/brand_stage.dart';
 import '../design/motion.dart';
 import '../design/tokens.dart';
 import '../program/plan_quiz.dart' show planFacts;
@@ -374,12 +375,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   /// The language applies at once; the app rebuilds in it and the intro
   /// resumes on the next step, which is saved first.
+  AppLang? _languageChoice;
+
   Future<void> _pickLanguage(AppLang lang) async {
-    await state.setOnboardingStep(steps.indexOf(_S.value));
-    if (lang != state.profile.appLanguage) {
-      await state.setAppLanguage(lang);
-    } else if (mounted) {
-      _go(_S.value);
+    if (busy) return;
+    setState(() {
+      busy = true;
+      _languageChoice = lang;
+    });
+    try {
+      await state.setOnboardingStep(steps.indexOf(_S.value));
+      if (lang != state.profile.appLanguage) {
+        await state.setAppLanguage(lang);
+      } else if (mounted) {
+        _go(_S.value);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _languageChoice = null);
+        showToast(
+          context,
+          tr(
+            'Jazyk se nepodařilo uložit. Zkus to znovu.',
+            'Could not save the language. Try again.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
@@ -619,9 +642,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
       child: StaggerColumn(
         gap: Space.s,
         children: [
-          const SizedBox(height: Space.xl),
-          const Center(child: AppMark(size: 96)),
-          const SizedBox(height: Space.l),
+          const BrandStage(),
+          const SizedBox(height: Space.s),
           Text(
             tr('Gym zápisník', 'Gym Log'),
             textAlign: TextAlign.center,
@@ -644,7 +666,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
               hint: lang == AppLang.cs
                   ? tr('Aplikace bude česky', 'The app will be in Czech')
                   : 'The app will be in English',
-              selected: false,
+              enabled: !busy,
+              selected: _languageChoice == lang,
               onTap: () => _pickLanguage(lang),
             ),
         ],

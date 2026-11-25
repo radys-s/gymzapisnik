@@ -120,3 +120,12 @@
 - Numbers: two new regression tests (reminder stays unset until a time is picked; My-gym switch toggles once); full `flutter analyze --no-pub` clean; full `flutter test --no-pub` passes 509 tests.
 - Verification: focused consent and My-gym suites pass. The full test log still contains one pre-existing non-fatal hit-test warning in `first_workout_test.dart`; it does not fail the suite or CI.
 - Next: rebuild the phone-review bundle from the new HEAD, dispatch the final sideload IPA, and check its artifact and version.
+
+## 2026-11-25 — First impression: brand, welcome and interaction finish
+
+- What: gave language selection and welcome a finite 900 ms brand entrance, with the existing icon framed by restrained calibration rings. Rebuilt the welcome hierarchy around a bilingual two-line headline, concise supporting copy and compact benefit rows. Home now carries the same small brand mark in its greeting.
+- Motion: loading crossfades into the real app; primary actions, tappable panels and onboarding choices share a 2 px pointer lift and a visible keyboard-focus outline. These effects add no permanent animation loop and respect reduced motion. The hover wrapper adds no keyboard traversal stop and does not intercept taps.
+- Reliability: language selection gives immediate selected feedback, blocks duplicate saves and disables its controls while saving. Choice cards now expose their own screen-reader tap action and disabled state instead of hiding the child's action with their combined label.
+- Verification: new tests cover finite logo motion, changes to reduced motion while it plays, 320 × 568 layout with 1.5× text, pointer enter/exit and taps, keyboard activation, and choice accessibility. Focused onboarding, first-workout, set-entry, navigation, Home and design checks pass; targeted analyzer clean. The screen tour rendered 23 first-run and tab screens for visual inspection.
+- Evidence: actual before/after Flutter screenshots and an interactive comparison are in `docs/screenshots/first-impression-2026-11-25/`. Independent read-only review found one saving-state affordance issue; fixed it directly. Existing app-icon assets retain the same final mark, so installation and in-app branding stay consistent.
+- Delivery: this follow-up starts from merged PR #14 in the same worktree, on `tomas/first-impression`. The hosted phone preview and IPA have not been rebuilt in this pass.

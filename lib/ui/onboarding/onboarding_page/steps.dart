@@ -299,52 +299,80 @@ class _Value extends StatelessWidget {
     final p = context.palette;
     final text = Theme.of(context).textTheme;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: Space.xl),
-        const Reveal(child: AppMark(size: 112)),
-        const SizedBox(height: Space.xxl),
+        const BrandStage(height: 172),
         Reveal(
-          index: 1,
-          child: Semantics(
-            container: true,
-            header: true,
-            child: Text(
-              tr('Gym zápisník', 'Gym Log'),
-              style: text.headlineLarge,
-              textAlign: TextAlign.center,
+          child: Text(
+            tr('Gym zápisník', 'Gym Log'),
+            textAlign: TextAlign.center,
+            style: text.labelLarge?.copyWith(
+              color: p.secondaryLabel,
+              letterSpacing: 1.4,
             ),
           ),
         ),
-        const SizedBox(height: Space.s),
+        const SizedBox(height: Space.m),
+        Reveal(
+          index: 1,
+          child: Semantics(
+            header: true,
+            child: Text(
+              tr('Tvoje práce.\nTvůj progres.', 'Your effort.\nYour progress.'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: condensedFont,
+                fontSize: 46,
+                height: 1.02,
+                letterSpacing: -0.8,
+                fontWeight: FontWeight.w700,
+                color: p.label,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: Space.m),
         Reveal(
           index: 2,
           child: Text(
             tr(
-              'Trenér do kapsy: řekne, co dnes, a hlídá, jak rosteš.',
-              'A pocket coach: tells you what to do today and tracks your growth.',
+              'Méně přemýšlení mezi sériemi. Víc prostoru zesílit.',
+              'Less thinking between sets. More room to get stronger.',
             ),
             textAlign: TextAlign.center,
-            style: text.bodyLarge?.copyWith(color: p.secondaryLabel),
+            style: text.bodyMedium?.copyWith(
+              color: p.secondaryLabel,
+              height: 1.4,
+            ),
           ),
         ),
-        const SizedBox(height: Space.xxl),
+        const SizedBox(height: Space.xl),
         for (final (i, (icon, title, body)) in _points.indexed)
           Reveal(
             index: 3 + i,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: Space.l),
+              padding: const EdgeInsets.symmetric(vertical: Space.s),
               child: Row(
                 children: [
-                  IconTile(icon, color: p.secondaryLabel, size: 40),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: p.accent.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, size: 19, color: p.accent),
+                  ),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: text.titleMedium),
+                        Text(title, style: text.titleSmall),
+                        const SizedBox(height: 2),
                         Text(
                           body,
-                          style: text.bodyMedium?.copyWith(
+                          style: text.bodySmall?.copyWith(
                             color: p.secondaryLabel,
                           ),
                         ),
