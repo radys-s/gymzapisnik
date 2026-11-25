@@ -79,9 +79,14 @@ flutter:
   assets:
     - assets/fonts/OFL-BarlowCondensed.txt
     - assets/fonts/OFL-Inter.txt
+    - assets/fonts/OFL-IBMPlexMono.txt
 
   # Tensor: úzké tučné písmo pro nadpisy a čísla (SIL OFL 1.1).
   fonts:
+    - family: IBM Plex Mono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono-Regular.ttf
+          weight: 400
     # Inter: text face (SIL OFL 1.1).
     - family: Inter
       fonts:

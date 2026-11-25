@@ -413,7 +413,13 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
         child: child,
       ),
     ),
-    child: IndexedStack(index: widget.index, children: widget.children),
+    child: IndexedStack(
+      index: widget.index,
+      children: [
+        for (final (i, child) in widget.children.indexed)
+          TickerMode(enabled: i == widget.index, child: child),
+      ],
+    ),
   );
 }
 

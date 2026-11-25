@@ -46,6 +46,7 @@ Future<void> _fonts() async {
       '$material/Roboto-$w.ttf',
   ]);
   await _font('MaterialIcons', ['$material/MaterialIcons-Regular.otf']);
+  await _font('IBM Plex Mono', ['assets/fonts/IBMPlexMono-Regular.ttf']);
   await _font('Inter', [
     for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold'])
       'assets/fonts/Inter-$w.ttf',

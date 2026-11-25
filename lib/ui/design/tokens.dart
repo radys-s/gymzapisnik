@@ -201,6 +201,9 @@ const condensedFont = 'Barlow Condensed';
 /// Text face for everything else.
 const textFont = 'Inter';
 
+/// Small technical metadata; bundled for consistent glyphs on every platform.
+const technicalFont = 'IBM Plex Mono';
+
 /// Čísla se stejnou šířkou číslic, aby hodnoty neposkakovaly.
 const tabular = [FontFeature.tabularFigures()];
 

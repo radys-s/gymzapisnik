@@ -27,6 +27,7 @@ import '../workout/launcher.dart';
 import '../settings/file_io.dart';
 import 'dashboard.dart';
 import 'food_block.dart';
+import 'home_technical.dart';
 
 /// Home shows today's action, food, this week's focus, and recent workouts.
 /// Routines live in Training, while deeper metrics live in Progress.
@@ -118,6 +119,7 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
         // The tab bar already says "Domů"; the title greets instead.
         title: greeting(now),
         titleLeading: const AppMark(size: 30),
+        background: const HomeTechnicalBackground(),
         actions: [
           IconButton(
             tooltip: tr('Trenér', 'Coach'),
@@ -127,6 +129,10 @@ class _HomePageState extends State<HomePage> with WorkoutLauncher {
           SettingsButton(state),
         ],
         children: [
+          HomeSystemLine(
+            now: now,
+            workouts: state.workouts.where((w) => w.finished).length,
+          ),
           if (state.backupDue)
             Padding(
               padding: const EdgeInsets.only(bottom: Space.m),
@@ -247,8 +253,7 @@ class _TodayCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => HeroCard(
-    padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.l),
+  Widget build(BuildContext context) => HomeConsoleSurface(
     // Rozepsaný trénink se mění při každé sérii: překreslí se jen karta.
     child: ListenableBuilder(
       listenable: state.on.active,
@@ -332,7 +337,14 @@ class _TodayCard extends StatelessWidget {
                           '${dayIndex % split.days.length + 1}/${split.days.length}',
                     ),
                   ),
-                  Text(day.name, style: text.headlineMedium),
+                  Text(
+                    day.name,
+                    style: text.headlineMedium?.copyWith(
+                      fontFamily: condensedFont,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -353,18 +365,22 @@ class _TodayCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Space.m),
-        for (final (pe, s) in plan.take(5))
+        for (final (i, (pe, s)) in plan.take(5).indexed)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Row(
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: Space.s),
-                  decoration: BoxDecoration(
-                    color: p.tertiaryLabel,
-                    shape: BoxShape.circle,
+                ExcludeSemantics(
+                  child: SizedBox(
+                    width: 28,
+                    child: Text(
+                      (i + 1).toString().padLeft(2, '0'),
+                      style: TextStyle(
+                        fontFamily: technicalFont,
+                        fontSize: 10,
+                        color: p.accent.withValues(alpha: 0.65),
+                      ),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -375,6 +391,7 @@ class _TodayCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: Space.s),
                 Text(
                   _target(state.typeOf(pe.exerciseId), pe, s),
                   style: text.bodyMedium?.copyWith(
@@ -404,6 +421,7 @@ class _TodayCard extends StatelessWidget {
                 style: text.bodySmall?.copyWith(fontFeatures: tabular),
               ),
             ),
+            const SizedBox(width: Space.s),
             TextButton(
               onPressed: busy ? null : onOther,
               style: TextButton.styleFrom(
@@ -527,8 +545,8 @@ class _Eyebrow extends StatelessWidget {
     child: Text(
       text.toUpperCase(),
       style: TextStyle(
-        fontFamily: textFont,
-        color: color ?? context.palette.tertiaryLabel,
+        fontFamily: technicalFont,
+        color: color ?? context.palette.secondaryLabel,
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.6,
@@ -785,7 +803,7 @@ class _DayDot extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: bg,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(11),
               border: today && !done
                   ? Border.all(color: p.accent, width: 2)
                   : null,

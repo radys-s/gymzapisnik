@@ -29,6 +29,9 @@ class AmbientClock extends ChangeNotifier implements ValueListenable<double> {
   AmbientClock._();
 
   static const frame = Duration(milliseconds: 40);
+
+  @visibleForTesting
+  bool get isRunning => _timer?.isActive ?? false;
   Timer? _timer;
   int _listeners = 0;
   int _ticks = 0;

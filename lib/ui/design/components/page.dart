@@ -22,6 +22,9 @@ class LargeTitlePage extends StatefulWidget {
   /// Prvek vedle velkého nadpisu (značka aplikace na Domů).
   final Widget? titleLeading;
 
+  /// Optional page-scoped decoration behind the scrolling content.
+  final Widget? background;
+
   const LargeTitlePage({
     super.key,
     required this.title,
@@ -39,6 +42,7 @@ class LargeTitlePage extends StatefulWidget {
     this.implyLeading = true,
     this.tone = Tone.training,
     this.titleLeading,
+    this.background,
   });
 
   @override
@@ -71,7 +75,15 @@ class _LargeTitlePageState extends State<LargeTitlePage> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: Space.contentMax),
-              child: _scroll(context, p, text),
+              child: widget.background == null
+                  ? _scroll(context, p, text)
+                  : Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Positioned.fill(child: widget.background!),
+                        _scroll(context, p, text),
+                      ],
+                    ),
             ),
           ),
         ),
